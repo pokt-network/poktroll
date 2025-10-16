@@ -13,9 +13,16 @@ You can find a fully featured example configuration at [gateway1_stake_config.ya
 
 :::
 
+- [Gov Param References \& Values](#gov-param-references--values)
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`stake_amount`](#stake_amount)
+
+## Gov Param References & Values
+
+- Gateway module governance params can be found [here](../../3_protocol/governance/2_gov_params.md).
+- Gateway module Beta parameter values can be found [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/params/bulk_params_beta/gateway_params.json).
+- Gateway module Main parameter values can be found [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/params/bulk_params_main/gateway_params.json).
 
 ## Usage
 
@@ -23,20 +30,13 @@ The `stake-gateway` transaction submission command accepts a `--config` flag
 that points to a `yaml` configuration file that defines the `stake_amount` the
 `Gateway` is willing to lock.
 
-:::warning
-
-TestNet is not ready as of writing this documentation, so you may
-need to adjust the command below appropriately.
-
-:::
-
 ```bash
 pocketd tx gateway stake-gateway \
   --home=./pocket \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from gateway1 \
-  --node tcp://pocket-node:26657
+  --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ## Configuration

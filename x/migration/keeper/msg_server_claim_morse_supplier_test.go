@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/migration/mocks"
@@ -43,7 +43,7 @@ var (
 			},
 			RevShare: []*sharedtypes.ServiceRevenueShare{
 				{
-					Address:            sample.AccAddress(),
+					Address:            sample.AccAddressBech32(),
 					RevSharePercentage: 100,
 				},
 			},
@@ -52,13 +52,13 @@ var (
 )
 
 func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
-	shannonDestAddr := sample.AccAddress()
+	shannonDestAddr := sample.AccAddressBech32()
 	shannonDestAccAddr, err := cosmostypes.AccAddressFromBech32(shannonDestAddr)
 	require.NoError(t, err)
 
 	claimCommitHeight := int64(10)
-	unstakedBalance := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
-	supplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 200)
+	unstakedBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	supplierStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 200)
 	expectedClaimedUnstakedTokens := unstakedBalance.Add(supplierStake).Sub(supplierStake)
 	expectedMsgStakeSupplier := &suppliertypes.MsgStakeSupplier{
 		Signer:          shannonDestAddr,
@@ -113,7 +113,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	// Set the supplier min stake to zero so that suppliers can be
 	// claimed without being unstaked.
 	supplierParams := suppliertypes.DefaultParams()
-	supplierParams.MinStake = &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: cosmosmath.ZeroInt()}
+	supplierParams.MinStake = &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: cosmosmath.ZeroInt()}
 	supplierKeeper.EXPECT().GetParams(gomock.Any()).
 		Return(supplierParams).
 		AnyTimes()
@@ -144,7 +144,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	morseClaimableAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 		UnstakedBalance:  unstakedBalance,
-		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
 		SupplierStake:    supplierStake,
 		// ShannonDestAddress: (intentionally omitted),
 		// ClaimedAtHeight:    (intentionally omitted),
@@ -173,27 +173,16 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		testSupplierServices,
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 	)
 	require.NoError(t, err)
 
-	msgClaimRes, err := srv.ClaimMorseSupplier(ctx, msgClaim)
+	_, err = srv.ClaimMorseSupplier(ctx, msgClaim)
 	require.NoError(t, err)
 
 	// Construct and assert the expected response.
 	sharedParams := sharedtypes.DefaultParams()
 	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
-	expectedRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
-		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-		ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
-		ClaimedBalance: expectedClaimedUnstakedTokens.
-			Add(morseClaimableAccount.GetApplicationStake()),
-		SessionEndHeight: expectedSessionEndHeight,
-		Supplier:         &expectedSupplier,
-	}
-	require.Equal(t, expectedRes, msgClaimRes)
 
 	// Assert that the persisted MorseClaimableAccount is updated.
 	expectedMorseAccount := morseClaimableAccount
@@ -208,8 +197,8 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
 		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
 		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-		ClaimedBalance:       expectedClaimedUnstakedTokens,
-		ClaimedSupplierStake: supplierStake,
+		ClaimedBalance:       expectedClaimedUnstakedTokens.String(),
+		ClaimedSupplierStake: supplierStake.String(),
 		SessionEndHeight:     expectedSessionEndHeight,
 		Supplier:             &expectedSupplier,
 	}
@@ -219,8 +208,8 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 }
 
 func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
-	claimableUnstakedBalance := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
-	claimableSupplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 200)
+	claimableUnstakedBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	claimableSupplierStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 200)
 
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
@@ -229,7 +218,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 	morseClaimableAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 		UnstakedBalance:  claimableUnstakedBalance,
-		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
 		SupplierStake:    claimableSupplierStake,
 		// ShannonDestAddress: (intentionally omitted),
 		// ClaimedAtHeight:    (intentionally omitted),
@@ -252,12 +241,12 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 
 	// Claim the MorseClaimableAccount with random Shannon owner & operator addresses.
 	msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
-		sample.AccAddress(),
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
+		sample.AccAddressBech32(),
 		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		testSupplierServices,
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 	)
 	require.NoError(t, err)
 
@@ -266,12 +255,12 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 
 	t.Run("invalid claim msg", func(t *testing.T) {
 		invalidClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
+			sample.AccAddressBech32(),
 			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServices,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -292,12 +281,12 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 
 	t.Run("account not found", func(t *testing.T) {
 		invalidMsgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
+			sample.AccAddressBech32(),
 			nonExistentMorsePrivKey.PubKey().Address().String(),
 			nonExistentMorsePrivKey,
 			testSupplierServices,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -335,7 +324,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 	t.Run("account already claimed (non-empty shannon_dest_address)", func(t *testing.T) {
 		// Set the Shannon destination address BUT NOT the claimed at height.
 		morseClaimableAccount.ClaimedAtHeight = 0
-		morseClaimableAccount.ShannonDestAddress = sample.AccAddress()
+		morseClaimableAccount.ShannonDestAddress = sample.AccAddressBech32()
 		k.SetMorseClaimableAccount(ctx, *morseClaimableAccount)
 
 		expectedErr := status.Error(
@@ -356,27 +345,27 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		nonSupplierMorseClaimableAccount := migrationtypes.MorseClaimableAccount{
 			MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 			UnstakedBalance:  claimableUnstakedBalance,
-			SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-			ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+			SupplierStake:    cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+			ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
 		}
 		k.SetMorseClaimableAccount(ctx, nonSupplierMorseClaimableAccount)
 
 		expectedErr := status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"Morse account %q is not staked as an supplier or application, please use `pocketd tx migration claim-account` instead",
+				"Morse account %q is not staked as a supplier or application, please use `pocketd tx migration claim-account` instead",
 				nonSupplierMorseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
 
 		// Claim the MorseClaimableAccount with random Shannon owner & operator addresses.
 		msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
+			sample.AccAddressBech32(),
 			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServices,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -388,8 +377,8 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		nonSupplierMorseClaimableAccount := migrationtypes.MorseClaimableAccount{
 			MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 			UnstakedBalance:  claimableUnstakedBalance,
-			SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-			ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100),
+			SupplierStake:    cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+			ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100),
 		}
 		k.SetMorseClaimableAccount(ctx, nonSupplierMorseClaimableAccount)
 
@@ -403,12 +392,12 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 
 		// Claim the MorseClaimableAccount with random Shannon owner & operator addresses.
 		msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
+			sample.AccAddressBech32(),
 			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServices,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 

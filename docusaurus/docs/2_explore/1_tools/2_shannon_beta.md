@@ -5,13 +5,11 @@ sidebar_position: 2
 
 ## Explorers
 
-- 🚰 Coming Soon: MACT Faucet for claiming tokens
-- 🪙 [StakeNodes' Faucet](https://faucet.beta.testnet.pokt.network/)
+- 🚰 [MACT Faucet for claiming tokens](https://faucet.beta.testnet.pokt.network/mact/)
+- 🪙 [StakeNodes' Faucet](https://faucet.beta.testnet.pokt.network/pokt/)
 - 🗺️ [StakeNodes' Explorer](https://explorer.pocket.network/pocket-beta)
 - 🗺️ [Soothe's Explorer](https://shannon-beta.trustsoothe.io)
 - 👨‍💻 [Soothe's GraphQL Playground](https://shannon-beta-api.trustsoothe.io/)
-
-<!-- TODO_MAINNET_MIGRATION(@bryanchriswhite): Add a link to the MACT Faucet once it's live. -->
 
 ## RPC Endpoints
 
@@ -32,7 +30,7 @@ curl -X POST https://shannon-testnet-grove-rpc.beta.poktroll.com/block
 Using the `pocketd` binary:
 
 ```bash
-pocketd query block --type=height 0 --node https://shannon-testnet-grove-rpc.beta.poktroll.com
+pocketd query block --type=height 0 --network=beta
 ```
 
 ## Alpha Genesis

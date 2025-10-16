@@ -8,13 +8,13 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
-	expectedMinStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 420)
+	expectedMinStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 420)
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
@@ -30,12 +30,14 @@ func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
 		Name:      gatewaytypes.ParamMinStake,
 		AsType:    &gatewaytypes.MsgUpdateParam_AsCoin{AsCoin: &expectedMinStake},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.MinStake, res.Params.MinStake)
-	require.Equal(t, expectedMinStake.Amount, res.Params.MinStake.Amount)
+	params := k.GetParams(ctx)
+
+	require.NotEqual(t, defaultParams.MinStake, params.MinStake)
+	require.Equal(t, expectedMinStake.Amount, params.MinStake.Amount)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(gatewaytypes.KeyMinStake))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &params, string(gatewaytypes.KeyMinStake))
 }

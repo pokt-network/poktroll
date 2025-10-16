@@ -12,7 +12,7 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
-	"github.com/cosmos/cosmos-sdk/client/flags"
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -26,6 +26,10 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/pokt-network/poktroll/app"
+	pocketdcmd "github.com/pokt-network/poktroll/cmd"
+	"github.com/pokt-network/poktroll/cmd/faucet"
+	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
@@ -69,10 +73,20 @@ func NewRootCmd() *cobra.Command {
 For additional documentation, see https://dev.poktroll.com/tools/user_guide/pocketd_cli
 		`,
 		SilenceErrors: true,
-		PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
+			// Set up the global logger for all CLI subcommands.
+			if err = logger.PreRunESetup(cmd, args); err != nil {
+				return err
+			}
+
 			// set the default command outputs
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
+
+			// Parse the --network flag. If set, update related flags (e.g. --chain-id, --node, --grpc-addr).
+			if err = pocketdcmd.ParseAndSetNetworkRelatedFlags(cmd); err != nil {
+				return err
+			}
 
 			clientCtx = clientCtx.WithCmdContext(cmd.Context())
 			clientCtx, err = client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
@@ -98,6 +112,7 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			}
 
 			clientCtx = clientCtx.WithTxConfig(txConfigWithTextual)
+
 			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
@@ -111,7 +126,11 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			customAppTemplate, customAppConfig := initAppConfig()
 			customCMTConfig := initCometBFTConfig()
 
-			return server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig)
+			if err = server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig); err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 
@@ -125,8 +144,8 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	initRootCmd(rootCmd, clientCtx.TxConfig, clientCtx.InterfaceRegistry, clientCtx.Codec, moduleBasicManager)
 
 	if err := overwriteFlagDefaults(rootCmd, map[string]string{
-		flags.FlagChainID:        DefaultChainID,
-		flags.FlagKeyringBackend: "test",
+		cosmosflags.FlagChainID:        DefaultChainID,
+		cosmosflags.FlagKeyringBackend: "test",
 	}); err != nil {
 		log.Fatal(err)
 	}
@@ -138,7 +157,10 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	// add relayer command
 	rootCmd.AddCommand(
 		relayercmd.RelayerCmd(),
+		faucet.FaucetCmd(),
 	)
+
+	rootCmd.PersistentFlags().String(flags.FlagNetwork, flags.DefaultNetwork, flags.FlagNetworkUsage)
 
 	return rootCmd
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -54,7 +54,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 
 	service = sharedtypes.Service{
 		Id:                   "svc",
-		ComputeUnitsPerRelay: 2,
+		ComputeUnitsPerRelay: 20000,
 	}
 
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, service.Id, protocol.BaseRelayDifficultyHashBz)
@@ -69,10 +69,10 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 			SessionId:               "sessionId",
 		},
 	}
-	supplierOperatorAddress := sample.AccAddress()
+	supplierOperatorAddress := sample.AccAddressBech32()
 	// Set the supplier operator balance to be able to submit the expected number of proofs.
 	feePerProof := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
-	gasCost := session.ClamAndProofGasCost.Amount.Int64()
+	gasCost := session.ClaimAndProofGasCost.Amount.Int64()
 	proofCost := feePerProof + gasCost
 	supplierOperatorBalance := proofCost
 	supplierClientMap := testsupplier.NewClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress, proofCount)
@@ -204,10 +204,10 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	ctrl := gomock.NewController(t)
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 
-	supplierOperatorAddress := sample.AccAddress()
+	supplierOperatorAddress := sample.AccAddressBech32()
 
 	proofSubmissionFee := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
-	claimAndProofGasCost := session.ClamAndProofGasCost.Amount.Int64()
+	claimAndProofGasCost := session.ClaimAndProofGasCost.Amount.Int64()
 	// Set the supplier operator balance to be able to submit only a single proof.
 	supplierOperatorBalance := proofSubmissionFee + claimAndProofGasCost + 1
 	supplierClientMock.EXPECT().
@@ -217,7 +217,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	supplierClientMock.EXPECT().
 		CreateClaims(
-			gomock.Eq(ctx),
+			gomock.AssignableToTypeOf(ctx),
 			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
 		).
@@ -231,7 +231,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	supplierClientMock.EXPECT().
 		SubmitProofs(
-			gomock.Eq(ctx),
+			gomock.AssignableToTypeOf(ctx),
 			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
@@ -266,15 +266,36 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 }
 
 // waitSimulateIO sleeps for a bit to allow the relayer sessions manager to
-// process asynchronously. This effectively simulates I/O delays which would
-// normally be present.
+// process asynchronously.
+// This effectively simulates I/O delays which would normally be present.
+// Uses a longer delay for session persistence tests.
 func waitSimulateIO() {
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
+}
+
+// waitForCondition polls for a condition to be true with a timeout.
+// This is used to wait for asynchronous operations to complete in tests.
+// Returns true if the condition becomes true within the timeout, false otherwise.
+func waitForCondition(
+	t *testing.T,
+	condition func() bool,
+	timeout time.Duration,
+	checkInterval time.Duration,
+) bool {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if condition() {
+			return true
+		}
+		time.Sleep(checkInterval)
+	}
+	return false
 }
 
 // uPOKTCoin returns a pointer to a uPOKT denomination coin with the given amount.
 func uPOKTCoin(amount int64) *sdktypes.Coin {
-	return &sdktypes.Coin{Denom: volatile.DenomuPOKT, Amount: sdkmath.NewInt(amount)}
+	return &sdktypes.Coin{Denom: pocket.DenomuPOKT, Amount: sdkmath.NewInt(amount)}
 }
 
 func setupDependencies(
@@ -332,10 +353,10 @@ func setupDependencies(
 		bankQueryClient,
 		logger,
 	)
-	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
+	storesDirectoryPathOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
-	relayerSessionsManager, err := session.NewRelayerSessions(deps, storesDirectoryOpt)
+	relayerSessionsManager, err := session.NewRelayerSessions(deps, storesDirectoryPathOpt)
 	require.NoError(t, err)
 	require.NotNil(t, relayerSessionsManager)
 

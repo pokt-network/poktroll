@@ -7,7 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -54,11 +54,12 @@ func (s *SupplierModuleSuite) StakeSupplier(
 		serviceConfigs[serviceIdx] = SupplierServiceConfigFromServiceIdAndOperatorAddress(serviceId, supplierAddress)
 	}
 
+	stakeCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, stakeAmtUpokt)
 	stakeSupplierMsg := suppliertypes.NewMsgStakeSupplier(
 		supplierAddress,
 		supplierAddress,
 		supplierAddress,
-		cosmostypes.NewInt64Coin(volatile.DenomuPOKT, stakeAmtUpokt),
+		&stakeCoin,
 		serviceConfigs,
 	)
 

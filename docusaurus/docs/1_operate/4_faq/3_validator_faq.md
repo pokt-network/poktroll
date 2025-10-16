@@ -45,6 +45,15 @@ If `K` joins with more stake than `J`:
 - `K` enters the active set.
 - `J` is rotated out and becomes inactive.
 
+## How does reward share work for Validators on Shannon?
+
+In Shannon, we are moving away from a custom \*supplier-like rev share\* imlpementation
+and defaulting to standard Cosmos best practices.
+
+Learn more about validator stake delegation [here](https://docs.cosmos.network/main/build/modules/staking#msgdelegate).
+
+You can read more about how delegation works [on the Cosmos Hub](https://hub.cosmos.network/main/delegators/delegator-faq), which follows similar patterns, or [this blog post](https://medium.com/@notional-ventures/staking-and-delegation-in-cosmos-db660154bcf9)
+
 ## How many validators can be staked and how many validators can produce blocks?
 
 An infinite number of validators can be staked, HOWEVER, only validators in the _active set_ will produce blocks. The size of the active set is dictated by the parameter `max_validators` which can be checked using `pocketd query params`.
@@ -86,7 +95,7 @@ pocketd tx staking \
   delegate $VALIDATOR_ADDR <amount> \
   --from <delegator_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 Example with specific parameters:
@@ -96,7 +105,7 @@ pocketd tx staking \
   delegate $VALIDATOR_ADDR 1000000upokt \
   --from <your_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 ## How do I unbond (undelegate) tokens from my Validator?
@@ -108,7 +117,7 @@ pocketd tx staking \
   unbond $VALIDATOR_ADDR <amount> \
   --from <delegator_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 Example with specific parameters:
@@ -118,7 +127,7 @@ pocketd tx staking \
   unbond $VALIDATOR_ADDR 500000upokt \
   --from <your_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 :::note Unbonding lock period
@@ -152,7 +161,7 @@ Your Full Node must be fully synchronized before creating a Validator.
 **Monitor and follow**:
 
 - Upgrade notifications in [Pocket Network's Discord](https://discord.com/invite/pocket-network)
-- The [latest recommended version](../../4_develop/upgrades/4_upgrade_list.md) documentation
+- The [latest recommended version](../../4_develop/upgrades/6_upgrade_list.md) documentation
 
 ## What security practices should I follow?
 
@@ -162,3 +171,11 @@ Your Full Node must be fully synchronized before creating a Validator.
 - When setting up your validator:
   - The `commission-rate`, `commission-max-rate`, and `commission-max-change-rate` should be expressed as decimals (e.g., `0.1` for 10%)
   - Ensure you have sufficient balance for your specified amounts in `validator.json` and delegations
+
+## What keys are important for Validators?
+
+_BE ABSOLUTELY SURE YOU HAVE THESE BACKED UP!!!_
+
+- You will need your validator address key (the address you staked from)
+- Your `priv_validator_key.json` - found in `/pocketd/config`
+- Your `node_key.json` - found in `/pocketd/config`

@@ -1,0 +1,54 @@
+chain_a_key:
+  name: pocket
+  # LocalNet app1 mnemonic; SHOULD match config.yml.
+  mnemonic: "mention spy involve verb exercise fiction catalog order agent envelope mystery text defy sing royal fringe return face alpha knife wonder vocal virus drum"
+
+chain_a_config: |
+  [[chains]]
+  type = "CosmosSdk"
+  id = "pocket"
+  rpc_addr = "http://validator-pocket-validator.default.svc.cluster.local:26657/"
+  grpc_addr = "http://validator-pocket-validator.default.svc.cluster.local:9090/"
+  rpc_timeout = "10s"
+  trusted_node = false
+  account_prefix = "pokt"
+  key_name = "pocket"
+  key_store_type = "Test"
+  store_prefix = "ibc"
+  default_gas = 100000
+  max_gas = 400000
+  gas_multiplier = 1.1
+  max_msg_num = 30
+  max_tx_size = 180000
+  max_grpc_decoding_size = 33554432
+  query_packets_chunk_size = 50
+  clock_drift = "5s"
+  max_block_time = "30s"
+  client_refresh_rate = "1/3"
+  ccv_consumer_chain = false
+  memo_prefix = ""
+  sequential_batch_tx = false
+  allow_ccq = true
+
+  [chains.event_source]
+  mode = "pull"
+  interval = "500ms"
+  max_retries = 4
+
+  [chains.trust_threshold]
+  numerator = 2
+  denominator = 3
+
+  [chains.gas_price]
+  price = 0.00
+  denom = "upokt"
+
+  [chains.dynamic_gas_price]
+  enabled = false
+  multiplier = 1.1
+  max = 0.6
+
+  [chains.address_type]
+  derivation = "cosmos"
+
+  [chains.excluded_sequences]

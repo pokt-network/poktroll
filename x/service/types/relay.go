@@ -4,7 +4,6 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // GetHash returns the hash of the relay, which contains both the signed
@@ -68,6 +67,29 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 	// res and res.Meta are not pointers, so we can set the signature to nil
 	// in order to generate the signable bytes hash without the need restore it.
 	res.Meta.SupplierOperatorSignature = nil
+
+	// TODO_TECHDEBT: REMOVE THIS BACKWARDS COMPATIBILITY CHECK ONCE ALL ACTORS ARE UPGRADED.
+	// See #1604 for the original implementation and delete after `v0.1.26` release is live
+	//
+	// Set the response payload to nil to reduce the size of SMST & onchain proofs.
+	//
+	// DEV_NOTE: This MUST be done in order to support onchain response signature verification,
+	// without including the entire response payload in the SMST/proof.
+	//
+	// DEV_NOTE: Backward compatibility implementation for signature verification:
+	// During network upgrades, different components (Chain, Gateway, RelayMiner) may run
+	// different software versions.
+	// The logic below enables compatibility between all versions without requiring synchronized upgrades.
+	//
+	// PayloadHash only gets set as of v0.1.25.
+	// Prior to v0.1.25, the payload was never nill and PayloadHash did not exist.
+	// By only setting the payload to nil if PayloadHash is not nil, we ensure compatibility before and after the upgrade.
+	//
+	// Ref for additional details: docusaurus/docs/4_develop/upgrades/10_backward_compatibility.md
+	if res.PayloadHash != nil {
+		res.Payload = nil
+	}
+
 	responseBz, err := res.Marshal()
 	if err != nil {
 		return [protocol.RelayHasherSize]byte{}, err
@@ -85,6 +107,11 @@ func (res *RelayResponse) ValidateBasic() error {
 	// TODO_POST_MAINNET: if a client gets a response with an invalid/incomplete
 	// SessionHeader, consider sending an onchain challenge, lowering their
 	// QoS, or other future work.
+
+	// TODO_TECHDEBT(red-0ne): Reenable once RelayMiners are updated to generate payload hashes.
+	// if len(res.GetPayloadHash()) == 0 {
+	// 	return ErrServiceInvalidRelayResponse.Wrapf("missing payload hash")
+	// }
 
 	meta := res.GetMeta()
 
@@ -118,30 +145,15 @@ func (res *RelayResponse) VerifySupplierOperatorSignature(supplierOperatorPubKey
 	return nil
 }
 
-// NullifyForObservability generates an empty RelayRequest that has the same
-// service and payload as the source RelayRequest if they are not nil.
-// It is meant to be used when replying with an error but no valid RelayRequest is available.
-func (sourceRelayRequest *RelayRequest) NullifyForObservability() *RelayRequest {
-	emptyRelayRequest := &RelayRequest{
-		Meta: RelayRequestMetadata{
-			SessionHeader: &sessiontypes.SessionHeader{
-				ServiceId: "",
-			},
-		},
-		Payload: []byte{},
+// UpdatePayloadHash computes the hash of the response payload and set it on res (this relay response).
+// This is necessary for onchain proof verification without requiring the full payload.
+// If the response payload is empty, an error is returned.
+func (res *RelayResponse) UpdatePayloadHash() error {
+	if len(res.GetPayload()) == 0 {
+		return ErrServiceInvalidRelayResponse.Wrapf("attempted to update payload hash with an empty payload")
 	}
 
-	if sourceRelayRequest == nil {
-		return emptyRelayRequest
-	}
-
-	if sourceRelayRequest.Payload != nil {
-		emptyRelayRequest.Payload = sourceRelayRequest.Payload
-	}
-
-	if sourceRelayRequest.Meta.SessionHeader != nil {
-		emptyRelayRequest.Meta.SessionHeader.ServiceId = sourceRelayRequest.Meta.SessionHeader.ServiceId
-	}
-
-	return emptyRelayRequest
+	responseHash := protocol.GetRelayHashFromBytes(res.GetPayload())
+	res.PayloadHash = responseHash[:]
+	return nil
 }

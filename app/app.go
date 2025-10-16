@@ -2,6 +2,8 @@ package app
 
 import (
 	// this line is used by starport scaffolding # stargate/app/moduleImport
+	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,6 +11,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -33,6 +36,7 @@ import (
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
+	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	"github.com/pokt-network/poktroll/app/keepers"
@@ -271,7 +275,7 @@ func New(
 	// The ante handler waives fees for txs which contain ONLY morse claim
 	// messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and
 	// MsgClaimMorseSupplier), and is signed by a single secp256k1 signer.
-	app.App.BaseApp.SetAnteHandler(newMorseClaimGasFeesWaiverAnteHandlerFn(app))
+	app.SetAnteHandler(newMorseClaimGasFeesWaiverAnteHandlerFn(app))
 
 	// Register legacy modules
 	app.registerIBCModules()
@@ -283,6 +287,7 @@ func New(
 
 	/****  Module Options ****/
 
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code.
 	app.ModuleManager.RegisterInvariants(app.Keepers.CrisisKeeper)
 
 	// add test gRPC service for testing gRPC queries in isolation
@@ -299,16 +304,35 @@ func New(
 
 	app.sm.RegisterStoreDecoders()
 
-	// A custom InitChainer can be set if extra pre-init-genesis logic is required.
-	// By default, when using app wiring enabled module, this is not required.
-	// For instance, the upgrade module will set automatically the module version map in its init genesis thanks to app wiring.
-	// However, when registering a module manually (i.e. that does not support app wiring), the module version map
-	// must be set manually as follow. The upgrade module will de-duplicate the module version map.
+	// Custom InitChainer to ensure ICA host port binding.
 	//
-	// app.SetInitChainer(func(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
-	// 	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap())
-	// 	return app.App.InitChainer(ctx, req)
-	// })
+	// Why this is necessary:
+	// - The default InitChainer does NOT bind the "icahost" port
+	// - Binding this port is required to allow other chains (controllers) to open ICA channels with pocket (host)
+	// - Without this, controller chains will get "port not found" errors during handshake
+	// - Even if ICA host is disabled via `host_enabled = false`, binding the port is harmless
+	// - Port binding is a runtime state operation and MUST happen after capability initialization
+	app.SetInitChainer(func(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+		// Parse genesis state (this replaces the default InitChainer logic)
+		var genesisState map[string]json.RawMessage
+		if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal genesis state: %w", err)
+		}
+
+		// Initialize all modules from genesis
+		res, err := app.ModuleManager.InitGenesis(ctx, app.appCodec, genesisState)
+		if err != nil {
+			return nil, fmt.Errorf("failed to init genesis: %w", err)
+		}
+
+		// Bind the ICA host port (if not already bound)
+		if !app.Keepers.IBCKeeper.PortKeeper.IsBound(ctx, icahosttypes.SubModuleName) {
+			// This allows remote controller chains to create ICA channels
+			_ = app.Keepers.IBCKeeper.PortKeeper.BindPort(ctx, icahosttypes.SubModuleName)
+		}
+
+		return res, nil
+	})
 
 	if err := app.setUpgrades(); err != nil {
 		return nil, err
@@ -335,11 +359,17 @@ func (app *App) LegacyAmino() *codec.LegacyAmino {
 }
 
 // AppCodec returns App's app codec.
-//
-// NOTE: This is solely to be used for testing purposes as it may be desirable
-// for modules to register their own custom testing types.
+// DEV_NOTE: Do not delete this.
+// It is needed to comply with the ignite CLI; https://github.com/ignite/cli/issues/4697
 func (app *App) AppCodec() codec.Codec {
 	return app.appCodec
+}
+
+// TxConfig returns App's transaction config.
+// DEV_NOTE: Do not delete this.
+// It is needed to comply with the ignite CLI; https://github.com/ignite/cli/issues/4697
+func (app *App) TxConfig() client.TxConfig {
+	return app.txConfig
 }
 
 // GetKey returns the KVStoreKey for the provided store key.

@@ -2,21 +2,16 @@ package proxy
 
 import (
 	"context"
+	stdmath "math"
 	"math/big"
-	"strings"
 	"sync"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/gogoproto/proto"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	"github.com/pokt-network/poktroll/pkg/either"
-	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -25,8 +20,6 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
-
-const defaultOverServicingAllowanceCoins = 1000000
 
 var _ relayer.RelayMeter = (*ProxyRelayMeter)(nil)
 
@@ -46,18 +39,6 @@ type sessionRelayMeter struct {
 	// numOverServicedRelays is the number of relays that have been over-serviced
 	// by the relayer for the application.
 	numOverServicedRelays uint64
-	// numOverservicedComputeUnits is the number of compute units that have been
-	// over-serviced by the relayer for the application.
-	numOverServicedComputeUnits uint64
-
-	// sharedParams, service and serviceRelayDifficulty are used to calculate the relay cost
-	// that increments the consumedAmount.
-	// They are cached at each session to avoid querying the blockchain for each relay.
-	// TODO_TECHDEBT(#543): Remove once the query clients start handling caching and invalidation.
-	sharedParams           *sharedtypes.Params
-	service                *sharedtypes.Service
-	serviceRelayDifficulty servicetypes.RelayMiningDifficulty
-	numSuppliersPerSession uint64
 }
 
 // ProxyRelayMeter is the offchain Supplier's rate limiter.
@@ -71,32 +52,29 @@ type ProxyRelayMeter struct {
 	// Only known applications (i.e. have sent at least one relay) have their stakes metered.
 	// This map gets reset every new session in order to meter new applications.
 	sessionToRelayMeterMap map[string]*sessionRelayMeter
-	// overServicingAllowanceCoins allows Suppliers to overservice applications.
+
+	// overServicingEnabled allows Suppliers to overservice applications.
 	// This entails providing a free service (i.e. mine for relays), that they will not be paid for onchain.
 	// This is common by some suppliers to build goodwill and receive a higher offchain quality-of-service rating.
-	// If negative, allow infinite overservicing.
-	// TODO_MAINNET(@red-0ne): Expose overServicingAllowanceCoins as a configuration parameter.
-	overServicingAllowanceCoins cosmostypes.Coin
+	overServicingEnabled bool
 
 	// relayMeterMu ensures that relay meter operations are thread-safe.
-	relayMeterMu sync.Mutex
+	relayMeterMu sync.RWMutex
 
 	// Clients to query onchain data.
 	applicationQuerier client.ApplicationQueryClient
 	serviceQuerier     client.ServiceQueryClient
 	sharedQuerier      client.SharedQueryClient
 	sessionQuerier     client.SessionQueryClient
-	eventsQueryClient  client.EventsQueryClient
 	blockQuerier       client.BlockClient
 
 	logger polylog.Logger
 }
 
-func NewRelayMeter(deps depinject.Config) (relayer.RelayMeter, error) {
-	overservicingAllowanceCoins := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, defaultOverServicingAllowanceCoins)
+func NewRelayMeter(deps depinject.Config, enableOverServicing bool) (relayer.RelayMeter, error) {
 	rm := &ProxyRelayMeter{
-		sessionToRelayMeterMap:      make(map[string]*sessionRelayMeter),
-		overServicingAllowanceCoins: overservicingAllowanceCoins,
+		sessionToRelayMeterMap: make(map[string]*sessionRelayMeter),
+		overServicingEnabled:   enableOverServicing,
 	}
 
 	if err := depinject.Inject(
@@ -105,7 +83,6 @@ func NewRelayMeter(deps depinject.Config) (relayer.RelayMeter, error) {
 		&rm.applicationQuerier,
 		&rm.serviceQuerier,
 		&rm.blockQuerier,
-		&rm.eventsQueryClient,
 		&rm.sessionQuerier,
 		&rm.logger,
 	); err != nil {
@@ -117,25 +94,6 @@ func NewRelayMeter(deps depinject.Config) (relayer.RelayMeter, error) {
 
 // Start starts the relay meter by observing application staked events and new sessions.
 func (rmtr *ProxyRelayMeter) Start(ctx context.Context) error {
-	// Listen to transaction events to filter application staked events.
-	// TODO_TECHDEBT(@red-0ne): refactor this listener to be shared across all query clients
-	// and remove the need to listen to events in the relay meter.
-	eventsObs, err := rmtr.eventsQueryClient.EventsBytes(ctx, "tm.event = 'Tx'")
-	if err != nil {
-		return err
-	}
-
-	// Listen for application staked events and update known application stakes.
-	//
-	// Since an applications might upstake (never downstake) during a session, this
-	// stake increase is guaranteed to be available at settlement.
-	// Stake updates take effect immediately.
-	//
-	// This enables applications to adjust their stake mid-session and increase
-	// their rate limits without needing to wait for the next session to start.
-	appStakedEvents := filterTypedEvents[*apptypes.EventApplicationStaked](ctx, eventsObs, nil)
-	channel.ForEach(ctx, appStakedEvents, rmtr.forEachEventApplicationStakedFn)
-
 	// Listen to new blocks and reset the relay meter application stakes every new session.
 	committedBlocksSequence := rmtr.blockQuerier.CommittedBlocksSequence(ctx)
 	channel.ForEach(ctx, committedBlocksSequence, rmtr.forEachNewBlockFn)
@@ -143,156 +101,214 @@ func (rmtr *ProxyRelayMeter) Start(ctx context.Context) error {
 	return nil
 }
 
-// AccumulateRelayReward accumulates the relay reward for the given relay request.
-// The relay reward is added optimistically, assuming that the relay will be volume / reward
-// applicable and the relay meter would remain up to date.
-func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) error {
-	// TODO_MAINNET(@adshmh): Locking the relay serving flow to ensure that the relay meter is updated
-	// might be a bottleneck since ensureRequestAppMetrics is performing multiple
-	// sequential queries to the Pocket Network node.
-	// Re-evaluate when caching and invalidation is implemented.
-	rmtr.relayMeterMu.Lock()
-	defer rmtr.relayMeterMu.Unlock()
+// IsOverServicing returns whether the relay would result in over-servicing the application.
+//
+// It returns true if serving this relay would exceed the application's allocated stake
+// (serving beyond what the application can pay for), false if the relay is within limits.
+// The function updates the relay meter with the given relay request metadata.
+func (rmtr *ProxyRelayMeter) IsOverServicing(
+	ctx context.Context,
+	reqMeta servicetypes.RelayRequestMetadata,
+) bool {
+	// Create a context-specific logger to avoid concurrent access issues
+	logger := rmtr.logger.With(
+		"method", "IsOverServicing",
+		"session_id", reqMeta.GetSessionHeader().GetSessionId(),
+	)
 
 	// Ensure that the served application has a relay meter and update the consumed
 	// stake amount.
 	appRelayMeter, err := rmtr.ensureRequestSessionRelayMeter(ctx, reqMeta)
 	if err != nil {
-		return err
+		logger.Warn().Msgf(
+			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			err,
+		)
+		return false
+	}
+
+	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
+	if err != nil {
+		logger.Warn().Msgf(
+			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			err,
+		)
+		return false
+	}
+
+	service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
+	if err != nil {
+		logger.Warn().Msgf(
+			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			err,
+		)
+		return false
 	}
 
 	// Get the cost of the relay based on the service and shared parameters.
-	relayCostCoin, err := getSingleMinedRelayCostCoin(
-		appRelayMeter.sharedParams,
-		appRelayMeter.service,
-		appRelayMeter.serviceRelayDifficulty,
-	)
+	relayCostCoin, err := getSingleRelayCostCoin(sharedParams, &service)
 	if err != nil {
-		return err
+		logger.Warn().Msgf(
+			"[Non critical] Unable to calculate relay cost in session %s. Relay will continue without rate limiting: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			err,
+		)
+		return false
 	}
 
 	// Increase the consumed stake amount by relay cost.
 	newConsumedCoin := appRelayMeter.consumedCoin.Add(relayCostCoin)
 
-	isAppOverServiced := appRelayMeter.maxCoin.IsLT(newConsumedCoin)
-	if !isAppOverServiced {
+	if appRelayMeter.maxCoin.IsGTE(newConsumedCoin) {
 		appRelayMeter.consumedCoin = newConsumedCoin
-		return nil
-	}
-
-	// Check if the supplier is allowing unlimited over-servicing (i.e. negative value)
-	allowUnlimitedOverServicing := rmtr.overServicingAllowanceCoins.IsNegative()
-
-	// The application is over-servicing, if unlimited over-servicing is not allowed
-	// and the newConsumedCoin is greater than the maxCoin + overServicingAllowanceCoins,
-	// then return a rate limit error.
-	overServicingCoin := newConsumedCoin.Sub(appRelayMeter.maxCoin)
-
-	// In case Allowance is positive, add it to maxCoin to allow no or limited over-servicing.
-	if !allowUnlimitedOverServicing {
-		maxAllowedOverServicing := appRelayMeter.maxCoin.Add(rmtr.overServicingAllowanceCoins)
-		if maxAllowedOverServicing.IsLT(newConsumedCoin) {
-			return ErrRelayerProxyRateLimited.Wrapf(
-				"application has been rate limited, stake needed: %s, has: %s",
-				newConsumedCoin.String(),
-				appRelayMeter.maxCoin.String(),
-			)
-		}
+		return false
 	}
 
 	appRelayMeter.numOverServicedRelays++
-	appRelayMeter.numOverServicedComputeUnits += appRelayMeter.service.ComputeUnitsPerRelay
 
-	// Exponential backoff, only log over-servicing when numOverServicedRelays is a power of 2
+	// Exponential backoff: only log over-servicing when numOverServicedRelays is a power of 2
+	// This prevents log spam while still tracking the issue at exponentially growing intervals
 	if shouldLogOverServicing(appRelayMeter.numOverServicedRelays) {
-		rmtr.logger.Warn().Msgf(
-			"overservicing enabled, application %q over-serviced %s",
+		logger.Warn().Msgf(
+			"overservicing enabled, application %q over-serviced %d times",
 			appRelayMeter.app.GetAddress(),
-			overServicingCoin,
+			appRelayMeter.numOverServicedRelays,
 		)
 	}
 
-	return nil
+	return true
 }
 
 // SetNonApplicableRelayReward updates the relay meter to make the relay reward for
 // the given relay request as non-applicable.
 // This is used when the relay is not volume / reward applicable but was optimistically
 // accounted for in the relay meter.
-func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) error {
+func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) {
 	rmtr.relayMeterMu.Lock()
 	defer rmtr.relayMeterMu.Unlock()
 
+	// Create a context-specific logger to avoid concurrent access issues
+	logger := rmtr.logger.With(
+		"method", "SetNonApplicableRelayReward",
+		"session_id", reqMeta.GetSessionHeader().GetSessionId(),
+	)
+
 	sessionRelayMeter, ok := rmtr.sessionToRelayMeterMap[reqMeta.GetSessionHeader().GetSessionId()]
 	if !ok {
-		return ErrRelayerProxyUnknownSession.Wrap("session relay meter not found")
+		logger.Warn().Msgf(
+			"[Non critical] Unable to find session relay meter for session %s. Application may be rate limited more than intended: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			ErrRelayerProxyUnknownSession.Wrap("session relay meter not found"),
+		)
+
+		return
+	}
+
+	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
+	if err != nil {
+		logger.Warn().Msgf(
+			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			err,
+		)
+		return
+	}
+
+	service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
+	if err != nil {
+		logger.Warn().Msgf(
+			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			err,
+		)
+		return
 	}
 
 	// Get the cost of the relay based on the service and shared parameters.
-	relayCost, err := getSingleMinedRelayCostCoin(
-		sessionRelayMeter.sharedParams,
-		sessionRelayMeter.service,
-		sessionRelayMeter.serviceRelayDifficulty,
-	)
+	relayCost, err := getSingleRelayCostCoin(sharedParams, &service)
 	if err != nil {
-		return ErrRelayerProxyCalculateRelayCost.Wrapf("%s", err)
+		logger.Warn().Msgf(
+			"[Non critical] Unable to calculate relay cost in session %s. Application may be rate limited more than intended: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			err,
+		)
 	}
 
+	// TODO_FOLLOWUP(@red-0ne): Consider fixing the relay meter logic to never have
+	// a less than relay cost consumed amount.
+	if sessionRelayMeter.consumedCoin.IsLT(relayCost) {
+		logger.Warn().Msgf(
+			"(SHOULD NEVER HAPPEN) Your session earned less than the cost of a single relay. Not submitting a claim for application (%s), service id: (%s), session id: (%s), with consumed amount: (%s), relay cost: (%s)",
+			sessionRelayMeter.app.GetAddress(),
+			sessionRelayMeter.sessionHeader.GetServiceId(),
+			sessionRelayMeter.sessionHeader.GetSessionId(),
+			sessionRelayMeter.consumedCoin.String(),
+			relayCost.String(),
+		)
+		return
+	}
 	// Decrease the consumed stake amount by relay cost.
 	newConsumedAmount := sessionRelayMeter.consumedCoin.Sub(relayCost)
 
 	sessionRelayMeter.consumedCoin = newConsumedAmount
-	return nil
+}
+
+// AllowOverServicing returns true if the relay meter is configured to allow over-servicing.
+//
+// Over-servicing allows the offchain relay miner to serve more relays than the
+// amount of stake the onchain Application can pay the corresponding onchain
+// Supplier at the end of the session.
+func (rmtr *ProxyRelayMeter) AllowOverServicing() bool {
+	// Over-servicing is enabled if the relay meter is configured to allow it.
+	return rmtr.overServicingEnabled
 }
 
 // forEachNewBlockFn is a callback function that is called every time a new block is committed.
 // It resets the relay meter's application stakes every new session so that new
 // application stakes can be metered.
 func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client.Block) {
-	rmtr.relayMeterMu.Lock()
-	defer rmtr.relayMeterMu.Unlock()
-
 	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
 	if err != nil {
 		return
 	}
 
-	// Delete the relay meters that correspond to settled sessions.
-	for _, sessionRelayMeter := range rmtr.sessionToRelayMeterMap {
-		sessionEndHeight := sessionRelayMeter.sessionHeader.GetSessionEndBlockHeight()
-		sessionClaimOpenHeight := sessionEndHeight + int64(sharedParams.GetClaimWindowOpenOffsetBlocks())
+	// First pass: Read-only scan to identify sessions to delete
+	rmtr.relayMeterMu.RLock()
+	var sessionsToDelete []string
+	for sessionId, sessionRelayMeter := range rmtr.sessionToRelayMeterMap {
+		sessionClaimOpenHeight := sharedtypes.GetClaimWindowOpenHeight(
+			sharedParams,
+			sessionRelayMeter.sessionHeader.GetSessionEndBlockHeight(),
+		)
 
 		if block.Height() >= sessionClaimOpenHeight {
-			// The session started its claim phase and the corresponding session relay meter
-			// is no longer needed.
-			delete(rmtr.sessionToRelayMeterMap, sessionRelayMeter.sessionHeader.GetSessionId())
+			sessionsToDelete = append(sessionsToDelete, sessionId)
 		}
 	}
-}
+	rmtr.relayMeterMu.RUnlock()
 
-// forEachEventApplicationStakedFn is a callback function that is called every time
-// an application staked event is observed. It updates the relay meter known applications.
-func (rmtr *ProxyRelayMeter) forEachEventApplicationStakedFn(ctx context.Context, event *apptypes.EventApplicationStaked) {
+	// Second pass: Write lock only for deletions (if needed)
+	if len(sessionsToDelete) == 0 {
+		return
+	}
+
+	// !!! CRITICAL MUTEX !!!
+	// DEV_NOTE: This is a WRITE lock on relay-meter-wide mutex, shared across all served relays:
+	// - This critical section is delicate for performance.
+	// - Keep the work here minimal and fast.
+	// - Avoid unnecessary allocations, I/O, or blocking calls.
+	// - Prolonged holds will throttle relay throughput across the process.
+	// TODO_IMPROVE: Identify potential ways to avoid a write lock if possible.
 	rmtr.relayMeterMu.Lock()
-	defer rmtr.relayMeterMu.Unlock()
-
-	app := event.GetApplication()
-
-	// Since lean clients are supported, multiple suppliers might share the same RelayMiner.
-	// Loop over all the suppliers that have metered the application and update their
-	// max amount of stake they can consume.
-	for _, sessionRelayMeter := range rmtr.sessionToRelayMeterMap {
-		if sessionRelayMeter.app.Address != app.Address {
-			continue
-		}
-		sessionRelayMeter.app.Stake = app.GetStake()
-		appStakeShare := getAppStakePortionPayableToSessionSupplier(
-			app.GetStake(),
-			sessionRelayMeter.sharedParams,
-			sessionRelayMeter.numSuppliersPerSession,
-		)
-		sessionRelayMeter.maxCoin = appStakeShare
+	for _, sessionId := range sessionsToDelete {
+		// The session started its claim phase and the corresponding session relay meter
+		// is no longer needed.
+		delete(rmtr.sessionToRelayMeterMap, sessionId)
 	}
+	rmtr.relayMeterMu.Unlock()
 }
 
 // ensureRequestSessionRelayMeter ensures that the relay miner has a relay meter
@@ -301,11 +317,16 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 	appAddress := reqMeta.GetSessionHeader().GetApplicationAddress()
 	sessionId := reqMeta.GetSessionHeader().GetSessionId()
 
+	rmtr.relayMeterMu.RLock()
 	relayMeter, ok := rmtr.sessionToRelayMeterMap[sessionId]
+	rmtr.relayMeterMu.RUnlock()
+
 	// If the application is seen for the first time in this session, calculate the
 	// max amount of stake the application can consume.
 	if !ok {
 		var app apptypes.Application
+		// Application stake is guaranteed to be up-to-date as long as the cache is
+		// invalidated at each new block.
 		app, err := rmtr.applicationQuerier.GetApplication(ctx, appAddress)
 		if err != nil {
 			return nil, err
@@ -326,16 +347,6 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 			return nil, err
 		}
 
-		service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
-		if err != nil {
-			return nil, err
-		}
-
-		serviceRelayDifficulty, err := rmtr.serviceQuerier.GetServiceRelayDifficulty(ctx, service.Id)
-		if err != nil {
-			return nil, err
-		}
-
 		sessionParams, err := rmtr.sessionQuerier.GetParams(ctx)
 		if err != nil {
 			return nil, err
@@ -347,88 +358,51 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 			sharedParams,
 			sessionParams.GetNumSuppliersPerSession(),
 		)
+
 		relayMeter = &sessionRelayMeter{
-			app:                    app,
-			consumedCoin:           cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-			maxCoin:                supplierAppStake,
-			sessionHeader:          reqMeta.SessionHeader,
-			sharedParams:           sharedParams,
-			service:                &service,
-			serviceRelayDifficulty: serviceRelayDifficulty,
-			numSuppliersPerSession: sessionParams.GetNumSuppliersPerSession(),
+			app:           app,
+			consumedCoin:  cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+			maxCoin:       supplierAppStake,
+			sessionHeader: reqMeta.SessionHeader,
 		}
 
+		rmtr.relayMeterMu.Lock()
 		rmtr.sessionToRelayMeterMap[sessionId] = relayMeter
+		rmtr.relayMeterMu.Unlock()
 	}
 
 	return relayMeter, nil
 }
 
-// filterTypedEvents filters the provided events bytes for the typed event T.
-// T is then filtered by the provided filter function.
-func filterTypedEvents[T proto.Message](
-	ctx context.Context,
-	eventBzObs client.EventsBytesObservable,
-	filterFn func(T) bool,
-) observable.Observable[T] {
-	eventObs, eventCh := channel.NewObservable[T]()
-	channel.ForEach(ctx, eventBzObs, func(ctx context.Context, maybeTxBz either.Bytes) {
-		if maybeTxBz.IsError() {
-			return
-		}
-		txBz, _ := maybeTxBz.ValueOrError()
-
-		// Try to deserialize the provided bytes into an abci.TxResult.
-		txResult, err := tx.UnmarshalTxResult(txBz)
-		if err != nil {
-			return
-		}
-
-		for _, event := range txResult.Result.Events {
-			eventApplicationStakedType := cosmostypes.MsgTypeURL(*new(T))
-			if strings.Trim(event.GetType(), "/") != strings.Trim(eventApplicationStakedType, "/") {
-				continue
-			}
-
-			typedEvent, err := cosmostypes.ParseTypedEvent(event)
-			if err != nil {
-				return
-			}
-
-			castedEvent, ok := typedEvent.(T)
-			if !ok {
-				return
-			}
-
-			// Apply the filter function to the typed event.
-			if filterFn == nil || filterFn(castedEvent) {
-				eventCh <- castedEvent
-				return
-			}
-		}
-	})
-
-	return eventObs
-}
-
-// getSingleMinedRelayCostCoin returns the cost of a relay based on the shared parameters and the service.
-// relayCost = Compute Units Per Relay (CUPR) * Compute Units To Token Multiplier (CUTTM) * relayDifficultyMultiplier
-func getSingleMinedRelayCostCoin(
+// getSingleRelayCostCoin returns the cost of a relay based on the shared parameters and the service.
+//
+// relayCost =
+//
+//	Compute Units Per Relay (CUPR) *
+//	Compute Units To Token Multiplier (CUTTM) /
+//	Compute Unit Cost Granularity
+//
+// Example:
+// 1 relayCost (in uPOKT) =
+//
+//	100 (compute units per relay)
+//	42_000_000 (compute unit cost in pPOKT) /
+//	1000000 (convert pPOKT to uPOKT)
+func getSingleRelayCostCoin(
 	sharedParams *sharedtypes.Params,
 	service *sharedtypes.Service,
-	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
 ) (cosmostypes.Coin, error) {
-	// Get the difficulty multiplier based on the relay mining difficulty.
-	difficultyTargetHash := relayMiningDifficulty.GetTargetHash()
-	difficultyMultiplier := protocol.GetRelayDifficultyMultiplier(difficultyTargetHash)
+	// Get the cost of a single compute unit in fractional uPOKT.
+	computeUnitCostUpokt := new(big.Rat).SetFrac64(
+		int64(sharedParams.GetComputeUnitsToTokensMultiplier()),
+		int64(sharedParams.GetComputeUnitCostGranularity()),
+	)
+	// Get the cost of a single relay in fractional uPOKT.
+	relayCostRat := new(big.Rat).Mul(new(big.Rat).SetUint64(service.ComputeUnitsPerRelay), computeUnitCostUpokt)
 
-	// Get the estimated cost of the relay if it gets mined.
-	relayCostAmt := service.ComputeUnitsPerRelay * sharedParams.GetComputeUnitsToTokensMultiplier()
-	relayCostRat := big.NewRat(int64(relayCostAmt), 1)
-	estimatedRelayCostRat := big.NewRat(0, 1).Mul(relayCostRat, difficultyMultiplier)
-	estimatedRelayCost := big.NewInt(0).Quo(estimatedRelayCostRat.Num(), estimatedRelayCostRat.Denom())
-
-	estimatedRelayCostCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(estimatedRelayCost))
+	// Get the estimated cost of the relay if it gets mined in uPOKT.
+	estimatedRelayCost := big.NewInt(0).Quo(relayCostRat.Num(), relayCostRat.Denom())
+	estimatedRelayCostCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewIntFromBigInt(estimatedRelayCost))
 
 	return estimatedRelayCostCoin, nil
 }
@@ -445,10 +419,12 @@ func getAppStakePortionPayableToSessionSupplier(
 	// Calculate the number of pending sessions that might consume the application's stake.
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 	numBlocksUntilProofWindowCloses := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
-	pendingSessions := (numBlocksUntilProofWindowCloses + numBlocksPerSession - 1) / numBlocksPerSession
+	numClosedSessionsAwaitingSettlement := stdmath.Ceil(float64(numBlocksUntilProofWindowCloses) / float64(numBlocksPerSession))
+	// Add 1 to the number of pending sessions to account for the current session
+	pendingSessions := int64(numClosedSessionsAwaitingSettlement) + 1
 
 	appStakePerSessionSupplier := appStakePerSupplier.Quo(math.NewInt(pendingSessions))
-	appStakePerSessionSupplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, appStakePerSessionSupplier)
+	appStakePerSessionSupplierCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, appStakePerSessionSupplier)
 
 	return appStakePerSessionSupplierCoin
 }

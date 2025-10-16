@@ -5,6 +5,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/gogoproto/proto"
+
+	"github.com/pokt-network/poktroll/pkg/encoding"
 )
 
 var (
@@ -44,6 +46,14 @@ func (msg *MsgClaimMorseAccount) ValidateBasic() error {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
 			"invalid shannonDestAddress address (%s): %s",
 			msg.GetShannonDestAddress(), err,
+		)
+	}
+
+	// Validate the shannonDestAddress is a valid bech32 address.
+	if _, err := sdk.AccAddressFromBech32(msg.ShannonSigningAddress); err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"invalid shannonDestAddress address (%s): %s",
+			msg.ShannonSigningAddress, err,
 		)
 	}
 
@@ -87,5 +97,5 @@ func (msg *MsgClaimMorseAccount) getSigningBytes() ([]byte, error) {
 
 // GetMorseSignerAddress returns the morse address which was used to sign the claim message.
 func (msg *MsgClaimMorseAccount) GetMorseSignerAddress() string {
-	return msg.GetMorsePublicKey().Address().String()
+	return encoding.NormalizeMorseAddress(msg.GetMorsePublicKey().Address().String())
 }

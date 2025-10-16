@@ -65,13 +65,6 @@ development purposes.
 
 :::
 
-If you want to deploy your own Gateway and Supplier, please follow the instructions
-in our [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example)
-example.
-
-If you want to deploy a Supplier & Gateway via a copy-pasta method without understanding
-anything, see the instructions [here](https://github.com/pokt-network/poktroll-docker-compose-example/blob/main/debian_cheasheet.md).
-
 ## Video Walkthrough
 
 You can access the video [here](https://www.youtube.com/watch?v=H-R5FqrCYQs).
@@ -167,7 +160,7 @@ make localnet_up
 
 The `make localnet_up` command will run the `make k8s_kind_up` target, which:
 
-- Creates a new `kind` cluster name `kind-pocket-localnet`
+- Creates a new `kind` cluster named `pocket-localnet` (the `kubectl` context will be `kind-pocket-localnet`).
 - Creates all namespaces required by the PATH Helm Charts
 
 :::tip
@@ -189,6 +182,16 @@ If you are in a hurry, specifically look for the `acc_initialize_pubkeys` step.
 
 If everything worked as expected, your screen should look similar to the following:
 
+**LocalNet Ports (defaults)**
+
+* Tilt UI: Port 10350 - http://localhost:10350 (Access the Tilt UI dashboard)
+* Grafana: Port 3003 - http://localhost:3003 (Monitor metrics with Grafana)
+* PATH Gateway (JSON-RPC): Port 3069 - http://localhost:3069/v1 (Send JSON-RPC requests to the PATH Gateway)
+* PATH Gateway (REST): Port 3070 - http://localhost:3070/v1/... (Interact with the PATH Gateway via REST API)
+* Anvil (ETH dev node): Port 8547 - http://localhost:8547 (JSON-RPC endpoint for Ethereum development)
+* CometBFT RPC (Pocket node): Port 26657 - http://localhost:26657/status (Query CometBFT RPC status)
+* Cosmos gRPC (Pocket node): Port 9090 - grpc://localhost:9090 (Access Cosmos gRPC services)
+
 ### 1.5 View Grafana Logs
 
 Every actor has a local grafana dashboard associated with it.
@@ -205,7 +208,7 @@ you can click in the top left corner to view its [grafana dashboard](http://loca
 You can query the status of the blockchain using `pocketd` by running:
 
 ```bash
-pocketd status --node=tcp://127.0.0.1:26657 | jq
+pocketd status --network=local | jq
 ```
 
 Alternatively, you use the [CometBFT](https://github.com/cometbft/cometbft) status directly at:
@@ -305,7 +308,7 @@ You can send some uPOKT to your `shannon_supplier` by running:
 pocketd \
   tx bank send \
   faucet $SHANNON_SUPPLIER 420000000000069upokt \
-  --node tcp://127.0.0.1:26657 \
+  --network=local \
   --home=./localnet/pocketd
 ```
 
@@ -328,7 +331,7 @@ Let's do the same thing for the `shannon_application`:
 pocketd \
   tx bank send \
   faucet $SHANNON_APPLICATION 420000000000069upokt \
-  --node tcp://127.0.0.1:26657 \
+  --network=local \
   --home=./localnet/pocketd
 ```
 
@@ -391,7 +394,7 @@ You can learn more about our [supplier configs here](../../1_operate/3_configs/3
 The following is an example config to get you started:
 
 ```bash
-cat <<EOF >> shannon_supplier_config.yaml
+cat <<🚀 >> shannon_supplier_config.yaml
 owner_address: pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8
 operator_address: pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8
 stake_amount: 1000069upokt
@@ -400,7 +403,7 @@ services:
     endpoints:
       - publicly_exposed_url: http://localhost:6942
         rpc_type: JSON_RPC
-EOF
+🚀
 ```
 
 ### 3.4 Stake the new Supplier
@@ -413,7 +416,7 @@ pocketd \
   --config shannon_supplier_config.yaml \
   --keyring-backend test \
   --from shannon_supplier \
-  --node tcp://127.0.0.1:26657 \
+  --network=local \
   --home=./localnet/pocketd \
   --yes
 ```
@@ -421,7 +424,7 @@ pocketd \
 And verify that the supplier is now staked with:
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_SUPPLIER --node tcp://127.0.0.1:26657
+pocketd query supplier show-supplier $SHANNON_SUPPLIER --network=local
 ```
 
 ### 3.4 Prepare the RelayMiner configuration
@@ -433,9 +436,11 @@ You can learn more about our [relay miner configs here](../../1_operate/3_config
 The following is an example config to get you started:
 
 ```bash
-cat <<EOF >> shannon_relayminer_config.yaml
+cat <<🚀 >> shannon_relayminer_config.yaml
 default_signing_key_names: [ "shannon_supplier" ]
-smt_store_path: $HOME/.pocket/smt
+
+smt_store_path: ":memory:"  # OR $HOME/.pocket/smt
+
 metrics:
   enabled: true
   addr: :9999 # you may need to change the metrics server port due to port conflicts.
@@ -451,7 +456,7 @@ suppliers:
 pprof:
   enabled: false
   addr: localhost:6060
-EOF
+🚀
 ```
 
 ### 3.5 Start the RelayMiner locally
@@ -459,8 +464,9 @@ EOF
 Start the RelayMiner locally:
 
 ```bash
-pocketd relayminer \
+pocketd relayminer start \
   --config ./shannon_relayminer_config.yaml \
+  --chain-id=pocket \
   --keyring-backend test \
   --home=./localnet/pocketd
 ```
@@ -518,14 +524,14 @@ pocketd --home=./localnet/pocketd \
   --config shannon_app_config.yaml \
   --keyring-backend test \
   --from shannon_application \
-  --node tcp://127.0.0.1:26657 \
+  --network=local \
   --yes
 ```
 
 And verify that the application is now staked with:
 
 ```bash
-pocketd query application show-application $SHANNON_APPLICATION --node tcp://127.0.0.1:26657
+pocketd query application show-application $SHANNON_APPLICATION --network=local
 ```
 
 You can also you re-run, `make app_list` you should see that `SHANNON_APPLICATION` is now staked as an app:

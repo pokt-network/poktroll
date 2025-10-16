@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -43,7 +43,7 @@ type YAMLServiceEndpoint struct {
 type SupplierStakeConfig struct {
 	OwnerAddress    string
 	OperatorAddress string
-	StakeAmount     sdk.Coin
+	StakeAmount     *sdk.Coin
 	Services        []*sharedtypes.SupplierServiceConfig
 }
 
@@ -84,7 +84,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 	return &SupplierStakeConfig{
 		OwnerAddress:    stakeConfig.OwnerAddress,
 		OperatorAddress: stakeConfig.OperatorAddress,
-		StakeAmount:     *stakeAmount,
+		StakeAmount:     stakeAmount,
 		Services:        supplierServiceConfigs,
 	}, nil
 }
@@ -152,6 +152,8 @@ func parseEndpointRPCType(endpoint YAMLServiceEndpoint) (sharedtypes.RPCType, er
 		return sharedtypes.RPCType_JSON_RPC, nil
 	case "rest":
 		return sharedtypes.RPCType_REST, nil
+	case "websocket":
+		return sharedtypes.RPCType_WEBSOCKET, nil
 	default:
 		return sharedtypes.RPCType_UNKNOWN_RPC, ErrSupplierConfigInvalidRPCType.Wrapf("%s", endpoint.RPCType)
 	}
@@ -193,15 +195,17 @@ func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeAddresses(logger pol
 	return nil
 }
 
-// ParseAndValidateStakeAmount validates that the configured stake amount is non-zero
-// and has the upokt denomination.
+// ParseAndValidateStakeAmount validates that the configured stake amount has a
+// non-zero amount and has the upokt denomination, if present.
 //
 // Returns:
-// • The parsed stake amount
+// • The parsed stake amount, if stake amount is present and non-zero
+// • nil, nil if stake amount is not present
+// • nil, Error if stake amount is zero or has an invalid denom
 func (yamlStakeConfig *YAMLStakeConfig) ParseAndValidateStakeAmount() (*sdk.Coin, error) {
 	// Validate the stake amount
 	if len(yamlStakeConfig.StakeAmount) == 0 {
-		return nil, ErrSupplierConfigInvalidStake.Wrap("stake amount cannot be empty")
+		return nil, nil
 	}
 
 	// Retrieve the stake amount from the config
@@ -220,7 +224,7 @@ func (yamlStakeConfig *YAMLStakeConfig) ParseAndValidateStakeAmount() (*sdk.Coin
 		return nil, ErrSupplierConfigInvalidStake.Wrap("stake amount cannot be zero")
 	}
 
-	if stakeAmount.Denom != volatile.DenomuPOKT {
+	if stakeAmount.Denom != pocket.DenomuPOKT {
 		return nil, ErrSupplierConfigInvalidStake.Wrapf(
 			"invalid stake denom, expecting: upokt, got: %s",
 			stakeAmount.Denom,
@@ -255,7 +259,7 @@ func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeDefaultRevShare() (m
 }
 
 // ValidateAndParseServiceConfigs performs the following:
-//   - Validate that at least one service is configured
+//   - Validate that all services present are configured
 //   - Validate the configured service IDs
 //   - Parse the configured endpoints
 //   - Validates at least one endpoint is configured for each service
@@ -266,7 +270,7 @@ func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeDefaultRevShare() (m
 func (stakeConfig *YAMLStakeConfig) ValidateAndParseServiceConfigs(defaultRevSharePercent map[string]uint64) ([]*sharedtypes.SupplierServiceConfig, error) {
 	// Validate at least one service is specified
 	if len(stakeConfig.Services) == 0 {
-		return nil, ErrSupplierConfigInvalidServiceId.Wrap("serviceIds cannot be empty")
+		return nil, nil
 	}
 
 	// Prepare the supplierServiceConfigs

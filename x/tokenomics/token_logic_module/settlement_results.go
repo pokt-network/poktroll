@@ -1,12 +1,11 @@
 package token_logic_module
 
+// DEV_NOTE: This is defined in the token_logic_module package to avoid circular dependencies
+// while enabling tlm_suite_test.
+
 import (
 	"errors"
-	"fmt"
 	"sort"
-
-	"cosmossdk.io/log"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -95,12 +94,13 @@ func (rs ClaimSettlementResults) GetServiceIds() (serviceIds []string) {
 	return serviceIds
 }
 
-// GetRelaysPerServiceMap returns a map of service IDs to the total number of relays
-// claimed for that service in the combined results.
-// IMPORTANT: **DO NOT** directly iterate over returned map in onchain code to avoid
-// the possibility of introducing non-determinism. Instead, iterate over the service ID
-// slice returned by OR a sorted slice of the service ID keys.
-func (rs ClaimSettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64, errs error) {
+// GetRelaysPerServiceMap returns a map of {service_id -> total_num_relays_claimed_for_service} across all results.
+// IMPORTANT: **DO NOT** directly iterate over returned map in onchain code.
+// Iterating over the returned map can cause non-determinism.
+// Instead, iterate over a sorted slice of the service ID keys.
+// TODO_IMPROVE: Return a sorted slice of the service ID keys alongside the map for iteration.
+func (rs ClaimSettlementResults) GetRelaysPerServiceMap() (map[string]uint64, error) {
+	var errs error
 	relaysPerServiceMap := make(map[string]uint64)
 
 	for _, result := range rs {
@@ -147,16 +147,4 @@ func WithModToAcctTransfers(transfers []tokenomicstypes.ModToAcctTransfer) resul
 	return func(r *tokenomicstypes.ClaimSettlementResult) {
 		r.ModToAcctTransfers = transfers
 	}
-}
-
-// logRewardOperation logs (at the info level) whether a particular reward operation
-// was queued or not by appending a corresponding prefix to the given message.
-func logRewardOperation(logger log.Logger, msg string, reward *cosmostypes.Coin) {
-	var opMsgPrefix string
-	if reward.IsZero() {
-		opMsgPrefix = "operation skipped:"
-	} else {
-		opMsgPrefix = "operation queued:"
-	}
-	logger.Info(fmt.Sprintf("%s: %s", opMsgPrefix, msg))
 }

@@ -2,7 +2,9 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/smt"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -35,13 +37,40 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 		return ErrProofInvalidSessionHeader.Wrapf("session header is nil")
 	}
 	if err := sessionHeader.ValidateBasic(); err != nil {
-		return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %v", err)
+		return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", err)
 	}
 
 	// Validate the root hash
-	// TODO_IMPROVE: Only checking to make sure a non-nil hash was provided for now, but we can validate the length as well.
-	if len(msg.RootHash) == 0 {
-		return ErrProofInvalidClaimRootHash.Wrapf("%v", msg.RootHash)
+	if len(msg.RootHash) != protocol.TrieRootSize {
+		return ErrProofInvalidClaimRootHash.Wrapf("expecting root hash to be %d bytes, got %d bytes", protocol.TrieRootSize, len(msg.RootHash))
+	}
+
+	// Get the Merkle root from the root hash to validate the claim's relays and compute units.
+	merkleRoot := smt.MerkleSumRoot(msg.RootHash)
+
+	count, err := merkleRoot.Count()
+	if err != nil {
+		return ErrProofInvalidClaimRootHash.Wrapf("error getting Merkle root (hex) %x count due to: %s", msg.RootHash, err)
+	}
+
+	// Ensure the count is greater than zero, as a valid claim MUST reflect the
+	// number of relays served by the supplier in the session.
+	// If no work was done, there should be no claim.
+	if count == 0 {
+		return ErrProofInvalidClaimRootHash.Wrapf("has zero count in Merkle root (hex) %x", msg.RootHash)
+	}
+
+	sum, err := merkleRoot.Sum()
+	if err != nil {
+		return ErrProofInvalidClaimRootHash.Wrapf("error getting Merkle root (hex) %x sum due to: %s", msg.RootHash, err)
+	}
+
+	// Ensure the sum is greater than zero, as a valid claim MUST reflect the
+	// number of compute units corresponding to the number of relays served by the
+	// supplier in the session.
+	// If no work was done, there should be no claim.
+	if sum == 0 {
+		return ErrProofInvalidClaimRootHash.Wrapf("has zero sum in Merkle root (hex) %x", msg.RootHash)
 	}
 
 	return nil

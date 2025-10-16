@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -29,15 +29,15 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 			RevShare: []*sharedtypes.ServiceRevenueShare{
 				{
-					Address:            sample.AccAddress(),
+					Address:            sample.AccAddressBech32(),
 					RevSharePercentage: 100,
 				},
 			},
 		},
 	}
 
-	ownerAddress := sample.AccAddress()
-	operatorAddress := sample.AccAddress()
+	ownerAddress := sample.AccAddressBech32()
+	operatorAddress := sample.AccAddressBech32()
 
 	tests := []struct {
 		desc        string
@@ -51,17 +51,17 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Signer:          ownerAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: ownerAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
 			},
 		},
 		{
 			desc: "valid different owner and operator address",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
 			},
 		},
@@ -71,19 +71,40 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
 			},
 		},
 		{
-			desc: "valid signer is neither the operator nor the owner",
+			desc: "valid signer is neither the operator nor the owner - empty service configs",
 			msg: MsgStakeSupplier{
-				Signer:          sample.AccAddress(),
+				Signer:          sample.AccAddressBech32(),
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				Services:        []*sharedtypes.SupplierServiceConfig{},
+			},
+		},
+		{
+			desc: "valid signer is neither the operator nor the owner - omitted service configs",
+			msg: MsgStakeSupplier{
+				Signer:          sample.AccAddressBech32(),
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				// Services:     (intentionally omitted),
+			},
+		},
+		{
+			desc: "invalid signer is neither the operator nor the owner - with service configs",
+			msg: MsgStakeSupplier{
+				Signer:          sample.AccAddressBech32(),
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
 			},
+			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
 			desc: "invalid operator address",
@@ -91,7 +112,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Signer:          ownerAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: "invalid_address",
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
 			},
 			expectedErr: ErrSupplierInvalidAddress,
@@ -102,7 +123,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Signer:          ownerAddress,
 				OwnerAddress:    "invalid_address",
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
 			},
 			expectedErr: ErrSupplierInvalidAddress,
@@ -112,7 +133,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Signer:       "invalid_address",
 				OwnerAddress: ownerAddress,
-				Stake:        &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
+				Stake:        &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(0)},
 				Services:     defaultServicesList,
 			},
 			expectedErr: ErrSupplierInvalidAddress,
@@ -123,7 +144,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Signer: ownerAddress,
 				// OwnerAddress: ownerAddress, // intentionally commented out.
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
 			},
 			expectedErr: ErrSupplierInvalidAddress,
@@ -134,7 +155,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Signer:       ownerAddress,
 				OwnerAddress: ownerAddress,
 				// OperatorAddress: operatorAddress, // intentionally commented out.
-				Stake:    &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
+				Stake:    &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(0)},
 				Services: defaultServicesList,
 			},
 			expectedErr: ErrSupplierInvalidAddress,
@@ -145,7 +166,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				// Signer: ownerAddress, // intentionally commented out.
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(0)},
 				Services:        defaultServicesList,
 			},
 			expectedErr: ErrSupplierInvalidAddress,
@@ -155,23 +176,22 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid stake",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
 			},
 		},
 		{
-			desc: "invalid stake - missing stake",
+			desc: "valid stake - omitted stake because the signer is the operator",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				// Stake explicitly omitted
 				Services: defaultServicesList,
 			},
-			expectedErr: ErrSupplierInvalidStake,
 		},
 		{
 			desc: "invalid stake - zero amount",
@@ -179,7 +199,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Signer:          ownerAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(0)},
 				Services:        defaultServicesList,
 			},
 			expectedErr: ErrSupplierInvalidStake,
@@ -190,7 +210,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Signer:          ownerAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(-100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(-100)},
 				Services:        defaultServicesList,
 			},
 			expectedErr: ErrSupplierInvalidStake,
@@ -222,10 +242,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid service configs - multiple services",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svcId1",
@@ -238,7 +258,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -254,7 +274,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -263,34 +283,52 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 		},
 		{
-			desc: "invalid service configs - omitted",
+			desc: "valid service configs - omitted - owner signed",
 			msg: MsgStakeSupplier{
 				Signer:          ownerAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				// Services explicitly omitted
 			},
-			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
-			desc: "invalid service configs - empty",
+			desc: "valid service configs - omitted - operator signed",
+			msg: MsgStakeSupplier{
+				Signer:          operatorAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				// Services explicitly omitted
+			},
+		},
+		{
+			desc: "valid service configs - empty - owner signed",
 			msg: MsgStakeSupplier{
 				Signer:          ownerAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        []*sharedtypes.SupplierServiceConfig{},
 			},
-			expectedErr: ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc: "valid service configs - empty - operator signed",
+			msg: MsgStakeSupplier{
+				Signer:          operatorAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				Services:        []*sharedtypes.SupplierServiceConfig{},
+			},
 		},
 		{
 			desc: "invalid service configs - invalid service ID that's too long",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: strings.Repeat("a", 43), // 42 is the max length hardcoded in the services module
@@ -303,7 +341,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -315,10 +353,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - invalid service ID that contains invalid characters",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "12 45 !",
@@ -331,7 +369,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -343,10 +381,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - missing url",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svcId",
@@ -359,7 +397,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -371,10 +409,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - invalid url",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svcId",
@@ -387,7 +425,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -399,10 +437,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - missing rpc type",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svcId",
@@ -415,7 +453,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -427,10 +465,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - empty revenue share config",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svcId",
@@ -450,10 +488,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - missing revenue share config",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svcId",
@@ -462,6 +500,34 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Url: "http://localhost:8080",
 								// RpcType explicitly omitted,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc: "invalid service configs - owner cannot update",
+			msg: MsgStakeSupplier{
+				Signer:          ownerAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: "svcId1",
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url:     "http://localhost:8081",
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            sample.AccAddressBech32(),
+								RevSharePercentage: 100,
 							},
 						},
 					},

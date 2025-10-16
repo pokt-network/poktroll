@@ -91,8 +91,10 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 
 	req := &sharedtypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*sharedtypes.QueryParamsResponse, error) {
-		return sq.sharedQuerier.Params(ctx, req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return sq.sharedQuerier.Params(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}
@@ -192,8 +194,10 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 			logger.Debug().Msgf("cache MISS for blockHeight: %s", blockHashCacheKey)
 
 			claimWindowOpenBlock, err := retry.Call(ctx, func() (*cometrpctypes.ResultBlock, error) {
-				return sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
-			}, retry.GetStrategy(ctx))
+				queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+				defer cancelQueryCtx()
+				return sq.blockQuerier.Block(queryCtx, &claimWindowOpenHeight)
+			}, retry.GetStrategy(ctx), logger)
 			if err != nil {
 				return 0, err
 			}
@@ -251,8 +255,10 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 			logger.Debug().Msgf("cache MISS for blockHeight: %s", blockHashCacheKey)
 
 			proofWindowOpenBlock, err := retry.Call(ctx, func() (*cometrpctypes.ResultBlock, error) {
-				return sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
-			}, retry.GetStrategy(ctx))
+				queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+				defer cancelQueryCtx()
+				return sq.blockQuerier.Block(queryCtx, &proofWindowOpenHeight)
+			}, retry.GetStrategy(ctx), logger)
 			if err != nil {
 				return 0, err
 			}
@@ -271,21 +277,6 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 		proofWindowOpenBlockHash,
 		supplierOperatorAddr,
 	), nil
-}
-
-// GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
-//
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
-// TODO_MAINNET(@red-0ne, #543): We also don't really want to use the current value of the params.
-// Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error) {
-	sharedParams, err := sq.GetParams(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return sharedParams.GetComputeUnitsToTokensMultiplier(), nil
 }
 
 // getBlockHashCacheKey constructs the cache key for a block hash by string formatting the block height.

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -11,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
-	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -20,20 +19,20 @@ var (
 	noPassphrase                  bool
 )
 
+// TODO_MAINNET_MIGRATION: Add a few examples in the CLI.
 func ClaimAccountCmd() *cobra.Command {
 	claimAcctCmd := &cobra.Command{
 		Use:   "claim-account [morse_key_export_path] --from [shannon_dest_key_name]",
 		Args:  cobra.ExactArgs(1),
-		Short: "Claim an onchain MorseClaimableAccount as an unstaked/non-actor account",
-		Long: `Claim an onchain MorseClaimableAccount as an unstaked/non-actor account.
+		Short: "Claim 1 Morse Account as an unstaked account (i.e. non-actor, balance only account)",
+		Long: `Claim 1 onchain MorseAccount as an unstaked account (i.e. non-actor, balance only).
 
-The unstaked balance amount of the onchain MorseClaimableAccount will be minted to the Shannon account specified by the --from flag.
-This will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
+The unstaked balance amount of the onchain MorseAccount will be minted to the Shannon account specified by the --from flag.
+
+This CLI will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
 
 For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
-		// Example: TODO_MAINNET_CRITICAL(@bryanchriswhite): Add a few examples,
-		RunE:    runClaimAccount,
-		PreRunE: logger.PreRunESetup,
+		RunE: runClaimAccount,
 	}
 
 	// Add a string flag for providing a passphrase to decrypt the Morse keyfile.
@@ -78,10 +77,11 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// The destination Shannon address must be the same as the signing Shannon address.
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
+	shannonDestAddr := shannonSigningAddr
 
 	// Construct a MsgClaimMorseAccount message.
-	shannonDestAddr := clientCtx.GetFromAddress().String()
 	msgClaimMorseAccount, err := types.NewMsgClaimMorseAccount(
 		shannonDestAddr,
 		morsePrivKey,
@@ -91,13 +91,10 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Serialize, as JSON, and print the MsgClaimMorseAccount for posterity and/or confirmation.
-	msgClaimMorseAcctJSON, err := json.MarshalIndent(msgClaimMorseAccount, "", "  ")
-	if err != nil {
+	// Print the claim message according to the --output format.
+	if err = clientCtx.PrintProto(msgClaimMorseAccount); err != nil {
 		return err
 	}
-
-	logger.Logger.Info().Msgf("MsgClaimMorseAccount %s\n", string(msgClaimMorseAcctJSON))
 
 	// Last chance for the user to abort.
 	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)
@@ -117,9 +114,6 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		// Terminate the confirmation prompt output line.
-		fmt.Println()
-
 		// Abort unless some affirmative confirmation is given.
 		switch string(inputLine) {
 		case "Yes", "yes", "Y", "y":
@@ -129,18 +123,21 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
 	// Sign and broadcast the claim Morse account message.
-	_, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseAccount)
-	err, errCh := eitherErr.SyncOrAsyncError()
-	if err != nil {
+	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseAccount)
+	if _, err = eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 
-	// Wait for an async error, timeout, or the errCh to close on success.
-	return <-errCh
+	// Print the TxResponse according to the --output format.
+	if err = clientCtx.PrintProto(txResponse); err != nil {
+		return err
+	}
+
+	return nil
 }

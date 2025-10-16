@@ -9,10 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/telemetry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -39,15 +38,13 @@ func (k msgServer) StakeSupplier(
 
 	logger := k.Logger().With("method", "StakeSupplier")
 	// Create or update a supplier using the configuration in the msg provided.
-	supplier, err := k.Keeper.StakeSupplier(ctx, logger, msg)
+	_, err := k.Keeper.StakeSupplier(ctx, logger, msg)
 	if err != nil {
 		return nil, err
 	}
 
 	isSuccessful = true
-	return &suppliertypes.MsgStakeSupplierResponse{
-		Supplier: supplier,
-	}, nil
+	return &suppliertypes.MsgStakeSupplierResponse{}, nil
 }
 
 // createSupplier creates a new supplier entity from the given message.
@@ -141,7 +138,15 @@ func (k Keeper) StakeSupplier(
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 
 	if !isSupplierFound {
-		supplierCurrentStake = sdk.NewInt64Coin(volatile.DenomuPOKT, 0)
+		// Ensure that a stake amount is provided if the supplier is being created.
+		if msg.Stake == nil {
+			return nil, status.Error(
+				codes.InvalidArgument,
+				suppliertypes.ErrSupplierInvalidStake.Wrap("when staking a new supplier, the stake amount MUST be non-nil").Error(),
+			)
+		}
+
+		supplierCurrentStake = sdk.NewInt64Coin(pocket.DenomuPOKT, 0)
 		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.OperatorAddress))
 		supplier = k.createSupplier(ctx, msg)
 	} else {
@@ -183,6 +188,16 @@ func (k Keeper) StakeSupplier(
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
+		// Only the operator can change service configurations. This ensures that
+		// the owner cannot inadvertently modify services they don't understand.
+		if !msg.IsSigner(supplier.OperatorAddress) && len(msg.Services) > 0 {
+			err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrap(
+				"only the operator account is authorized to update the service configurations",
+			)
+			logger.Info(fmt.Sprintf("ERROR: %s", err))
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
 			logger.Info(fmt.Sprintf("ERROR: could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
 			return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -215,7 +230,7 @@ func (k Keeper) StakeSupplier(
 
 	supplierStakingFee := k.GetParams(ctx).StakingFee
 
-	if err = k.reconcileSupplierStakeDiff(ctx, msgSignerAddress, supplierCurrentStake, *msg.Stake); err != nil {
+	if err = k.reconcileSupplierStakeDiff(ctx, msg, supplierCurrentStake); err != nil {
 		logger.Error(fmt.Sprintf("Could not transfer supplier stake difference due to %s", err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -246,7 +261,7 @@ func (k Keeper) StakeSupplier(
 
 	// Emit an event which signals that the supplier staked.
 	events = append(events, &suppliertypes.EventSupplierStaked{
-		Supplier:         &supplier,
+		OperatorAddress:  supplier.OperatorAddress,
 		SessionEndHeight: sessionEndHeight,
 	})
 	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
@@ -261,16 +276,23 @@ func (k Keeper) StakeSupplier(
 // updateSupplier updates an existing supplier with new configuration from the stake message.
 // This includes updating the stake amount, owner address, and service configurations.
 //
-// Service configuration changes are scheduled to take effect at the next session start
-// to ensure that current sessions remain stable and deterministic.
+// Service configuration update behavior:
+// - NEW Services: Scheduled to activate at the next session start
+// - EXISTING Services WITHOUT NEW configs: Marked for deactivation at next session start
+// - EXISTING Services WITH NEW configs:
+//   - If not yet activated (scheduled for next session): Replaced silently (not deactivated)
+//   - If already active or scheduled for later: Replace at the next session start
+//
+// This session-boundary approach ensures current sessions remain stable and deterministic
+// while allowing configuration updates to take effect seamlessly.
 func (k Keeper) updateSupplier(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
 	msg *suppliertypes.MsgStakeSupplier,
 ) error {
-	// Validate that the stake is not being lowered
+	// If no stake amount is provided, preserve the current stake
 	if msg.Stake == nil {
-		return suppliertypes.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
+		msg.Stake = supplier.Stake
 	}
 
 	supplier.Stake = msg.Stake
@@ -281,23 +303,67 @@ func (k Keeper) updateSupplier(
 	currentHeight := sdkCtx.BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
-	// Mark all the supplier's service configurations as to be deactivated at the
-	// start of the next session.
-	for _, oldServiceConfigUpdate := range supplier.ServiceConfigHistory {
-		oldServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
-	}
+	// Service configuration update logic when msg.Services is non-empty:
+	//
+	// We maintain complete history to support session-based activation through 3 steps:
+	// 1. Add: Add new service configs scheduled for next session activation
+	// 2. Replace: Replace inactive configs with new ones for the same service ID
+	// 3. Remove: Deactivate configs that aren't being replaced/updated
+	//
+	// This ensures deterministic session hydration while allowing seamless config updates.
+	updatedServiceConfigHistory := make([]*sharedtypes.ServiceConfigUpdate, 0)
 
-	// Initialize the supplier's service configurations with the new ones from the msg.
-	// These will take effect at the start of the next session.
+	// Track which service IDs are being updated or newly added for O(1) lookups.
+	// Used to distinguish:
+	// - Services with new configs (present in map) → replace inactive configs
+	// - Services without new configs (absent from map) → deactivate current configs
+	updatedServices := make(map[string]struct{})
+
+	// Step 1: Add all new service configurations from the message.
+	// - Configs activate at next session start
+	// - Track service IDs for identifying which old inactive configs need replacement
 	for _, newServiceConfig := range msg.Services {
 		newServiceConfigUpdate := &sharedtypes.ServiceConfigUpdate{
-			OperatorAddress: msg.OperatorAddress,
-			Service:         newServiceConfig,
-			// The effective block height is the start of the next session.
+			OperatorAddress:  msg.OperatorAddress,
+			Service:          newServiceConfig,
 			ActivationHeight: nextSessionStartHeight,
 		}
-		supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, newServiceConfigUpdate)
+		updatedServiceConfigHistory = append(updatedServiceConfigHistory, newServiceConfigUpdate)
+
+		// DEV_NOTE: This map does not affect CosmosSDK determinism:
+		// - Used only for O(1) lookups during processing, discarded after use
+		// - All on-chain state is managed by updatedServiceConfigHistory slice
+		updatedServices[newServiceConfig.ServiceId] = struct{}{}
 	}
+
+	// Step 2: Process existing service configurations.
+	// - Replace inactive configs if new config exists for same service
+	// - Deactivate configs without new replacements or already active ones
+	if len(msg.Services) > 0 {
+		// Loop over deterministic list (supplier.ServiceConfigHistory).
+		for _, currentServiceConfigUpdate := range supplier.ServiceConfigHistory {
+			// Replacement vs deactivation logic:
+			// 1. Config scheduled for next session + new config exists → replace (skip)
+			// 2. Otherwise → deactivate
+			shouldActivateAtNextSession := currentServiceConfigUpdate.ActivationHeight == nextSessionStartHeight
+			_, hasNewConfig := updatedServices[currentServiceConfigUpdate.Service.ServiceId]
+			shouldReplaceWithNewConfig := shouldActivateAtNextSession && hasNewConfig
+
+			// Skip configs replaced in Step 1 (never activated, no deactivation needed).
+			if shouldReplaceWithNewConfig {
+				continue
+			}
+
+			// Deactivate old configs NOT being replaced:
+			// - Active configs (no deactivation height set)
+			// - Scheduled configs for different services
+			currentServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
+			updatedServiceConfigHistory = append(updatedServiceConfigHistory, currentServiceConfigUpdate)
+		}
+	}
+
+	// Step 3: Update supplier with final service configuration history.
+	supplier.ServiceConfigHistory = updatedServiceConfigHistory
 
 	return nil
 }
@@ -306,18 +372,31 @@ func (k Keeper) updateSupplier(
 // amounts by either escrowing, when the stake is increased, or unescrowing otherwise.
 func (k Keeper) reconcileSupplierStakeDiff(
 	ctx context.Context,
-	signerAddr sdk.AccAddress,
+	msg *suppliertypes.MsgStakeSupplier,
 	currentStake sdk.Coin,
-	newStake sdk.Coin,
 ) error {
 	logger := k.Logger().With("method", "reconcileSupplierStakeDiff")
+
+	newStake := *msg.Stake
+
+	// Parse the signer address - this is the account that will pay for stake increases
+	signerAccAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		return err
+	}
+
+	// Parse the owner address - this is the account that will receive stake decreases
+	ownerAccAddr, err := sdk.AccAddressFromBech32(msg.OwnerAddress)
+	if err != nil {
+		return err
+	}
 
 	// The Supplier is increasing its stake, so escrow the difference
 	if currentStake.Amount.LT(newStake.Amount) {
 		coinsToEscrow := sdk.NewCoins(newStake.Sub(currentStake))
 
 		// Send the coins from the message signer account to the staked supplier pool
-		return k.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAddr, suppliertypes.ModuleName, coinsToEscrow)
+		return k.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAccAddr, suppliertypes.ModuleName, coinsToEscrow)
 	}
 
 	// Ensure that the new stake is at least the minimum stake which is required for:
@@ -327,7 +406,7 @@ func (k Keeper) reconcileSupplierStakeDiff(
 	if newStake.Amount.LT(minStake.Amount) {
 		err := suppliertypes.ErrSupplierInvalidStake.Wrapf(
 			"supplier with owner %q must stake at least %s",
-			signerAddr, minStake,
+			signerAccAddr, minStake,
 		)
 		return err
 	}
@@ -336,12 +415,12 @@ func (k Keeper) reconcileSupplierStakeDiff(
 	if currentStake.Amount.GT(newStake.Amount) {
 		coinsToUnescrow := sdk.NewCoins(currentStake.Sub(newStake))
 
-		// Send the coins from the staked supplier pool to the message signer account
-		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, signerAddr, coinsToUnescrow)
+		// Send the coins from the staked supplier pool to the supplier owner account
+		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, suppliertypes.ModuleName, ownerAccAddr, coinsToUnescrow)
 	}
 
 	// The supplier is not changing its stake. This can happen if the supplier
 	// is updating its service configurations or owner address but not the stake.
-	logger.Info(fmt.Sprintf("Updating supplier with address %q but stake is unchanged", signerAddr.String()))
+	logger.Info(fmt.Sprintf("Updating supplier with address %q but stake is unchanged", msg.OperatorAddress))
 	return nil
 }

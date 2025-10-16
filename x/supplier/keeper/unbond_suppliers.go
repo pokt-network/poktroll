@@ -17,7 +17,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding suppliers at the end of the session.
-	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if !sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return numUnbondedSuppliers, nil
 	}
 
@@ -87,11 +87,6 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 				return numUnbondedSuppliers, err
 			}
 		}
-
-		// TODO_CONSIDERATION: Should we hydrate the supplier service configurations
-		// to expose the full supplier information to the event?
-		// This can result in a lot of state bloat.
-		// k.hydrateSupplierServiceConfigs(ctx, &supplier)
 
 		// Remove the supplier from the store.
 		k.RemoveSupplier(ctx, supplierOperatorAddress.String())

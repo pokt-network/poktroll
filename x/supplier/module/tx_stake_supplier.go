@@ -9,33 +9,59 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
+	pocketdcmd "github.com/pokt-network/poktroll/cmd"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/x/supplier/config"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+const (
+	flagConfig      = "config"
+	flagConfigUsage = "Path to the supplier configuration file (YAML format)"
+
+	flagStakeOnly      = "stake-only"
+	flagStakeOnlyUsage = "Update only the supplier stake amount. Config file should contain stake_amount but the services section must be empty. Can be signed by owner or operator."
+
+	flagServicesOnly      = "services-only"
+	flagServicesOnlyUsage = "Update only the supplier service configurations. Config file should contain services but stake_amount must be empty. Must be signed by operator."
+)
+
 var (
-	flagStakeConfig string
-	_               = strconv.Itoa(0) // Part of the default ignite imports
+	configFlagValue       string
+	stakeOnlyFlagValue    bool
+	servicesOnlyFlagValue bool
+	_                     = strconv.Itoa(0) // Part of the default ignite imports
 )
 
 func CmdStakeSupplier() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
-		Use:   "stake-supplier --config <config_file.yaml>",
-		Short: "Stake a supplier",
-		Long: `Stake a supplier using the specified configuration file. This command
-supports both custodial and non-custodial staking of the signer's tokens.
-It sources the necessary information from the provided configuration file.
+		Use:   "stake-supplier --config <config_file.yaml> [--stake-only | --services-only]",
+		Short: "Stake a supplier or update supplier configuration",
+		Long: `Stake a supplier or update supplier configuration using the specified configuration file.
+This command supports flexible staking operations:
+
+• Stake-only updates: Update stake amount without changing service configurations (--stake-only)
+• Service configuration updates: Update services without changing stake (--services-only)
+
+The command supports both custodial and non-custodial staking workflows and sources
+the necessary information from the provided configuration file.
 
 For more details on the staking process, please refer to the supplier staking documentation at:
-https://dev.poktroll.com/operate/configs/supplier_staking_config
+https://dev.poktroll.com/operate/configs/supplier_staking_config`,
+		Example: `
+  # Initial supplier staking by Operator: Required stake and optional services
+  $ pocketd tx supplier stake-supplier --config stake_config.yaml --from $(OPERATOR_ADDRESS)
 
-Example:
-$ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backend test  --from $(OWNER_ADDRESS) --node $(POCKET_NODE) --home $(POCKETD_HOME)`,
+  # Initial supplier staking by Owner: Required stake and services section must be empty
+  $ pocketd tx supplier stake-supplier --config stake_config.yaml --from $(OWNER_ADDRESS)
+
+  # Update only the stake amount by Owner: Services section must be empty
+  $ pocketd tx supplier stake-supplier --config stake_config.yaml --stake-only --from $(OWNER_ADDRESS)`,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
-			configContent, err := os.ReadFile(flagStakeConfig)
+			configContent, err := os.ReadFile(configFlagValue)
 			if err != nil {
 				return err
 			}
@@ -45,9 +71,28 @@ $ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backen
 				return err
 			}
 
+			signingKeyNameOrAddress, err := cmd.Flags().GetString(flags.FlagFrom)
+			if err != nil {
+				return err
+			}
+
 			// Ensure the --from flag is set before getting the client context.
-			if cmd.Flag(flags.FlagFrom) == nil {
-				if err = cmd.Flags().Set(flags.FlagFrom, supplierStakeConfigs.OwnerAddress); err != nil {
+			// Default to owner/operator signer in this order:
+			// 1. owner address - rationale: typical stake escrow source
+			// 2. operator address - rationale: --services-only, operator-custodial workflow, etc. use cases
+			if signingKeyNameOrAddress == "" {
+				switch {
+				case supplierStakeConfigs.OwnerAddress != "":
+					logger.Logger.Info().Msgf("⚠️ no signer specified via --from flag; defaulting to owner %s as signer", supplierStakeConfigs.OwnerAddress)
+					signingKeyNameOrAddress = supplierStakeConfigs.OwnerAddress
+				case supplierStakeConfigs.OperatorAddress != "":
+					logger.Logger.Info().Msgf("⚠️ no signer specified via --from flag; defaulting to operator %s as signer", supplierStakeConfigs.OperatorAddress)
+					signingKeyNameOrAddress = supplierStakeConfigs.OperatorAddress
+				default:
+					return types.ErrSupplierInvalidAddress.Wrap("unable to determine signer address: config must specify owner_address or operator_address, or use --from flag")
+				}
+
+				if err = cmd.Flags().Set(flags.FlagFrom, signingKeyNameOrAddress); err != nil {
 					return err
 				}
 			}
@@ -65,16 +110,60 @@ $ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backen
 				supplierStakeConfigs.Services,
 			)
 
-			if err := msg.ValidateBasic(); err != nil {
+			if err = msg.ValidateBasic(); err != nil {
 				return err
+			}
+
+			// Ensure mutually exclusive flags
+			if stakeOnlyFlagValue && servicesOnlyFlagValue {
+				return types.ErrSupplierInvalidServiceConfig.Wrap("--stake-only and --services-only flags are mutually exclusive")
+			}
+
+			// Validate flag-specific requirements
+			switch {
+			case stakeOnlyFlagValue && servicesOnlyFlagValue:
+				return pocketdcmd.ErrInvalidFlagUsage.Wrap("--stake-only and --services-only flags are mutually exclusive")
+			case stakeOnlyFlagValue:
+				if len(msg.GetServices()) > 0 {
+					return pocketdcmd.ErrInvalidFlagUsage.Wrap("--stake-only flag specified but config contains service configurations; remove services section from config")
+				}
+				if msg.GetStake() == nil {
+					return pocketdcmd.ErrInvalidFlagUsage.Wrap("--stake-only flag requires stake_amount in config file")
+				}
+			case servicesOnlyFlagValue:
+				if msg.GetStake() != nil {
+					return pocketdcmd.ErrInvalidFlagUsage.Wrap("--services-only flag specified but config contains stake_amount; remove stake_amount from config")
+				}
+				if len(msg.GetServices()) == 0 {
+					return pocketdcmd.ErrInvalidFlagUsage.Wrap("--services-only flag requires services section in config file")
+				}
+				if !msg.IsSigner(msg.GetOperatorAddress()) {
+					return pocketdcmd.ErrInvalidFlagUsage.Wrap(
+						"--services-only flag requires operator to be the transaction signer",
+					)
+				}
+			default:
+				// Default behavior: require both stake and services for new suppliers
+				if len(msg.GetServices()) == 0 {
+					return types.ErrSupplierInvalidServiceConfig.Wrap("no service configurations provided in config file; either provide services or use --stake-only flag")
+				}
+				if msg.GetStake() == nil {
+					return types.ErrSupplierInvalidStake.Wrap("stake amount is required; either provide stake_amount in config or use --services-only flag")
+				}
 			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 
-	cmd.Flags().StringVar(&flagStakeConfig, "config", "", "Path to the stake config file")
+	cmd.Flags().StringVar(&configFlagValue, flagConfig, "", flagConfigUsage)
+	cmd.Flags().BoolVar(&stakeOnlyFlagValue, flagStakeOnly, false, flagStakeOnlyUsage)
+	cmd.Flags().BoolVar(&servicesOnlyFlagValue, flagServicesOnly, false, flagServicesOnlyUsage)
 	flags.AddTxFlagsToCmd(cmd)
+
+	if err := cmd.MarkFlagRequired(flagConfig); err != nil {
+		panic(err)
+	}
 
 	return cmd
 }

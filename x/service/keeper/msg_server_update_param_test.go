@@ -9,13 +9,13 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
 func TestMsgUpdateParam_UpdateAddServiceFeeOnly(t *testing.T) {
-	expectedAddServiceFee := &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(1000000001)}
+	expectedAddServiceFee := &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(1000000001)}
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
@@ -31,14 +31,15 @@ func TestMsgUpdateParam_UpdateAddServiceFeeOnly(t *testing.T) {
 		Name:      servicetypes.ParamAddServiceFee,
 		AsType:    &servicetypes.MsgUpdateParam_AsCoin{AsCoin: expectedAddServiceFee},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.AddServiceFee, res.Params.AddServiceFee)
-	require.Equal(t, expectedAddServiceFee, res.Params.AddServiceFee)
+	params := k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.AddServiceFee, params.AddServiceFee)
+	require.Equal(t, expectedAddServiceFee, params.AddServiceFee)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "AddServiceFee")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &params, "AddServiceFee")
 }
 
 func TestMsgUpdateParam_UpdateTargetNumRelaysOnly(t *testing.T) {
@@ -58,12 +59,13 @@ func TestMsgUpdateParam_UpdateTargetNumRelaysOnly(t *testing.T) {
 		Name:      servicetypes.ParamTargetNumRelays,
 		AsType:    &servicetypes.MsgUpdateParam_AsUint64{AsUint64: expectedTargetNumRelays},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.TargetNumRelays, res.Params.TargetNumRelays)
-	require.Equal(t, expectedTargetNumRelays, res.Params.TargetNumRelays)
+	params := k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.TargetNumRelays, params.TargetNumRelays)
+	require.Equal(t, expectedTargetNumRelays, params.TargetNumRelays)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "TargetNumRelays")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &params, "TargetNumRelays")
 }

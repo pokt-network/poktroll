@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"math/big"
 	"testing"
 
 	cosmoslog "cosmossdk.io/log"
@@ -10,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/pkg/encoding"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -26,6 +27,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 )
 
@@ -65,8 +67,8 @@ func (s *applicationMinStakeTestSuite) SetupTest() {
 	require.NoError(s.T(), err)
 
 	s.serviceId = "svc1"
-	s.appBech32 = sample.AccAddress()
-	s.supplierBech32 = sample.AccAddress()
+	s.appBech32 = sample.AccAddressBech32()
+	s.supplierBech32 = sample.AccAddressBech32()
 	s.numRelays = 10
 	s.numComputeUnitsPerRelay = 1
 
@@ -100,7 +102,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 
 	// Create a claim whose settlement amount drops the application below min stake
 	claim := s.getClaim(sessionHeader)
-	s.keepers.ProofKeeper.UpsertClaim(s.ctx, *claim)
+	s.keepers.UpsertClaim(s.ctx, *claim)
 
 	// Set the current height to the claim settlement session end height.
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
@@ -108,7 +110,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	s.setBlockHeight(settlementSessionEndHeight)
 
 	// Settle pending claims; this should cause the application to be unbonded.
-	_, _, err := s.keepers.Keeper.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
+	_, _, _, err := s.keepers.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
 	require.NoError(s.T(), err)
 
 	expectedApp := s.getExpectedApp(claim)
@@ -124,14 +126,14 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	s.setBlockHeight(unbondingSessionEndHeight)
 
 	// Run app module end blockers to complete unbonding.
-	err = s.keepers.ApplicationKeeper.EndBlockerUnbondApplications(s.ctx)
+	err = s.keepers.EndBlockerUnbondApplications(s.ctx)
 	require.NoError(s.T(), err)
 
 	// Assert that the EventApplicationUnbondingEnd event is emitted.
 	s.assertUnbondingEndEventObserved(expectedApp)
 
 	// Assert that the application was unbonded.
-	_, isAppFound := s.keepers.ApplicationKeeper.GetApplication(s.ctx, s.appBech32)
+	_, isAppFound := s.keepers.GetApplication(s.ctx, s.appBech32)
 	require.False(s.T(), isAppFound)
 
 	// Assert that the application's stake was returned to its bank balance.
@@ -140,16 +142,16 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 
 // addService adds the test service to the service module state.
 func (s *applicationMinStakeTestSuite) addService() {
-	s.keepers.ServiceKeeper.SetService(s.ctx, sharedtypes.Service{
+	s.keepers.SetService(s.ctx, sharedtypes.Service{
 		Id:                   s.serviceId,
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(), // random address.
+		OwnerAddress:         sample.AccAddressBech32(), // random address.
 	})
 }
 
 // stakeApp stakes an application for service 1 with min stake.
 func (s *applicationMinStakeTestSuite) stakeApp() {
-	s.keepers.ApplicationKeeper.SetApplication(s.ctx, apptypes.Application{
+	s.keepers.SetApplication(s.ctx, apptypes.Application{
 		Address:        s.appBech32,
 		Stake:          s.appStake,
 		ServiceConfigs: s.appServiceConfigs,
@@ -175,7 +177,7 @@ func (s *applicationMinStakeTestSuite) stakeSupplier() {
 		1,
 		sharedtypes.NoDeactivationHeight,
 	)
-	s.keepers.SupplierKeeper.SetAndIndexDehydratedSupplier(s.ctx, sharedtypes.Supplier{
+	s.keepers.SetAndIndexDehydratedSupplier(s.ctx, sharedtypes.Supplier{
 		OwnerAddress:         s.supplierBech32,
 		OperatorAddress:      s.supplierBech32,
 		Stake:                &suppliertypes.DefaultMinStake,
@@ -190,7 +192,7 @@ func (s *applicationMinStakeTestSuite) getSessionHeader() *sessiontypes.SessionH
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sessionRes, err := s.keepers.SessionKeeper.GetSession(s.ctx, &sessiontypes.QueryGetSessionRequest{
+	sessionRes, err := s.keepers.GetSession(s.ctx, &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: s.appBech32,
 		ServiceId:          s.serviceId,
 		BlockHeight:        currentHeight,
@@ -217,8 +219,8 @@ func (s *applicationMinStakeTestSuite) getClaim(
 func (s *applicationMinStakeTestSuite) getAppBalance() *cosmostypes.Coin {
 	s.T().Helper()
 
-	appBalRes, err := s.keepers.BankKeeper.Balance(s.ctx, &banktypes.QueryBalanceRequest{
-		Address: s.appBech32, Denom: volatile.DenomuPOKT,
+	appBalRes, err := s.keepers.Balance(s.ctx, &banktypes.QueryBalanceRequest{
+		Address: s.appBech32, Denom: pocket.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
 
@@ -245,11 +247,11 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, s.getCurrentHeight())
-	relayMiningDifficulty := s.newRelayminingDifficulty()
+	relayMiningDifficulty := s.newRelayMiningDifficulty()
 	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(s.T(), err)
 
-	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
+	globalInflationPerClaim := (*tokenomicskeeper.Keeper)(s.keepers.Keeper).GetParams(s.ctx).GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	require.NoError(s.T(), err)
 
@@ -265,8 +267,8 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 	}
 }
 
-// newRelayminingDifficulty creates a new RelayMiningDifficulty for use in calculating application burn.
-func (s *applicationMinStakeTestSuite) newRelayminingDifficulty() servicetypes.RelayMiningDifficulty {
+// newRelayMiningDifficulty creates a new RelayMiningDifficulty for use in calculating application burn.
+func (s *applicationMinStakeTestSuite) newRelayMiningDifficulty() servicetypes.RelayMiningDifficulty {
 	s.T().Helper()
 
 	targetNumRelays := s.keepers.ServiceKeeper.GetParams(s.ctx).TargetNumRelays
@@ -287,7 +289,7 @@ func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expecte
 
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
-	sessionEndHeight := s.keepers.SharedKeeper.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
+	sessionEndHeight := s.keepers.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:        expectedApp,
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
@@ -326,9 +328,20 @@ func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedA
 func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 	s.T().Helper()
 
-	expectedAppBurn := int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier)
-	expectedAppBurnCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, expectedAppBurn)
-	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
+	// Get the compute unit cost in fractional uPOKT.
+	computeUnitCostUpoktRat := new(big.Rat).SetFrac64(
+		int64(sharedtypes.DefaultComputeUnitsToTokensMultiplier),
+		int64(sharedtypes.DefaultComputeUnitCostGranularity),
+	)
+
+	numComputeUnitsRat := new(big.Rat).SetInt64(int64(s.numRelays * s.numComputeUnitsPerRelay))
+
+	// Compute the expect burn
+	expectedAppBurnRat := new(big.Rat).Mul(computeUnitCostUpoktRat, numComputeUnitsRat)
+	expectedAppBurn := expectedAppBurnRat.Num().Int64() / expectedAppBurnRat.Denom().Int64()
+	expectedAppBurnCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, int64(expectedAppBurn))
+
+	globalInflationPerClaim := (*tokenomicskeeper.Keeper)(s.keepers.Keeper).GetParams(s.ctx).GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	require.NoError(s.T(), err)
 

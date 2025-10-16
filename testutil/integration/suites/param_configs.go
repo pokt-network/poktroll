@@ -3,7 +3,7 @@ package suites
 import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -21,13 +21,14 @@ import (
 type ParamType = string
 
 const (
-	ParamTypeInt64                     ParamType = "int64"
-	ParamTypeUint64                    ParamType = "uint64"
-	ParamTypeFloat64                   ParamType = "float64"
-	ParamTypeString                    ParamType = "string"
-	ParamTypeBytes                     ParamType = "uint8"
-	ParamTypeCoin                      ParamType = "Coin"
-	ParamTypeMintAllocationPercentages ParamType = "MintAllocationPercentages"
+	ParamTypeInt64                           ParamType = "int64"
+	ParamTypeUint64                          ParamType = "uint64"
+	ParamTypeFloat64                         ParamType = "float64"
+	ParamTypeString                          ParamType = "string"
+	ParamTypeBytes                           ParamType = "uint8"
+	ParamTypeCoin                            ParamType = "Coin"
+	ParamTypeMintAllocationPercentages       ParamType = "MintAllocationPercentages"
+	ParamTypeMintEqualsBurnClaimDistribution ParamType = "MintEqualsBurnClaimDistribution"
 )
 
 // ModuleParamConfig holds type information about a module's parameters update
@@ -65,12 +66,12 @@ type ModuleParamsMessages struct {
 }
 
 var (
-	ValidAddServiceFeeCoin             = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000001)
-	ValidProofMissingPenaltyCoin       = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 500)
-	ValidProofSubmissionFeeCoin        = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 5000000)
-	ValidProofRequirementThresholdCoin = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
-	ValidActorMinStake                 = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
-	ValidStakingFee                    = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1)
+	ValidAddServiceFeeCoin             = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000001)
+	ValidProofMissingPenaltyCoin       = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 500)
+	ValidProofSubmissionFeeCoin        = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 5000000)
+	ValidProofRequirementThresholdCoin = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
+	ValidActorMinStake                 = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
+	ValidStakingFee                    = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1)
 
 	SharedModuleParamConfig = ModuleParamConfig{
 		ParamsMsgs: ModuleParamsMessages{
@@ -96,7 +97,10 @@ var (
 			SupplierUnbondingPeriodSessions:    9,
 			ApplicationUnbondingPeriodSessions: 9,
 			GatewayUnbondingPeriodSessions:     9,
-			ComputeUnitsToTokensMultiplier:     420,
+			// compute units to tokens multiplier in pPOKT (i.e. 1/compute_unit_cost_granularity)
+			ComputeUnitsToTokensMultiplier: 42_000_000,
+			// compute unit cost granularity is 1pPOKT (i.e. 1/1e6)
+			ComputeUnitCostGranularity: 1_000_000,
 		},
 		DefaultParams:    sharedtypes.DefaultParams(),
 		NewParamClientFn: sharedtypes.NewQueryClient,
@@ -236,14 +240,16 @@ var (
 			QueryParamsResponse:     tokenomicstypes.QueryParamsResponse{},
 		},
 		ValidParams: tokenomicstypes.Params{
-			MintAllocationPercentages: tokenomicstypes.DefaultMintAllocationPercentages,
-			DaoRewardAddress:          sample.AccAddress(),
-			GlobalInflationPerClaim:   0.666,
+			MintAllocationPercentages:       tokenomicstypes.DefaultMintAllocationPercentages,
+			DaoRewardAddress:                sample.AccAddressBech32(),
+			GlobalInflationPerClaim:         0.666,
+			MintEqualsBurnClaimDistribution: tokenomicstypes.DefaultMintEqualsBurnClaimDistribution,
 		},
 		ParamTypes: map[ParamType]any{
-			ParamTypeMintAllocationPercentages: tokenomicstypes.MsgUpdateParam_AsMintAllocationPercentages{},
-			ParamTypeString:                    tokenomicstypes.MsgUpdateParam_AsString{},
-			ParamTypeFloat64:                   tokenomicstypes.MsgUpdateParam_AsFloat{},
+			ParamTypeMintAllocationPercentages:       tokenomicstypes.MsgUpdateParam_AsMintAllocationPercentages{},
+			ParamTypeMintEqualsBurnClaimDistribution: tokenomicstypes.MsgUpdateParam_AsMintEqualsBurnClaimDistribution{},
+			ParamTypeString:                          tokenomicstypes.MsgUpdateParam_AsString{},
+			ParamTypeFloat64:                         tokenomicstypes.MsgUpdateParam_AsFloat{},
 		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,
@@ -259,6 +265,7 @@ var (
 		ValidParams: migrationtypes.Params{
 			WaiveMorseClaimGasFees:           true,
 			AllowMorseAccountImportOverwrite: false,
+			MorseAccountClaimingEnabled:      true,
 		},
 		DefaultParams:    migrationtypes.DefaultParams(),
 		NewParamClientFn: migrationtypes.NewQueryClient,

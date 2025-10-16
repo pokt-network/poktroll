@@ -1,5 +1,6 @@
 broadcast-mode = "sync"
 chain-id = "pocket"
 keyring-backend = "test"
+keyring-default-keyname = ""
 node = "tcp://localhost:26657"
 output = "text"

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
@@ -23,7 +23,7 @@ const (
 	defaultNumMorseClaimableAccounts = 10
 )
 
-var defaultTestMinStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+var defaultTestMinStake = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 
 type MigrationModuleTestSuite struct {
 	suites.MigrationModuleSuite
@@ -76,7 +76,7 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 			},
 			RevShare: []*sharedtypes.ServiceRevenueShare{
 				{
-					Address:            sample.AccAddress(),
+					Address:            sample.AccAddressBech32(),
 					RevSharePercentage: 100,
 				},
 			},
@@ -87,11 +87,11 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 	s.ServiceSuite.SetApp(s.GetApp())
 	s.AppSuite.SetApp(s.GetApp())
 	s.SupplierSuite.SetApp(s.GetApp())
-	s.ParamsSuite.SetApp(s.GetApp())
+	s.SetApp(s.GetApp())
 
 	// Set up authz accounts and grants
-	s.ParamsSuite.SetupTestAuthzAccounts(s.T())
-	s.ParamsSuite.SetupTestAuthzGrants(s.T())
+	s.SetupTestAuthzAccounts(s.T())
+	s.SetupTestAuthzGrants(s.T())
 }
 
 func TestMigrationModuleSuite(t *testing.T) {
@@ -104,19 +104,13 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
 	msgImportRes, err := s.ImportMorseClaimableAccounts(s.T())
 	require.NoError(s.T(), err)
 
-	morseAccountState := s.GetAccountState(s.T())
-	morseAccountStateHash, err := morseAccountState.GetHash()
-	s.NoError(err)
-
-	expectedMsgImportRes := &migrationtypes.MsgImportMorseClaimableAccountsResponse{
-		StateHash:   morseAccountStateHash,
-		NumAccounts: uint64(s.numMorseClaimableAccounts),
-	}
+	expectedMsgImportRes := &migrationtypes.MsgImportMorseClaimableAccountsResponse{}
 	s.Equal(expectedMsgImportRes, msgImportRes)
 
 	foundMorseClaimableAccounts := s.QueryAllMorseClaimableAccounts(s.T())
 	s.Equal(s.numMorseClaimableAccounts, len(foundMorseClaimableAccounts))
 
+	morseAccountState := s.GetAccountState(s.T())
 	for _, expectedMorseClaimableAccount := range morseAccountState.Accounts {
 		isFound := false
 		for _, foundMorseClaimableAccount := range foundMorseClaimableAccounts {
@@ -135,7 +129,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalid
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 
 	// random authority address
-	invalidAuthority := sample.AccAddress()
+	invalidAuthority := sample.AccAddressBech32()
 	msgImport, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
 		invalidAuthority,
 		*s.GetAccountState(s.T()),
@@ -154,7 +148,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalid
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 
 	msgImport, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
-		sample.AccAddress(), // random authority address
+		sample.AccAddressBech32(), // random authority address
 		*s.GetAccountState(s.T()),
 	)
 	s.NoError(err)
@@ -199,10 +193,10 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_Overwrite() 
 	// Set allow_morse_account_import_overwrite to true.
 	params.AllowMorseAccountImportOverwrite = true
 	msgUpdateParams := &migrationtypes.MsgUpdateParams{
-		Authority: s.ParamsSuite.AuthorityAddr.String(),
+		Authority: s.AuthorityAddr.String(),
 		Params:    params,
 	}
-	_, err = s.ParamsSuite.RunUpdateParams(s.T(), msgUpdateParams)
+	_, err = s.RunUpdateParams(s.T(), msgUpdateParams)
 	require.NoError(s.T(), err)
 
 	// Ensure that allow_morse_account_import_overwrite was updated to true.

@@ -1,4 +1,3 @@
-//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/supplier_client_mock.go -package=mockclient . SupplierClient
@@ -10,10 +9,12 @@
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/service_query_client_mock.go -package=mockclient . ServiceQueryClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/bank_query_client_mock.go -package=mockclient . BankQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/bank_grpc_query_client_mock.go -package=mockclient . BankGRPCQueryClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/comet_rpc_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client CometRPC
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/comet_client_mock.go -package=mockclient github.com/cometbft/cometbft/rpc/client Client
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/grpc_client_conn_mock.go -package=mockclient github.com/cosmos/gogoproto/grpc ClientConn
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/signing_tx.go -package=mockclient github.com/cosmos/cosmos-sdk/x/auth/signing Tx
 
@@ -23,11 +24,13 @@ import (
 	"context"
 
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
-	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/hashicorp/go-version"
+	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -123,7 +126,7 @@ type TxContext interface {
 	SignTx(
 		keyName string,
 		txBuilder cosmosclient.TxBuilder,
-		offline, overwriteSig bool,
+		offline, overwriteSig, unordered bool,
 	) error
 
 	// EncodeTx takes a transaction builder and encodes it, returning its byte representation.
@@ -149,6 +152,9 @@ type TxContext interface {
 		signingKeyName string,
 		msgs ...cosmostypes.Msg,
 	) (uint64, error)
+
+	// WithUnordered returns a copy of the transaction context with the unordered flag set.
+	WithUnordered(bool) TxContext
 }
 
 // Block is an interface which abstracts the details of a block to its minimal
@@ -156,7 +162,6 @@ type TxContext interface {
 type Block interface {
 	Height() int64
 	Hash() []byte
-	Txs() []comettypes.Tx
 }
 
 // EventsObservable is a replay observable for events of some type T.
@@ -170,9 +175,6 @@ type EventsReplayClient[T any] interface {
 	EventsSequence(context.Context) observable.ReplayObservable[T]
 	// LastNEvents returns the latest N events that has been received.
 	LastNEvents(ctx context.Context, n int) []T
-	// Close unsubscribes all observers of the events sequence observable
-	// and closes the events query client.
-	Close()
 }
 
 // BlockReplayObservable is a defined type which is a replay observable of type Block.
@@ -185,75 +187,23 @@ type BlockClient interface {
 	// CommittedBlocksSequence returns a BlockObservable that emits the
 	// latest blocks that have been committed to the chain.
 	CommittedBlocksSequence(context.Context) BlockReplayObservable
+
 	// LastBlock returns the latest block that has been committed onchain.
 	LastBlock(context.Context) Block
+
 	// Close unsubscribes all observers of the committed block sequence
 	// observable and closes the events query client.
 	Close()
+
+	// GetChainVersion returns the current chain version.
+	GetChainVersion() *version.Version
 }
-
-// EventsBytesObservable is an observable which is notified with an either
-// value which contains either an error or the event message bytes.
-//
-// TODO_HACK: The purpose of this type is to work around gomock's lack of
-// support for generic types. For the same reason, this type cannot be an
-// alias (i.e. EventsBytesObservable = observable.Observable[either.Bytes]).
-type EventsBytesObservable observable.Observable[either.Bytes]
-
-// EventsQueryClient is used to subscribe to chain event messages matching the given query,
-//
-// TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
-// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
-// replace our custom implementation with one which wraps that.
-// (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
-// (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
-//
-// NOTE: a branch which attempts this is available at:
-// https://github.com/pokt-network/poktroll/pull/74
-type EventsQueryClient interface {
-	// EventsBytes returns an observable which is notified about chain event messages
-	// matching the given query. It receives an either value which contains either an
-	// error or the event message bytes.
-	EventsBytes(
-		ctx context.Context,
-		query string,
-	) (EventsBytesObservable, error)
-	// Close unsubscribes all observers of each active query's events bytes
-	// observable and closes the connection.
-	Close()
-}
-
-// Connection is a transport agnostic, bi-directional, message-passing interface.
-type Connection interface {
-	// Receive blocks until a message is received or an error occurs.
-	Receive() (msg []byte, err error)
-	// Send sends a message and may return a synchronous error.
-	Send(msg []byte) error
-	// Close closes the connection.
-	Close() error
-}
-
-// Dialer encapsulates the construction of connections.
-type Dialer interface {
-	// DialContext constructs a connection to the given URL and returns it or
-	// potentially a synchronous error.
-	DialContext(ctx context.Context, urlStr string) (Connection, error)
-}
-
-// EventsQueryClientOption defines a function type that modifies the EventsQueryClient.
-type EventsQueryClientOption func(EventsQueryClient)
 
 // TxClientOption defines a function type that modifies the TxClient.
 type TxClientOption func(TxClient)
 
 // SupplierClientOption defines a function type that modifies the SupplierClient.
 type SupplierClientOption func(SupplierClient)
-
-// BlockClientOption defines a function type that modifies the BlockClient.
-type BlockClientOption func(BlockClient)
-
-// EventsReplayClientOption defines a function type that modifies the ReplayClient.
-type EventsReplayClientOption[T any] func(EventsReplayClient[T])
 
 // AccountQueryClient defines an interface that enables the querying of the
 // onchain account information
@@ -325,8 +275,6 @@ type SharedQueryClient interface {
 	// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 	// for the session that includes queryHeight can be committed for a given supplier.
 	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error)
-	// GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
-	GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error)
 }
 
 // BlockQueryClient defines an interface that enables the querying of
@@ -359,7 +307,7 @@ type ProofQueryClient interface {
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
 
-	// GetClaim queries the chain for the full claim associatd with the (supplier, sessionId).
+	// GetClaim queries the chain for the full claim associated with the (supplier, sessionId).
 	GetClaim(ctx context.Context, supplierOperatorAddress string, sessionId string) (Claim, error)
 }
 
@@ -368,6 +316,7 @@ type ProofQueryClient interface {
 type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
+	// GetServiceRelayDifficulty queries the chain for the relay difficulty of the service provided
 	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (*servicetypes.Params, error)
@@ -378,6 +327,10 @@ type ServiceQueryClient interface {
 type BankQueryClient interface {
 	// GetBalance queries the chain for the uPOKT balance of the account provided
 	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
+}
+
+type BankGRPCQueryClient interface {
+	AllBalances(ctx context.Context, in *banktypes.QueryAllBalancesRequest, opts ...grpc.CallOption) (*banktypes.QueryAllBalancesResponse, error)
 }
 
 // ParamsCache is an interface for a simple in-memory cache implementation for onchain module parameter quueries.

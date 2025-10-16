@@ -86,8 +86,10 @@ func (supq *supplierQuerier) GetSupplier(
 
 	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
 	res, err := retry.Call(ctx, func() (*suppliertypes.QueryGetSupplierResponse, error) {
-		return supq.supplierQuerier.Supplier(ctx, req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return supq.supplierQuerier.Supplier(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return sharedtypes.Supplier{}, err
 	}
@@ -121,8 +123,10 @@ func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Para
 
 	req := suppliertypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*suppliertypes.QueryParamsResponse, error) {
-		return supq.supplierQuerier.Params(ctx, &req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return supq.supplierQuerier.Params(queryCtx, &req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return nil, err
 	}

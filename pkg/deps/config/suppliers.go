@@ -2,20 +2,21 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"net/url"
 
 	"cosmossdk.io/depinject"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
+	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/pkg/cache"
+	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
@@ -23,10 +24,12 @@ import (
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/poktroll/pkg/relayer/miner"
+	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
+	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
+	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
-
-// FlagQueryCaching is the flag name to enable or disable query caching.
-const FlagQueryCaching = "query-caching"
 
 // SupplierFn is a function that is used to supply a depinject config.
 type SupplierFn func(
@@ -66,19 +69,45 @@ func NewSupplyLoggerFromCtx(ctx context.Context) SupplierFn {
 	}
 }
 
-// NewSupplyEventsQueryClientFn supplies a depinject config with an
-// EventsQueryClient from the given queryNodeRPCURL.
-func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
+// NewSupplyCometClientFn supplies a depinject config with an
+// comet HTTP client from the given queryNodeRPCURL.
+func NewSupplyCometClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		// Convert the host to a websocket URL
-		queryNodeWebsocketURL := events.RPCToWebsocketURL(queryNodeRPCURL)
-		eventsQueryClient := events.NewEventsQueryClient(queryNodeWebsocketURL)
 
-		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
+		// Inject the logger from the deps
+		var logger polylog.Logger
+		err := depinject.Inject(deps, &logger)
+		if err != nil {
+			return nil, err
+		}
+
+		// Convert the query node RPC URL to a comet client
+		cometClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL.String())
+		if err != nil {
+			return nil, err
+		}
+
+		// Convert polylog logger to comet logger implementation:
+		// - CometBFT client requires a logger implementing the CometBFT log.Logger interface
+		// - Our application standardizes on polylog logger throughout the codebase
+		// - The wrapper in polylog/comet_logger.go adapts between these interfaces
+		// - This approach maintains consistent logging patterns across the application
+		cometLogger := polylog.ToCometLogger(logger.With("component", "comet-client"))
+		cometClient.SetLogger(cometLogger)
+
+		// IMPORTANT: The CometBFT client MUST be started immediately after creation.
+		// This ensures the client is fully initialized before any dependent components
+		// attempt to use it for subscriptions, preventing connection errors.
+		if err := cometClient.Start(); err != nil {
+			return nil, err
+		}
+
+		// Inject the comet client into the deps
+		return depinject.Configs(deps, depinject.Supply(cometClient)), nil
 	}
 }
 
@@ -104,13 +133,13 @@ func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 //
 //	ClientContext, a GRPC client connection, and a keyring from the given queryNodeGRPCURL.
 func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
-	return func(_ context.Context,
+	return func(
+		ctx context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value to be restored later, after
 		// the client context has been created with queryNodeGRPCURL.
-		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
 		tmpGRPC, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
 		if err != nil {
 			return nil, err
@@ -135,9 +164,25 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 		if err != nil {
 			return nil, err
 		}
+
+		// Get the chain ID from the configured query client context.
+		nodeStatus, err := cmtservice.GetNodeStatus(ctx, queryClientCtx)
+		if err != nil {
+			return nil, err
+		}
+
+		// Check if the network's returned chain ID matches the configured chain ID.
+		if nodeStatus.NodeInfo.Network != queryClientCtx.ChainID {
+			return nil, fmt.Errorf(
+				"chain ID mismatch: client is configured for %q but the RPC node reports %q - ensure you're connecting to the correct network",
+				queryClientCtx.ChainID,
+				nodeStatus.NodeInfo.Network,
+			)
+		}
+
 		deps = depinject.Configs(deps, depinject.Supply(
 			query.Context(queryClientCtx),
-			grpc.ClientConn(queryClientCtx),
+			query.NewGRPCClientWithDebugMetrics(queryClientCtx),
 			queryClientCtx.Keyring,
 		))
 
@@ -165,7 +210,6 @@ func NewSupplyTxClientContextFn(
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value to be restored later, after
 		// the client context has been created with txNodeRPCURL.
-		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
 		tmpNode, err := cmd.Flags().GetString(cosmosflags.FlagNode)
 		if err != nil {
 			return nil, err
@@ -173,7 +217,6 @@ func NewSupplyTxClientContextFn(
 
 		// Temporarily store the flag's current value to be restored later, after
 		// the client context has been created with queryNodeGRPCURL.
-		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
 		tmpGRPC, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
 		if err != nil {
 			return nil, err
@@ -375,24 +418,6 @@ func NewSupplySupplierClientsFn(signingKeyNames []string, gasSettingStr string) 
 	}
 }
 
-// NewSupplyBlockQueryClientFn returns a function which constructs a
-// BlockQueryClient instance and returns a new depinject.Config which
-// is supplied with the given deps and the new BlockQueryClient.
-func NewSupplyBlockQueryClientFn(queryNodeRPCUrl *url.URL) SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCUrl.String())
-		if err != nil {
-			return nil, err
-		}
-
-		return depinject.Configs(deps, depinject.Supply(blockQueryClient)), nil
-	}
-}
-
 // NewSupplySharedQueryClientFn returns a function which constructs a
 // SharedQueryClient instance and returns a new depinject.Config which
 // is supplied with the given deps and the new SharedQueryClient.
@@ -487,14 +512,14 @@ func newSupplyTxClientsFn(
 
 // NewSupplyKeyValueCacheFn returns a function which constructs a KeyValueCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyValueCache[T]]) SupplierFn {
+func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Check if query caching is enabled
-		queryCachingEnabled, err := cmd.Flags().GetBool(FlagQueryCaching)
+		queryCachingEnabled, err := cmd.Flags().GetBool(flags.FlagQueryCaching)
 		if err != nil {
 			return nil, err
 		}
@@ -523,14 +548,14 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyVal
 
 // NewSupplyParamsCacheFn returns a function which constructs a ParamsCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsCache[T]]) SupplierFn {
+func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Check if params caching is enabled
-		queryCachingEnabled, err := cmd.Flags().GetBool(FlagQueryCaching)
+		queryCachingEnabled, err := cmd.Flags().GetBool(flags.FlagQueryCaching)
 		if err != nil {
 			return nil, err
 		}
@@ -548,13 +573,221 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 			return nil, err
 		}
 
-		// Apply the query cache options
+		// Supply the cache to deps before applying options to avoid circular dependencies.
+		deps = depinject.Configs(deps, depinject.Supply(paramsCache))
+
+		// Apply the query cache options after supplying the cache.
 		for _, opt := range opts {
 			if err := opt(ctx, deps, paramsCache); err != nil {
 				return nil, err
 			}
 		}
 
-		return depinject.Configs(deps, depinject.Supply(paramsCache)), nil
+		return deps, nil
+	}
+}
+
+// SupplyMiner constructs a Miner instance and returns a new depinject.Config with it supplied.
+//
+// - Supplies Miner to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
+func SupplyMiner(
+	_ context.Context,
+	deps depinject.Config,
+	_ *cobra.Command,
+) (depinject.Config, error) {
+	mnr, err := miner.NewMiner(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(mnr)), nil
+}
+
+// SupplyRelayMeterFn returns a function which constructs a RelayMeter instance
+// and returns a new depinject.Config with it supplied.
+//
+// - Accepts enableOverServicing boolean for proxy setup
+// - Returns a SupplierFn for dependency injection
+//
+// Parameters:
+//   - enableOverServicing: Enable over-servicing in the relay meter
+//
+// Returns:
+//   - SupplierFn: Supplier function for dependency injection
+func SupplyRelayMeterFn(
+	enableOverServicing bool,
+) SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		rm, err := proxy.NewRelayMeter(deps, enableOverServicing)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(rm)), nil
+	}
+}
+
+// SupplyTxFactory constructs a cosmostx.Factory instance and returns a new depinject.Config with it supplied.
+//
+// - Supplies TxFactory to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
+func SupplyTxFactory(
+	_ context.Context,
+	deps depinject.Config,
+	cmd *cobra.Command,
+) (depinject.Config, error) {
+	var txClientCtx txtypes.Context
+	if err := depinject.Inject(deps, &txClientCtx); err != nil {
+		return nil, err
+	}
+
+	clientCtx := sdkclient.Context(txClientCtx)
+	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(clientFactory)), nil
+}
+
+// SupplyTxContext constructs a transaction context and returns a new depinject.Config with it supplied.
+//
+// - Supplies TxContext to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
+func SupplyTxContext(
+	_ context.Context,
+	deps depinject.Config,
+	_ *cobra.Command,
+) (depinject.Config, error) {
+	txContext, err := tx.NewTxContext(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(txContext)), nil
+}
+
+// NewSupplyRelayAuthenticatorFn returns a function which constructs a RelayAuthenticator and returns a new depinject.Config with it supplied.
+//
+// - Accepts signingKeyNames for authenticator setup
+// - Returns a SupplierFn for dependency injection
+//
+// Parameters:
+//   - signingKeyNames: List of signing key names
+//
+// Returns:
+//   - SupplierFn: Supplier function for dependency injection
+func NewSupplyRelayAuthenticatorFn(
+	signingKeyNames []string,
+) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayAuthenticator, err := relay_authenticator.NewRelayAuthenticator(
+			deps,
+			relay_authenticator.WithSigningKeyNames(signingKeyNames),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(relayAuthenticator)), nil
+	}
+}
+
+// newSupplyRelayerProxyFn returns a function which constructs a RelayerProxy and returns a new depinject.Config with it supplied.
+//
+//   - Accepts servicesConfigMap for proxy setup
+//   - Accepts pingEnabled flag to enable pinging the backend services to ensure
+//     they are correctly setup and reachable before starting the relayer proxy.
+//   - Returns a SupplierFn for dependency injection
+//
+// Parameters:
+//   - servicesConfigMap: Map of services configuration
+//   - pingEnabled: Flag to enable pinging the backend services
+//
+// Returns:
+//   - SupplierFn: Supplier function for dependency injection
+func NewSupplyRelayerProxyFn(
+	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
+	pingEnabled bool,
+) SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayerProxy, err := proxy.NewRelayerProxy(
+			deps,
+			proxy.WithServicesConfigMap(servicesConfigMap),
+			proxy.WithPingEnabled(pingEnabled),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(relayerProxy)), nil
+	}
+}
+
+// newSupplyRelayerSessionsManagerFn returns a function which constructs a RelayerSessionsManager and returns a new depinject.Config with it supplied.
+//
+// - Accepts smtStorePath for sessions manager setup
+// - Returns a SupplierFn for dependency injection
+//
+// Parameters:
+//   - smtStorePath: Path to the sessions store
+//
+// Returns:
+//   - config.SupplierFn: Supplier function for dependency injection
+func NewSupplyRelayerSessionsManagerFn(smtStorePath string) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayerSessionsManager, err := session.NewRelayerSessions(
+			deps,
+			session.WithStoresDirectoryPath(smtStorePath),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
 	}
 }

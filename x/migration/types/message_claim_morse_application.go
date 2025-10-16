@@ -6,6 +6,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/gogoproto/proto"
 
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -101,5 +102,5 @@ func (msg *MsgClaimMorseApplication) getSigningBytes() ([]byte, error) {
 
 // GetMorseSignerAddress returns the morse address which was used to sign the claim message.
 func (msg *MsgClaimMorseApplication) GetMorseSignerAddress() string {
-	return msg.GetMorsePublicKey().Address().String()
+	return encoding.NormalizeMorseAddress(msg.GetMorsePublicKey().Address().String())
 }

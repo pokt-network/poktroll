@@ -7,12 +7,13 @@ This document describes the configuration file used by the `Supplier` actor
 to submit a `stake` transaction, **which is a prerequisite** for it to provide
 RPC services on Pocket Network.
 
-:::tip
+:::tip Copy-pasta example
 
 You can find a fully featured example configuration at [supplier_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/pocketd/config/supplier1_stake_config.yaml).
 
 :::
 
+- [Gov Param References \& Values](#gov-param-references--values)
 - [Usage](#usage)
 - [Staking types](#staking-types)
   - [Custodial Staking](#custodial-staking)
@@ -22,12 +23,26 @@ You can find a fully featured example configuration at [supplier_staking_config.
   - [`operator_address`](#operator_address)
   - [`stake_amount`](#stake_amount)
   - [`default_rev_share_percent`](#default_rev_share_percent)
+    - [`default_rev_share_percent` configuration details](#default_rev_share_percent-configuration-details)
   - [`services`](#services)
     - [`service_id`](#service_id)
     - [`endpoints`](#endpoints)
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
     - [`rev_share_percent`](#rev_share_percent)
+    - [`rev_share_percent` configuration details](#rev_share_percent-configuration-details)
+- [Staking Modes](#staking-modes)
+  - [1. Stake Only Updates](#1-stake-only-updates)
+  - [2. Service Configuration Updates](#2-service-configuration-updates)
+  - [3. Stake \& Service Config Updates](#3-stake--service-config-updates)
+  - [Staking Permission Rules](#staking-permission-rules)
+  - [Configuration Use Case Matrix](#configuration-use-case-matrix)
+
+## Gov Param References & Values
+
+- Supplier module governance params can be found [here](../../3_protocol/governance/2_gov_params.md).
+- Supplier module Beta parameter values can be found [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/params/bulk_params_beta/supplier_params.json).
+- Supplier module Main parameter values can be found [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/params/bulk_params_main/supplier_params.json).
 
 ## Usage
 
@@ -45,7 +60,7 @@ pocketd tx supplier stake-supplier \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from supplier1 \
-  --node tcp://pocket-node:26657
+  --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ## Staking types
@@ -135,14 +150,16 @@ account.
 
 ### `owner_address`
 
-_`Required`_
+| Scenario | Requirement  |
+| -------- | ------------ |
+| Always   | _`Required`_ |
 
 ```yaml
 owner_address: <address>
 ```
 
 The `owner_address` is the address of the account that owns the `Supplier`s staked
-funds, which will be transferred to this account's balannce when the `Supplier`
+funds, which will be transferred to this account's balance when the `Supplier`
 unstakes and finishes unbonding.
 
 For custodial staking, the `owner_address` is the same as the `operator_address`.
@@ -166,7 +183,9 @@ the same `owner_address`.
 
 ### `operator_address`
 
-_`Optional`_
+| Scenario | Requirement  |
+| -------- | ------------ |
+| Always   | _`Optional`_ |
 
 ```yaml
 operator_address: <address>
@@ -186,18 +205,13 @@ as the `operator_address`.
 If the `operator_address` is the same as the `owner_address`, then the staking
 is custodial.
 
-:::warning
-
-Since the `operator_address` is the unique identifier of a `Supplier`, it cannot
-be changed once the `Supplier` is created. If it needs to be changed, then the
-corresponding `Supplier` has to be unstaked and a new one staked with the new
-`operator_address`.
-
-:::
-
 ### `stake_amount`
 
-_`Required`_, _`Non-empty`_
+| Scenario                   | Requirement  |
+| -------------------------- | ------------ |
+| Initial Supplier Stake     | _`Required`_ |
+| In/Decrease Supplier Stake | _`Required`_ |
+| Otherwise                  | _`Optional`_ |
 
 ```yaml
 stake_amount: <number>upokt
@@ -208,7 +222,19 @@ This amount covers all the `service`s defined in the `services` section.
 
 ### `default_rev_share_percent`
 
-_`Optional`_, _`Non-empty`_
+:::warning Revenue Share Update Permissions (Operator-Only)
+
+**Revenue share addresses and percentages CAN ONLY be updated by the OPERATOR account.**
+
+In this example, both `owner_address` and `operator_address` are the same (custodial staking).
+This means the same account can update both stake amounts and revenue share configurations.
+For non-custodial staking, only the operator can modify revenue share settings.
+
+:::
+
+| Scenario | Requirement  |
+| -------- | ------------ |
+| Always   | _`Optional`_ |
 
 ```yaml
 default_rev_share_percent:
@@ -227,26 +253,23 @@ does not have to repeat the same values for each `service` in the `services` sec
 This map cannot be empty but can be omitted, in which case the default revenue
 share falls back to `100%` of the rewards allocated to the `Supplier`'s `owner_address`.
 
-:::note
+#### `default_rev_share_percent` configuration details
 
 The `shareholder_address`s MUST be valid Pocket addresses.
 
 The revenue share values MUST be strictly positive floats with a maximum value of
 100 and a total sum of 100 across all the `shareholder_address`es.
 
-:::
-
-:::warning
-
 If `default_rev_share_percent` is defined, then the `owner_address` of the `Supplier`
 MUST be **explicitly** defined in the map if they are to receive a share on the
 `service`s that fall back to the default.
 
-:::
-
 ### `services`
 
-_`Required`_, _`Non-empty`_
+| Scenario                          | Requirement  |
+| --------------------------------- | ------------ |
+| Initial Supplier Stake            | _`Optional`_ |
+| Update Supplier Service Config(s) | _`Required`_ |
 
 ```yaml
 services:
@@ -265,7 +288,9 @@ advertise on Pocket Network.
 
 #### `service_id`
 
-_`Required`_
+| Scenario             | Requirement  |
+| -------------------- | ------------ |
+| Always (per service) | _`Required`_ |
 
 `service_id` is a string that uniquely identifies the service that the `Supplier`
 is providing. It MUST 8 characters or less and composed of alphanumeric characters,
@@ -275,7 +300,9 @@ For example, it must match the regex `^[a-zA-Z0-9_-]{1,8}$`, and spaces are disa
 
 #### `endpoints`
 
-_`Required`_, _`Non-empty`_
+| Scenario             | Requirement  |
+| -------------------- | ------------ |
+| Always (per service) | _`Required`_ |
 
 `endpoints` is a list of `endpoint` objects that the `Supplier` will advertise
 to the Pocket Network. Each `endpoint` object consists of a `publicly_exposed_url`
@@ -283,7 +310,9 @@ and a `rpc_type`.
 
 ##### `publicly_exposed_url`
 
-_`Required`_
+| Scenario             | Requirement  |
+| -------------------- | ------------ |
+| Always (per service) | _`Required`_ |
 
 The `publicly_exposed_url` defines the endpoint for sending `RelayRequests` from
 the Pocket Network's `Gateways` and `Applications`. This endpoint is provided by
@@ -298,7 +327,9 @@ the `Supplier`'s `RelayMiner` which in turn forwards these requests to the servi
 
 ##### `rpc_type`
 
-_`Required`_
+| Scenario             | Requirement  |
+| -------------------- | ------------ |
+| Always (per service) | _`Required`_ |
 
 `rpc_type` is a string that defines the type of RPC service that the `Supplier`
 is providing.
@@ -339,18 +370,92 @@ It overrides the `default_rev_share_percent` if defined for the `service`.
 This map cannot be empty but can be omitted, in which case it falls back to the
 `default_rev_share_percent` top-level configuration entry.
 
-:::note
+#### `rev_share_percent` configuration details
 
 The `shareholder_address`s MUST be valid Pocket addresses.
 
-The revenue share values MUST be strictly positive decimals with a maximum value
-of 100 and a total sum of 100 across all the `shareholder_address`es.
+The revenue share values MUST be strictly positive floats with a maximum value of
+100 and a total sum of 100 across all the `shareholder_address`es.
+
+If `default_rev_share_percent` is defined, then the `owner_address` of the `Supplier`
+MUST be **explicitly** defined in the map if they are to receive a share on the
+`service`s that fall back to the default.
+
+## Staking Modes
+
+:::info Session Boundary Behavior
+
+All service configuration changes take effect at next session start to ensure
+current sessions remain stable and deterministic.
 
 :::
 
-:::warning
+The `pocketd tx stake-supplier` command supports different operational modes depending on what
+you provide in the configuration file and which account signs the transaction.
 
-If `rev_share_percent` is defined for a `service`, then the `owner_address` of the
-`Supplier` MUST be **explicitly** defined in the map if they are to receive a share.
+There are three modes:
 
-:::
+1. **Stake-only updates**
+2. **Service configuration updates**
+3. **Combined updates**
+
+See `pocketd tx stake-supplier --help` for more details.
+
+### 1. Stake Only Updates
+
+If the `services` section is empty, only the stake amount changes.
+Service configuration history remains unchanged.
+
+**For example**:
+
+```yaml
+owner_address: $SUPPLIER_ADDR
+operator_address: $SUPPLIER_ADDR
+stake_amount: 1000069upokt
+```
+
+### 2. Service Configuration Updates
+
+If the `services` section is provided, new configs are scheduled to activate at next session start.
+
+Existing configs are either:
+
+- Replaced (if inactive and for the same service)
+- Marked for deactivation (if active or for different services)
+
+**For example**:
+
+```yaml
+owner_address: $SUPPLIER_ADDR
+operator_address: $SUPPLIER_ADDR
+services:
+  - service_id: "eth"
+    endpoints:
+      - publicly_exposed_url: http://$EXTERNAL_IP:8545 # must be public
+        rpc_type: JSON_RPC
+```
+
+### 3. Stake & Service Config Updates
+
+Both stake and services can be updated in a single transaction.
+
+### Staking Permission Rules
+
+- **Owner**: Can update stake amount only (services section must be empty)
+- **Operator**: Can update stake amount, service configs, or both
+
+### Configuration Use Case Matrix
+
+| Action            | Signer   | Service Configs Provided? | Stake Amount Provided? | Result / Behavior                                   |
+| ----------------- | -------- | ------------------------- | ---------------------- | --------------------------------------------------- |
+| Initial Stake     | Owner    | ❌ No                     | ✅ Yes                 | ✅ Stake escrowed, no services configured           |
+|                   |          | ✅ Yes                    | ✅ Yes                 | ❌ ERROR – owner may not provide service configs    |
+|                   |          | ❌ No / ✅ Yes            | ❌ No                  | ❌ ERROR – stake amount must be provided            |
+|                   | Operator | ❌ No                     | ✅ Yes                 | ✅ Stake escrowed, no services configured           |
+|                   |          | ✅ Yes                    | ✅ Yes                 | ✅ Stake escrowed, services configured              |
+|                   |          | ❌ No / ✅ Yes            | ❌ No                  | ❌ ERROR – stake amount must be provided            |
+| Upstake/Downstake | Owner    | ❌ No                     | ✅ Yes                 | ✅ Stake (un)escrowed, no change to service configs |
+|                   |          | ✅ Yes                    | ❌ No / ✅ Yes         | ❌ ERROR – owner may not provide service configs    |
+|                   | Operator | ❌ No                     | ✅ Yes                 | ✅ Stake (un)escrowed, no change to service configs |
+|                   |          | ✅ Yes                    | ✅ Yes                 | ✅ Stake (un)escrowed, services updated             |
+|                   |          | ✅ Yes                    | ❌ No                  | ✅ Service configs updated                          |

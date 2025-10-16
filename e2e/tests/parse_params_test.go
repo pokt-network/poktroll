@@ -5,6 +5,7 @@ package e2e
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -13,7 +14,7 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -35,10 +36,61 @@ func (s *suite) parseParamsTable(table gocuke.DataTable) paramsAnyMap {
 
 	paramsMap := make(paramsAnyMap)
 
+	// Track complex parameter fields for aggregation
+	complexParams := make(map[string]map[string]float64)
+
 	// NB: skip the header row.
 	for rowIdx := 1; rowIdx < table.NumRows(); rowIdx++ {
 		param := s.parseParam(table, rowIdx)
-		paramsMap[param.name] = param
+
+		// Check if this is a dotted parameter (e.g., "mint_equals_burn_claim_distribution.dao")
+		if strings.Contains(param.name, ".") {
+			parts := strings.Split(param.name, ".")
+			if len(parts) == 2 {
+				complexParamName := parts[0]
+				fieldName := parts[1]
+
+				if complexParams[complexParamName] == nil {
+					complexParams[complexParamName] = make(map[string]float64)
+				}
+
+				// Store the field value
+				complexParams[complexParamName][fieldName] = param.value.(float64)
+			}
+		} else {
+			paramsMap[param.name] = param
+		}
+	}
+	// Convert complex parameters to their proper types
+	for complexParamName, fields := range complexParams {
+		switch complexParamName {
+		case "mint_equals_burn_claim_distribution":
+			distribution := tokenomicstypes.MintEqualsBurnClaimDistribution{
+				Dao:         fields["dao"],
+				Proposer:    fields["proposer"],
+				Supplier:    fields["supplier"],
+				SourceOwner: fields["source_owner"],
+				Application: fields["application"],
+			}
+			paramsMap[tokenomicstypes.ParamMintEqualsBurnClaimDistribution] = paramAny{
+				name:    tokenomicstypes.ParamMintEqualsBurnClaimDistribution,
+				typeStr: "MintEqualsBurnClaimDistribution",
+				value:   distribution,
+			}
+		case "mint_allocation_percentages":
+			allocation := tokenomicstypes.MintAllocationPercentages{
+				Dao:         fields["dao"],
+				Proposer:    fields["proposer"],
+				Supplier:    fields["supplier"],
+				SourceOwner: fields["source_owner"],
+				Application: fields["application"],
+			}
+			paramsMap[tokenomicstypes.ParamMintAllocationPercentages] = paramAny{
+				name:    tokenomicstypes.ParamMintAllocationPercentages,
+				typeStr: "MintAllocationPercentages",
+				value:   allocation,
+			}
+		}
 	}
 
 	return paramsMap
@@ -68,7 +120,7 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 		paramValue = floatValue
 	case "coin":
 		coinAmount := table.Cell(rowIdx, paramValueColIdx).Int64()
-		coinValue := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinAmount))
+		coinValue := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(coinAmount))
 		paramValue = &coinValue
 	default:
 		s.Fatalf("ERROR: unexpected param type %q", paramType)
@@ -113,11 +165,19 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsAnyMap) cosmostypes.Ms
 
 	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    tokenomicstypes.Params{},
+		Params:    tokenomicstypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {
 		switch paramName {
+		case tokenomicstypes.ParamDaoRewardAddress:
+			msgUpdateParams.Params.DaoRewardAddress = paramValue.value.(string)
+		case tokenomicstypes.ParamMintAllocationPercentages:
+			msgUpdateParams.Params.MintAllocationPercentages = paramValue.value.(tokenomicstypes.MintAllocationPercentages)
+		case tokenomicstypes.ParamGlobalInflationPerClaim:
+			msgUpdateParams.Params.GlobalInflationPerClaim = paramValue.value.(float64)
+		case tokenomicstypes.ParamMintEqualsBurnClaimDistribution:
+			msgUpdateParams.Params.MintEqualsBurnClaimDistribution = paramValue.value.(tokenomicstypes.MintEqualsBurnClaimDistribution)
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -130,7 +190,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 
 	msgUpdateParams := &prooftypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    prooftypes.Params{},
+		Params:    prooftypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {
@@ -155,7 +215,7 @@ func (s *suite) newSharedMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 
 	msgUpdateParams := &sharedtypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    sharedtypes.Params{},
+		Params:    sharedtypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {
@@ -180,6 +240,8 @@ func (s *suite) newSharedMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 			msgUpdateParams.Params.GatewayUnbondingPeriodSessions = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamComputeUnitsToTokensMultiplier:
 			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
+		case sharedtypes.ParamComputeUnitCostGranularity:
+			msgUpdateParams.Params.ComputeUnitCostGranularity = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -192,7 +254,7 @@ func (s *suite) newAppMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 
 	msgUpdateParams := &apptypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    apptypes.Params{},
+		Params:    apptypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {
@@ -214,7 +276,7 @@ func (s *suite) newServiceMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 
 	msgUpdateParams := &servicetypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    servicetypes.Params{},
+		Params:    servicetypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {
@@ -234,7 +296,7 @@ func (s *suite) newSupplierMsgUpdateParams(params map[string]paramAny) cosmostyp
 
 	msgUpdateParams := &suppliertypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    suppliertypes.Params{},
+		Params:    suppliertypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {

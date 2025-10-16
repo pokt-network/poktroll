@@ -80,38 +80,9 @@ endif
 # TODO_TECHDEBT(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `golangci-lint` and other go tools
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3 && golangci-lint --version
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
-
-.PHONY: install_cosmovisor
-install_cosmovisor: ## Installs `cosmovisor`
-	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0 && cosmovisor version --cosmovisor-only
-
-.PHONY: cosmovisor_cross_compile
-cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different platforms (used by Dockerfile.release)
-	@COSMOVISOR_VERSION="v1.6.0"; \
-	PLATFORMS="linux/amd64 linux/arm64"; \
-	mkdir -p ./tmp; \
-	echo "Fetching Cosmovisor source..."; \
-	temp_dir=$$(mktemp -d); \
-	cd $$temp_dir; \
-	go mod init temp; \
-	go get cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@$$COSMOVISOR_VERSION; \
-	for platform in $$PLATFORMS; do \
-		OS=$${platform%/*}; \
-		ARCH=$${platform#*/}; \
-		echo "Compiling for $$OS/$$ARCH..."; \
-		GOOS=$$OS GOARCH=$$ARCH go build -o $(CURDIR)/tmp/cosmovisor-$$OS-$$ARCH cosmossdk.io/tools/cosmovisor/cmd/cosmovisor; \
-	done; \
-	cd $(CURDIR); \
-	rm -rf $$temp_dir; \
-	echo "Compilation complete. Binaries are in ./tmp/"; \
-	ls -l ./tmp/cosmovisor-*
-
-.PHONY: cosmovisor_clean
-cosmovisor_clean:
-	rm -f ./tmp/cosmovisor-*
 
 ########################
 ### Makefile Helpers ###
@@ -122,53 +93,127 @@ cosmovisor_clean:
 prompt_user:
 	@echo "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
-.PHONY: list
-list: ## List all make targets
-	@${MAKE} -pRrn : -f $(MAKEFILE_LIST) 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | sort
-
 .PHONY: help
 .DEFAULT_GOAL := help
 help: ## Prints all the targets in all the Makefiles
-	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-60s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)$(CYAN)🚀 Poktroll Makefile Targets$(RESET)"
+	@echo ""
+	@echo "$(BOLD)=== 📋 Information & Discovery ===$(RESET)"
+	@grep -h -E '^(help|help-params|list):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔨 Build & Run ===$(RESET)"
+	@grep -h -E '^(ignite_build|ignite_pocketd_build|ignite_serve|ignite_serve_reset|ignite_release.*|cosmovisor_start_node):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== ⚙️ Development ===$(RESET)"
+	@grep -h -E '^(go_develop|go_develop_and_test|proto_regen|go_mockgen|go_testgen_fixtures|go_testgen_accounts|go_imports):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🧪 Testing ===$(RESET)"
+	@grep -h -E '^(test_all|test_unit|test_e2e|test_integration|test_timing|test_govupgrade|test_e2e_relay|go_test_verbose|go_test):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== ✅ Linting & Quality ===$(RESET)"
+	@grep -h -E '^(go_lint|go_vet|go_sec|gosec_version_fix|check_todos):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🌐 LocalNet Operations ===$(RESET)"
+	@grep -h -E '^(localnet_up|localnet_up_quick|localnet_down|localnet_regenesis|localnet_cancel_upgrade|localnet_show_upgrade_plan):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔗 TestNet Operations ===$(RESET)"
+	@grep -h -E '^(testnet_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 💰 Accounts & Balances ===$(RESET)"
+	@grep -h -E '^(acc_.*|pocketd_addr|pocketd_key):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📊 Query Commands ===$(RESET)"
+	@grep -h -E '^(query_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🛡️ Applications ===$(RESET)"
+	@grep -h -E '^(app_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏭 Suppliers ===$(RESET)"
+	@grep -h -E '^(supplier_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🌉 Gateways ===$(RESET)"
+	@grep -h -E '^(gateway_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📡 Relays & Claims ===$(RESET)"
+	@grep -h -E '^(relay_.*|claim_.*|ping_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📜 Sessions ===$(RESET)"
+	@grep -h -E '^(session_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔄 IBC ===$(RESET)"
+	@grep -h -E '^(ibc_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🚢 Release Management ===$(RESET)"
+	@grep -h -E '^(release_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🐳 Docker Testing ===$(RESET)"
+	@grep -h -E '^(docker_test_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📚 Documentation ===$(RESET)"
+	@grep -h -E '^(go_docs|docusaurus_.*|gen_.*_docs):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔧 Tools & Utilities ===$(RESET)"
+	@grep -h -E '^(install_.*|check_.*|grove_.*|act_.*|trigger_ci|docker_wipe):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📱 Telegram ===$(RESET)"
+	@grep -h -E '^(telegram_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🤖 AI & Sync ===$(RESET)"
+	@grep -h -E '^(claudesync_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)Use $(CYAN)make help-params$(RESET) to see parameter management commands"
+	@echo ""
+
+.PHONY: help-params
+help-params: ## Show parameter management commands
+	@echo ""
+	@echo "$(BOLD)$(CYAN)⚙️ Parameter Management Commands$(RESET)"
+	@echo ""
+	@echo "$(BOLD)=== 🌐 All Modules ===$(RESET)"
+	@grep -h -E '^(params_query_all):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏛️ Cosmos Modules ===$(RESET)"
+	@grep -h -E '^(params_(auth|bank|consensus|crisis|distribution|gov|mint|protocolpool|slashing|staking)_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 💰 Tokenomics ===$(RESET)"
+	@grep -h -E '^(params_tokenomics_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔧 Service ===$(RESET)"
+	@grep -h -E '^(params_service_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔍 Proof ===$(RESET)"
+	@grep -h -E '^(params_proof_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🤝 Shared ===$(RESET)"
+	@grep -h -E '^(params_shared_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🌉 Gateway ===$(RESET)"
+	@grep -h -E '^(params_gateway_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🛡️ Application ===$(RESET)"
+	@grep -h -E '^(params_application_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏭 Supplier ===$(RESET)"
+	@grep -h -E '^(params_supplier_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📜 Session ===$(RESET)"
+	@grep -h -E '^(params_session_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔄 Migration ===$(RESET)"
+	@grep -h -E '^(params_migration_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏛️ Consensus ===$(RESET)"
+	@grep -h -E '^(params_consensus_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
 
 #######################
 ### Proto  Helpers ####
 #######################
 
-.PHONY: proto_ignite_gen
-proto_ignite_gen: ## Generate protobuf artifacts using ignite
-	ignite generate proto-go --yes
-
-proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@echo "Updating all instances of cosmossdk.io/api/pocket to github.com/pokt-network/poktroll/api/pocket..."
-	@find ./api/pocket/ -type f | while read -r file; do \
-		$(SED) -i 's,cosmossdk.io/api/pocket,github.com/pokt-network/poktroll/api/pocket,g' "$$file"; \
-	done
-	@for dir in $(wildcard ./api/pocket/*/); do \
-			module=$$(basename $$dir); \
-			echo "Further processing module $$module"; \
-			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/pocket/'$$module'"' ./api/pocket/$$module | while read -r file; do \
-					echo "Modifying file: $$file"; \
-					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/pocket/'$$module'",,' "$$file"; \
-					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
-			done; \
-	done
-
-
-.PHONY: proto_clean
-proto_clean: ## Delete existing .pb.go, .pb.gw.go (avoid cleaning *.pulsar.go files here)
-	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
-
-## TODO_TECHDEBT(@bryanchriswhite): Investigate if / how this can be integrated with `proto_regen`
-.PHONY: proto_clean_pulsar
-proto_clean_pulsar: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
-	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
-	$(MAKE) proto_regen
-	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
-
 .PHONY: proto_regen
-proto_regen: proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
+proto_regen: ## Regenerate protobuf artifacts
+	ignite generate proto-go --yes
 
 #######################
 ### Docker  Helpers ###
@@ -192,6 +237,7 @@ go_lint: ## Run all go linters
 go_imports: check_go_version ## Run goimports on all go files
 	go run ./tools/scripts/goimports
 
+# DEV_NOTE: Add `-v` flag to `go generate` to see which files are being generated.
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
 	find . -name "*_mock.go" | xargs --no-run-if-empty rm
@@ -214,7 +260,7 @@ go_testgen_accounts: ## Generate test accounts for usage in test environments
 	go generate ./testutil/testkeyring/keyring.go
 
 .PHONY: go_develop
-go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and mocks
+go_develop: ignite_check_version proto_regen go_mockgen ## Generate protos and mocks
 
 .PHONY: go_develop_and_test
 go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all tests
@@ -244,8 +290,8 @@ acc_balance_query_modules: ## Query the balance of the network level module acco
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
-	APP1=$$(make pocketd_addr ACC_NAME=app1) && \
-	make acc_balance_query ACC=$$APP1
+	APP1=$$(make -s pocketd_addr ACC_NAME=app1) && \
+	make -s acc_balance_query ACC=$$APP1
 
 .PHONY: acc_balance_total_supply
 acc_balance_total_supply: ## Query the total supply of the network
@@ -273,59 +319,22 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 ### Ignite Helpers ###
 ######################
 
-.PHONY: ignite_acc_list
-ignite_acc_list: ## List all the accounts in LocalNet
-	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
+# TODO_TECHDEBT(@olshansk): Change this to pocketd keys list
 
-.PHONY: ignite_pocketd_build
-ignite_pocketd_build: check_go_version check_ignite_version ## Build the pocketd binary using Ignite
-	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
-.PHONY: ignite_openapi_gen
-ignite_openapi_gen: ## Generate the OpenAPI spec natively and process the output
-	ignite generate openapi --yes
-	$(MAKE) process_openapi
 
-.PHONY: ignite_openapi_gen_docker
-ignite_openapi_gen_docker: ## Generate the OpenAPI spec using Docker and process the output; workaround due to https://github.com/ignite/cli/issues/4495
-	docker build -f ./proto/Dockerfile.ignite -t ignite-openapi .
-	docker run --rm -v "$(PWD):/workspace" ignite-openapi
-	$(MAKE) process_openapi
-
-.PHONY: process_openapi
-process_openapi: ## Ensure OpenAPI JSON and YAML files are properly formatted
-	# The original command incorrectly outputs a JSON-formatted file with a .yml extension.
-	# This fixes the issue by properly converting the JSON to a valid YAML format.
-	mv docs/static/openapi.yml docs/static/openapi.json
-	yq -o=json '.' docs/static/openapi.json -I=4 > docs/static/openapi.json.tmp && mv docs/static/openapi.json.tmp docs/static/openapi.json
-	yq -P -o=yaml '.' docs/static/openapi.json > docs/static/openapi.yml
 
 ##################
 ### CI Helpers ###
 ##################
+
 
 .PHONY: trigger_ci
 trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/pocket/issues/900 for details
 	git commit --allow-empty -m "Empty commit"
 	git push
 
-.PHONY: ignite_install
-ignite_install: ## Install ignite. Used by CI and heighliner.
-	# Determine if sudo is available and use it if it is
-	if command -v sudo &>/dev/null; then \
-		SUDO="sudo"; \
-	else \
-		SUDO=""; \
-	fi; \
-	echo "Downloading Ignite CLI..."; \
-	wget https://github.com/ignite/cli/releases/download/v28.3.0/ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
-	echo "Extracting Ignite CLI..."; \
-	tar -xzf ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
-	echo "Moving Ignite CLI to /usr/local/bin..."; \
-	$$SUDO mv ignite /usr/local/bin/ignite; \
-	echo "Cleaning up..."; \
-	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
-	ignite version
+
 
 #######################
 ### Keyring Helpers ###
@@ -390,6 +399,7 @@ grove_staging_eth_block_height: ## Sends a relay through the staging grove gatew
 ### Imports ###
 ###############
 
+include ./makefiles/colors.mk
 include ./makefiles/warnings.mk
 include ./makefiles/todos.mk
 include ./makefiles/checks.mk
@@ -407,5 +417,9 @@ include ./makefiles/relay.mk
 include ./makefiles/ping.mk
 include ./makefiles/migrate.mk
 include ./makefiles/claudesync.mk
+include ./makefiles/telegram.mk
 include ./makefiles/docs.mk
+include ./makefiles/ignite.mk
 include ./makefiles/release.mk
+include ./makefiles/tools.mk
+include ./makefiles/ibc.mk

@@ -5,7 +5,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 )
 
 // DefaultAddServiceFee is the default value for the add service fee
@@ -16,9 +16,10 @@ var (
 
 	// TODO_MAINNET: Determine a sensible default/min values.
 
-	KeyAddServiceFee       = []byte("AddServiceFee")
-	ParamAddServiceFee     = "add_service_fee"
-	MinAddServiceFee       = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
+	KeyAddServiceFee   = []byte("AddServiceFee")
+	ParamAddServiceFee = "add_service_fee"
+	MinAddServiceFee   = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1))
+
 	KeyTargetNumRelays     = []byte("TargetNumRelays")
 	ParamTargetNumRelays   = "target_num_relays"
 	DefaultTargetNumRelays = uint64(10e4)
@@ -80,7 +81,7 @@ func ValidateAddServiceFee(addServiceFeeAny any) error {
 		return ErrServiceParamInvalid.Wrap("missing add_service_fee")
 	}
 
-	if addServiceFee.Denom != volatile.DenomuPOKT {
+	if addServiceFee.Denom != pocket.DenomuPOKT {
 		return ErrServiceParamInvalid.Wrapf("invalid add_service_fee denom: %s", addServiceFee.Denom)
 	}
 

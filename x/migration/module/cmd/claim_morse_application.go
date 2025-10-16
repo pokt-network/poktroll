@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -11,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
-	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -30,8 +29,7 @@ This will construct, sign, and broadcast a tx containing a MsgClaimMorseApplicat
 
 For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
 		// Example: TODO_MAINNET_CRITICAL(@bryanchriswhite): Add a few examples,
-		RunE:    runClaimApplication,
-		PreRunE: logger.PreRunESetup,
+		RunE: runClaimApplication,
 	}
 
 	// Add a string flag for providing a passphrase to decrypt the Morse keyfile.
@@ -102,13 +100,10 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Serialize, as JSON, and print the MsgClaimMorseApplication for posterity and/or confirmation.
-	msgClaimMorseAppJSON, err := json.MarshalIndent(msgClaimMorseApplication, "", "  ")
-	if err != nil {
+	// Print the claim message according to the --output format.
+	if err = clientCtx.PrintProto(msgClaimMorseApplication); err != nil {
 		return err
 	}
-
-	logger.Logger.Info().Msgf("MsgClaimMorseApplication %s\n", string(msgClaimMorseAppJSON))
 
 	// Last chance for the user to abort.
 	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)
@@ -127,9 +122,6 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		// Terminate the confirmation prompt output line.
-		fmt.Println()
-
 		// Abort unless some affirmative confirmation is given.
 		switch string(inputLine) {
 		case "Yes", "yes", "Y", "y":
@@ -139,18 +131,21 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
 	// Sign and broadcast the claim Morse account message.
-	_, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseApplication)
-	err, errCh := eitherErr.SyncOrAsyncError()
-	if err != nil {
+	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseApplication)
+	if _, err = eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 
-	// Wait for an async error, timeout, or the errCh to close on success.
-	return <-errCh
+	// Print the TxResponse according to the --output format.
+	if err = clientCtx.PrintProto(txResponse); err != nil {
+		return err
+	}
+
+	return nil
 }

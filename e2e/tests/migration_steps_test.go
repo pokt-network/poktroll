@@ -5,12 +5,12 @@ package e2e
 import (
 	"fmt"
 	"math/rand"
-	"net/url"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -142,13 +142,13 @@ func (s *migrationSuite) Before() {
 	s.updatePreviousUnstakedBalanceUpoktOfCurrentShannonIdx()
 
 	// Initialize the previous actor stake here. It is updated in a relevant subsequent step.
-	s.previousStakedActorUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	s.previousStakedActorUpokt = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 
 	// Initialize the fauced funded balance to zero upokt.
-	s.faucetFundedBalanceUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	s.faucetFundedBalanceUpokt = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 
 	// Initialize the supplier staking fee to zero upokt, non-supplier for cases.
-	s.supplierStakingFeeIfApplicable = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	s.supplierStakingFeeIfApplicable = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 }
 
 // TestMigrationWithFixtureData runs the migration_fixture.feature file ONLY.
@@ -187,11 +187,11 @@ func (s *migrationSuite) ALocalMorseNodePersistedStateExists() {
 //   - In the Before(), at the beginning of the scenario
 //   - In the "shannon destination account is staked as an <actor> with <amount> upokt for <service_id> service step", after staking
 func (s *migrationSuite) updatePreviousUnstakedBalanceUpoktOfCurrentShannonIdx() {
-	s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 	if shannonDestAddr, isFound := s.getShannonKeyAddress(); isFound {
 		if _, isFound = s.queryAccount(shannonDestAddr); isFound {
 			upoktBalanceInt := s.getAccBalance(s.getShannonKeyName())
-			upoktBalanceCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(upoktBalanceInt))
+			upoktBalanceCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, int64(upoktBalanceInt))
 			s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = upoktBalanceCoin
 		}
 	}
@@ -203,7 +203,7 @@ func (s *migrationSuite) NoMorseclaimableaccountsExist() {
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountIsStakedAsAnWithUpoktForService(actorType actorTypeEnum, upoktAmount int64, serviceId string) {
-	s.previousStakedActorUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, upoktAmount)
+	s.previousStakedActorUpokt = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, upoktAmount)
 
 	s.TheUserStakesAWithUpoktForServiceFromTheAccount(actorType, s.previousStakedActorUpokt.Amount.Int64(), serviceId, s.getShannonKeyName())
 	s.TheUserShouldBeAbleToSeeStandardOutputContaining("txhash:")
@@ -322,6 +322,9 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 			res.Stdout,
 		)
 	}
+
+	s.Logf("waiting for 3 seconds for the claim tx to be committed...")
+	time.Sleep(time.Second * 3)
 }
 
 func (s *migrationSuite) AMorsestateexportIsWrittenTo(morseStateExportFile string) {
@@ -372,7 +375,7 @@ func (s *migrationSuite) AShannonDestinationKeyExistsInTheLocalKeyring() {
 
 func (s *migrationSuite) TheShannonDestinationAccountBalanceIsIncreasedByTheUnstakedBalanceAmountOfTheMorseclaimableaccount() {
 	currentUpoktBalanceInt := s.getAccBalance(s.getShannonKeyName())
-	currentUpoktBalanceCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(currentUpoktBalanceInt))
+	currentUpoktBalanceCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, int64(currentUpoktBalanceInt))
 	balanceUpoktDiffCoin := currentUpoktBalanceCoin.Sub(s.previousUnstakedBalanceUpoktOfCurrentShannonIdx)
 
 	expectedBalanceUpoktDiffCoin := s.expectedMorseClaimableAccount.GetUnstakedBalance().
@@ -428,25 +431,14 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 	)
 
 	switch {
-	// DEV_NOTE: The `import-morse-accounts` subcommand requires additional flags
-	// whose values are environment specific: --grpc-addr and --from.
+	// DEV_NOTE: The `import-morse-accounts` subcommand requires additional flags.
 	case strings.Contains(commandStr, "import-morse-accounts"):
-		rpcURL, err := url.Parse(defaultRPCURL)
-		require.NoError(s, err)
-
-		grpcAddrFlagString := fmt.Sprintf(
-			"--grpc-addr=%s:%d",
-			rpcURL.Hostname(),
-			defaultGRPCPort,
-		)
-		grpcAddrFlagParts := strings.Split(grpcAddrFlagString, "=")
 		commandStringParts = append(commandStringParts,
 			"--from", "pnf",
 			keyRingFlag,
 			chainIdFlag,
 			"--gas", "1000000",
 		)
-		commandStringParts = append(commandStringParts, grpcAddrFlagParts...)
 		results, err = s.pocketd.RunCommandOnHost("", commandStringParts...)
 	default:
 		results, err = s.pocketd.RunCommand(commandStringParts...)
@@ -543,10 +535,13 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 			res.Stdout,
 		)
 	}
+
+	s.Logf("waiting for 3 seconds for the claim tx to be committed...")
+	time.Sleep(time.Second * 3)
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountExistsOnchain() {
-	s.faucetFundedBalanceUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1)
+	s.faucetFundedBalanceUpokt = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1)
 	s.TheShannonAccountIsFundedWith(s.faucetFundedBalanceUpokt.String())
 }
 
@@ -634,6 +629,9 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 	}, " ")
 	s.TheAuthorityExecutes(importMorseAccountsCmdString)
 	s.ThePocketdBinaryShouldExitWithoutError()
+
+	time.Sleep(time.Second * 3)
+
 	s.TheMorseclaimableaccountsArePersistedOnchain()
 }
 

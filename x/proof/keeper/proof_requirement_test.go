@@ -22,7 +22,8 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
 	// Set expected compute units to be below the proof requirement threshold to only
 	// exercise the probabilistic branch of the #isProofRequired() logic.
-	expectedComputeUnits := (proofParams.ProofRequirementThreshold.Amount.Uint64() - 1) / sharedParams.ComputeUnitsToTokensMultiplier
+	proofRequirementThresholdFractionalUpokt := proofParams.ProofRequirementThreshold.Amount.Uint64() * sharedParams.ComputeUnitCostGranularity
+	expectedComputeUnits := (proofRequirementThresholdFractionalUpokt - 1) / sharedParams.ComputeUnitsToTokensMultiplier
 
 	var (
 		probability = types.DefaultProofRequestProbability
@@ -40,7 +41,7 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 
 	// NB: Not possible to sample concurrently, this causes a race condition due to the keeper's gas meter.
 	for i := int64(0); i < sampleSize; i++ {
-		claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
+		claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddressBech32(), sample.AccAddressBech32(), expectedComputeUnits)
 
 		proofRequirementReason, err := keepers.ProofRequirementForClaim(sdkCtx, &claim)
 		require.NoError(t, err)

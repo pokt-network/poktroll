@@ -10,7 +10,7 @@ import (
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -35,11 +35,11 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	// Prepare the test application.
-	appAddress := sample.AccAddress()
+	appAddress := sample.AccAddressBech32()
 	appStake := apptypes.DefaultMinStake.Add(apptypes.DefaultMinStake)
 	application := apptypes.Application{
 		Address: appAddress,
@@ -50,7 +50,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	}
 
 	// Prepare the test supplier.
-	supplierAddress := sample.AccAddress()
+	supplierAddress := sample.AccAddressBech32()
 	// TODO(#850): Update supplier stake to be min stake
 	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{
 		{
@@ -63,7 +63,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 			},
 		},
 	}
-	supplierStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
+	supplierStake := sdk.NewInt64Coin(pocket.DenomuPOKT, 1000)
 	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierAddress, supplierServiceConfigs, 1, 0)
 	supplier := sharedtypes.Supplier{
 		OperatorAddress:      supplierAddress,
@@ -77,6 +77,10 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		testkeeper.WithService(service),
 		testkeeper.WithApplication(application),
 		testkeeper.WithSupplier(supplier),
+		testkeeper.WithBlockProposer(
+			sample.ConsAddress(),
+			sample.ValOperatorAddress(),
+		),
 		testkeeper.WithProofRequirement(false),
 		testkeeper.WithDefaultModuleBalances(),
 	)
@@ -92,7 +96,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 
 	// Set the CUTTM to 1 to simplify the math
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
-	sharedParams.ComputeUnitsToTokensMultiplier = uint64(1)
+	sharedParams.ComputeUnitsToTokensMultiplier = uint64(1) * sharedParams.ComputeUnitCostGranularity
 	err = keepers.SharedKeeper.SetParams(sdkCtx, sharedParams)
 	require.NoError(t, err)
 
@@ -116,7 +120,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 			ServiceId:          service.Id,
 			BlockHeight:        sdkCtx.BlockHeight(),
 		}
-		sessionRes, err := keepers.SessionKeeper.GetSession(sdkCtx, &getSessionReq)
+		sessionRes, err := keepers.GetSession(sdkCtx, &getSessionReq)
 		require.NoError(t, err)
 
 		session := sessionRes.Session
@@ -129,7 +133,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		sdkCtx = sdkCtx.WithBlockHeight(claimExpirationHeight)
 
 		// Get the relay mining difficulty that will be used when settling the pending claims.
-		relayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(sdkCtx, service.Id)
+		relayMiningDifficulty, ok := keepers.GetRelayMiningDifficulty(sdkCtx, service.Id)
 		require.True(t, ok)
 
 		// Prepare a claim with the given number of relays.
@@ -144,20 +148,21 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		require.NoError(t, err)
 
 		// Store the claim before settling it.
-		keepers.ProofKeeper.UpsertClaim(sdkCtx, *claim)
+		keepers.UpsertClaim(sdkCtx, *claim)
 
 		// Calling SettlePendingClaims calls ProcessTokenLogicModules behind the scenes
-		settledResult, expiredResult, err := keepers.Keeper.SettlePendingClaims(sdkCtx)
+		settledResult, expiredResult, numDiscardedFaultyClaims, err := keepers.SettlePendingClaims(sdkCtx)
 		require.NoError(t, err)
 		require.Equal(t, 1, int(settledResult.GetNumClaims()))
 		require.Equal(t, 0, int(expiredResult.GetNumClaims()))
+		require.Equal(t, uint64(0), numDiscardedFaultyClaims)
 
 		// Update the relay mining difficulty
 		_, err = keepers.Keeper.UpdateRelayMiningDifficulty(sdkCtx, map[string]uint64{service.Id: claimNumRelays})
 		require.NoError(t, err)
 
 		// Get the updated relay mining difficulty
-		updatedRelayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(sdkCtx, service.Id)
+		updatedRelayMiningDifficulty, ok := keepers.GetRelayMiningDifficulty(sdkCtx, service.Id)
 		require.True(t, ok)
 
 		targetNumRelays := keepers.ServiceKeeper.GetParams(ctx).TargetNumRelays

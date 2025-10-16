@@ -26,7 +26,7 @@ func networkWithProofObjects(t *testing.T, n int) (*network.Network, []types.Pro
 	state := types.GenesisState{}
 	for i := 0; i < n; i++ {
 		proof := types.Proof{
-			SupplierOperatorAddress: sample.AccAddress(),
+			SupplierOperatorAddress: sample.AccAddressBech32(),
 			SessionHeader: &sessiontypes.SessionHeader{
 				SessionId: "mock_session_id",
 				// Other fields omitted and unused for these tests.
@@ -40,7 +40,15 @@ func networkWithProofObjects(t *testing.T, n int) (*network.Network, []types.Pro
 	buf, err := cfg.Codec.MarshalJSON(&state)
 	require.NoError(t, err)
 	cfg.GenesisState[types.ModuleName] = buf
-	return network.New(t, cfg), state.ProofList
+
+	// Start the network
+	net := network.New(t, cfg)
+
+	// Wait for the network to be fully initialized to avoid race conditions
+	// with consensus reactor goroutines
+	require.NoError(t, net.WaitForNextBlock())
+
+	return net, state.ProofList
 }
 
 func TestShowProof(t *testing.T) {
@@ -69,7 +77,7 @@ func TestShowProof(t *testing.T) {
 		},
 		{
 			desc:                 "not found",
-			supplierOperatorAddr: sample.AccAddress(),
+			supplierOperatorAddr: sample.AccAddressBech32(),
 			sessionId:            proofs[0].SessionHeader.SessionId,
 
 			args:        common,

@@ -16,17 +16,18 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
 	keyringtypes "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
+	ring_secp256k1 "github.com/pokt-network/go-dleq/secp256k1"
+	ringtypes "github.com/pokt-network/go-dleq/types"
 	"github.com/pokt-network/ring-go"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
@@ -67,6 +68,10 @@ type TestBehavior struct {
 	// proxyServersMap is a map from ServiceId to the actual Server that handles
 	// processing of incoming RPC requests.
 	proxyServersMap map[string]*http.Server
+
+	// RelayMeterCallCount is used to track the number of times the relay meter
+	// methods are called during the test execution.
+	RelayMeterCallCount *relayMeterCallCount
 }
 
 // blockHeight is the default block height used in the tests.
@@ -75,11 +80,30 @@ const blockHeight = 1
 // blockHashBz is the []byte representation of the block hash used in the tests.
 var blockHashBz []byte
 
+// testDelays stores artificial delays for specific service IDs for timeout testing
+var testDelays = make(map[string]time.Duration)
+
 func init() {
 	var err error
 	if blockHashBz, err = hex.DecodeString("1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"); err != nil {
 		panic(fmt.Errorf("error while trying to decode block hash: %w", err))
 	}
+}
+
+// SetTestDelay sets an artificial delay for a specific service ID (for timeout testing)
+func SetTestDelay(serviceId string, delay time.Duration) {
+	testDelays[serviceId] = delay
+}
+
+// ClearTestDelays clears all artificial delays
+func ClearTestDelays() {
+	testDelays = make(map[string]time.Duration)
+}
+
+// getTestDelay returns the delay for a service ID, if any
+func getTestDelay(serviceId string) (time.Duration, bool) {
+	delay, exists := testDelays[serviceId]
+	return delay, exists
 }
 
 // NewRelayerProxyTestBehavior creates a TestBehavior with the provided set of
@@ -154,6 +178,9 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		relayAuthenticator, err := relay_authenticator.NewRelayAuthenticator(relayAuthenticatorDeps, opts)
 		require.NoError(test.t, err)
 
+		test.RelayMeterCallCount = &relayMeterCallCount{}
+		relayMeter := newMockRelayMeterWithCallCount(test.t, test.RelayMeterCallCount)
+
 		testDeps := depinject.Configs(
 			ringClientDeps,
 			depinject.Supply(
@@ -164,6 +191,7 @@ func WithRelayerProxyDependenciesForBlockHeight(
 				supplierQueryClient,
 				keyring,
 				relayAuthenticator,
+				relayMeter,
 			),
 		)
 
@@ -205,6 +233,10 @@ $ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/...`)
 
 				server := &http.Server{
 					Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						// Apply configured test delay for service ID if present.
+						if delay, hasDelay := getTestDelay(serviceId); hasDelay {
+							time.Sleep(delay)
+						}
 						sendJSONRPCResponse(test.t, w)
 					}),
 				}
@@ -219,7 +251,11 @@ $ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/...`)
 				go func() {
 					<-test.ctx.Done()
 					err := server.Shutdown(test.ctx)
-					require.NoError(test.t, err)
+					if err != nil {
+						require.ErrorIs(test.t, err, context.Canceled)
+					} else {
+						require.NoError(test.t, err)
+					}
 				}()
 
 				test.proxyServersMap[serviceId] = server
@@ -332,6 +368,44 @@ func newMockRelayMeter(t *testing.T) relayer.RelayMeter {
 	return relayMeter
 }
 
+// relayMeterCallCount tracks the number of calls made to each method of the RelayMeter interface.
+type relayMeterCallCount struct {
+	// AccumulateRelayReward counts the number of times AccumulateRelayReward method was called.
+	// This tracks how many relays were initially processed and optimistically accounted.
+	AccumulateRelayReward int
+
+	// SetNonApplicableRelayReward counts the number of times SetNonApplicableRelayReward method was called.
+	// This tracks how many relays were later determined to be non-applicable for rewards.
+	SetNonApplicableRelayReward int
+}
+
+// newMockRelayMeterWithCallCount creates a mock RelayMeter implementation that
+// tracks call counts for its methods.
+// It returns a RelayMeter that increments the corresponding counter in the provided
+// callCount struct whenever one of its methods is called.
+func newMockRelayMeterWithCallCount(
+	t *testing.T,
+	callCount *relayMeterCallCount,
+) relayer.RelayMeter {
+	ctrl := gomock.NewController(t)
+
+	relayMeter := mockrelayer.NewMockRelayMeter(ctrl)
+
+	relayMeter.EXPECT().Start(gomock.Any()).Return(nil).AnyTimes()
+
+	relayMeter.EXPECT().IsOverServicing(gomock.Any(), gomock.Any()).
+		Do(func(ctx context.Context, meta servicetypes.RelayRequestMetadata) {
+			callCount.AccumulateRelayReward++
+		}).AnyTimes()
+
+	relayMeter.EXPECT().SetNonApplicableRelayReward(gomock.Any(), gomock.Any()).
+		Do(func(ctx context.Context, meta servicetypes.RelayRequestMetadata) {
+			callCount.SetNonApplicableRelayReward++
+		}).AnyTimes()
+
+	return relayMeter
+}
+
 // MarshalAndSend marshals the request and sends it to the provided service.
 func MarshalAndSend(
 	test *TestBehavior,
@@ -412,9 +486,13 @@ func GetApplicationRingSignature(
 	point, err := curve.DecodeToPoint(publicKey.Bytes())
 	require.NoError(t, err)
 
-	// At least two points are required to create a ring signer so we are reusing
-	// the same key for it
-	points := []ringtypes.Point{point, point}
+	// Ring signatures require at least two points.
+	// Use the same deterministic dummy key that the ring client uses for apps without delegations.
+	placeholderPoint, err := curve.DecodeToPoint(rings.PlaceholderRingPubKey.Bytes())
+	require.NoError(t, err)
+
+	// Sort the points to match the order used in verification
+	points := []ringtypes.Point{point, placeholderPoint}
 	pointsRing, err := ring.NewFixedKeyRingFromPublicKeys(curve, points)
 	require.NoError(t, err)
 

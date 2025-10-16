@@ -1,15 +1,18 @@
 package config
 
+import "github.com/pokt-network/poktroll/pkg/polylog"
+
 // HydrateSuppliers populates the suppliers fields of the RelayMinerConfig that
 // are relevant to the "suppliers" section in the config file.
 func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
+	logger polylog.Logger,
 	yamlSupplierConfigs []YAMLRelayMinerSupplierConfig,
 ) error {
 	existingSuppliers := make(map[string]bool)
 	for _, yamlSupplierConfig := range yamlSupplierConfigs {
 		// Hydrate and validate each supplier in the suppliers list of the config file.
 		supplierConfig := &RelayMinerSupplierConfig{}
-		if err := supplierConfig.HydrateSupplier(yamlSupplierConfig); err != nil {
+		if err := supplierConfig.HydrateSupplier(logger, yamlSupplierConfig); err != nil {
 			return err
 		}
 
@@ -29,6 +32,12 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 			supplierConfig.SigningKeyNames = relayMinerConfig.DefaultSigningKeyNames
 		}
 
+		// If RequestTimeoutSeconds is not specified, use the default from the config.
+		supplierConfig.RequestTimeoutSeconds = yamlSupplierConfig.RequestTimeoutSeconds
+		if supplierConfig.RequestTimeoutSeconds == 0 {
+			supplierConfig.RequestTimeoutSeconds = relayMinerConfig.DefaultRequestTimeoutSeconds
+		}
+
 		// Supplier operator name should be unique
 		if _, ok := existingSuppliers[yamlSupplierConfig.ServiceId]; ok {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
@@ -38,6 +47,8 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 		}
 		// Mark the supplier as existing
 		existingSuppliers[yamlSupplierConfig.ServiceId] = true
+
+		logger.Info().Msgf("Hydrating supplier %s with config: %+v", yamlSupplierConfig.ServiceId, supplierConfig)
 
 		relayMinerConfig.
 			Servers[yamlSupplierConfig.ListenUrl].

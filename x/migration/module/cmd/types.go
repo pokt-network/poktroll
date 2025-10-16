@@ -1,16 +1,56 @@
 package cmd
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	cosmosmath "cosmossdk.io/math"
 	cometcrypto "github.com/cometbft/cometbft/crypto"
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
+
+// MorseAccountInfo holds Morse account data.
+// - Address and private key are in hex format.
+type MorseAccountInfo struct {
+	// Address is the Morse account address in hex format.
+	Address cometcrypto.Address `json:"address"`
+
+	// PrivateKey is the Morse account private key in ed25519 format.
+	PrivateKey ed25519.PrivKey `json:"private_key"`
+}
+
+// MarshalJSON customizes MorseAccountInfo JSON output.
+// - Includes private key if unsafe/unarmored flags are set.
+func (m MorseAccountInfo) MarshalJSON() ([]byte, error) {
+	addressStr := hex.EncodeToString(m.Address)
+	return marshalAccountInfo(addressStr, m.PrivateKey, "")
+}
+
+// ShannonAccountInfo holds Shannon account data.
+// - Address and private key are in bech32 format.
+type ShannonAccountInfo struct {
+	// Address is the Shannon account address in bech32 format.
+	Address cosmostypes.AccAddress `json:"address"`
+
+	// PrivateKey is the Shannon account private key in secp256k1 format.
+	PrivateKey secp256k1.PrivKey `json:"private_key"`
+
+	// KeyringName is the name of the key in the keyring.
+	KeyringName string `json:"keyring_name"`
+}
+
+// MarshalJSON customizes ShannonAccountInfo JSON output.
+// - Includes private key if unsafe/unarmored flags are set.
+func (s ShannonAccountInfo) MarshalJSON() ([]byte, error) {
+	addressStr := s.Address.String()
+	return marshalAccountInfo(addressStr, s.PrivateKey.Bytes(), s.KeyringName)
+}
 
 // newMorseImportWorkspace returns a new morseImportWorkspace with fields initialized to their zero values.
 func newMorseImportWorkspace() *morseImportWorkspace {
@@ -123,9 +163,9 @@ func (miw *morseImportWorkspace) addAccount(addr string) error {
 	accountIdx := miw.nextIdx()
 	importAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  addr,
-		UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-		SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		UnstakedBalance:  cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+		SupplierStake:    cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+		ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
 	}
 	miw.accountState.Accounts = append(miw.accountState.Accounts, importAccount)
 	miw.accountIdxByAddress[addr] = uint64(accountIdx)
@@ -147,39 +187,59 @@ func (miw *morseImportWorkspace) addUnstakedBalance(addr string, amount cosmosma
 // addSupplierStake does two things:
 // - Adds the given amount to the corresponding Morse account balances in the morseWorkspace
 // - Sets the MorseOutputAddress if the given outputAddr is not nil
-func (miw *morseImportWorkspace) addSupplierStake(
-	addr string,
-	amount cosmosmath.Int,
-	outputAddr cometcrypto.Address,
-) error {
+func (miw *morseImportWorkspace) addSupplierStake(morseSupplier *migrationtypes.MorseValidator) error {
 	// Retrieve the Morse supplier (aka Service/Node) account
-	morseAccount, err := miw.getAccount(addr)
+	morseClaimableAccount, err := miw.getAccount(morseSupplier.Address.String())
 	if err != nil {
 		return err
 	}
 
 	// Update the supplier stake amount
-	morseAccount.SupplierStake.Amount = morseAccount.SupplierStake.Amount.Add(amount)
+	supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(morseSupplier.StakedTokens)
+	if !ok {
+		return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", morseSupplier.StakedTokens)
+	}
+	morseClaimableAccount.SupplierStake.Amount = morseClaimableAccount.SupplierStake.Amount.
+		Add(supplierStakeAmtUpokt)
 
 	// Custodial address (i.e. output, a.k.a. owner) is optional.
-	if outputAddr != nil {
-		morseAccount.MorseOutputAddress = outputAddr.String()
+	if morseSupplier.OutputAddress != nil {
+		morseClaimableAccount.MorseOutputAddress = morseSupplier.OutputAddress.String()
 	}
+
+	// If the supplier is unbonding, transfer the unstaking completion time.
+	if !morseSupplier.UnstakingTime.IsZero() {
+		morseClaimableAccount.UnstakingTime = morseSupplier.UnstakingTime
+	}
+
+	miw.accumulatedTotalSupplierStake = miw.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
+	miw.numSuppliers++
 
 	return nil
 }
 
 // addAppStake adds the given amount to the corresponding Morse account balances in the morseWorkspace.
-func (miw *morseImportWorkspace) addAppStake(
-	addr string,
-	amount cosmosmath.Int,
-) error {
+func (miw *morseImportWorkspace) addAppStake(morseApplication *migrationtypes.MorseApplication) error {
+	appStakeAmtUpokt, ok := cosmosmath.NewIntFromString(morseApplication.StakedTokens)
+	if !ok {
+		return ErrMorseExportState.Wrapf("failed to parse application stake amount %q", morseApplication.StakedTokens)
+	}
+
 	// Retrieve the Morse application (aka Validator) account
-	morseAccount, err := miw.getAccount(addr)
+	morseClaimableAccount, err := miw.getAccount(morseApplication.Address.String())
 	if err != nil {
 		return err
 	}
 
-	morseAccount.ApplicationStake.Amount = morseAccount.ApplicationStake.Amount.Add(amount)
+	// If the application is unbonding, transfer the unstaking completion time.
+	if !morseApplication.UnstakingTime.IsZero() {
+		morseClaimableAccount.UnstakingTime = morseApplication.UnstakingTime
+	}
+
+	morseClaimableAccount.ApplicationStake.Amount = morseClaimableAccount.ApplicationStake.Amount.Add(appStakeAmtUpokt)
+
+	miw.accumulatedTotalAppStake = miw.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
+	miw.numApplications++
+
 	return nil
 }

@@ -88,7 +88,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_ServiceQuerier_RelayMiningDiffic
 
 func (s *QueryCacheTestSuite) TestKeyValueCache_ApplicationQuerier_Applications() {
 	ctx := context.Background()
-	appAddress := sample.AccAddress()
+	appAddress := sample.AccAddressBech32()
 
 	// Assert that the server has not been reached yet.
 	require.Equal(s.T(), 0, s.rpcCallCount.apps)
@@ -119,7 +119,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_ApplicationQuerier_Params() {
 
 func (s *QueryCacheTestSuite) TestKeyValueCache_SupplierQuerier_Suppliers() {
 	ctx := context.Background()
-	supplierAddress := sample.AccAddress()
+	supplierAddress := sample.AccAddressBech32()
 
 	// Assert that the server has not been reached yet.
 	require.Equal(s.T(), 0, s.rpcCallCount.suppliers)
@@ -135,7 +135,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SupplierQuerier_Suppliers() {
 
 func (s *QueryCacheTestSuite) TestKeyValueCache_SessionQuerier_Sessions() {
 	ctx := context.Background()
-	appAddress := sample.AccAddress()
+	appAddress := sample.AccAddressBech32()
 	serviceId := "serviceId"
 	blockHeight := int64(1)
 
@@ -209,16 +209,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
-	// Call the GetSessionBlockFrequency method numCalls times and assert that the server
-	// is not reached again.
-	for range numCalls {
-		_, err := s.queryClients.shared.GetComputeUnitsToTokensMultiplier(ctx)
-		require.NoError(s.T(), err)
-	}
-	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
-	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
-
-	supplierAddr := sample.AccAddress()
+	supplierAddr := sample.AccAddressBech32()
 
 	// Call the GetEarliestSupplierClaimCommitHeight method numCalls times and assert that
 	// the CometRPC server is reached only once.
@@ -256,7 +247,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_ProofQuerier_Params() {
 
 func (s *QueryCacheTestSuite) TestKeyValueCache_BankQuerier_Balances() {
 	ctx := context.Background()
-	accountAddress := sample.AccAddress()
+	accountAddress := sample.AccAddressBech32()
 
 	// Assert that the bank server has not been reached yet.
 	require.Equal(s.T(), 0, s.rpcCallCount.balances)
@@ -272,7 +263,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_BankQuerier_Balances() {
 
 func (s *QueryCacheTestSuite) TestKeyValueCache_AccountQuerier_Accounts() {
 	ctx := context.Background()
-	accountAddress := sample.AccAddress()
+	accountAddress := sample.AccAddressBech32()
 
 	// Assert that the account server has not been reached yet.
 	require.Equal(s.T(), 0, s.rpcCallCount.accounts)

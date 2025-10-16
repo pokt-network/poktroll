@@ -164,19 +164,6 @@ func (k Keeper) validateProof(
 	}
 	logger.Info(fmt.Sprintf("proof checked, validation result: %s", proofStatus))
 
-	// Create and emit an event for the proof validation result.
-	eventProofValidityChecked := types.EventProofValidityChecked{
-		Proof:         &proof,
-		BlockHeight:   uint64(sdkCtx.BlockHeight()),
-		ProofStatus:   proofStatus,
-		FailureReason: invalidProofReason,
-	}
-
-	if err := sdkCtx.EventManager().EmitTypedEvent(&eventProofValidityChecked); err != nil {
-		logger.Error(fmt.Sprintf("failed to emit proof validity check event due to: %v", err))
-		return
-	}
-
 	// Protect the subsequent operations from concurrent access.
 	coordinator.coordinatorMu.Lock()
 	defer coordinator.coordinatorMu.Unlock()
@@ -188,6 +175,22 @@ func (k Keeper) validateProof(
 	// 2. The corresponding supplier should be slashed or not
 	claim.ProofValidationStatus = proofStatus
 	k.UpsertClaim(ctx, claim)
+
+	// Create and emit an event for the proof validation result.
+	eventProofValidityChecked := types.EventProofValidityChecked{
+		BlockHeight:             uint64(sdkCtx.BlockHeight()),
+		FailureReason:           invalidProofReason,
+		ServiceId:               claim.SessionHeader.ServiceId,
+		ApplicationAddress:      claim.SessionHeader.ApplicationAddress,
+		SessionEndBlockHeight:   claim.SessionHeader.SessionEndBlockHeight,
+		ClaimProofStatusInt:     int32(proofStatus),
+		SupplierOperatorAddress: supplierOperatorAddr,
+	}
+
+	if err := sdkCtx.EventManager().EmitTypedEvent(&eventProofValidityChecked); err != nil {
+		logger.Error(fmt.Sprintf("failed to emit proof validity check event due to: %v", err))
+		return
+	}
 
 	// Collect the processed proofs info to delete them after the proofIterator is closed
 	// to prevent iterator invalidation.

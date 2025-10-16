@@ -23,7 +23,7 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	// Generate an address for the gateway
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 
 	// Verify that the gateway does not exist yet
 	_, isGatewayFound := k.GetGateway(sdkCtx, addr)
@@ -48,22 +48,21 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 
 	// Unstake the gateway
 	unstakeMsg := &types.MsgUnstakeGateway{Address: addr}
-	unstakeRes, err := srv.UnstakeGateway(sdkCtx, unstakeMsg)
+	_, err = srv.UnstakeGateway(sdkCtx, unstakeMsg)
 	require.NoError(t, err)
+
+	// Make sure the gateway is found after unstaking
+	foundGateway, isGatewayFound = k.GetGateway(sdkCtx, addr)
+	require.True(t, isGatewayFound)
 
 	currentHeight := sdkCtx.BlockHeight()
 	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(currentHeight))
-	expectedGateway := &types.Gateway{
+	expectedGateway := types.Gateway{
 		Address:                 foundGateway.Address,
 		Stake:                   foundGateway.Stake,
 		UnstakeSessionEndHeight: sessionEndHeight,
 	}
-
-	require.Equal(t, expectedGateway, unstakeRes.GetGateway())
-
-	// Make sure the gateway is found after unstaking
-	_, isGatewayFound = k.GetGateway(sdkCtx, addr)
-	require.True(t, isGatewayFound)
+	require.Equal(t, expectedGateway, foundGateway)
 
 	// Calculate the unbonding period blocks
 	sharedParams := sharedtypes.DefaultParams()
@@ -75,7 +74,8 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 	unbondingPeriodHeight := sessionEndHeight + unbondingPeriodBlocks
 	sdkCtx = sdkCtx.WithBlockHeight(int64(unbondingPeriodHeight))
 
-	k.EndBlockerUnbondGateways(sdkCtx)
+	_, err = k.EndBlockerUnbondGateways(sdkCtx)
+	require.NoError(t, err)
 
 	// Make sure the gateway can no longer be found after the unbonding period has elapsed.
 	_, isGatewayFound = k.GetGateway(sdkCtx, addr)
@@ -87,7 +87,7 @@ func TestMsgServer_UnstakeGateway_FailIfAlreadyUnbonding(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the gateway
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 
 	// Verify that the gateway does not exist yet
 	_, isGatewayFound := k.GetGateway(ctx, addr)
@@ -134,7 +134,7 @@ func TestMsgServer_UnstakeGateway_FailIfNotStaked(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the gateway
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 
 	// Verify that the gateway does not exist yet
 	_, isGatewayFound := k.GetGateway(ctx, addr)
@@ -158,7 +158,7 @@ func TestMsgServer_UnstakeGateway_RestakeBeforeUnbondingSuccess(t *testing.T) {
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	// Generate an address for the gateway
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 
 	// Verify that the gateway does not exist yet
 	_, isGatewayFound := k.GetGateway(sdkCtx, addr)
@@ -183,22 +183,21 @@ func TestMsgServer_UnstakeGateway_RestakeBeforeUnbondingSuccess(t *testing.T) {
 
 	// Unstake the gateway
 	unstakeMsg := &types.MsgUnstakeGateway{Address: addr}
-	unstakeRes, err := srv.UnstakeGateway(sdkCtx, unstakeMsg)
+	_, err = srv.UnstakeGateway(sdkCtx, unstakeMsg)
 	require.NoError(t, err)
+
+	// Make sure the gateway is found after unstaking
+	foundGateway, isGatewayFound = k.GetGateway(sdkCtx, addr)
+	require.True(t, isGatewayFound)
 
 	currentHeight := sdkCtx.BlockHeight()
 	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(currentHeight))
-	expectedGateway := &types.Gateway{
+	expectedGateway := types.Gateway{
 		Address:                 foundGateway.Address,
 		Stake:                   foundGateway.Stake,
 		UnstakeSessionEndHeight: sessionEndHeight,
 	}
-
-	require.Equal(t, expectedGateway, unstakeRes.Gateway)
-
-	// Make sure the gateway is found after unstaking
-	_, isGatewayFound = k.GetGateway(sdkCtx, addr)
-	require.True(t, isGatewayFound)
+	require.Equal(t, expectedGateway, foundGateway)
 
 	// Calculate the unbonding period blocks
 	sharedParams := sharedtypes.DefaultParams()
@@ -210,7 +209,8 @@ func TestMsgServer_UnstakeGateway_RestakeBeforeUnbondingSuccess(t *testing.T) {
 	unbondingPeriodHeight := sessionEndHeight + unbondingPeriodBlocks
 	sdkCtx = sdkCtx.WithBlockHeight(int64(unbondingPeriodHeight - 1))
 
-	k.EndBlockerUnbondGateways(sdkCtx)
+	_, err = k.EndBlockerUnbondGateways(sdkCtx)
+	require.NoError(t, err)
 
 	// Make sure the gateway still exists before the unbonding period has elapsed.
 	_, isGatewayFound = k.GetGateway(sdkCtx, addr)

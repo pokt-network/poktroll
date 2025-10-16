@@ -24,7 +24,10 @@ var (
 		SupplierUnbondingPeriodSessions:    1,
 		ApplicationUnbondingPeriodSessions: 1,
 		GatewayUnbondingPeriodSessions:     1,
-		ComputeUnitsToTokensMultiplier:     42,
+		// compute units to tokens multiplier in pPOKT (i.e. 1/compute_unit_cost_granularity)
+		ComputeUnitsToTokensMultiplier: 42_000_000,
+		// compute unit cost granularity is 1pPOKT (i.e. 1/1e6)
+		ComputeUnitCostGranularity: 1_000_000,
 	}
 
 	sharedParamsOpt = keepertest.WithSharedModuleParams(&testSharedParams)
@@ -254,7 +257,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 		{
 			desc: "app is not found",
 
-			appAddr:   sample.AccAddress(), // Generating a random address on the fly
+			appAddr:   sample.AccAddressBech32(), // Generating a random address on the fly
 			serviceId: keepertest.TestServiceId1,
 
 			expectedErr: types.ErrSessionHydration,

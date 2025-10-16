@@ -5,22 +5,17 @@ package tests
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
-	"testing"
 	"time"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/json"
-	cmtcoretypes "github.com/cometbft/cometbft/rpc/core/types"
-	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -35,15 +30,16 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/load-testing/config"
-	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sync2"
 	testdelays "github.com/pokt-network/poktroll/testutil/delays"
-	"github.com/pokt-network/poktroll/testutil/events"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/testclient"
-	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -51,6 +47,11 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+)
+
+const (
+	newBlockEventQuery = "tm.event='NewBlock'"
+	blocksReplayLimit  = 10
 )
 
 // actorLoadTestIncrementPlans is a struct that holds the parameters for incrementing
@@ -92,46 +93,51 @@ func (s *relaysSuite) setupEventListeners(rpcNode string) {
 	eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
 	s.committedEventsObs = eventsObs
 
-	extractBlockEvents := func(ctx context.Context, block client.Block) {
-		// Query the block results endpoint for each observed block to get the tx and block events.
-		// Ref: https://docs.cometbft.com/main/rpc/#/Info/block_results
-		blockResultsUrl := fmt.Sprintf("%s/block_results?height=%d", rpcNode, block.Height())
-		blockResultsResp, err := http.DefaultClient.Get(blockResultsUrl)
-		require.NoError(s, err)
+	cometClient, err := sdkclient.NewClientFromNode(testclient.LocalCometTCPURL)
+	require.NoError(s, err)
 
-		defer blockResultsResp.Body.Close()
+	err = cometClient.Start()
+	require.NoError(s, err)
 
-		blockResultsRespBz, err := io.ReadAll(blockResultsResp.Body)
-		require.NoError(s, err)
+	logger := polylog.Ctx(s.ctx)
 
-		var rpcResponse rpctypes.RPCResponse
-		err = json.Unmarshal(blockResultsRespBz, &rpcResponse)
-		require.NoError(s, err)
+	deps := depinject.Supply(cometClient, logger)
+	s.eventsReplayClient, err = events.NewEventsReplayClient(
+		s.ctx,
+		deps,
+		newBlockEventQuery,
+		block.UnmarshalNewBlockEvent,
+		blocksReplayLimit,
+	)
+	require.NoError(s, err)
 
-		var blockResults cmtcoretypes.ResultBlockResults
-		err = json.Unmarshal(rpcResponse.Result, &blockResults)
-		require.NoError(s, err)
+	// Channel to signal when the first block has been received over the replay client.
+	initialBlockReceivedCh := make(chan struct{})
 
-		numEvents := len(blockResults.TxsResults) + len(blockResults.FinalizeBlockEvents)
-		events := make([]types.Event, 0, numEvents)
-
-		// Flatten all tx result events and block event results into one slice.
-		for _, txResult := range blockResults.TxsResults {
-			events = append(events, txResult.Events...)
-		}
-
-		events = append(events, blockResults.FinalizeBlockEvents...)
-
-		s.latestBlock = block
-		eventsObsCh <- events
-	}
-
-	s.blockClient = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T))
+	// Iterate over the events sequence from the events replay client.
 	channel.ForEach(
 		s.ctx,
-		s.blockClient.CommittedBlocksSequence(s.ctx),
-		extractBlockEvents,
+		s.eventsReplayClient.EventsSequence(s.ctx),
+		func(ctx context.Context, block *block.CometNewBlockEvent) {
+			// Check if this is the first block received over the replay client.
+			if s.latestBlock == nil {
+				close(initialBlockReceivedCh)
+			}
+			s.latestBlock = block
+
+			// Publish the events to the observable.
+			txResultEvents := make([]types.Event, 0)
+			for _, txResult := range block.TxResults() {
+				txResultEvents = append(txResultEvents, txResult.Events...)
+			}
+			txResultEvents = append(txResultEvents, block.Events()...)
+
+			eventsObsCh <- txResultEvents
+		},
 	)
+
+	// Block until the first block has been received over the replay client.
+	<-initialBlockReceivedCh
 }
 
 // initFundingAccount initializes the account that will be funding the onchain actors.
@@ -187,8 +193,8 @@ func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 // Each time it notifies, it also sends a relayBatchInfo to the given relayBatchInfoPublishCh
 // such that the corresponding pipeline branch will send a relay batch.
 func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
-	relayBatchInfoPublishCh chan<- *relayBatchInfoNotif,
-) channel.MapFn[client.Block, *sessionInfoNotif] {
+	relayBatchInfoPublishCh chan<- *relayBatchInfoNotification,
+) channel.MapFn[*block.CometNewBlockEvent, *sessionInfoNotification] {
 	var (
 		// The test suite is initially waiting for the next session to start.
 		waitingForFirstSession = true
@@ -197,14 +203,14 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 	return func(
 		ctx context.Context,
-		block client.Block,
-	) (_ *sessionInfoNotif, skip bool) {
+		block *block.CometNewBlockEvent,
+	) (_ *sessionInfoNotification, skip bool) {
 		blockHeight := block.Height()
 		if blockHeight <= s.latestBlock.Height() {
 			return nil, true
 		}
 
-		sessionInfo := &sessionInfoNotif{
+		sessionInfo := &sessionInfoNotification{
 			blockHeight:             blockHeight,
 			sessionNumber:           sharedtypes.GetSessionNumber(s.sharedParams, blockHeight),
 			sessionStartBlockHeight: sharedtypes.GetSessionStartHeight(s.sharedParams, blockHeight),
@@ -279,12 +285,12 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 		// Inform the relay sending observable of the active applications that
 		// will be sending relays and the gateways that will be receiving them.
-		relayBatchInfoPublishCh <- &relayBatchInfoNotif{
-			sessionInfoNotif: *sessionInfo,
-			prevBatchTime:    prevBatchTime,
-			nextBatchTime:    now,
-			appAccounts:      s.activeApplications,
-			gateways:         s.activeGateways,
+		relayBatchInfoPublishCh <- &relayBatchInfoNotification{
+			sessionInfoNotification: *sessionInfo,
+			prevBatchTime:           prevBatchTime,
+			nextBatchTime:           now,
+			appAccounts:             s.activeApplications,
+			gateways:                s.activeGateways,
 		}
 
 		// Update prevBatchTime after this iteration completes.
@@ -441,14 +447,14 @@ func (plan *actorLoadTestIncrementPlan) blocksToFinalIncrementEnd() int64 {
 // & gateways but only funds new applications as they can't be delegated to until after the respective
 // gateway stake tx has been committed. It receives at the same frequency as committed blocks (i.e. 1:1)
 // but only sends conditionally as described here.
-func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() channel.MapFn[*sessionInfoNotif, *stakingInfoNotif] {
+func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() channel.MapFn[*sessionInfoNotification, *stakingInfoNotification] {
 	appsPlan := s.plans.apps
 	gatewaysPlan := s.plans.gateways
 	suppliersPlan := s.plans.suppliers
 
 	// Check if any new actors need to be staked **for use in the next session**
 	// and send the appropriate stake transactions if so.
-	return func(ctx context.Context, notif *sessionInfoNotif) (*stakingInfoNotif, bool) {
+	return func(ctx context.Context, notif *sessionInfoNotification) (*stakingInfoNotification, bool) {
 		var newSuppliers []*accountInfo
 		activeSuppliers := int64(len(s.activeSuppliers))
 		// Suppliers increment is different from the other actors and have a dedicated
@@ -477,11 +483,11 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() chann
 			return nil, true
 		}
 
-		return &stakingInfoNotif{
-			sessionInfoNotif: *notif,
-			newApps:          newApps,
-			newGateways:      newGateways,
-			newSuppliers:     newSuppliers,
+		return &stakingInfoNotification{
+			sessionInfoNotification: *notif,
+			newApps:                 newApps,
+			newGateways:             newGateways,
+			newSuppliers:            newSuppliers,
 		}, false
 	}
 }
@@ -493,8 +499,8 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() chann
 // txs to be committed before sending staking & delegation txs for new applications.
 func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 	ctx context.Context,
-	notif *stakingInfoNotif,
-) (*stakingInfoNotif, bool) {
+	notif *stakingInfoNotification,
+) (*stakingInfoNotification, bool) {
 	// Ensure that new gateways and suppliers are staked.
 	// Ensure that new applications are funded and have an account entry onchain
 	// so that they can stake and delegate in the next block.
@@ -516,7 +522,7 @@ func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 		return nil, true
 	}
 
-	s.sendStakeAndDelegateAppsTxs(&notif.sessionInfoNotif, notif.newApps, notif.newGateways)
+	s.sendStakeAndDelegateAppsTxs(&notif.sessionInfoNotification, notif.newApps, notif.newGateways)
 
 	return notif, false
 }
@@ -595,7 +601,7 @@ func (s *relaysSuite) addPendingFundMsg(addr string, coins sdk.Coins) {
 // sendFundNewAppsTx creates the applications given the next appIncAmt and sends
 // the corresponding funding transaction.
 func (s *relaysSuite) sendFundNewAppsTx(
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	appIncrementPlan *actorLoadTestIncrementPlan,
 ) (newApps []*accountInfo) {
 	appCount := int64(len(s.activeApplications) + len(s.preparedApplications))
@@ -662,9 +668,8 @@ func (s *relaysSuite) createApplicationAccount(
 // remaining test duration in blocks, the relay rate per application, the relay
 // cost, and the block duration.
 func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
-	currentTestDuration := s.testStartHeight + s.relayLoadDurationBlocks - currentBlockHeight
 	// Compute the cost of all relays throughout the test duration.
-	totalRelayCostDuringTestUPOKT := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDurationSec
+	totalRelayCostDuringTestUPOKT := s.getTestTotalRelayCost(currentBlockHeight)
 	// Multiply by 2 to make sure the application does not run out of funds
 	// based on the number of relays it needs to send. Theoretically, `+1` should
 	// be enough, but probabilistic and time based mechanisms make it hard
@@ -700,7 +705,7 @@ func (s *relaysSuite) addPendingDelegateToGatewayMsg(application, gateway *accou
 // the active and new gateways.
 // It also ensures that new gateways are delegated to by already active applications.
 func (s *relaysSuite) sendStakeAndDelegateAppsTxs(
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	newApps, newGateways []*accountInfo,
 ) {
 
@@ -753,7 +758,7 @@ func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) 
 // TODO_TECHDEBT(@bryanchriswhite): move to a new file.
 func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	sharedParams *sharedtypes.Params,
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	actorCount int64,
 	startBlockHeight int64,
 ) bool {
@@ -779,7 +784,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 // available for the beginning of the next one.
 func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	sharedParams *sharedtypes.Params,
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	actorCount int64,
 	startBlockHeight int64,
 ) bool {
@@ -826,7 +831,7 @@ func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 		supplier.address, // The message signer.
 		supplier.address, // The supplier owner.
 		supplier.address, // The supplier operator.
-		supplier.amountToStake,
+		&supplier.amountToStake,
 		[]*sharedtypes.SupplierServiceConfig{
 			{
 				ServiceId: testedServiceId,
@@ -846,7 +851,7 @@ func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 
 // sendStakeSuppliersTxs increments the number of suppliers to be staked.
 func (s *relaysSuite) sendStakeSuppliersTxs(
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	supplierIncrementPlan *actorLoadTestIncrementPlan,
 ) (newSuppliers []*accountInfo) {
 	supplierCount := int64(len(s.activeSuppliers))
@@ -913,7 +918,7 @@ func (s *relaysSuite) sendInitialActorsStakeMsgs(
 // sendStakeGatewaysTxs stakes the next gatewayInc number of gateways, picks their address
 // from the provisioned gateways list and sends the corresponding stake transactions.
 func (s *relaysSuite) sendStakeGatewaysTxs(
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	gatewayIncrementPlan *actorLoadTestIncrementPlan,
 ) (newGateways []*accountInfo) {
 	gatewayCount := int64(len(s.activeGateways) + len(s.preparedGateways))
@@ -963,7 +968,7 @@ func (s *relaysSuite) signWithRetries(
 	// All messages have to be signed by the keyName provided.
 	// TODO_TECHDEBT: Extend the txContext to support multiple signers.
 	for i := 0; i < maxRetries; i++ {
-		err := s.txContext.SignTx(actorKeyName, txBuilder, false, false)
+		err := s.txContext.SignTx(actorKeyName, txBuilder, false, false, false)
 		if err == nil {
 			return nil
 		}
@@ -1155,12 +1160,12 @@ func (s *relaysSuite) ensureStakedActors(
 	// Add 1 second to the block duration to make sure the deadline is after the next block.
 	deadline := time.Now().Add(time.Second * time.Duration(blockDurationSec+1))
 	ctx, cancel := context.WithDeadline(ctx, deadline)
-	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
+	typedEventsObs := testevents.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
 	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
 		for _, event := range blockEvents {
 			switch e := event.(type) {
 			case *suppliertypes.EventSupplierStaked:
-				stakedActors[e.Supplier.GetOperatorAddress()] = struct{}{}
+				stakedActors[e.GetOperatorAddress()] = struct{}{}
 			case *gatewaytypes.EventGatewayStaked:
 				stakedActors[e.Gateway.GetAddress()] = struct{}{}
 			case *apptypes.EventApplicationStaked:
@@ -1208,7 +1213,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 
 	deadline := time.Now().Add(time.Second * time.Duration(blockDurationSec+1))
 	ctx, cancel := context.WithDeadline(ctx, deadline)
-	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
+	typedEventsObs := testevents.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
 	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
 		for _, event := range blockEvents {
 			redelegationEvent, ok := event.(*apptypes.EventRedelegation)
@@ -1252,7 +1257,7 @@ func allAppsDelegatedToAllGateways(
 	return true
 }
 
-// getRelayCost fetches the relay cost from the tokenomics module.
+// getRelayCost computes the relay cost from the tokenomics module.
 func (s *relaysSuite) getRelayCost() int64 {
 	relayCost := s.testedService.ComputeUnitsPerRelay * s.sharedParams.ComputeUnitsToTokensMultiplier
 
@@ -1291,7 +1296,7 @@ func (s *relaysSuite) getProvisionedActorsCurrentStakedAmount() int64 {
 
 // activatePreparedActors checks if the session has started and activates the
 // prepared actors by moving them to the active list.
-func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotif) {
+func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotification) {
 	if notif.blockHeight == notif.sessionStartBlockHeight {
 		logger.Debug().
 			Int64("session_num", notif.sessionNumber).
@@ -1401,7 +1406,7 @@ func (s *relaysSuite) parseActorLoadTestIncrementPlans(
 
 // forEachSettlement asynchronously captures the settlement events and processes them.
 func (s *relaysSuite) forEachSettlement(ctx context.Context) {
-	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
+	typedEventsObs := testevents.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
 	channel.ForEach(
 		s.ctx,
 		typedEventsObs,
@@ -1422,7 +1427,7 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.blockClient,
+		s.eventsReplayClient,
 		sharedParamsCache,
 		blockhashCache,
 	)
@@ -1450,7 +1455,7 @@ func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.blockClient,
+		s.eventsReplayClient,
 		appParmsCache,
 		appsCache,
 	)
@@ -1474,11 +1479,13 @@ func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	s.Helper()
 
 	proofParamsCache := querycache.NewNoOpParamsCache[prooftypes.Params]()
+	proofCache := querycache.NewNoOpKeyValueCache[prooftypes.Claim]()
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.blockClient,
+		s.eventsReplayClient,
 		proofParamsCache,
+		proofCache,
 	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
@@ -1533,14 +1540,17 @@ func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.blockClient,
+		s.eventsReplayClient,
 		servicesCache,
 		relayMiningDifficultyCache,
 	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
-	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
+	serviceParamsCache := querycache.NewNoOpParamsCache[servicetypes.Params]()
+
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient, serviceParamsCache))
 
 	serviceQueryclient, err := query.NewServiceQuerier(deps)
 	require.NoError(s, err)
@@ -1556,7 +1566,7 @@ func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
 // new applications were successfully staked and all application actors are delegated
 // to all gateways. Then it adds the new application actors to the prepared set, to
 // be activated & used in the next session.
-func (s *relaysSuite) forEachStakedAndDelegatedAppPrepareApp(ctx context.Context, notif *stakingInfoNotif) {
+func (s *relaysSuite) forEachStakedAndDelegatedAppPrepareApp(ctx context.Context, notif *stakingInfoNotification) {
 	testdelays.WaitAll(
 		func() { s.ensureStakedActors(ctx, notif.newApps) },
 		func() { s.ensureDelegatedApps(ctx, s.activeApplications, notif.newGateways) },
@@ -1575,7 +1585,7 @@ func (s *relaysSuite) forEachStakedAndDelegatedAppPrepareApp(ctx context.Context
 // to the maximum logical concurrency supported (or configured).
 //
 // See: https://pkg.go.dev/runtime#GOMAXPROCS
-func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchInfo *relayBatchInfoNotif) {
+func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchInfo *relayBatchInfoNotification) {
 	// Limit the number of concurrent requests to maxConcurrentRequestLimit.
 	batchLimiter := sync2.NewLimiter(maxConcurrentRequestLimit)
 
@@ -1644,4 +1654,15 @@ func (s *relaysSuite) populateWithKnownGateways() (gateways []*accountInfo) {
 	}
 
 	return gateways
+}
+
+// getTestTotalRelayCost computes the total relay uPOKT cost for the test given the current block height.
+func (s *relaysSuite) getTestTotalRelayCost(currentHeight int64) int64 {
+	// Test duration in blocks
+	currentTestDurationBlocks := s.testStartHeight + s.relayLoadDurationBlocks - currentHeight
+
+	// Total number of relays to be sent given the current height
+	testNumRelays := s.relayRatePerApp * currentTestDurationBlocks * blockDurationSec
+
+	return testNumRelays * s.relayCoinAmountCost / int64(s.sharedParams.ComputeUnitCostGranularity)
 }

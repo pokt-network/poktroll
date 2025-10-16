@@ -1,20 +1,50 @@
-# This Dockerfile is used to build container image for production workloads.
-# The image depends on `cosmovisor_cross_compile`, `ignite_release` and `ignite_release_extract_binaries` make targets.
+# Non-CGO release Dockerfile for maximum portability
+# This Dockerfile builds CGO-disabled (static) binaries for production workloads.
+# For CGO-enabled builds, use Dockerfile.release.cgo instead.
+
+# Stage 1: Binary selection stage
+FROM busybox:stable AS binary-selector
+ARG TARGETARCH
+
+# Copy non-CGO binaries only
+COPY release_binaries/pocket_linux_* /tmp/release_binaries/
+COPY tmp/cosmovisor-linux-* /tmp/
+
+# Select the non-CGO binary for the architecture
+RUN set -eu; \
+    binary_name="/tmp/release_binaries/pocket_linux_${TARGETARCH}"; \
+    if [ -f "${binary_name}" ]; then \
+        cp "${binary_name}" /tmp/pocketd; \
+        chmod 755 /tmp/pocketd; \
+    else \
+        echo "Non-CGO binary not found: ${binary_name}" >&2; \
+        echo "Available binaries:" >&2; \
+        ls -la /tmp/release_binaries/ >&2; \
+        exit 1; \
+    fi; \
+    cp /tmp/cosmovisor-linux-${TARGETARCH} /tmp/cosmovisor; \
+    chmod 755 /tmp/cosmovisor
+
+# Stage 2: Final runtime image
 FROM debian:bookworm
 ARG TARGETARCH
 
-# Install necessary packages.
+# Minimal runtime deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# Use `1025` G/UID so users can switch between this and `heighliner` image without a need to chown the files.
+# Use `1025` G/UID so users can switch between this and `heighliner` image without chown.
 # Ref: https://github.com/strangelove-ventures/heighliner
 RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -m -s /sbin/nologin pocket
 
-COPY --chown=pocket:pocket release_binaries/pocket_linux_$TARGETARCH /bin/pocketd
-COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
+# Copy the selected binaries from the selector stage
+COPY --from=binary-selector --chown=pocket:pocket /tmp/pocketd /bin/pocketd
+COPY --from=binary-selector --chown=pocket:pocket /tmp/cosmovisor /bin/cosmovisor
+
+# Optional runtime tuning
+# ENV GODEBUG="madvdontneed=1"
+# ENV GOGC="50"
 
 USER pocket
-
 ENTRYPOINT ["pocketd"]

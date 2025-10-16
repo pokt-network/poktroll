@@ -1,3 +1,4 @@
+# Load external extensions
 load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 load("ext://configmap", "configmap_create")
@@ -5,104 +6,26 @@ load("ext://secret", "secret_create_generic")
 load("ext://deployment", "deployment_create")
 load("ext://execute_in_pod", "execute_in_pod")
 
+# Load local files
+load("./tiltfiles/config.Tiltfile", "read_configs")
+load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
+load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
+load("./tiltfiles/static-nginx.Tiltfile", "provision_static_nginx")
+load("./tiltfiles/env.Tiltfile", "build_env", "build_cmd", "TARGET_GOOS", "TARGET_GOARCH", "IGNITE_CMD", "IGNITE_CGO_CFLAGS")
+
+
+# Avoid the header
+analytics_settings(enable=False)
+
 # A list of directories where changes trigger a hot-reload of the validator
-hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
-
-
-# merge_dicts updates the base dictionary with the updates dictionary.
-def merge_dicts(base, updates):
-    for k, v in updates.items():
-        if k in base and type(base[k]) == "dict" and type(v) == "dict":
-            # Assume nested dict and merge
-            for vk, vv in v.items():
-                base[k][vk] = vv
-        else:
-            # Replace or set the value
-            base[k] = v
+hot_reload_dirs = ["app", "cmd", "x", "pkg", "telemetry"]
 
 # TODO_IMPROVE: Non urgent requirement, but we need to find a way to ensure that the Tiltfile works (e.g. through config checks)
 # so that if we merge something that passes E2E tests but was not manually validated by the developer, the developer
 # environment is not broken for future engineers.
 
-# Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
-localnet_config_path = "localnet_config.yaml"
-localnet_config_defaults = {
-    "hot-reloading": True,
-    "validator": {
-        "cleanupBeforeEachStart": True,
-        "logs": {
-            "level": "info",
-            "format": "json",
-        },
-        "delve": {"enabled": False},
-    },
-    "observability": {
-        "enabled": True,
-        "grafana": {"defaultDashboardsEnabled": False},
-    },
-    "relayminers": {
-        "count": 1,
-        "delve": {"enabled": False},
-        "logs": {
-            "level": "debug",
-        },
-    },
-    "ollama": {
-        "enabled": False,
-        "model": "qwen:0.5b",
-    },
-    "rest": {
-        "enabled": True,
-    },
-    "path_gateways": {
-        "count": 1,
-    },
-
-    #############
-    # NOTE: git submodule usage was explicitly avoided for the repositories below
-    # to reduce environment complexity.
-    #############
-
-    # By default, we use the `helm_repo` function below to point to the remote repository
-    # but can update it to the locally cloned repo for testing & development
-    "helm_chart_local_repo": {
-        "enabled": False,
-        "path": os.path.join("..", "helm-charts")
-    },
-
-    # By default, we use the `helm_repo` function below to point to the remote repository
-    # but can update it to the locally cloned repo for testing & development
-    "grove_helm_chart_local_repo": {
-        "enabled": False,
-        "path": os.path.join("..", "grove-helm-charts")
-    },
-
-    # By default, we use a pre-built PATH image, but can update it to use a local
-    # repo instead.
-    "path_local_repo": {
-        "enabled": False,
-        "path": os.path.join("..", "path")
-    },
-
-    "indexer": {
-        "repo_path": os.path.join("..", "pocketdex"),
-        "enabled": False,
-        "clone_if_not_present": False,
-    },
-}
-
-# Initial empty config
-localnet_config = {}
-# Load the existing config file, if it exists, or use an empty dict as fallback
-localnet_config_file = read_yaml(localnet_config_path, default={})
-# Merge defaults into the localnet_config first
-merge_dicts(localnet_config, localnet_config_defaults)
-# Then merge file contents over defaults
-merge_dicts(localnet_config, localnet_config_file)
-# Check if there are differences or if the file doesn't exist
-if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_config_path)):
-    print("Updating " + localnet_config_path + " with defaults")
-    local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
+# Read configs
+localnet_config = read_configs()
 
 # Configure helm chart reference.
 # If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
@@ -219,36 +142,47 @@ secret_create_generic(
 # Import configuration files into Kubernetes ConfigMap
 configmap_create("pocketd-configs", from_file=listdir("localnet/pocketd/config/"), watch=True)
 
+# Common deps for hot reload targets
+PROTO_RESOURCE = "hot-reload: generate protobufs"
+
 if localnet_config["hot-reloading"]:
-    # Hot reload protobuf changes
     local_resource(
-        "hot-reload: generate protobufs",
+        PROTO_RESOURCE,
         "make proto_regen",
         deps=["proto"],
         labels=["hot-reloading"],
     )
-    # Hot reload the pocketd binary used by the k8s cluster
+
+    # TODO_IMPROVE: Enable CGO cross-compilation.
+    # Given the complexity of containerized environments, CGO, static/dynamic linking, darwin/linux, etc.
+    # it is not currently possible to enable CGO cross-compilation.
+
+    # Cross-compilation for container use - uses appropriate build tags and CGO settings.
+    # Automatically selects Decred (no CGO) for cross-compilation or Ethereum (CGO) for native builds.
     local_resource(
-        "hot-reload: pocketd",
-        "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
+        "hot-reload: pocketd (bin)",
+        "%s --output=./bin" % build_cmd(TARGET_GOOS, TARGET_GOARCH),
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
-        resource_deps=["hot-reload: generate protobufs"],
+        resource_deps=[PROTO_RESOURCE],
+        env=build_env(TARGET_GOOS, TARGET_GOARCH),
     )
-    # Hot reload the local pocketd binary used by the CLI
+
+    # Hot reload the local pocketd binary used by the CLI (host architecture).
+    # Always uses CGO + ethereum_secp256k1 for optimal performance on host.
     local_resource(
-        "hot-reload: pocketd - local cli",
-        "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
+        "hot-reload: pocketd (host)",
+        '%s %s -o $(go env GOPATH)/bin' % (IGNITE_CGO_CFLAGS, IGNITE_CMD),
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
-        resource_deps=["hot-reload: generate protobufs"],
+        resource_deps=[PROTO_RESOURCE],
     )
 
 # Build an image with a pocketd binary
 docker_build_with_restart(
     "pocketd",
     ".",
-    dockerfile_contents="""FROM golang:1.23.0
+    dockerfile_contents="""FROM golang:1.24.3
 RUN apt-get -q update && apt-get install -qyy curl jq less
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 COPY bin/pocketd /usr/local/bin/pocketd
@@ -256,7 +190,10 @@ WORKDIR /
 """,
     only=["./bin/pocketd"],
     entrypoint=["pocketd"],
-    live_update=[sync("bin/pocketd", "/usr/local/bin/pocketd")],
+    live_update=[
+        sync("bin/pocketd", "/usr/local/bin/pocketd"),
+        run("chmod +x /usr/local/bin/pocketd"),
+    ],
 )
 
 # Run data nodes & validators
@@ -294,6 +231,8 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
             "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
+            # Default queryCaching to false if not set in localnet_config
+            "--set=queryCaching=" + str(localnet_config["relayminers"].get("queryCaching", False)),
             "--set=image.repository=pocketd",
     ]
 
@@ -309,11 +248,18 @@ for x in range(localnet_config["relayminers"]["count"]):
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvil")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.json_rpc.backend_url=http://anvil:8547/")
     supplier_number = supplier_number + 1
 
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvilws")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
-    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=ws://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.websocket.backend_url=ws://anvil:8547/")
+    supplier_number = supplier_number + 1
+
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=static")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://nginx-chainid/")
     supplier_number = supplier_number + 1
 
     if localnet_config["rest"]["enabled"]:
@@ -339,7 +285,7 @@ for x in range(localnet_config["relayminers"]["count"]):
     k8s_resource(
         "relayminer" + str(actor_number),
         labels=["suppliers"],
-        resource_deps=["validator"],
+        resource_deps=["validator", "anvil"],
         links=[
             link(
                 "http://localhost:3003/d/relayminer/relayminer?orgId=1&var-relayminer=relayminer" + str(actor_number),
@@ -388,10 +334,9 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--set=guard.global.serviceName=path" + str(actor_number) + "-http", # Override the default service name
         "--set=guard.services[0].serviceId=anvil", # Ensure HTTPRoute resources are created for Anvil
         "--set=observability.enabled=false",
-
-        # TODO_IMPROVE(@okdas): Turn on guard when we are ready for it - e2e tests currently are not setup to use it.
-        # "--set=guard.enabled=true",
-        # "--set=guard.envoyGateway.enabled=true",
+        # TODO_TECHDEBT(@okdas): Remove the need for an override that uses a pre-released version of RLS.
+        # See 'guard-overrides.yaml' for more details and TODOs.
+        "--values=./localnet/kubernetes/guard-overrides.yaml",
     ]
 
     if localnet_config["path_local_repo"]["enabled"]:
@@ -432,13 +377,22 @@ for x in range(localnet_config["path_gateways"]["count"]):
         #     ),
         # ],
         # TODO_IMPROVE(@okdas): Add port forwards to grafana, pprof, like the other resources
+        # TODO_TECHDEBT(@okdas): Enable using port `3070` for consistency with path_localnet.
+        # Changing this port will make E2E start failing.
+        # See the `envoy proxy` k8s resource below for in progress work.
         port_forwards=[
                 # See PATH for the default port used by the gateway. As of PR #1026, it is :3069.
                 # https://github.com/buildwithgrove/path/blob/main/config/router.go
                 str(3068 + actor_number) + ":3069"
         ],
+        extra_pod_selectors=[
+            {"app.kubernetes.io/instance": "path" + str(actor_number)},
+            {"app.kubernetes.io/name": "path" + str(actor_number)},
+        ],
+        discovery_strategy="selectors-only", # Extra pod selectors didn't work without this
     )
 
+    # DO NOT DELETE, this is an example of how we'll turn on envoy proxy in the future
     # Envoy Proxy / Gateway. Endpoint that requires authorization header (unlike 3069 - accesses path directly)
     # k8s_resource(
     #     "path" + str(actor_number),
@@ -496,8 +450,17 @@ if localnet_config["rest"]["enabled"]:
     deployment_create("rest", image="davarski/go-rest-api-demo")
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
 
-### Pocketdex Shannon Indexer
-load("./tiltfiles/pocketdex.tilt", "check_and_load_pocketdex")
+provision_static_nginx()
+
+# Provision wrk2 load testing tool
+deployment_create(
+    "wrk2",
+    image="cylab/wrk2",
+    command=["sleep"],
+    args=["infinity"],
+)
+
+k8s_resource("wrk2", labels=["tools"])
 
 # Check if sibling pocketdex repo exists.
 # If it does, load the pocketdex.tilt file from the sibling repo.
@@ -506,3 +469,31 @@ load("./tiltfiles/pocketdex.tilt", "check_and_load_pocketdex")
 #   -- OR --
 #   2. Prints a message if true or false
 check_and_load_pocketdex(localnet_config["indexer"])
+
+
+### Pocketd Faucet
+if localnet_config["faucet"]["enabled"]:
+    helm_resource(
+        "pocketd-faucet",
+        chart_prefix + "pocketd-faucet",
+        flags=[
+            "--values=./localnet/kubernetes/values-pocketd-faucet.yaml",
+            "--set=image.repository=pocketd",
+        ],
+        image_deps=["pocketd"],
+        image_keys=[("image.repository", "image.tag")],
+        resource_deps=["validator"],
+    )
+
+    k8s_resource(
+        "pocketd-faucet",
+        labels=["faucet"],
+        resource_deps=["validator"],
+        port_forwards=[
+            "8080:8080",
+        ],
+    )
+
+
+### IBC relayer(s) & alt-chain node(s)
+check_and_load_ibc(chart_prefix, localnet_config["ibc"])

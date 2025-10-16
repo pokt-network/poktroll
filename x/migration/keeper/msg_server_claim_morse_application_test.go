@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	cosmosmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -12,7 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/migration/mocks"
@@ -31,13 +32,13 @@ var (
 )
 
 func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
-	shannonDestAddr := sample.AccAddress()
+	shannonDestAddr := sample.AccAddressBech32()
 	shannonDestAccAddr, err := sdk.AccAddressFromBech32(shannonDestAddr)
 	require.NoError(t, err)
 
 	expectedClaimedAtHeight := int64(10)
-	unstakedBalance := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
-	applicationStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 200)
+	unstakedBalance := sdk.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	applicationStake := sdk.NewInt64Coin(pocket.DenomuPOKT, 200)
 	expectedMintCoin := unstakedBalance.Add(applicationStake)
 	expectedClaimedUnstakedTokens := expectedMintCoin.Sub(applicationStake)
 	expectedMsgStakeApp := &apptypes.MsgStakeApplication{
@@ -72,6 +73,14 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		gomock.Eq(sdk.NewCoins(expectedMintCoin)),
 	).Return(nil).Times(1)
 
+	// Set the application min stake to zero so that applications can be
+	// claimed without being unstaked.
+	appParams := apptypes.DefaultParams()
+	appParams.MinStake = &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: cosmosmath.ZeroInt()}
+	appKeeper.EXPECT().GetParams(gomock.Any()).
+		Return(appParams).
+		AnyTimes()
+
 	// Simulate the application not existing.
 	appKeeper.EXPECT().GetApplication(
 		gomock.Any(),
@@ -99,7 +108,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 		UnstakedBalance:  unstakedBalance,
 		ApplicationStake: applicationStake,
-		SupplierStake:    sdk.NewInt64Coin(volatile.DenomuPOKT, 0),
+		SupplierStake:    sdk.NewInt64Coin(pocket.DenomuPOKT, 0),
 		// ShannonDestAddress: (intentionally omitted),
 		// ClaimedAtHeight:    (intentionally omitted),
 	}
@@ -125,25 +134,16 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		shannonDestAddr,
 		morsePrivKey,
 		&testAppServiceConfig,
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 	)
 	require.NoError(t, err)
 
-	msgClaimRes, err := srv.ClaimMorseApplication(ctx, msgClaim)
+	_, err = srv.ClaimMorseApplication(ctx, msgClaim)
 	require.NoError(t, err)
 
 	// Construct and assert the expected response.
 	sharedParams := sharedtypes.DefaultParams()
 	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
-	expectedRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-		MorseSrcAddress:         msgClaim.GetMorseSignerAddress(),
-		ClaimedApplicationStake: morseClaimableAccount.GetApplicationStake(),
-		ClaimedBalance: expectedClaimedUnstakedTokens.
-			Add(morseClaimableAccount.GetSupplierStake()),
-		SessionEndHeight: expectedSessionEndHeight,
-		Application:      &expectedApp,
-	}
-	require.Equal(t, expectedRes, msgClaimRes)
 
 	// Assert that the persisted MorseClaimableAccount is updated.
 	expectedMorseAccount := morseClaimableAccount
@@ -156,8 +156,8 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseApplicationClaimed{
 		MorseSrcAddress:         msgClaim.GetMorseSignerAddress(),
-		ClaimedBalance:          expectedClaimedUnstakedTokens,
-		ClaimedApplicationStake: applicationStake,
+		ClaimedBalance:          expectedClaimedUnstakedTokens.String(),
+		ClaimedApplicationStake: applicationStake.String(),
 		SessionEndHeight:        expectedSessionEndHeight,
 		Application:             &expectedApp,
 	}
@@ -167,8 +167,8 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 }
 
 func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
-	claimableUnstakedBalance := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
-	claimableApplicationStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 200)
+	claimableUnstakedBalance := sdk.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	claimableApplicationStake := sdk.NewInt64Coin(pocket.DenomuPOKT, 200)
 	expectedAppServiceConfig := &sharedtypes.ApplicationServiceConfig{ServiceId: "svc1"}
 
 	k, ctx := keepertest.MigrationKeeper(t)
@@ -179,7 +179,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 		MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 		UnstakedBalance:  claimableUnstakedBalance,
 		ApplicationStake: claimableApplicationStake,
-		SupplierStake:    sdk.NewInt64Coin(volatile.DenomuPOKT, 0),
+		SupplierStake:    sdk.NewInt64Coin(pocket.DenomuPOKT, 0),
 		// ShannonDestAddress: (intentionally omitted),
 		// ClaimedAtHeight:    (intentionally omitted),
 	}
@@ -201,10 +201,10 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 
 	// Claim the MorseClaimableAccount with a random Shannon address.
 	msgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 		morsePrivKey,
 		expectedAppServiceConfig,
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 	)
 	require.NoError(t, err)
 
@@ -216,7 +216,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 			msgClaim.GetShannonDestAddress(),
 			morsePrivKey,
 			&testAppServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -238,7 +238,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 			msgClaim.GetShannonDestAddress(),
 			nonExistentMorsePrivKey,
 			&testAppServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -276,7 +276,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 	t.Run("account already claimed (non-empty shannon_dest_address)", func(t *testing.T) {
 		// Set the Shannon destination address BUT NOT the claimed at height.
 		morseClaimableAccount.ClaimedAtHeight = 0
-		morseClaimableAccount.ShannonDestAddress = sample.AccAddress()
+		morseClaimableAccount.ShannonDestAddress = sample.AccAddressBech32()
 		k.SetMorseClaimableAccount(ctx, *morseClaimableAccount)
 
 		expectedErr := status.Error(

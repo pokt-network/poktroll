@@ -14,12 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/testcache"
 )
@@ -86,7 +85,7 @@ func (s *BaseIntegrationSuite) FundAddress(
 	addr cosmostypes.AccAddress,
 	amountUpokt int64,
 ) {
-	coinUpokt := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, amountUpokt)
+	coinUpokt := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, amountUpokt)
 	sendMsg := &banktypes.MsgSend{
 		FromAddress: s.GetApp().GetFaucetBech32(),
 		ToAddress:   addr.String(),
@@ -165,6 +164,11 @@ func (s *BaseIntegrationSuite) filterEvents(
 	}
 
 	return matchedEvents
+}
+
+// GetEvents returns all events from the event manager.
+func (s *BaseIntegrationSuite) GetEvents() cosmostypes.Events {
+	return s.GetApp().GetSdkCtx().EventManager().Events()
 }
 
 // newInitChainerCollectModuleNamesFn returns an InitChainerModuleFn that collects

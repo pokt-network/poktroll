@@ -44,7 +44,7 @@ sudo systemctl restart cosmovisor.service
 Using pocketd:
 
 ```bash
-pocketd query block --type=height --node http://localhost:26657
+pocketd query block --type=height --network=local
 ```
 
 Or, using curl:
@@ -121,3 +121,37 @@ For example, for Beta TestNet, we got the RPC endpoint from [here](../../2_explo
 ```bash
 curl -s https://shannon-testnet-grove-rpc.beta.poktroll.com/abci_info | jq '.result.response.version'
 ```
+
+## How do I check for applied upgrades?
+
+You can query on-chain upgrades using:
+
+```bash
+pocketd query upgrade applied v0.1.1
+```
+
+This will return the height of the upgrade `v0.1.1`.
+
+## How do I find information about protocol upgrades and releases?
+
+Protocol upgrades are tracked at [dev.poktroll.com/develop/upgrades/upgrade_list](https://dev.poktroll.com/develop/upgrades/upgrade_list#beta-testnet-protocol-upgrades).
+
+The source of truth for releases is the [GitHub releases page](https://github.com/pokt-network/poktroll/releases/tag/v0.1.11).
+
+## Should I use Grove's public RPC endpoint?
+
+While the [beta RPC endpoint](https://shannon-testnet-grove-rpc.beta.poktroll.com) is available, it's recommended to set up your own RPC endpoint.
+
+This is especially true if you're running a Supplier or Indexer, as there's no guarantee the public endpoints can handle all community traffic.
+
+## What should I know about early Beta TestNet blocks?
+
+- Early blocks on Beta TestNet may experience non-scalable validation times (e.g., 5 hours to validate) due to load tests
+- This issue will be addressed in a future state shift
+- Recommended workaround: Use a snapshot or wait for validation to complete
+
+## Where can I find deployment solutions?
+
+- [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet)
+- [Community deployment solutions](https://dev.poktroll.com/explore/community/community)
+- [Cosmovisor](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet#install--run-full-node-cosmovisor) for automated upgrades

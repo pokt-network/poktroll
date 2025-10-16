@@ -1,3 +1,5 @@
+//go:build test
+
 package migration
 
 import (
@@ -13,8 +15,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	events "github.com/pokt-network/poktroll/testutil/events"
+	"github.com/pokt-network/poktroll/app/pocket"
+	"github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	"github.com/pokt-network/poktroll/x/migration/recovery"
@@ -31,7 +33,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 	require.NoError(t, err)
 
 	// Valid shannon destination address to be reused in all tests
-	shannonDestAddr := sample.AccAddress()
+	shannonDestAddr := sample.AccAddressBech32()
 	invalidShannonDestAddr := "invalid_shannon_dest_address"
 
 	// Get the complete state of all Morse accounts for testing
@@ -171,12 +173,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 			claimedAccount := accountState.Accounts[claimedAccountIdx]
 			claimedAccountBalance := claimedAccount.TotalTokens()
 
-			expectedRecoveryRes := &migrationtypes.MsgRecoverMorseAccountResponse{
-				ShannonDestAddress: shannonDestAddr,
-				MorseSrcAddress:    test.morseSrcAddress,
-				RecoveredBalance:   claimedAccountBalance,
-				SessionEndHeight:   sessionEndHeight,
-			}
+			expectedRecoveryRes := &migrationtypes.MsgRecoverMorseAccountResponse{}
 			require.Equal(t, msgRecoveryRes, expectedRecoveryRes)
 
 			allEvents := s.GetApp().GetSdkCtx().EventManager().Events()
@@ -185,7 +182,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 
 			expectedEventMorseAccountRecovered := &migrationtypes.EventMorseAccountRecovered{
 				SessionEndHeight:   sessionEndHeight,
-				RecoveredBalance:   claimedAccountBalance,
+				RecoveredBalance:   claimedAccountBalance.String(),
 				ShannonDestAddress: shannonDestAddr,
 				MorseSrcAddress:    test.morseSrcAddress,
 			}
@@ -205,10 +202,10 @@ func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures,
 
 	// Configure valid accounts (regular accounts, applications, validators, module accounts).
 	validAccountsConfig := testmigration.ValidAccountsConfig{
-		NumAccounts:       3, // Standard EOA accounts
-		NumApplications:   3, // Application accounts with stake
-		NumValidators:     3, // Validator accounts with stake
-		NumModuleAccounts: 3, // System module accounts
+		NumAccountsValid:     3, // Standard EOA accounts
+		NumApplicationsValid: 3, // Application accounts with stake
+		NumValidatorsValid:   3, // Validator accounts with stake
+		NumModuleAccounts:    3, // System module accounts
 	}
 
 	// Configure accounts with invalid addresses to test error handling.
@@ -221,8 +218,8 @@ func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures,
 	// Configure orphaned actors (applications and validators without corresponding accounts).
 	// Used for testing recovery of unclaimed stakes.
 	orphanedActors := testmigration.OrphanedActorsConfig{
-		NumApplications: 3, // Orphaned application actors
-		NumValidators:   3, // Orphaned validator actors
+		NumApplicationsOrphaned: 3, // Orphaned application actors
+		NumValidatorsOrphaned:   3, // Orphaned validator actors
 	}
 
 	// Step 2: Initialize the recovery allowlist and address categorization structure
@@ -243,7 +240,7 @@ func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures,
 		morseAccount *migrationtypes.MorseAccount, // The account being processed
 	) *cosmostypes.Coin {
 		// All unstaked accounts get an initial balance of 1000 uPOKT
-		coin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
+		coin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
 
 		// Based on actor type, selectively add the first account of each type to the recovery allowlist
 		switch actorType {
@@ -280,8 +277,8 @@ func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures,
 		application *migrationtypes.MorseApplication, // The application account being processed
 	) (staked, unstaked *cosmostypes.Coin) {
 		// Applications have 2000 uPOKT staked and 1000 uPOKT unstaked balances
-		stakedCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 2000)
-		unstakedCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
+		stakedCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 2000)
+		unstakedCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
 
 		// If the application is the first one of its type (Application or OrphanedApplication),
 		// append it to the recovery allowlist.
@@ -302,8 +299,8 @@ func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures,
 		validator *migrationtypes.MorseValidator, // The validator account being processed
 	) (staked, unstaked *cosmostypes.Coin) {
 		// Validators have 3000 uPOKT staked and 1000 uPOKT unstaked balances
-		stakedCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 3000)
-		unstakedCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
+		stakedCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 3000)
+		unstakedCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
 
 		// If the validator is the first one of its type (Validator or OrphanedValidator),
 		// append it to the recovery allowlist.

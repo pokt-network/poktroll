@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/service/keeper"
@@ -20,8 +20,8 @@ func TestMsgServer_AddService(t *testing.T) {
 	k, ctx := keepertest.ServiceKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	oldServiceOwnerAddr := sample.AccAddress()
-	newServiceOwnerAddr := sample.AccAddress()
+	oldServiceOwnerAddr := sample.AccAddressBech32()
+	newServiceOwnerAddr := sample.AccAddressBech32()
 
 	// Pre-existing service
 	oldService := sharedtypes.Service{
@@ -40,15 +40,14 @@ func TestMsgServer_AddService(t *testing.T) {
 	}
 
 	// Mock adding a balance to the account
-	keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, volatile.DenomuPOKT, oneUPOKTGreaterThanFee)
+	keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee)
 
 	// Add the service to the store
-	addSvcRes, err := srv.AddService(ctx, &types.MsgAddService{
+	_, err := srv.AddService(ctx, &types.MsgAddService{
 		OwnerAddress: oldServiceOwnerAddr,
 		Service:      oldService,
 	})
 	require.NoError(t, err)
-	require.Equal(t, &oldService, addSvcRes.GetService())
 
 	// Validate the service was added
 	serviceFound, found := k.GetService(ctx, oldService.Id)
@@ -62,16 +61,6 @@ func TestMsgServer_AddService(t *testing.T) {
 		service     sharedtypes.Service
 		expectedErr error
 	}{
-		{
-			desc: "valid - service added successfully",
-			setup: func(t *testing.T) {
-				// Add 10000000001 upokt to the account
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, volatile.DenomuPOKT, oneUPOKTGreaterThanFee)
-			},
-			address:     newServiceOwnerAddr,
-			service:     newService,
-			expectedErr: nil,
-		},
 		{
 			desc:    "invalid - service owner address is empty",
 			setup:   func(t *testing.T) {},
@@ -155,7 +144,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - insufficient upokt balance",
 			setup: func(t *testing.T) {
 				// Add 999999999 upokt to the account (one less than AddServiceFee)
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, volatile.DenomuPOKT, oneUPOKTGreaterThanFee-2)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee-2)
 			},
 			address:     newServiceOwnerAddr,
 			service:     newService,
@@ -165,7 +154,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - account has exactly AddServiceFee",
 			setup: func(t *testing.T) {
 				// Add the exact fee in upokt to the account
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, volatile.DenomuPOKT, types.MinAddServiceFee.Amount.Uint64())
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, pocket.DenomuPOKT, types.MinAddServiceFee.Amount.Uint64())
 			},
 			address:     newServiceOwnerAddr,
 			service:     newService,
@@ -175,7 +164,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - sufficient balance of different denom",
 			setup: func(t *testing.T) {
 				// Adds 10000000001 wrong coins to the account
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, volatile.DenomuPOKT, oneUPOKTGreaterThanFee)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, pocket.DenomMACT, oneUPOKTGreaterThanFee)
 			},
 			address:     newServiceOwnerAddr,
 			service:     newService,
@@ -188,9 +177,35 @@ func TestMsgServer_AddService(t *testing.T) {
 			service:     oldService,
 			expectedErr: types.ErrServiceInvalidOwnerAddress,
 		},
-		// {
-		// 	desc: "// TODO(@red-0ne, #781): valid - update compute_units_pre_relay if the owner is correct",
-		// },
+		// This test is placed after those that check for errors, because of the stateful
+		// nature of the test setup.
+		// If placed first, those above will follow the update service logic and
+		// will not return an error.
+		{
+			desc: "valid - service added successfully",
+			setup: func(t *testing.T) {
+				// Add 10000000001 upokt to the account
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee)
+			},
+			address:     newServiceOwnerAddr,
+			service:     newService,
+			expectedErr: nil,
+		},
+		{
+			desc: "valid - update compute_units_per_relay if the owner is correct",
+			setup: func(t *testing.T) {
+				// Add 10000000001 upokt to the account
+				keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee)
+			},
+			address: oldServiceOwnerAddr,
+			service: sharedtypes.Service{
+				Id:                   oldService.Id,
+				Name:                 oldService.Name,
+				ComputeUnitsPerRelay: 20, // Update to a new value
+				OwnerAddress:         oldServiceOwnerAddr,
+			},
+			expectedErr: nil,
+		},
 	}
 
 	for _, test := range tests {

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -89,7 +89,7 @@ func (s *baseIntegrationSuiteTestSuite) TestSdkCtx() {
 func (s *baseIntegrationSuiteTestSuite) TestFundAddressAndGetBankQueryClient() {
 	s.NewApp(s.T())
 	fundAmount := int64(1000)
-	fundAddr, err := cosmostypes.AccAddressFromBech32(sample.AccAddress())
+	fundAddr, err := cosmostypes.AccAddressFromBech32(sample.AccAddressBech32())
 	require.NoError(s.T(), err)
 
 	// Assert that the balance is zero before funding.
@@ -177,13 +177,13 @@ func (s *baseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents 
 		faucetAddr, err := cosmostypes.AccAddressFromBech32(s.GetApp().GetFaucetBech32())
 		require.NoError(s.T(), err)
 
-		randomAddr, err := cosmostypes.AccAddressFromBech32(sample.AccAddress())
+		randomAddr, err := cosmostypes.AccAddressFromBech32(sample.AccAddressBech32())
 		require.NoError(s.T(), err)
 
 		sendMsg := banktypes.NewMsgSend(
 			faucetAddr,
 			randomAddr,
-			cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)),
+			cosmostypes.NewCoins(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)),
 		)
 		msgs = append(msgs, sendMsg)
 	}
@@ -199,7 +199,7 @@ func (s *baseIntegrationSuiteTestSuite) emitPocketGatewayUnbondingBeginEvents(ex
 	for i := 0; i < expectedNumEvents; i++ {
 		err := s.SdkCtx().EventManager().EmitTypedEvent(&gatewaytypes.EventGatewayUnbondingBegin{
 			Gateway: &gatewaytypes.Gateway{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 			},
 		})
 		require.NoError(s.T(), err)

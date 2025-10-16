@@ -1,6 +1,10 @@
 package config
 
-import "net/url"
+import (
+	"net/url"
+
+	"github.com/docker/go-units"
+)
 
 // HydrateServers populates the servers fields of the RelayMinerConfig.
 func (relayMinerConfig *RelayMinerConfig) HydrateServers(
@@ -34,8 +38,22 @@ func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 		}
 
 		serverConfig := &RelayMinerServerConfig{
-			XForwardedHostLookup: yamlSupplierConfig.XForwardedHostLookup,
-			SupplierConfigsMap:   make(map[string]*RelayMinerSupplierConfig),
+			XForwardedHostLookup:              yamlSupplierConfig.XForwardedHostLookup,
+			SupplierConfigsMap:                make(map[string]*RelayMinerSupplierConfig),
+			EnableEagerRelayRequestValidation: relayMinerConfig.EnableEagerRelayRequestValidation,
+		}
+
+		if yamlSupplierConfig.MaxBodySize == "" {
+			serverConfig.MaxBodySize = relayMinerConfig.DefaultMaxBodySize
+		} else {
+			size, sizeErr := units.RAMInBytes(yamlSupplierConfig.MaxBodySize)
+			if sizeErr != nil {
+				return ErrRelayMinerConfigInvalidMaxBodySize.Wrapf(
+					"invalid max body size %q",
+					yamlSupplierConfig.MaxBodySize,
+				)
+			}
+			serverConfig.MaxBodySize = size
 		}
 
 		// Populate the server fields that are relevant to each supported server type

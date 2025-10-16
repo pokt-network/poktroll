@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -330,13 +331,13 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 
 	logger.Debug().Msg("relay emitted to miner")
 
-	// Accumulate the relay reward.
-	// The asynchronous flow assumes that every inbound and outbound message is a
-	// payment-eligible relay.
+	// Check if the relay should be rate-limited.
 	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
-	if err := b.relayMeter.AccumulateRelayReward(b.ctx, relayRequest.Meta); err != nil {
+	isOverServicing := b.relayMeter.IsOverServicing(b.ctx, relayRequest.Meta)
+	shouldRateLimit := isOverServicing && !b.relayMeter.AllowOverServicing()
+	if shouldRateLimit {
 		b.serviceBackendConn.handleError(
-			ErrWebsocketsGatewayMessage.Wrapf("failed to accumulate relay reward: %v", err),
+			ErrWebsocketsGatewayMessage.Wrapf("offchain rate limit hit by relayer proxy"),
 		)
 		return
 	}
@@ -362,6 +363,20 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 	relayResponse := &types.RelayResponse{
 		Meta:    types.RelayResponseMetadata{SessionHeader: meta.SessionHeader},
 		Payload: msg.data,
+	}
+
+	chainVersion := b.blockClient.GetChainVersion()
+	if block.IsChainAfterAddPayloadHashInRelayResponse(chainVersion) {
+		// Compute hash of the response payload for proof verification.
+		// This hash will be stored in the RelayResponse and used during proof validation
+		// to verify the integrity of the response without requiring the full payload.
+		if err := relayResponse.UpdatePayloadHash(); err != nil {
+			logger.Error().Err(err).Msg("unable to update relay response payload hash")
+			b.gatewayConn.handleError(
+				ErrWebsocketsServiceBackendMessage.Wrapf("unable to update relay response payload hash: %s", err),
+			)
+			return
+		}
 	}
 
 	relayer.RelaysTotal.With(
@@ -426,13 +441,13 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 
 	logger.Debug().Msg("relay emitted to miner")
 
-	// Accumulate the relay reward.
-	// The asynchronous flow assumes that every inbound and outbound message is a
-	// payment-eligible relay.
+	// Check if the relay should be rate-limited.
 	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
-	if err := b.relayMeter.AccumulateRelayReward(b.ctx, b.latestRelayRequest.Meta); err != nil {
-		b.gatewayConn.handleError(
-			ErrWebsocketsServiceBackendMessage.Wrapf("failed to accumulate relay reward: %v", err),
+	isOverServicing := b.relayMeter.IsOverServicing(b.ctx, b.latestRelayRequest.Meta)
+	shouldRateLimit := isOverServicing && !b.relayMeter.AllowOverServicing()
+	if shouldRateLimit {
+		b.serviceBackendConn.handleError(
+			ErrWebsocketsGatewayMessage.Wrapf("offchain rate limit hit by relayer proxy"),
 		)
 		return
 	}

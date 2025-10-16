@@ -52,7 +52,8 @@ message MsgStakeGateway {
 }
 
 message MsgStakeGatewayResponse {
-  pocket.gateway.Gateway gateway = 1;
+  // pocket.gateway.Gateway gateway = 1;
+  reserved 1;
 }
 
 message MsgUnstakeGateway {
@@ -61,7 +62,8 @@ message MsgUnstakeGateway {
 }
 
 message MsgUnstakeGatewayResponse {
-  pocket.gateway.Gateway gateway = 1;
+  // pocket.gateway.Gateway gateway = 1;
+  reserved 1;
 }
 
 // MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
@@ -78,6 +80,7 @@ message MsgUpdateParam {
 }
 
 message MsgUpdateParamResponse {
-  Params params = 1;
+  // Params params = 1;
+  reserved 1;
 }
 

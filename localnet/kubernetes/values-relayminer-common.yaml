@@ -1,7 +1,13 @@
 chainId: "pocket"
 grpcInsecure: true
+queryCaching: false
 config:
-  smt_store_path: /root/.pocket/smt
+  # TODO(#1734): Ensure that LocalNet and E2E tests are configured to have:
+  # - One RM using SimpleMap in-memory store (":memory:")
+  # - One RM using Pebble in-memory store (":memory_pebble:")  
+  # - One RM using on-disk persisted store (/root/.pocket/smt)
+  # Currently using SimpleMap in-memory (recommended for production)
+  smt_store_path: ":memory:"
   metrics:
     enabled: true
     addr: :9090
