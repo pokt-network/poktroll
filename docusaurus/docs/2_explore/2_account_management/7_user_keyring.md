@@ -12,12 +12,16 @@ machines to **AVOID** providing a password each time.
 
 **Only follow these instructions if you know what you're doing.**
 
+This whole page can be skipped if the `backend` in your `.pocket/config/client.toml` is set to `test`.
+
+If it is set to `os` or other, these instructions avoid having to enter your password every time.
+
 :::
 
 ## Table of Contents <!-- omit in toc -->
 
 - [Prerequisites](#prerequisites)
-- [Background](#background)
+- [Background: `os` vs `test` backend](#background-os-vs-test-backend)
 - [Instructions](#instructions)
   - [1. Install `pass` (password store utility)](#1-install-pass-password-store-utility)
   - [2. Create a GPG Key](#2-create-a-gpg-key)
@@ -30,12 +34,17 @@ machines to **AVOID** providing a password each time.
 
 ## Prerequisites
 
-1. You are running any Shannon service on a `Debian` machine.
-2. You have installed the [pocketd CLI](1_pocketd_cli.md).
-3. You have created a `pocket` user following one of the guides in the docs.
-4. ⚠️ You are annoyed about having to enter your password every time ⚠️
+1. You have installed the [pocketd CLI](1_pocketd_cli.md).
+2. You have created a `pocket` user following one of the guides in the docs.
+3. You are running a Supplier on a `Debian` machine.
+4. 😮‍💨 You are annoyed about having to enter your password every time 😮‍💨
+5. ⚠️ You are not looking for a scalable "production ready" solution ⚠️
 
-## Background
+## Background: `os` vs `test` backend
+
+<details>
+
+<summary>*tl;dr: You can skip this page if you use the `test` backend*</summary>
 
 `pocketd` uses the Cosmos SDK keyring. For details on how it works, and understanding
 what a `backend` is, see [the official docs](https://docs.cosmos.network/v0.46/run-node/keyring.html).
@@ -43,13 +52,7 @@ what a `backend` is, see [the official docs](https://docs.cosmos.network/v0.46/r
 This document will focus on how to use `pocketd` with the `os` backend without
 a password on a Debian machine, and assume you have read the Cosmos documentation.
 
-:::note Only required for non `test` keyring backends
-
-This whole page can be skipped if the `backend` in your `.pocket/config/client.toml` is set to `test`.
-
-If it is set to `os` or other, these instructions avoid having to enter your password every time.
-
-:::
+</details>
 
 ## Instructions
 

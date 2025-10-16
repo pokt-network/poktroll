@@ -92,14 +92,14 @@ pocketd query bank balances $ADDR
 Know someone at [Grove](https://grove.city) on Beta TestNet? Ask them to run:
 
 ```bash
-pkd_beta_tx tx bank send faucet_beta $ADDR 6900000000042upokt
+pocketd tx --network=beta tx bank send faucet_beta $ADDR 6900000000042upokt
 ```
 
 :::
 
 ### Back up Keys 🔑
 
-:::warning 
+:::warning
 
 Before you proceed ensure you have securely backed up your keys!!! Losing validator keys will result in SLASHING!
 

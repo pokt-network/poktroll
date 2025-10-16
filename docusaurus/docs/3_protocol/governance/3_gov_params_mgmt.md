@@ -54,7 +54,7 @@ Before updating parameters, make sure you have the following:
 - A valid `pocket` home directory with the authority keys imported. For example:
 
 ```bash
-pocket keys import-hex pnf_beta <...>
+pocketd keys import-hex pnf_beta <...>
 ```
 
 ### Important Background: Updating All Params
@@ -140,7 +140,6 @@ A helper that bulk updates all parameters for a given environment using the `.js
 ```bash
 ./tools/scripts/params/update_all_params.sh <command> [options]
 ```
-
 
 ## Parameter Update Workflow
 
