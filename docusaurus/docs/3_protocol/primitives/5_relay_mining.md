@@ -1,9 +1,7 @@
 ---
 title: Relay Mining
-sidebar_position: 3
+sidebar_position: 5
 ---
-
-# Relay Mining <!-- omit in toc -->
 
 :::warning
 
@@ -13,6 +11,11 @@ the [relay mining paper](https://arxiv.org/abs/2305.10672) as a reference for wr
 :::
 
 - [Introduction](#introduction)
+- [Relay Sessions](#relay-sessions)
+  - [Sovereign Application](#sovereign-application)
+  - [Delegated Application](#delegated-application)
+- [Legend](#legend)
+  - [Sequence Diagram](#sequence-diagram)
 
 ## Introduction
 
@@ -23,7 +26,7 @@ Relay Mining is the only solution in Web3 to incentivize read-only requests
 and solve for the problem of high volume: `how can we scale to billions or trillions
 of relays per session`.
 
-This complements the design of [Probabilistic Proofs](./probabilistic_proofs.md)
+This complements the design of [Probabilistic Proofs](7_probabilistic_proofs_shannon.md)
 to solve for all scenarios.
 
 ## Relay Sessions
