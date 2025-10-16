@@ -166,7 +166,7 @@ func TestReconstructSMTFromMinedRelaysLog_BasicReplay(t *testing.T) {
 
 	// Reconstruct a trie from the WAL log to verify the replay logic.
 	replayKVStore := simplemap.NewSimpleMap()
-	reconstructedTrie, err := reconstructSMTFromMinedRelaysLog(walPath, replayKVStore, newTestLogger())
+	reconstructedTrie, err := ReconstructSMTFromMinedRelaysLog(walPath, replayKVStore, newTestLogger())
 	require.NoError(t, err)
 
 	// Compare roots
@@ -204,7 +204,7 @@ func TestMinedRelaysWAL_ConcurrentAppends(t *testing.T) {
 
 	// Reconstruct a trie from the WAL log to verify the replay logic.
 	replayKVStore := simplemap.NewSimpleMap()
-	reconstructedTrie, err := reconstructSMTFromMinedRelaysLog(walPath, replayKVStore, newTestLogger())
+	reconstructedTrie, err := ReconstructSMTFromMinedRelaysLog(walPath, replayKVStore, newTestLogger())
 	require.NoError(t, err)
 
 	// Count should equal number of appended relays

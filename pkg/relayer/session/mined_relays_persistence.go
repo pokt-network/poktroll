@@ -205,7 +205,7 @@ func (wal *minedRelaysWriteAheadLog) runPeriodicFlushLoop() {
 	}
 }
 
-// reconstructSMTFromMinedRelaysLog replays the mined relays write-ahead log from disk
+// ReconstructSMTFromMinedRelaysLog replays the mined relays write-ahead log from disk
 // to reconstruct the SMST representing the session state at crash/restart.
 //
 // Since the SMST is in-memory by design (for speed), replaying the WAL is how
@@ -217,7 +217,7 @@ func (wal *minedRelaysWriteAheadLog) runPeriodicFlushLoop() {
 // - For each relay, read fields in order and feed them into a fresh, in-memory SMST via Update
 // - Stop on clean EOF; any other read error is logged/returned
 // - The resulting trie represents the exact pre-crash state (deterministic replay)
-func reconstructSMTFromMinedRelaysLog(
+func ReconstructSMTFromMinedRelaysLog(
 	minedRelaysLogFilePath string,
 	treeStore kvstore.MapStore,
 	logger polylog.Logger,

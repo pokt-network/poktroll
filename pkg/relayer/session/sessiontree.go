@@ -154,7 +154,7 @@ func importSessionTree(
 	// Reconstruct the SMST from the persisted WAL
 	logger.Info().Msg("Reconstructing the session SMT from the persisted WAL")
 	treeStore := simplemap.NewSimpleMap()
-	trie, err := reconstructSMTFromMinedRelaysLog(storePath, treeStore, logger)
+	trie, err := ReconstructSMTFromMinedRelaysLog(storePath, treeStore, logger)
 	if err != nil {
 		return nil, err
 	}
