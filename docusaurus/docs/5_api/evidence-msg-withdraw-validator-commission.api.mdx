@@ -1,0 +1,75 @@
+---
+id: evidence-msg-withdraw-validator-commission
+title: "WithdrawValidatorCommission defines a method to withdraw the
+full commission to the validator address."
+description: "WithdrawValidatorCommission defines a method to withdraw the"
+sidebar_label: "WithdrawValidatorCommission defines a method to withdraw the
+full commission to the validator address."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9Vt9v2jAQ/lcsP1NYuzee1iGk9WEratn2AFXlxEfiEtuZ7UAR4n/fnU1ouragTVojgeLz/f6+s7PlQRSeD2f8qy/4XY/bGpwIyporyYd8vFISTA64ef9ThVI6sf4hKiVFsG5ktVbeoy7vcQe/GvDhs5UbPtzy3JoAJtCrqOtK5dHn4MGjMsp8XoIW9CbB507VtIvxMM6RMGy93/MslMAWTVWx/Gk32ChetYZzI6R04H0f8wubGjCAzR4gD7iuHVUaFHjK4mBzvzch4d7EB6dMwXf09N4tX+qncoAgBNfAjgS+tsanfC8+fHjZvEvmmzxHewzEWnXy9V/AuNkHYBIWykAscW7QZnCsI21ajJp7GhehbZMS3+sJ58QG1VQA3QXpYP+8hJFV5pCgwI4vIaGCCyS21crEXjBhJP5Yitefm7n5dj0dD9kUAUpCtlBQSaY86V3hel2qvGRK1xVo7G7COG98sJppCKWVc+NVgQEarJq1gLJswwpbWCw02P7pilv6UWmY8BvEbMm5EE0VXqGGYY2Bxxp7hBmAc9b9G0OOw5VbCR0thU4LcKi2sE6LkEQfL1IxQajK/w20z2N9Stsvu9HjOEaK8hfVpGsSW6RxPkTxquGrE36MzE/ESnjTRLcjn8bh1MizzsQnHxiytj6WK0KJq0Fuvba+LxUlmjWUV391nmH/zvsnxg29EIQ3T2fz+FEQYd848zpkU2ZhX/JoVAocqAIjNlkf6xrUdhnODIS1dcu4cBYrvhnfTtnl5IrmWwUKx79MpxMSsRFyzqIokU7kkXRGaFI65ZgSW4HzKZn9GzM2MA+BNql1WpiOy/fD71mnDuwK8BgGdYVto/waV9FegnbGT0CLTo+Bi7d1SVRBR9ttJjx8d9VuR2KE2+E1PMPXlXBKZATB7A4TKEFInMjhbMuXsIknZJz8symlS+pVE4fxz1Ng12stLvGOqcNR3bsOmyfXt1NUzvYfBjoeERxLoksO/4ec01cHWce5jrItr4QpmjioPPmk5zefcSCV
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"WithdrawValidatorCommission defines a method to withdraw the\nfull commission to the validator address."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.distribution.v1beta1.Msg/WithdrawValidatorCommission"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+WithdrawValidatorCommission defines a method to withdraw the
+full commission to the validator address.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgWithdrawValidatorCommission withdraws the full commission to the validator\naddress.","type":"object","properties":{"validator_address":{"type":"string"}}}}},"description":"MsgWithdrawValidatorCommission withdraws the full commission to the validator\naddress.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgWithdrawValidatorCommissionResponse defines the\nMsg/WithdrawValidatorCommission response type.","type":"object","properties":{"amount":{"type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

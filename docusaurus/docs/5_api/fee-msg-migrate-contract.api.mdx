@@ -1,0 +1,72 @@
+---
+id: fee-msg-migrate-contract
+title: "MigrateContract defines a rpc handler method for MsgMigrateContract."
+description: "MigrateContract defines a rpc handler method for MsgMigrateContract."
+sidebar_label: "MigrateContract defines a rpc handler method for MsgMigrateContract."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vk1v2zAM/SuCzmnSddgOOa0rOqyHYkGbnYKikGXGViNLmiQ3DYL895Gy3bhO1m5A50Mg0eTj1yOdLY+iCHy64Neh4Hcjbh14EZU1Vzmf8m8AKL+/VgUK4cKa6IWMfMQ9/KohxK823/Dplkt8AybSUTinlUwQk4dgDcmCLKESdMohSK8cvUV4xB5AsxyWykBgsQTWOmFx44AtrU/CoYF3cowBkQ4i2uwBUoDOUyZRQUjxlSBXoa7o3GqG6JUpUBOBK4Gh82wTgZBU1KTQ2TDVRBNKcfbpMytFKJldJpGBNVuLUDEyZdLm+zBlV6vdiEutsDj3Kj/mvnOXjJIiU3nnoI9SYYP+IXwyp/ozMBRYzioIQRTAomUZMCdCQCFe+n4Y6lepwNQgdBpUYcC/FnejwUSee3TAd/SM/l+fSVd5wFJGX8OOBMFZE5o+n52eHrLsnIVaSgxuWWvWqRPWX7N2SK4u98O8blr4QX6t8K0EeVe8pah1PJKJYbWBJ4dRYO/Ae4R6l4QG04J86WkpBC2QBD2uoejjGU+hRqF06GkL78UGdVWEKrzt60vzesgvKgNSSlH8Qs/6JqlELZmPGR5n4B/oJ6jsONMm10jiCmJp89Shw9ZSgRsFxHM2pFxELPE2UZkca1WUsZngMKatMH78MEaYyeH2pIbc7Dfo5ZOonIaXi2o/ab31sRembbC/dnP6XAZsgFnaQwpdlEIZVqhY1tlY2mri7CqeGIhr61fp4q3W7Obyds7OZ1c9sn+fz2ckYphIsBpavlFG6MWIipTeAqbAHsGHJpj2xIyNLEDaclTYSpge5Du17kUZnlkT4SlOnMaakPPaa3rXdHXBX+sqIg77il/PkmiBltttJgL89Hq3IzF22uN3coHHR+GVyKigizv0WILIqW+LLV/BhvrTjPDJnOIjdV2nqRqO827UWZzjbnPxVd27HnNnP27nqJy1X+4qzTr3Yk3LFX+nnNO/ALJOA5pkW66FKeo0cbzBpOc3umzmYA==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"MigrateContract defines a rpc handler method for MsgMigrateContract."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.lightclients.wasm.v1.Msg/MigrateContract"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+MigrateContract defines a rpc handler method for MsgMigrateContract.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgMigrateContract defines the request type for the MigrateContract rpc.","type":"object","properties":{"checksum":{"type":"string","format":"byte","title":"checksum is the sha256 hash of the new wasm byte code for the contract"},"client_id":{"type":"string","title":"the client id of the contract"},"msg":{"type":"string","format":"byte","title":"the json encoded message to be passed to the contract on migration"},"signer":{"type":"string","title":"signer address"}}}}},"description":"MsgMigrateContract defines the request type for the MigrateContract rpc.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgMigrateContractResponse defines the response type for the MigrateContract rpc"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: fee-msg-prune-acknowledgements
+title: "PruneAcknowledgements defines a rpc handler method for MsgPruneAcknowledgements."
+description: "PruneAcknowledgements defines a rpc handler method for MsgPruneAcknowledgements."
+sidebar_label: "PruneAcknowledgements defines a rpc handler method for MsgPruneAcknowledgements."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VktvEzEQ/iuWTyClSSmIQ06EqogegKiEU1RF3t3ZXTde29izTaMo/52Z3byaRwuokENkz8ufZ74Z70KiKqLsj+WXWMjbjnQegkLt7HUm+/ITAMknw1BbGKRT62YGsgIqsBhlRwb4WUPEjy6by/5Cps4iaXipvDc6bQL17qKzLItpCZXiVQYxDdqzlg6hE44eIDLItYUosASxOkrg3IPIXWiEx92CT7sEji0pukvuIEXa+8B3Qw2xwVoqa8FMdMa7lW3EoG0hlx1pdKXxUNORdHSlSCNrbfH9O7b1LuCpOFEXFsIRFf86/ycR7KEDEEAMNSxZEL2zsU3Exfn5YUkGItZpCjHmtRFrc471wiW+WYXeu+FK+FK1RofKTDwHyCaR82fTVvMY5de6SiAIl4uNkWi9xCttU1OTuUgclsKrdAoo1D4cZbO1LkAKFDmKWQkBBGWLMAWtEF7vIH6KVy3sQAnVloz+FLmBnBDmSHK+BEX4rXM3zMxVbfAINaygjDx4SjTlBUKg+vwVQ57pT5fBjhWBg4IaaQcwid5eyAYqKm3ijrUKQc3JViNU8fmzPrTqwx7tSJVlmvErM9x1aVJUUX+o4qjj0fZ+urcVc1nQVMoMVawCLF3WkP9U73CyWzOK7V1s7qWwpF1PJ2k3dQG6qzHXvX/TpTi9U4Ocq3OzHeZXD6ryBvbn5JY1q/G4FWxm4Fa0Hn0701Db3B0y6rIkgotCY1knhLrqeTfFMws4c2HabIIzRtxcfR+JwfCaSayR0cnPo9GQReKS2OdI1NJPpQ39rKrY6LnADOweQmzBrFbCOqRewna+R6yU3Qn5Dyr5KCUbQiE8YM8byg8DqYNhXVvksTxRZAp2vMz0updME3JdLBIV4UcwyyWLqfCBXvAxLe8VzaiEszu+pSNLUBkXcbyQU5hzsdr2PhsxQDY3ddNx+62+7Kw9BvSQeHzS9naHycNv30dknKy+KapmDsigZvyS0X9fSv5KYe+meRvZQhpli7rpRtnG5N8vbbgoew==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PruneAcknowledgements defines a rpc handler method for MsgPruneAcknowledgements."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.core.channel.v1.Msg/PruneAcknowledgements"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+PruneAcknowledgements defines a rpc handler method for MsgPruneAcknowledgements.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgPruneAcknowledgements defines the request type for the PruneAcknowledgements rpc.","type":"object","properties":{"channel_id":{"type":"string"},"limit":{"type":"string","format":"uint64"},"port_id":{"type":"string"},"signer":{"type":"string"}}}}},"description":"MsgPruneAcknowledgements defines the request type for the PruneAcknowledgements rpc.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgPruneAcknowledgementsResponse defines the response type for the PruneAcknowledgements rpc.","type":"object","properties":{"total_pruned_sequences":{"description":"Number of sequences pruned (includes both packet acknowledgements and packet receipts where appropriate).","type":"string","format":"uint64"},"total_remaining_sequences":{"description":"Number of sequences left after pruning.","type":"string","format":"uint64"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: evidence-abci-info
+title: "EvidenceABCI_Info"
+description: "EvidenceABCI_Info"
+sidebar_label: "EvidenceABCI_Info"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VcFu2zAM/RVD5zQpumGHnJYWBZbTgjY7BUVB24ytRpY0iW4bBPn3kXLSpEnarsDmQyJTfE/kIymvFEEV1XCmRpdXY3XXU85jANLOjks1VNePukRboOzej+3cqZ4K+LvFSJeuXKrhShXOElqSJXhvdJHQg4forNhiUWMDsqKlR6Z0+QMWxDw+yFmkMSZsXuj7RwxRd7iNd6SgbaXWPZUbVyze9uipuQsNcByq1Za+fRWMv/CfRLwdgTxd8joga0OhxWSI3tnYJXFxfi5/JcYiaE+JSI2y2BYFxjhvTbZ17/Px/0o5/9kkSyA4qbGBSPed0MJaQ6zfpcyXhAe4GnVV07uovxRbAsU5tIZOaGqz1uKzZz2wzDAEF/6HtIUrcc+LA8cKw0EuXy6SpkigTdzzhhBgyb6asIkfn/W92z6WoqegLLXED2ayD0kSNdxYUJ0Evoi4r9ypiW6Qaifj7l1MgQFx3dWAJSwxNJxjX8azL5jBBiNS3uxugutnaLzB40ne1f9ggHcbr6Z0Zz4ycS5aDj/qhqsatM0qTXWb9wvXDLxb0JlFenJhkV6CMya7ub6dZqPJmLlJkwSrfkynEzFlV9w5jk1d60CRWsdCI04fEb9q5e0qs46yiJSuIZa1AbtHua1CJpJmG0lfJfVSTsJnGnjDGQpVG4zsdRWaqVMVYqZEyJd5LfVkt9Uqh4i/glmvxcxVC3x3z3j5CEFDLlrM7pi+RmA+flmpBS5F2m6QzqYSjLibNvX24VCte1vEiO86T+/63u213OTn7VSaY/M1adLEqQBP8qXh36FS8lESdBqTZFvxjWOrNvW96jjl+QP0v1tV
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"EvidenceABCI_Info"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/tendermint.abci.ABCI/Info"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+EvidenceABCI_Info
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"abci_version":{"type":"string"},"block_version":{"type":"string","format":"uint64"},"p2p_version":{"type":"string","format":"uint64"},"version":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"app_version":{"type":"string","format":"uint64"},"data":{"type":"string"},"last_block_app_hash":{"type":"string","format":"byte"},"last_block_height":{"type":"string","format":"int64"},"version":{"type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

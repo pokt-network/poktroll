@@ -1,0 +1,72 @@
+---
+id: fee-query-upgrade-error
+title: "UpgradeError returns the error receipt if the upgrade handshake failed."
+description: "UpgradeError returns the error receipt if the upgrade handshake failed."
+sidebar_label: "UpgradeError returns the error receipt if the upgrade handshake failed."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9Vt9v2zYQ/lcIPa2Aa7fdsAc/LQiyNS9FlqXYQxwENHWWWEukyh9OPMP/e7+jJFuKvRbFigUITJHH+/F9d8fbZUEWPpvfZ39GctvsYZLZhpwM2prrPJtnvxOlk8ePTeFkTlfOWZdNskY6WVMgx5d3mcEHpFUpjaHqUecQ0QY7jQwl1o4+R+0IGoOLNMm8KqmW2XyXhW3DN31w2hTZfj85KGusC/9F0wML+8YaT57P3715wz85eeV0wxFC+kL4qBR5v4qV6MWnsKOsCWQC35BNU2mVMJl98nxtd2rWLj+RCrgYdKh4I8E2RO220y60F6GkgzXBGsTKurSbrs1OLovbm0sBwEvLgDSOWQq6DYxY4NGRIoR1GmJnPJ2KnFbakBeytfpUalUKMko2PlYyUOtabC0LD7BxSEKaXCQzQnpvlYZkLp50KFl8YXp50J/7Uq4RjtRVdDQVf5dkYK3LDHEqCTTkElRD4dJCISS1wZ4jQc8NMMVBsEIb5agGI/yRjBp6DgcPmbKXTIxRqkGyLOg0U46UcehtlJ0w4AoIBFIJFiUj6LKrPrpsj/zrHDinF5zWEoxkUZvw6y8vLL2E5KBpjypg5+3qq0qX20ADlTW5dUUi3WMf6Vn70OrrtD2WpIvyTIZ8YJVVtU1B3tJGe+y/T8JMzwF6MCGDIImUaVVx/sDmmqiBcwvT3/0Q6yW1+exRzFPx3j7RBjve1gics974CJKrwjpkUe1FLbdAxFquB7swKA4KSUFnSRuhQKbkX2tyza57QdNiilxyOdfP2k+ED0jN1zVcRJovzNKRXDN9DHaB7L42rNQzl2gLk1HEndcvIvacbjIsTOcINwZtIleKFUsStTU64F8lBNNN6dkkAkbm+zOgLuBK8CLFeCZve0aPDEi2Ys9ayWVoa3lh2E3EZdgrZWu0aCas4HIKqGAUF6LrlPbtpomuAeaeMyY2UMY6UZsLs3JE/yToKg0k/ElBuS6mQVp9XwH0OYQE0IkWUWjGrFfMiXswYhI532+kV5BIbKs4xcOwqugclgCUjXV/ExTHSsbqTJ1cGBHNoSm1neKHvBljYJXNh+0EUVFBbhgptn5+lyVXuT/5gbR0Tm75zQxU+2/b+q09PvMOZzJvq0xWN8MrCaJ/baYDEIfIjZ4yRyE60xZGD2L7OunV6PkZPyeUM8bdGzjPilQ7aSqYZzO9VDNlHc26rjrbvO2XfrY7ziX7GY8V2Oqmi/2sM/ZI3WSjzcqeUn/JrxLyM5RxOUVxQc06vDYUntB30oezVSVur/66Exc318Mqvru74S1xiTSxFXV5IlXKk27W+ZZi5hr907fOdCuBkhbcQrjBWx9qaQYqfxzkIyQOhAc8v7OmAixsP7qKz1o67jPQkeJ0KdwWfaw2b4+f3FDmo4ExMcO7x8lvTA4muhJxsoHdbokG/tFV+z1vf07T6/wey410Wi4Zesylufa8Rr6sZOXpJJZDxWY/3XaD5StxbMnjGPsKM1xfG1lF/sJyTdvx7MtD7P9ouYdr/wDRkoCXS8G3pxcYb5swuHfSmnhSPpTVH1d3KOIvSeJKdA==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UpgradeError returns the error receipt if the upgrade handshake failed."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/channel/v1/channels/{channel_id}/ports/{port_id}/upgrade_error"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UpgradeError returns the error receipt if the upgrade handshake failed.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"channel_id","in":"path","required":true,"schema":{"type":"string"}},{"name":"port_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryUpgradeErrorResponse is the response type for the Query/QueryUpgradeError RPC method","properties":{"error_receipt":{"description":"ErrorReceipt defines a type which encapsulates the upgrade sequence and error associated with the\nupgrade handshake failure. When a channel upgrade handshake is aborted both chains are expected to increment to the\nnext sequence.","type":"object","properties":{"message":{"type":"string","title":"the error message detailing the cause of failure"},"sequence":{"type":"string","format":"uint64","title":"the channel upgrade sequence"}}},"proof":{"type":"string","format":"byte","title":"merkle proof of existence"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

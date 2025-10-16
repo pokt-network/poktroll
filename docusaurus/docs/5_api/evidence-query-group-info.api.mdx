@@ -1,0 +1,72 @@
+---
+id: evidence-query-group-info
+title: "GroupInfo queries group info based on group id."
+description: "GroupInfo queries group info based on group id."
+sidebar_label: "GroupInfo queries group info based on group id."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVktvGzcQ/ivE9pAWkLV2GrSATjVSI/XNdV30YBvGaDnSMt4l1+RQsiDov3eG+9AqEuIkPljcec83D3KbESxDNrvP/o7oN9njJHMNeiDj7LXOZtnVymi0BSb20yfvYnNtFy6bZA14qJHQi/o20xgKbxpRZLWlCD4ZrUxQVKKK1rxEVNd/KrdIhCQwZTOWjYwUmGLEQANU8tnjSzQeORLyESdZKEqsIZttM9o0ohfIG7tkyYXzNRBTorH024dst3sU9dA4GzCIxvvzc/k5DPRShVgUGMIiVqoXl7gKZwktiQY0TWWKhEn+OYjadhTIob2E0wDTbWewhyFx84E9OFSSjXjtsnLzz1iQgOylHGTaDIwgf+RSqL2Dvekvcf66ZdC1scemE7m3DUXhoiUFWnPc4cDDu6CS7MhTV5kdQ+kRCPUT0LGHPU/cgCJTYyCoGxUaLMxiwzbUukTLvORJrSGoTuvY26gPNEuciTkJgRvrGLdv6M43u2yS8QwA+zrZlGSoEkIvk3K0GwV+bsiD36iBQ04BEXBbaTnvo3iwcvZYuLpGq5ndBtHHOrbNinNkfrRalehxpkqiJszyXLsiTAsXahemFmnt/HO+Op9++D2vnY4Vhjx5+yn9P7uQxMgRVE9rNMvyROHG3B7HEOsDBDm2es4L4p1q5cLJ9lixhGmn6i2494h2SuI5hg4yD8WzKkqwS0xQwNCbXRyl4bbiRVJQ9DxzJdCDXbtYaTXnhnpW+GoCScPJcLgAVZiq/7j3kL2lunV21D7t1p2ePFg3FkmF1lIsJnus3UpiLJk6CtxY7mOuKXcyq2q1NlX1YAvghPYRqDlIfqzhKs2GO/1u/NhKizSnuwBT8dpr/yZcrgXE6kTlLi03PL7yeIlj9D6F+AOb7+srpXAaR1JcQFyiHxeVSb++z1KoxLGHkTR4Dxu5Cwjr8LavP1r2lw0kMHAVjMQP1c1YJUHEqybA8qTiAOIYuf125XXh2VAHftrAQ506WtpOPJylk3t0iSlqudVmWd4OYjty+eoi724/NpNv+5twl67CUwv/Ywm8lZeGyjjnma7zxj3TWT/V8uFdVanbq3/u1OXN9Whq/rq7uxGS+sjFdkxqqw1FqnZ/Fb9h+GBmh0G0jlTgJJnJjUs12JHJ7wfuIOOhPISvlDcVpy9+oq+E14J6n7Wgsm6yw7+ri/4jQcsfs+GZwY+DksMUve1WIvjXV7udkF/SQ2h2z8cVeANzQU4eOCbImYu54LHEoxCHscl+vu1eLb+ob38HncywnwYrs7CCKsoXH59xM34z7R5ZtkTg/ZBCbdmX/K5paKR4NM3yRBo69NPVHff9/83lilM=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GroupInfo queries group info based on group id."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/group/v1/group_info/{group_id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GroupInfo queries group info based on group id.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"group_id is the unique ID of the group.","name":"group_id","in":"path","required":true,"schema":{"type":"string","format":"uint64"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryGroupInfoResponse is the Query/GroupInfo response type.","type":"object","properties":{"info":{"description":"info is the GroupInfo of the group.","type":"object","properties":{"admin":{"description":"admin is the account address of the group's admin.","type":"string"},"created_at":{"description":"created_at is a timestamp specifying when a group was created.","type":"string","format":"date-time"},"id":{"description":"id is the unique ID of the group.","type":"string","format":"uint64"},"metadata":{"type":"string","title":"metadata is any arbitrary metadata to attached to the group.\nthe recommended format of the metadata is to be found here: https://docs.cosmos.network/v0.47/modules/group#group-1"},"total_weight":{"description":"total_weight is the sum of the group members' weights.","type":"string"},"version":{"type":"string","format":"uint64","title":"version is used to track changes to a group's membership structure that\nwould break existing proposals. Whenever any members weight is changed,\nor any member is added or removed this version is incremented and will\ncause proposals based on older versions of this group to fail"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

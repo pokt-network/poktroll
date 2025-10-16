@@ -1,0 +1,64 @@
+---
+id: fee-query-connection-params
+title: "ConnectionParams queries all parameters of the ibc connection submodule."
+description: "ConnectionParams queries all parameters of the ibc connection submodule."
+sidebar_label: "ConnectionParams queries all parameters of the ibc connection submodule."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVUtv2zAM/iuCThuQxn1sO/TUoui23rIuO7VFwMi0rUYPV48sQZD/Pkp2Uy/pVmBYLrEofuTHj6S94QFqz8/v+LeIbs0fRty26CBIa25Kfs4/I+ab2ZU1BkWyT8CB9nzEHfrWGo+E3/DT4+P0V6IXTrbJj9CXzEch0PsqKvbsPiaosCagCQkBbaukyBmLR59gG+5FgxoO42Uq+0xu+7hMehYa3OVhYd0iq6zL1gwt9rHsdnLFNIbGlolWQlAaO38kJzq3LqkRZFdi2xV+wKqzsxIrabDjkE0Y0Hlmq2zRtowK306iYTXDVUtXWM6C1Dijy9lcWbE4zEzOUkfNngEsARgBWAawd9IwA8Z6JMFL/37Eok9elqEhYQT2fiUqWI/ZtCEJd9SZb2xUJelZKYqeqrg3ClyNPjDQNpqQi0spQwPZgYkGKKeWdRMICNRPmKs1C7DAlJZqLaPA7GpwFfr80ZSUz1inQbF+AE19bxJrmWr1Y0azBFVKYKXIvT47+rjKgf5Q/UBrHxzFo3OVUtDY8ShN+PSBb/vfiIStIKrwygwbordLgc7RQP3TKP+978KWOPAielijG1Im09kpz1QDSOUH3uAcrMlXBtT+7VwX3fVmT54kA5Sd4KAmQ0iWSNMiQ/0qcCfiULmDZXuiHaR4DJR6ZUPkXDCxg9CbY/6yM92KUswaczkQGjoUBCmEdVi84IrlSdE+v6EkTflhR6/yjNYyNHE+FlYXrV2EI4Php3WLfHCWGN5ef5+yy8lNGiMZVKr363Q6SSZGpXlLpq79IHL7DRWUKL4ROLVwSXV3ZPonGv7APBVHl631QYMZhPyPSv4mxa6RgXaxaBXpkghEp7r3XVL5jlO4XKjr6+3j0mF5kpuR1aZPR0PEE2CzmYPHH05tt8n8lD8t53f0uAQn6YWA6USJGgRafDps+ALXadnoa9GmDi9BxTzZ+yu1fRhMw5frKQ3fL29kZr8=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ConnectionParams queries all parameters of the ibc connection submodule."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/connection/v1/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ConnectionParams queries all parameters of the ibc connection submodule.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryConnectionParamsResponse is the response type for the Query/ConnectionParams RPC method.","type":"object","properties":{"params":{"description":"params defines the parameters of the module.","type":"object","properties":{"max_expected_time_per_block":{"description":"maximum expected time per block (in nanoseconds), used to enforce block delay. This parameter should reflect the\nlargest amount of time that the chain might reasonably take to produce the next block under normal operating\nconditions. A safe choice is 3-5x the expected time per block.","type":"string","format":"uint64"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

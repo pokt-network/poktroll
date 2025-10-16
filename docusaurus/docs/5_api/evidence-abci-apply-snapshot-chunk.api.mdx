@@ -1,0 +1,72 @@
+---
+id: evidence-abci-apply-snapshot-chunk
+title: "EvidenceABCI_ApplySnapshotChunk"
+description: "EvidenceABCI_ApplySnapshotChunk"
+sidebar_label: "EvidenceABCI_ApplySnapshotChunk"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vt9v2jAQ/lcsP20SLVU37YGnUYS0blKLgGqaWFU5yUFcEjuzL20R4n/fnRNCKGxUk5aHxDnffXf+7keylqgWXvZmsn81uJb3HWkLcAq1NdeJ7Mnhk07AxMC7D/2iyFYTowqfWhykpVnKjnTwqwSPVzZZyd5axtYgGOSlInUdB6zuo7eGZT5OIVe8wlUB5MBGjxAj4aDGjAXsRIMXSvjak4hrV4Xj4JB2g6cg3SF5dNosSG1uXa4oAhmtEOSmI7VJ4KWlqSnEBbi2Kok+fWRdD6TsDmE3fFWn1Q6IGnQlBIEvrPFVSJcXF/xIwMdOF3xwPpDwZRyD9/MyE1v1c3L+z1Tt8+BgDhinD4EP39JXzqlVi9mQMS/QitpEKJPQmp2znkbI/ZtoCufmYB4quk56FbVe5Zwtg+9ImSN+G8YDu2WGx5K8hT8Tdzffbm6/3/TEnVka+2xEZdQRKrKO/GTZrpJoC21V3j+NOBP9wWA4mvZEHWSTp2wlFK0LhKTSu7odk1r/NOJ4OB3/6IkxoFtVhSvexTaPtAHxrDF9xT1T8X5n+DC56Y8mX26nW4TGz1tBvg4H0z2UQDam2jdYHcHIFlNOXIeqda4CybJmkmRgypyHwk5SMcULpoKeId7ts/EYBHsxyPtN3TuNo4MOMaI08FJQpJAIcM66/9EosU3gZHl/uJQhVFQ6O1bWr4v1D74+V9vHalolieb4VTZqmwSKcio/tThq2JDYZu70eM4BU8uTvLA+hKkwpbcuhobM6cTnKor1OSN0jyIwzePdkB++qLzIoDWBd01ZD9qL3Rht4ufNuT3M/SBV2ogFFXUZnVONdwu7xDMD+GzdMrw4S/02Hk6moj+6bnX+l+l0xCIxoDqxJKoKRcWhUIzKWekUMAf2RH1QBVOvhKGG84C8ybTlyrQgt5wLpkwEysSWM7Elbe+QTTIRXrBbZHRihi5dxntVRmbyWEa43w5zQl/plLNJRut1pDzcuWyzYTFlydFneEbLJ+W0ipip2T05S0GFhMzWcgkrJr5qqrMph8bqWRnq/HWDbTpbi36YiH/VvW8V3Oh2wuMgqn8M8tB90qln/mmge09K/ttg6+o7xrK1zJRZlKEHZIXJ129uRflr
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"EvidenceABCI_ApplySnapshotChunk"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/tendermint.abci.ABCI/ApplySnapshotChunk"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+EvidenceABCI_ApplySnapshotChunk
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"Applies a snapshot chunk","properties":{"chunk":{"type":"string","format":"byte"},"index":{"type":"integer","format":"int64"},"sender":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"refetch_chunks":{"type":"array","title":"Chunks to refetch and reapply","items":{"type":"integer","format":"int64"}},"reject_senders":{"type":"array","title":"Chunk senders to reject and ban","items":{"type":"string"}},"result":{"type":"string","title":"- UNKNOWN: Unknown result, abort all snapshot restoration\n - ACCEPT: Chunk successfully accepted\n - ABORT: Abort all snapshot restoration\n - RETRY: Retry chunk (combine with refetch and reject)\n - RETRY_SNAPSHOT: Retry snapshot (combine with refetch and reject)\n - REJECT_SNAPSHOT: Reject this snapshot, try others","default":"UNKNOWN","enum":["UNKNOWN","ACCEPT","ABORT","RETRY","RETRY_SNAPSHOT","REJECT_SNAPSHOT"]}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: fee-msg-connection-open-init
+title: "ConnectionOpenInit defines a rpc handler method for MsgConnectionOpenInit."
+description: "ConnectionOpenInit defines a rpc handler method for MsgConnectionOpenInit."
+sidebar_label: "ConnectionOpenInit defines a rpc handler method for MsgConnectionOpenInit."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFV99v2zYQ/lcIPq2Aa3fdsIc8LQlaLBiKGqm3FzsIKOosX02RGkkl8Qz/77ujLFuylaYdCjQPiXS8n999d1S2MqoiyIu5/BAKeTeSrgKvIjp7k8sL+R6A5PfXzlrQLP1Ygb2xGOVIevinhhCvXL6RF1upnY1gIz+qqjKok5fJ5+Asy4JeQan4KYegPVZ8ShHI/bl3kcMSLQQRVyDKUIhAnkW2EcoKpbWr6c1Zcb1SaMWliG5hkcxQGfwXhBL64FE8YlztFa/GlHXcVEBhXfaZFOi98lxxRAipCIMU6R5zftmrhujRFnI3kikw+Er5uDmv5Lpz2iugayZ0SkWF4DSqCHmTYC9lsPk3ZtpPBHM6wSW24ZMm4/XVyRT4AHZhjzl18unC0R5/VRq9Ar8lnYVN+YgX0qk8Yf50nod2ZYmxZAxK8GsDotEUbvlMCkPoR4yGBR+Si2njAcPBpaJMG7+Ud3TJ8xo244WdNcVTorXmokgqlt6VSWXKdorw2OtTycaIjEhc0SzkP/H5+E/Y8N/Rwp5KU8BRCjQev3p1xhI6uD/i0odsJJfOl4omVmabCHLHPyMCzygyAo9uYAo6RjXa+NuvjHzAwoIfHJkH8AGbDdDvyt/NQW9Q9spkKtK6AFGHBk0LhYvMiaR3c3XNukirRSDx9IReK8IzrNQaXp6iJahY++Z5r6m8V5tOww2GyFRpVSlSSd3GjLqe+MnRQwWaqZ6LA+s9+cAIZRjAhYDp6A2A3AavLdKSbYHpOt/tDv36keuULwH0QEwhesOOBaEisjeQvn3z5rzzlyLUWkMIy9qIVp19fc8b5Hbvt1c6aU4G0GlzICJRG85J0+K8VLWJA/VYUVt4IgbwdIP3zv+/sl5Y+C6HjhYNHxSJZIeBJNEvb2VKNSo0Q6Q+JeQzsX5vjod4q/IcOX9lpl2TBFFJTVXFoOEgWb/AVCV8pdMkG/C0ZOPK5YIqFYPdZpgbHfJauZAqoh1JbxPM9Fg7D+PO9fHw83iYC2THfbk9ftq8e1JlZeDkyj1O6uk3wTNKvZvyeHDczd1N3cW7v46Plu3OPUo6q/a41ubt+V1/5fRWkV26gc+ZNOQFzXudEXblpHLr+NpCfHR+nV68o6vq9t2nmbic3nSW1h+z2ZRFgvANjkTNDCidZsCqkpVecty7PNonYV2k5RXTdU9tLpXtuPyudOqBceBzhKc4qQwhwynU3vBZw7S5fJ5p5G+Aa9SSFXOVTLfbTAX4y5vdjsXEPk9smtPjg/KoMsZ1fkchV6By7t88MaYpmrfL6xknyOqmTgN/uml2o9bikpZvFb+oe9cZp+nHTzNSzvaf+WVaQ9KrR97+9PtCSv6vga3T7kiyrTTKFnVaBrLxyT//Af0cbTo=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ConnectionOpenInit defines a rpc handler method for MsgConnectionOpenInit."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.core.connection.v1.Msg/ConnectionOpenInit"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ConnectionOpenInit defines a rpc handler method for MsgConnectionOpenInit.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgConnectionOpenInit defines the msg sent by an account on Chain A to\ninitialize a connection with Chain B.","type":"object","properties":{"client_id":{"type":"string"},"counterparty":{"description":"Counterparty defines the counterparty chain associated with a connection end.","type":"object","properties":{"client_id":{"description":"identifies the client on the counterparty chain associated with a given\nconnection.","type":"string"},"connection_id":{"description":"identifies the connection end on the counterparty chain associated with a\ngiven connection.","type":"string"},"prefix":{"description":"commitment merkle prefix of the counterparty chain.","type":"object","title":"MerklePrefix is merkle path prefixed to the key.\nThe constructed key from the Path and the key will be append(Path.KeyPath,\nappend(Path.KeyPrefix, key...))","properties":{"key_prefix":{"type":"string","format":"byte"}}}}},"delay_period":{"type":"string","format":"uint64"},"signer":{"type":"string"},"version":{"description":"Version defines the versioning scheme used to negotiate the IBC verison in\nthe connection handshake.","type":"object","properties":{"features":{"type":"array","title":"list of features compatible with the specified identifier","items":{"type":"string"}},"identifier":{"type":"string","title":"unique version identifier"}}}}}}},"description":"MsgConnectionOpenInit defines the msg sent by an account on Chain A to\ninitialize a connection with Chain B.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgConnectionOpenInitResponse defines the Msg/ConnectionOpenInit response\ntype.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

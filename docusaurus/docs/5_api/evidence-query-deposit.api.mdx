@@ -1,0 +1,72 @@
+---
+id: evidence-query-deposit
+title: "Deposit queries single deposit information based on proposalID, depositAddr."
+description: "Deposit queries single deposit information based on proposalID, depositAddr."
+sidebar_label: "Deposit queries single deposit information based on proposalID, depositAddr."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVlFP2zAQ/iuWnzapI8CmPfRpFVQbLxtj3RMg5CaXxDSxg+2UVVX+++7sJE1pB6IDCXDOvvPn77s7e82dyCwfX/OfNZgVvx1xXYERTmp1kfAxny5lAioGP313DpW20vERr4QRJTgw5LzmCdjYyIrc0KkyGteJ4k4mLIFUKrDM5cBqJR9qYGjVqTd0C48wosJ4275olD6ccDmODTzU0gCicqaGEbdxDqXg4zV3q4pcrTNSZbgy1aYUDi21VO7zJ940o6cQk3ASbbYAtlYmksSAtWhNjS63oNoB1j7IgUib5pYW20or3IvmT4+P6d821gmzdRwjnrQuWLecYMRaOVCOPERVFTL2ukX3ltzWg22343ktWymv2nBMBga68IyQMiTSW71H1Lqwq8szhtrnOiEQ7ZH0/B5inxmGMsjJcKCWol0QHdVD+ok3sA6SToiX44tS12pP+GBnTrN5LyvGna9YL9oguDBGrEhEB6XdDXampeqBCgy6AMUepcvxA6tDl1J55plQCf6ysPnRjbpR33/MpmM2w8O1iFIJRUJs47oL/H7MZZwzWVYFlKhlICKurcO8CyTfKCsz3KBGbViXWnSSTGca2XD6NTQ9ycAR9wfYl5uNn+wy/F8CHlhBOzCGdb+z10EN5eWuEH7olKmoiz1ZNFG4BfypkFKkHIzB0x5UgM+rE+sEBqsQHmRghpDR9PE0qOWELOxg9U7uPr/XlzC9K/eIo2aS8IvicujiKSpRTJHtdexJHDLX9QqUx2AYZnFtsUkPqcLRqGjmwiK5OOjEuzgfdQsnmEZEdKgEjJtBuH2wz455FGtbahtlehktT6I+waL1IGGaqI2F5j5nG9+xU72n1nOBxZ5hcdfzo1iXUaUX7oMC96jNwn8YXRTsavprxiaXF5Rn0hVEyLfZ7JJM7AzTQ6Mp5IeIfX60V8ZLgUnjJd6qAUw7Yko7ZvHkVCfaulKoQcg3pnqLjl5tB39cVBXIDYGoTUFzQYZrHmRAXxQC/y5P+KaeyTzevtQ7PWhm02DwKszxbBRvvSagv03RNGR+8E+T8TUOl8JIMSe66dEhLY0xLVLcB3ag99XJ3121bfM9+59Wsk1CV3+Kqm8pipq+cLiA1ZN3jH9+HAL2TXrsa1Bv5GhucXEOIsFGRGSH+Qm+Qyo38Nxpe/Sk6av163SGDeIvj16tUw==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Deposit queries single deposit information based on proposalID, depositAddr."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/gov/v1/proposals/{proposal_id}/deposits/{depositor}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Deposit queries single deposit information based on proposalID, depositAddr.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"proposal_id defines the unique id of the proposal.","name":"proposal_id","in":"path","required":true,"schema":{"type":"string","format":"uint64"}},{"description":"depositor defines the deposit addresses from the proposals.","name":"depositor","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryDepositResponse is the response type for the Query/Deposit RPC method.","type":"object","properties":{"deposit":{"description":"deposit defines the requested deposit.","type":"object","properties":{"amount":{"description":"amount to be deposited by depositor.","type":"array","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"depositor":{"description":"depositor defines the deposit addresses from the proposals.","type":"string"},"proposal_id":{"description":"proposal_id defines the unique id of the proposal.","type":"string","format":"uint64"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

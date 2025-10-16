@@ -1,0 +1,72 @@
+---
+id: evidence-query-balance-mixin-134
+title: "Balance queries the number of NFTs of a given class owned by the owner, same as balanceOf in ERC721"
+description: "Balance queries the number of NFTs of a given class owned by the owner, same as balanceOf in ERC721"
+sidebar_label: "Balance queries the number of NFTs of a given class owned by the owner, same as balanceOf in ERC721"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VUtv2zAM/iuCThuQ1U1bbIBP64ps62FblmWnoihkm47VypIryWkDI/99pPyY0wRoUQzzxXrx9fEj2XAvVo7HV/xnDXbDryfcVGCFl0ZfZjzms7XMQKcQrm8+CSVw800+Sj09PeMTXgkrSvBgSUnDM3CplRWJo7B50GCZdMwXwNqNyDILzjGTh0Ode1SiUUX/HLeSZCvhC1xbuK+lBXTF2xom3KUFlILHDfebioSct1Kv+HY7eWo9VcK5G5kx/JlUCg8Ze5C+2Dfcv3y17Wt67CqjHTi6Pzk+pt+uP+fM1WmKwee1Yv3zI7STGu1Be5IQVaVkGuCPbh2JNftmTXILKbnvpVd0EJLT5WbRKe5h7w0xEma5seE0SESdCFvMLxgmsTCEQGWJAV62kYjS1K1ruzFPOKoqBd7wWmr//mzkTivTO6DrMsHEY8KFUuz752VIvmAruQbNAvSBGxlLNn+JgqDSN0EMc1ErfwBOzWoNjxVCgbJgLYb2T1DdBSA1GYxeYaywCiwd4sej0xMeXPVCKjd6LawVG2KVh9I9b+tje32A2xzrRpL/Qs3HIgGiEjklVgcFBxDHyPVpv0cSoJonWXpphibMYfVgcbGk1fcjZ1Kz2eLiw8mUk1eBUDFfQYiUairmUWpcaVyE9RetpwkiNo06+agJerdR09fjNhRkbvaTf1EItLXCaq6To9SUUWXu/DsN/sHYu7CxBtm2mP1asvP55YicX5fLOR2xCySKwaOWKSINTOkawnOKKdtr7HmtM92KaeOZw2DxsjLOl0KPVP4f0HdQGujg4dFHlULIyLfaKrprE3LF24RQMwwtsUsKrjoLuIr7zhwPnRI7XoExkoKmSYSD31Ztt3R8HwZJfIXLtbBSJAQ7jQbpaI2MyIVysOfrUK/8zaJrvG/ZSyfIwUD7ItRUgmuhatrh8g42w7QJY+M1nr1gurzCqQHf7TW+LUBk6COh116f4/yo/Ehwr7PRKBoq78tsiT3gD7jhuek=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Balance queries the number of NFTs of a given class owned by the owner, same as balanceOf in ERC721"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/nft/v1beta1/balance/{owner}/{class_id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Balance queries the number of NFTs of a given class owned by the owner, same as balanceOf in ERC721
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"owner is the owner address of the nft","name":"owner","in":"path","required":true,"schema":{"type":"string"}},{"description":"class_id associated with the nft","name":"class_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryBalanceResponse is the response type for the Query/Balance RPC method","properties":{"amount":{"type":"string","format":"uint64","title":"amount is the number of all NFTs of a given class owned by the owner"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

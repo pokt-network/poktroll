@@ -1,0 +1,72 @@
+---
+id: evidence-query-vote-by-proposal-voter
+title: "VoteByProposalVoter queries a vote by proposal id and voter."
+description: "VoteByProposalVoter queries a vote by proposal id and voter."
+sidebar_label: "VoteByProposalVoter queries a vote by proposal id and voter."
+hide_title: true
+hide_table_of_contents: true
+api: eJylVl9v2zYQ/yoE99AOcKy0KzbAT3VTd/VL7CZuhiINDFo6W2wkUiEpp4ah77470lJlS2vQzC+m7o73/368PXdiY/noln8qwez43YDrAoxwUqtpwkd8spUJqBg8e3mjHbzbzY0utBUZfRk+4IUwIgc8k6I9T8DGRhakAhUUB+GlTJi0zKXASiUfSmDT90yvmWC1xBBVKVR0fAmJ0usRLsWzgYdSGkDXnClhwG2cQi74aM/drqCr1hmpNii51iYXDimlVO7PN7yqBqe+bSkA8uqHEyzQRBzrUjkmksSAtS3Xtoegn+NUVd2RsC20smCJ//r8nP6O3RozW8Yxml2XGavFyYVYKwfK0Q1RFJmMfZ2ib5au7Vtmj/X52vWU7uqguq6Ll4t6BBsnGMVDnhzi0qtvEDtqAUNt42SIinLUdYOotSl/fpQuZRu5BcXaXSJUEqrQZ8hJlxGB/EK3CvQMM0IV9Cqx6O2OCnln2JwiEU50HG0YPf1TW6plfJ+oHRNmJZ0RZteoZcI5gblPmNNNdMOvio4GYp3noBLkho6kpidOWy/eW5HzJYaegoERS50r7CiKEh3bYaxtru1QgXvU5j7ang/f/BXlOikzsNHG6LL4jUyeveYVzW/I92n6A71dAPPCsjjVMgaGDKK2R/E0HwmsRZnRQN3MFpPlbL6Yzi6Xny+v55OL6Yfp5D3KgCpzApP/lmhzvkyuTyjjd9eL8fTyhHo56xCW/0wXH5c3k8WM31WDI7zoBN6Mdh/8PBV1B0VwustVLt3SybynyVvM2h6drRN5wR5TUK32F5YFcQfJT21jm8CZt4fmAwD1TpepTZ7AVx3o6VQ1sBR+rRp3IElh2uB7gUOIjQzGaPM8ZPo5cMQ6gZYUphw2Hm2bVCDpD9/mCY6PzGxLWhgjdoTMDnL7tK23gd3F6AHHtEnyX2Tz9hWfIqylFZvei00S25nrg1NsP4Mqa9Ba7X48P6f4hyiRanqIN+BDoAdnxKOACGH2o+2riOSXq92yGQSvINq3BqOK9p5Y+cdrrbtFvkiFVAjILi1XiDl5VOh7d1ajDn0YnWXsanK9YOP5tIWRHxeLOZHYBTaERlLoCBH7jji8nE8p9s2NS8Shn8OJKe2YxdhpyrV1uVAtlf8zuUfhN/V08N1FRYa5IKOlyYgXEn/LQ+Lxrk89/m9f8TCT3fQjY3S8yYwCHbeAFGMhffv9Slj4bLKqIvKD38JGt3jcCiPFitJLO5W0dMZGWIvMQsf1Zv74y6vDMvI7+7XVqzf6erQUDdZWZCV94fEedidrmt+unuPlLy1hz3AypLyiZyIFkRB2YkIDb4xrVuFatzrgRRtbM4N/TxY45v8CMTnqog==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"VoteByProposalVoter queries a vote by proposal id and voter."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/group/v1/vote_by_proposal_voter/{proposal_id}/{voter}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+VoteByProposalVoter queries a vote by proposal id and voter.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"proposal_id is the unique ID of a proposal.","name":"proposal_id","in":"path","required":true,"schema":{"type":"string","format":"uint64"}},{"description":"voter is a proposal voter account address.","name":"voter","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryVoteByProposalVoterResponse is the Query/VoteByProposalVoter response type.","type":"object","properties":{"vote":{"description":"vote is the vote with given proposal_id and voter.","type":"object","title":"Vote represents a vote for a proposal.string metadata","properties":{"metadata":{"type":"string","title":"metadata is any arbitrary metadata attached to the vote.\nthe recommended format of the metadata is to be found here: https://docs.cosmos.network/v0.47/modules/group#vote-2"},"option":{"description":"option is the voter's choice on the proposal.","type":"string","default":"VOTE_OPTION_UNSPECIFIED","enum":["VOTE_OPTION_UNSPECIFIED","VOTE_OPTION_YES","VOTE_OPTION_ABSTAIN","VOTE_OPTION_NO","VOTE_OPTION_NO_WITH_VETO"]},"proposal_id":{"description":"proposal is the unique ID of the proposal.","type":"string","format":"uint64"},"submit_time":{"description":"submit_time is the timestamp when the vote was submitted.","type":"string","format":"date-time"},"voter":{"description":"voter is the account address of the voter.","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

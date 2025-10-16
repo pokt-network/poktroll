@@ -1,0 +1,72 @@
+---
+id: github-compokt-networkpoktroll-msg-update-param-mixin-10
+title: "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin10"
+description: "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin10"
+sidebar_label: "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin10"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVlFvGzcM/iuEnlYgtbPuzU/LgqDLQ1ujdZ+cIJBP9J3qk3STeLENw/99pGQ7tzhrigF9WwAHEkWR/MiP1O0U6TqpyVx9SLW6v1Chw6jJBn9r1ES9t9T0i+vgurCij0jrEFeyjKFt+cLD185owqmO2n2wG+t/vVQXKuJfPSb6I5itmuxUFTyhJ1nqrmttlc2Pv6XgRZaqBp2WlcFURdvJKbtm8wPrYBNQg8DS8VB88AW07RAoQJ/PQEOyvm4ROtEacVCiwFbD4htWxPsuClKymHJg6aEK1p9Hcc1SMLi0HhNbpbBCD2vOCm8M+uCsz3BAe8M/0C70nkZ3/s5//DS7mcCMgy5CWFpsjQBhvVverxtbNWBd16LjBBWAVZ8oOHBITTB3PtmaHfSRvQtUG9HAYgt1qAMjoPAD0LJzWR30EkXOjdpfqAzghZM9n+meA4iWtuc5OR0di6KN4QBlrQmk3EyPcuKC6bkKv3AGdd8KxACbcR0eofetXAmPGNdsixnyZoDlKUavHb4Y4j4D+ImMOeZbTSj2uBdB6oJPJa3vLi/PM3MFqa8qxrXsWziqi60f7oHv1zLHls79ZmTpxFOBnVWRMCZYhjgoxuuMYU4/JNIr/L8dTlw7ES7z+IXKe2Y0bjp2ySFhjJzzn0CAKphhN1g2WmNkNa6x01REv70raEjbNg20dYx6y7qW0KXXff1ejs/TwcPBGCvx63Y6vJJT5Jj+uv63nj3v2v/0xBQ+8O0upBy5poZ34y5UK6RRzTfWejt61vusKAn//PQ+3Wy08O3ZE3DkyDHyEzUGZBnMxye1MqwGWtYvwwtd1GhuozoDH1XBjQXvW1+wj4/g4fPNlxlcTW+F05YkSvXnbDYVEVwzsQKLCrN0lZl1cP+aYQmMx24qwRxW4ANBQpJDSarTfmCyFAkOVYJnZZIZCyXPUIbsU6X+gfxECcINjbuW0yD++tiW6SZFnKvzIrKdYRn5M6WRurPubrfQCb/Gdr8XMRc2ckXmvHzU0eqFZG1+zz4a1IY7ZTLfqRVu8yjLHfl2JhGJetvnJnnenfuL440rHu0dfVf3fkDN6acvM1ZeHD6DXG5dFfVa3hb+P1FKPrfkdu63LNupVvu6zw2kik35+xsE0GyP
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GithubCompoktNetworkpoktrollMsg_UpdateParamMixin10"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.gateway.Msg/UpdateParam"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GithubCompoktNetworkpoktrollMsg_UpdateParamMixin10
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParam is the Msg/UpdateParam request type to update a single param.","type":"object","properties":{"as_coin":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"name":{"type":"string"}}}}},"description":"MsgUpdateParam is the Msg/UpdateParam request type to update a single param.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"min_stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: fee-msg-store-code
+title: "StoreCode defines a rpc handler method for MsgStoreCode."
+description: "StoreCode defines a rpc handler method for MsgStoreCode."
+sidebar_label: "StoreCode defines a rpc handler method for MsgStoreCode."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVU1v2zAM/SuCzmnSddgOOa0rOqyHYUGbnYKikG3GViNLmkS3zYL895Gyk7hJ1m5Ycwhkinz8eCS1kqjKKMcz+S2W8nYgnYegUDt7Vcix/AJA8rsbdAEuXAFyIAP8bCDiZ1cs5Xglc2cRLPJReW90noxH99FZlsW8glrxqYCYB+35loAJdQsqCphrC1FgBaKDF7j0IOYuJOFONfh8SEHwLaG47B5ypG8fOG7UEJNTXVoIfOr0IgZtS7bTaJIgaQhVFAFilOuBfFSxvsuWCHc553nEloKpFSUqWauHxZaCZYIthZsLo8sKRW40FUZwgYLKcSiu6ENZkVEW6lFQauUv7em+9hwEFHLNv8HbVoq1dCDwMYYG1iyI3tnYVurs9PSQm3MRmzynkOaNERt1xvprrvfp2ZSqn8t1B7yXUyf8c1IHbJPXfBGb+l8429gI3fqNlTr78FFUKlZMYBKx0yJx2hKTmJmrxuCRklnRWHjylC7ZQAgU+ZtUbi/V562pCbSkRu/lSaL3ZzKFikqb2NNWIagl6WqEOr7u61N7vV9TLgONjeb4lZn0TVKJauobVR41PNreh72tmGWiwhaGRrQGrFyRWqHfPVzU9oowvIspfoUVfY10lg/TCLYTGIc8ocOHd0MCGPVXGZf/erfOLp9U7Q30N8iuk/b3wzYtKqidu8OWuKiUtqLUWDXZkIZ85N0CTyzgowuL9BGcMeL68mYqzidXveb8Op1OWCQuqH2cga5/aIewF6tqVnoNmAN7gBDbYLqTsA5FBORLLlqtbA/yP6h4lvqWeYQnHHlDdWCHTTB817I0ky+xRIg7nuhRqphgslmtMhXhRzDrNYuJuUCP0IyODypolXH5ZrfkqwJVMH+zlVzAktloB/BkypGxumnSTOwP43qwsTinFejxRd3bXg9Ovt9MSTnrnsW6bRJa9LyD6X8sJT+ubJ3GK8lW0ihbNmleZIvJv99WRKfq
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"StoreCode defines a rpc handler method for MsgStoreCode."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.lightclients.wasm.v1.Msg/StoreCode"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+StoreCode defines a rpc handler method for MsgStoreCode.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgStoreCode defines the request type for the StoreCode rpc.","type":"object","properties":{"signer":{"type":"string","title":"signer address"},"wasm_byte_code":{"type":"string","format":"byte","title":"wasm byte code of light client contract. It can be raw or gzip compressed"}}}}},"description":"MsgStoreCode defines the request type for the StoreCode rpc.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgStoreCodeResponse defines the response type for the StoreCode rpc","properties":{"checksum":{"type":"string","format":"byte","title":"checksum is the sha256 hash of the stored code"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: evidence-msg-vote-weighted-mixin-120
+title: "VoteWeighted defines a method to add a weighted vote on a specific proposal."
+description: "VoteWeighted defines a method to add a weighted vote on a specific proposal."
+sidebar_label: "VoteWeighted defines a method to add a weighted vote on a specific proposal."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVlFv2jAQ/iuWnym03bSHPo12TOWhBZWs1YQqZJIjcZvYme3QVoj/vjsn0IQAlbbygOy7853vvu/OWXEnYssvpvzGxvyxw3UORjip1TDiF3ywlBGoEFA5u9cOHkDGiYPoRr5KdXZ+yjvcwJ8CrLvU0Ru/WPFQKwfK0VLkeSpD76z3ZLUimQ0TyAStIrChkTlpMRAGqPtnESykAssEy8BaEQNzmoXCOpQs0bCLkd1bDnhUz58gdLjPDV3eSbDkX3vXth2qUmxDuATYyyYu+WaVRS2GMEa84VY6yLzL3djNEJs0KKWRF9YSKpR0TC/KUAttyoXFWrnugSwOJdHIYSlS2UygwzBSVmDRlHaMkBESzxQlLHAoWeuMVLFPaiGKFLHk96NgMBuNg+HodvbrdjIeXA1/Dgc/0AZUkRF9DlvUNb8Hkx1J/3IS9Ie3O9LbUUswexgG17P7QTDij+sOLxFrF6aUM1nVhDKsRMJaHUpBKL9Il7zrywq0C7DGX4mHtiKdyagdraZsYIEYY1cwlCLQJNgY7iszciATVOVCKvftK8egdC/TDufF9dwME1FksEM8kY4HWpf5/H/fUcdLA1gOZwpYk8DmSKGSseenp+2L95ktwhA9LoqUbczJ1+eMi7vKYwMDtOk1ctvEZVSX9gDZlKfifCsFhajCa46m6AuMwYL/UybHx1aoI6hZISMgRirUWIKiL+fcXxX7Oa2Pow/HVDPW91K9ahGlw5FWku4v0nH9iC9RxYx9B/dy7CDBXKIj4hcGw/3ODFYoslhtuZBhg9XlOWo+bX1OwiW464XaZtp2Y73sLs/mWJuz7i4F0JrwuHt/sgavIstTaDwY0/exe2SsbQbQNvnHnVnx3uBVN28tESC10G2KXSU0n2McTsW8G+qsl+tnd6LAvWjz7DdGpym7G0wC1h8PicHS0eX5dRCMScSuMAONopKPIvR8VCIjo48c+8EDxlazplz5p8OCIyUVPBOq5vKToW2UY8suB6+ul6dYG7pEYVLSlahP+X7U6fWo447YJMQWPLBazYWFXyZdr0mMTDD44TLF5VIYKeZUzym9MAmIiGBDOjzDG8FTdvhJQNci87TwTbfb7evO5kQfZ17ujto+1gg9Hk0CNJ5Xn1KZHwXciBcauvh/wXmn/l3jZSueChUXviF56ZN+fwEhcW9L
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"VoteWeighted defines a method to add a weighted vote on a specific proposal."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.gov.v1beta1.Msg/VoteWeighted"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+VoteWeighted defines a method to add a weighted vote on a specific proposal.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgVoteWeighted defines a message to cast a vote.","type":"object","properties":{"options":{"description":"options defines the weighted vote options.","type":"array","items":{"type":"object","description":"WeightedVoteOption defines a unit of vote for vote split.","properties":{"option":{"description":"option defines the valid vote options, it must not contain duplicate vote options.","type":"string","default":"VOTE_OPTION_UNSPECIFIED","enum":["VOTE_OPTION_UNSPECIFIED","VOTE_OPTION_YES","VOTE_OPTION_ABSTAIN","VOTE_OPTION_NO","VOTE_OPTION_NO_WITH_VETO"]},"weight":{"description":"weight is the vote weight associated with the vote option.","type":"string"}}}},"proposal_id":{"description":"proposal_id defines the unique id of the proposal.","type":"string","format":"uint64"},"voter":{"description":"voter is the voter address for the proposal.","type":"string"}}}}},"description":"MsgVoteWeighted defines a message to cast a vote.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgVoteWeightedResponse defines the Msg/VoteWeighted response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

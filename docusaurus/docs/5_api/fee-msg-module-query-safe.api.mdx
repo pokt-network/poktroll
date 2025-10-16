@@ -1,0 +1,72 @@
+---
+id: fee-msg-module-query-safe
+title: "ModuleQuerySafe defines a rpc handler for MsgModuleQuerySafe."
+description: "ModuleQuerySafe defines a rpc handler for MsgModuleQuerySafe."
+sidebar_label: "ModuleQuerySafe defines a rpc handler for MsgModuleQuerySafe."
+hide_title: true
+hide_table_of_contents: true
+api: eJzVVktz2zYQ/isY9GqRjtvpQac6aTrNIVNXdk+KJ7MEVyRiEGDxsK3R6L93F6QsSpbdZtIeyoMELha73377ADcyQhPkfCk/hkbenknXo4eonf1Qy7n8BZHknz+6Ohn8PaFfX8MK5Zn0+GfCEN+6ei3nG6mcjWgjL6HvjVbZRPklOMuyoFrsgFdx3SPZddUXVJHsRB0NC8jLkRNR40pbDCK2KHpYGwe1WDkvSLV8Dqj3jDxqDOxmhJfXNQbldc+AyNFu58B8l82JwG5p22uWO4GPqFLEgnEOuMF7WNOrjtiFU/EcOssAF4PHo3g8dBjRhxwSsCBqlQz4DGAtRpyfbLUWYIUmfr1qQVsBSrlkY/Es6BrilOMQvbYNaZGHDig3slpHnHDO+idZdqv8egBEwI6yWhCky58Xs/OLN8Un28bYh3lZNjq2qSqU60rlQufC+DcL9V1ZGVeVHaEva6dCCRQKUahi8lhC7dnUjIKJrkqrWfY7Q6tcTQEUXf2dSiG6btzw2GiKLVfYDGw98y5FjnRLhEBsT1GwC5n3j0Imwf81XnrOZNCNRf9a0IOGgLr2GEI+th06WHukLo8+YRaE3tkw1NLF+fnz3rkUISlFNlbJiJ061+F/0P6L0fxBtnY+//EcaFE3bXy1KRK11o8/TLAMZwRE8dBq1R44DuIB/W5G1PKYtaMp8VR1Y6ZFzjEV1N4cB4JAXnKuT0yWF7p4ux3TSPRAMvFEsqxIFh97Ipo8ovfk6V/J2SHDHNBEi+dUQ+U4wUui7y9khhpBm1NEvThOD339NGwfc8M0UHFrxg/manokU9RRxUJz8uATiVPmXrqIQPheiZZa0FA7jSV4pMzM0mBvHd+evQs5iDyUZKkrVUyoDsV+qH8eh3ooWjpT3L8pTlc3Z2exv3rfP0LXGzy88Za7m2BfOyOCXdi3+6nxJKMk2JV7Xkbv8p0zGXa9u4szi/HB+bv84p0xYvH++kZcXn2YVP2vNzdXLBLvKFZncKw5ULnmLN1/pPR3hhnYPV2TA5hxJayLImDME5/46sBOTH5r+g7ifyqZiI+x7A2RwV6TN7w38LqUX5tZ8nKcW8oJK7C1zaaCgH94s92yeJgM8yUt78FrqJjd5S2haBFqTiJl/A7XnKyhp2c3jJnVTcptdtzf27PdiUua5318Vfd2UtFXv13fkHI1fvZ1ufmlhwf+JKTfuZT8CZlJyFXJso00YJuUW1AONvn5C4xvuL4=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ModuleQuerySafe defines a rpc handler for MsgModuleQuerySafe."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.applications.interchain_accounts.host.v1.Msg/ModuleQuerySafe"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ModuleQuerySafe defines a rpc handler for MsgModuleQuerySafe.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"MsgModuleQuerySafe defines the payload for Msg/ModuleQuerySafe","properties":{"requests":{"description":"requests defines the module safe queries to execute.","type":"array","items":{"type":"object","description":"QueryRequest defines the parameters for a particular query request\nby an interchain account.","properties":{"data":{"type":"string","format":"byte","title":"data defines the payload of the query request as defined by ADR-021.\nhttps://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing"},"path":{"type":"string","title":"path defines the path of the query request as defined by ADR-021.\nhttps://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing"}}}},"signer":{"type":"string","title":"signer address"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgModuleQuerySafeResponse defines the response for Msg/ModuleQuerySafe","properties":{"height":{"type":"string","format":"uint64","title":"height at which the responses were queried"},"responses":{"type":"array","title":"protobuf encoded responses for each query","items":{"type":"string","format":"byte"}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

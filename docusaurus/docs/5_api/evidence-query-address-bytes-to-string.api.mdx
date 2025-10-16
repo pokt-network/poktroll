@@ -1,0 +1,72 @@
+---
+id: evidence-query-address-bytes-to-string
+title: "AddressBytesToString converts Account Address bytes to string"
+description: "AddressBytesToString converts Account Address bytes to string"
+sidebar_label: "AddressBytesToString converts Account Address bytes to string"
+hide_title: true
+hide_table_of_contents: true
+api: eJylVE1v2zAM/SuCThuQ1f245bSsKLbeujY7BUEhy0ysRpZUic4aGP7vI20nc5ZgBbZcQkvk0+PjRyNRrZOcLuT3GuJOLifSB4gKjXf3hZzKu60pwGnorp9nRREhpS87hDT3TxiNW8uJDCqqChAiIzXS0QeFqt75OWdv8jKODoPCkuwIr7WJQC9grGEiky6hUnLaSNwFDk577JWPlUI6YRjZtksOTsG7RKDkf315yX8FJB1NYN7kOxOp1poeX9VW7N0vCE17h+CQI1QI1ugu0+wlcVgzovEH3pm8HwdYYZLAEg7PCM5AEG0xRPXuIgYtSKTSF0xkSNPnL6CRJYysO5o+qb10gwonsrTdb0IsV6q2eIawE7WDt0DgUAiIkej8kw5/56l9ASMvQ6BriOOq0dHNteyoojI2jbxVjGrHfYFQpfff+txfn0oxYbkM81f2YRzSSVSRjmp9NvAg4nulFiTXlmCTmGnta4f70oqutwV6cejXvsQEtIYuB+73qcy0T5VPmaqxzLZXOYlxleWgy5vrrDkalLablJU/reltqYwTa4NlnV9oX2XBb/CTA/zp46b7iN5a8Xj3NBezh3tuMoOWM/42nz/wkbil+ns66htA6a4BhnF9D5iLSCKknsxgCedRJMqULoNPWCk3gvxfLY/yP9QP4Q2zYEkMfrWOlu96nRey15liWWn6G7Qmq1ebjOnxYqKFUhJzDm6aXCX4EW3b8vFrtxKnCzK3KhqVs5i03wqT2KYir5RNcMLzMFzyw+Ow5z6K3zN/zH8/DI5HYatszV9kbmB3skPbJQWUoAqaMSbS+5COEHAUfTLRvDQPffn1bk69/wvdXRiK
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"AddressBytesToString converts Account Address bytes to string"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/auth/v1beta1/bech32/{address_bytes}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+AddressBytesToString converts Account Address bytes to string
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"address_bytes","in":"path","required":true,"schema":{"type":"string","format":"byte"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"AddressBytesToStringResponse is the response type for AddressString rpc method.","type":"object","properties":{"address_string":{"type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

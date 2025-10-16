@@ -1,0 +1,75 @@
+---
+id: fee-query-client-connections
+title: "ClientConnections queries the connection paths associated with a client
+state."
+description: "ClientConnections queries the connection paths associated with a client"
+sidebar_label: "ClientConnections queries the connection paths associated with a client
+state."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVktvGzcQ/isDnlpAsZK06EGnGkba+BK4rnuKDGPEHe0y2iXXHK5sVdB/7wy1ktZZGYWBGJBFDTmP75sHuTUJSzazr+avjuLG3E9MaClicsFfF2Zm/iDKOw9XtSOfroL3ZHWXzcS0GLGhRFEtbE1BbKNrdVc0bVYAV8h/t3QUAZmDdZiogCeXKkCwR3NizYuto96DK0Tk1FCLqZJ1pMfORZKgUuxoYthW1KCZbU3atKrIKTpfmt3uXg9zKzES6/7H9+/162V4l8CdtcS87Go4HL8QPxJTkgBUA9u2djaTMf3GqrYduw2LbwJBFJNLtQoyXyO6bnsX4BhSRUeXoGZgGaJK5z4rT0facHtzBUJ1FZSWNmqSktvDO5H4oFTxGCsLCoKwBKzr7PykAlnlXGpyCEpIjxNjxI3mJFHD52jPcYXleGtiBF6DQqlZbBINqGoormqCrKfx0bNjId+SOVh7qMiVVRpj+qIm63qT8dzS2rHIP+fDSrHzNlIjCAQRJiC0FexNwVPlxOeKqJXg5v6g+6VrFpSzACyVeAGfwxOtRcKhyYwxee6EqroMUThqGBrcgK1C0CyGuZeUUsoGek/Og5U8oX4HX7h9KumivIAKY6FZX/EEOAnx7xoJ0XkpgUUkXEloYhp9SQzXXo2KE4tS0ZMXiPuov0PMQQ5hmvs+EK1p5zuxlQIsCJrgXZKPzQxmTWR1KYC9FMMZUucSSmLIGE9FMSr+UwZQvYSzXgpMmOt+7jVMweU1KhsamSiasFIo4wQo+pWg6432TQJtF1vhnLViulaMqU30xdwvI9G/mbpcvTzqldhjGpTVq7XaOZ9++3WAbZBZbRKX0wKlU84OhrVwj058Ts7bnRwM5CTuG7Yfpgy2i1GWQqg66/8m0hxL7OozfXLpofP03EqahFmKUUj8IePu+yFU0OCUoKJSoA+QiuiXjyaHKh1RD0fIa6PlFV+/77fPTSAs9l2G9c1QJVPUyLDH8qzikcQhc+Mh/CjD2RG/bYTOfe5v5bof4DNT5h7KF9vMTN3CTm2IND3ZnK4/TPuL8CTk6fZ4Oe7y7bgM44RfVTpvSgmhW1xIS03bsErvPKUnmTb5RwxyDdx++vsOLm+uh717d3ejIhDMHGrqqwNtro7+ev4/w5phmZq8D6ZfgTQy6ODQsR44NegHJn880S8YOaY70XOatrXQo3F0sda9fRK+GklCxht72Kd3yfqDSkbJEOHs9FaRN0clwNTSdruQOf1PrHc7FT/mh9XsqyzXGB0ulGt9LTnWtZTDEmumUdDHxjQ/3fZPn5/hzY+qs9APbee16dZYd/pLlivavHiA7e7lcEVY6BCTkPf7l/JsatNAczQ39AV2rPU/P91Jh/0Hakq4Sw==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ClientConnections queries the connection paths associated with a client\nstate."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/connection/v1/client_connections/{client_id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ClientConnections queries the connection paths associated with a client
+state.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"client identifier associated with a connection","name":"client_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryClientConnectionsResponse is the response type for the\nQuery/ClientConnections RPC method","properties":{"connection_paths":{"description":"slice of all the connection paths associated with a client.","type":"array","items":{"type":"string"}},"proof":{"type":"string","format":"byte","title":"merkle proof of existence"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

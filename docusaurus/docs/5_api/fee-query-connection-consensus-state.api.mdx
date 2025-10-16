@@ -1,0 +1,75 @@
+---
+id: fee-query-connection-consensus-state
+title: "ConnectionConsensusState queries the consensus state associated with the
+connection."
+description: "ConnectionConsensusState queries the consensus state associated with the"
+sidebar_label: "ConnectionConsensusState queries the consensus state associated with the
+connection."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFVktv4zYQ/isETy3gtXa3RQ8+NUi33VwWqTc9xUFAU2OJa4pUSMqJK+i/d4aSbFmW+wh20SBBKJLzzcw3D07Ng8g8X9zz3ytwe/4w47YEJ4Ky5iblC/4rQDx5vLbGgKR9XHkwvvKfgwjAZ7wUThQQwBFQzVPw0qmSriKAPMgxlYIJaqPAoZBBkZPjR5XitiKZUoQc1w6eKuUAzQiughn3ModC8EXNw74kYR+cMhlvmlnd4znYKU9opirWUdFrEGd8Y10hAu5UyoSffpzWkYPK8vAVdTyQuC+JYE8S79++pX+njF4xX0kJ3m8qzfrrc8RDLgMyTBKiLLWSMYzJF09i9bkhdv0FqUfBoIKmjRjpS4FedpqY8izkcNDMCI2hL7S7MhEjuQTClrfXDHMltxTs0lGyBdU6K7VC6ykNJrjqTWwvsZtfmPDeSoWYKXtWIY82yV4Z8zE3m0hKu/XYbk24f2rGz+3xRJJxkaaKfBL6dijSDMw7NWDayFwgOZqMQ81287epsd7HEuvxC3BbDSzKMfyFF+Ux5hIOaH1SnqXNJ4LUeh9tWHYp/DFeppAqIx0UyC2aKgIDIXPWQrHnXKHOLUCJxq1ML/spVliE81gYc/bRPsMOd7wthqEQOrMOnS88K8Qe3beWssauDKYQhAjQaVKGSaRV0H9rWrI9g3k2Z7lwKWXZ1s9abt8UaKIymHJrB2KLpkVmM/DsxhAoKpECC2l24nFn9chjb/GSCCvTGUKlpEyFWMGyNbDCGhXwT0YGo6TwpBIdNhjlCVJXaErwLPpIEbxQc8cICNJiJ7WkIohYZytDZqJfhqyStsDeSwHLkDIfmED5HL3rQLuiZGXlSuTcU8ZUJYIRpjDpymwcwJ+RulhX/qwaxr3uX7Sxo2+DyFL2qxgWlinirAemxB037f+spAeIQWyLrO0TSKusnMMlEkrKup8ZFsdGVHqiTq4Mqwy8lBgmZBacQxK/SpcddTubDrsMegVZfK8OnuLWD+95NBUrQvvBbeGc2NO7E6Dw36Sl0VmBb4zIJgUPJA6Zu9j0n/BNUOCnWvRUh1yZ41RAjHfvxYJnsZLiO7vgiVrLRFoHyfF2sns3+PJJfTJeNMnoMUj6vEnqUQo2SZu3g4N2o4mv/cae5811Tm0rQx+q9RwrMyntNrwxEJ6xacUPZ7Vmyw+f79jV7c2wBdzd3dIWI9qshi7JhIxJ1g0d/wRMiYLN17fGdCuG/YBR/6HXwfpQCDOA/FbxOuHlkDsBXkJSaiSJrKmcprM2lvccYxm9dp3zHRp+7N6d7FCHWoyHxvEbf+wodPt8JDzMbYtxe8MBLEeeyKS6XuPr8YfTTUPbT3E+XtzjciecEmsKHU27ytMa03MjtIcz7w/tgn+37CbD79mloXiSqr7mDVX8TuiKvnC5hf3ZAE1T6qssep3yMbX/l/oues1DQ8EVKb0hGJv21hUOy2UYyJ+1bZq7D03mtw932OD+AtWprLo=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ConnectionConsensusState queries the consensus state associated with the\nconnection."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/connection/v1/connections/{connection_id}/consensus_state/revision/{revision_number}/height/{revision_height}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ConnectionConsensusState queries the consensus state associated with the
+connection.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"connection identifier","name":"connection_id","in":"path","required":true,"schema":{"type":"string"}},{"name":"revision_number","in":"path","required":true,"schema":{"type":"string","format":"uint64"}},{"name":"revision_height","in":"path","required":true,"schema":{"type":"string","format":"uint64"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryConnectionConsensusStateResponse is the response type for the\nQuery/ConnectionConsensusState RPC method","properties":{"client_id":{"type":"string","title":"client ID associated with the consensus state"},"consensus_state":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"title":"consensus state associated with the channel"},"proof":{"type":"string","format":"byte","title":"merkle proof of existence"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

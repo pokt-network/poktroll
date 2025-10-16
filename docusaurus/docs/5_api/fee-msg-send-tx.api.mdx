@@ -1,0 +1,72 @@
+---
+id: fee-msg-send-tx
+title: "SendTx defines a rpc handler for MsgSendTx."
+description: "SendTx defines a rpc handler for MsgSendTx."
+sidebar_label: "SendTx defines a rpc handler for MsgSendTx."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVktv4zYQ/isDnh17uy168Klp4sX60NZIHGALJzBoamxxTZFaknLiGvrvnaFkW350F11sDrE0Gs7jm5lvuBNRroIYzsQfYSVeesKV6GXUzo4zMRQfEEk+f0SbTd9ET3j8UmGIv7tsK4Y7oZyNaCM/yrI0WqWTg8/BWZYFlWMh+SluSyRzbvEZVSQ7UUfDAjLe2IYMl9pigJgjlHJrnMxg6TyQxuDgvvQcXtQYWu+WzJHHuc46XkL02q5ETcm8WvRXv5RSrTHOMxlTfBkG5XXJtkhtTFl5lUttb5VylY2TpH1PyqADKFeUXgfMwC1BgpevEL20QaZYesDO+FNHCNKSdrIvDRRYOFhqNFmfsTjD5jTJfYSnGfQEYVNIQl4sthE5IzZ6NdVGcJ7jDUz/nozmT38+TkZ34w/j0f0Q7nEpKxPhH/QONtJUCGirom2IZwvtodGn0d3TdDSffhrC6A1VFZFw6KabMgZ9wBFkA2SA3IUISXZM/ZDUvi2mjOC+IyQoI0PQy7a9GNoCQ5ArpGqEiuqw9K5gPWpH74xB33iA6ECTTzrtlJaRNK+E9Gw5JvKeNemz/zNo6CMDwWNy5dMZJuKlrmseFUPhbnAedYGuipcleGg1oNVIvyHKogTqgY3OKN5XbQwsCN6M3ygfng9VeU9jBwvj1DqdgqxiCE9qgKky9NR/ttP8mpeiolqQcevsDde8f6Ukhz6rCLpffxF13Wb3pdIeaeyirzAJQulsaJr2/bt3l+neQqiUosItKwN7dXb541jkobV6wiZ7V3s6+Q82CUxtVuFXh60LQt3pmItcLVQW30qKk8qG3pPrH5LyOQNm3Xi5uVdEeJ2ASfTze5FCjVKb0NGW3sst6eqIRfi2r9/2PHJGMGSbmlM31DbpHkkQtZN67eABxC5yZ+uA6LVUkBN98lSfVJBxLDDmjhdV2YxwKWNObwO9UP0OsKF/nPv5fu77R7rob37qnywaLsTDcdeN3mhcDF5ZOsceaXfNUXC+YtLv8XPD1x3ua9C54JerVNKhd22X7rIB7xLFrXTMqwUlWgxKt443FuOr8+v0wpnDw+hxCreTcWeYPk6nExbBHeHmSNR0K5EKe7GyYKVvGebANuhDE0z7RDwTIWBM+5fqVUjbMfn/Cn+S7aG1Ir7FQWl4uZCPyhv+1vTETHxfT5CvtivocpQWBZna7RYy4JM3dc1i6hNP96EZPW6k13LBQM5eKIQcZcZdMduJNW65Ls3g3/CGE6xOS5Zn8ZwE6t7+BF1BsIxf1X3pDMLkr8cpKS/aG1qRGELQHYVvb/R/KLhXE3BprJNsJ4y0qyrNqWhs8t+/LCWLzQ==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SendTx defines a rpc handler for MsgSendTx."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.applications.interchain_accounts.controller.v1.Msg/SendTx"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+SendTx defines a rpc handler for MsgSendTx.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"MsgSendTx defines the payload for Msg/SendTx","properties":{"connection_id":{"type":"string"},"owner":{"type":"string"},"packet_data":{"description":"InterchainAccountPacketData is comprised of a raw transaction, type of transaction and optional memo field.","type":"object","properties":{"data":{"type":"string","format":"byte"},"memo":{"type":"string"},"type":{"description":"- TYPE_UNSPECIFIED: Default zero value enumeration\n - TYPE_EXECUTE_TX: Execute a transaction on an interchain accounts host chain","type":"string","title":"Type defines a classification of message issued from a controller chain to its associated interchain accounts\nhost","default":"TYPE_UNSPECIFIED","enum":["TYPE_UNSPECIFIED","TYPE_EXECUTE_TX"]}}},"relative_timeout":{"description":"Relative timeout timestamp provided will be added to the current block time during transaction execution.\nThe timeout timestamp must be non-zero.","type":"string","format":"uint64"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgSendTxResponse defines the response for MsgSendTx","properties":{"sequence":{"type":"string","format":"uint64"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

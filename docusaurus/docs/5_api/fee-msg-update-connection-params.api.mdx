@@ -1,0 +1,75 @@
+---
+id: fee-msg-update-connection-params
+title: "UpdateConnectionParams defines a rpc handler method for
+MsgUpdateParams."
+description: "UpdateConnectionParams defines a rpc handler method for"
+sidebar_label: "UpdateConnectionParams defines a rpc handler method for
+MsgUpdateParams."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VktvGzcQ/isETy0gS2nS9qBT3cBFc2gjOMrJCoTRcrTLiEuyfDgSBP33znD1WEuyDRSpDsJy3o9vhtzKBHWU4wf5V6zll4F0HgMk7ewHJcfyD0Sizz97BQnfO2uxYt4EArRRDmTAfzLG9LtTGzneysrZhDbxJ3hvdFUsjb5GZ5kWqwZb4C+FsQraM5e8kIvOQ2dXKFxqi1GkBkVUqyHxRdp4FMmJXAQLqzrGIzwrYsIQhxQVy5JZt/hKbDr7wFkljZF9+y74iyj8pfOrHk5RDGd2Zv/+OL0bi1tj+iJtjkksKPrMZUD1elQtrOe49sRCNU+6xTkx5wvjqtVlqCSs29yKg4JgBUEKoiiIH7QVFqyLSBmo+ONA5MhSTqBdulDhXk6hgc1QTBsdT9GL2LhslAi4NGSdCzGzBkJNjRbQumyTcMvOZWogdZVqgHy2um4SKQI1HBZmIxKsStcoV5Wrrm0W12nvP1tF/qwLLRixR56tZ5aj1pxrHIpbEWHJDpwmAxTou5tf1sXQM9n3ah1TIHt0XrILwqXM2qZff5a73W4go64tBq7uuXjSyRRCkRCgVMAYWYv1/l/w8kjpgDR9KWTcMSF6qkQHk7dv3lzCgUqUq4oiXGYjDuJs6/vM4/3e4pPUztM+uC25XsL9ULklZJOuZGAJC8d+Yggu/LdEXh6yyinsSREWsCYE9PBBpHdvZQk1gTaxJw0hwIZkdcI2vu7rt459Di4uA+GpoBvMpK9SStRSG6G+qngVftdX87FVIIKvRANWGQIyoaxxSlC2M3vWQK5yx+ZV6GJJCFJDp5FeVMPKBRyeQDt8/ImRPXr2ZuDW3J9uh7s1tN7g0/374s475n0a1B5J0x67hNH7soVqnZq8oGDbkXerdGMxfXNhVQ7B0aK+v/s0FbeTD71J/3M6nTBJUCrREanDHFQFc5bmk4ReM8yBPdIYd8Hsv2i9JRExMZPr2oLtmfye7XtSiyN8Eq3bkTdUGI4gB9P1gDv7IJ/vLNl7prf0SGgYH6S+3S4g4udgdjsmU7cDvQMe6PMRgqYbAPlEbhsExR182MoVbrhT3UDfTDlIFje5zNj5cO8GB41b2nA+vSj7pQfhycdPUxJe7F8mbZl8GeAbr1j6H0vJj51yybBAoW2lAVvnMn+ys8m/fwH2gEJZ
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UpdateConnectionParams defines a rpc handler method for\nMsgUpdateParams."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.core.connection.v1.Msg/UpdateConnectionParams"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UpdateConnectionParams defines a rpc handler method for
+MsgUpdateParams.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParams defines the sdk.Msg type to update the connection parameters.","type":"object","properties":{"params":{"description":"params defines the connection parameters to update.\n\nNOTE: All parameters must be supplied.","type":"object","properties":{"max_expected_time_per_block":{"description":"maximum expected time per block (in nanoseconds), used to enforce block delay. This parameter should reflect the\nlargest amount of time that the chain might reasonably take to produce the next block under normal operating\nconditions. A safe choice is 3-5x the expected time per block.","type":"string","format":"uint64"}}},"signer":{"type":"string","title":"signer address"}}}}},"description":"MsgUpdateParams defines the sdk.Msg type to update the connection parameters.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUpdateParamsResponse defines the MsgUpdateParams response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

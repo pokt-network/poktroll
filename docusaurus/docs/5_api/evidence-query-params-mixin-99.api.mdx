@@ -1,0 +1,64 @@
+---
+id: evidence-query-params-mixin-99
+title: "Params queries params of the distribution module."
+description: "Params queries params of the distribution module."
+sidebar_label: "Params queries params of the distribution module."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VU1v2zAM/SuCLrtkddudmtOKrth6GJB12SkrAtqiYzWy5EpyPhDkv4+U3cBdghXIYbnEovnx+Mgn72SERZDjmfzRot/Kp5F0DXqI2tkHJcfyfqUV2gLT6/kEPNThu95oe3MjR9JjaJwNSBl28vrykv8UhsLrhjNQ/K0IbVFgCGVrxKv7BYUWzka0kSOgaYwuUs3sOXDYToaiwhqO8yUcHYzHPpvQQcQKD9lF3DYoSueTNQVkXYR4nNyJGmPlFENgP0rp8mcsIp0bz71H3bXTpJBjBJ1dKCy1xa5yMmFEH4Qrk6V2qjX4fpEcAs7Z5AL6ucc1eHVc8gs2HokgVGMxpeynokSp0SjmQh28BdhksU4YZxfoRRtQ/bbaJpCbTOkQvc5brtNj/hBEn7DGogKrQz1og93tQu5HMne2DWdAPxX2v7EXrq5bq+N2HmHDmI881jpWysN6Dkr5OVrIDaqBZ+6cQbBy3/9G1HYJrYknFGBFa3HT0PipK/SeFvMsIfx7kwqncOClKSmRRm4khBpiZ/p0LRPUCNqEgTd4D1vy1RHr8H6tz93rI94oN/GlGT+YyTAkUVTTNQCLk4EHEofM9aJ9IQVTFtELr1fYifEzm526KXiBCTfEig5Z4ULtwpudyVZXORFxlfVCp+5t6Y7nd1cB7dyCFqLNL2hzssYt40eLce38Mh28M0Y83v+citvJA++bjoa7+zadTtgk7mjWtC/9sKFIw7Z0ZTDOdxLzwFZ0s3Rg+idSRRSBOqSXJKRYgx2kPIe3Nz0f5hNxE7PGEAFcqfWmuxiZ05nsOOXYQUo69rwm9hOz9FGpCCTH7HZ8d/3yZr9n80v66Ixn9LgCr1llfKJaFYKi9R3PdnKJW5YRfUUaHukKTJt29m+x7J8G4/96P6W1+gO4e3Io
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Params queries params of the distribution module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/distribution/v1beta1/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Params queries params of the distribution module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is the response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"params defines the parameters of the module.","type":"object","properties":{"base_proposer_reward":{"description":"Deprecated: The base_proposer_reward field is deprecated and is no longer used\nin the x/distribution module's reward mechanism.","type":"string"},"bonus_proposer_reward":{"description":"Deprecated: The bonus_proposer_reward field is deprecated and is no longer used\nin the x/distribution module's reward mechanism.","type":"string"},"community_tax":{"type":"string"},"withdraw_addr_enabled":{"type":"boolean"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

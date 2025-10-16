@@ -1,0 +1,72 @@
+---
+id: fee-msg-remove-checksum
+title: "RemoveChecksum defines a rpc handler method for MsgRemoveChecksum."
+description: "RemoveChecksum defines a rpc handler method for MsgRemoveChecksum."
+sidebar_label: "RemoveChecksum defines a rpc handler method for MsgRemoveChecksum."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VU1v2zAM/SuCzmnSddgOOa0tOqyHYUGanYJikG3GVqMPT6LTBkH++0jZbvO1docuh0CmyKdHPlLaSFRllOO5/B5LeT+QvoagUHt3W8ix/ApA9l9TsH4F1xXky9hYOZABfjcQ8coXazneyNw7BIe8VHVtdJ4QRg/RO7bFvAKreFVAzIOueZfQCXofWRSw0A6iwApEd4bAdQ1i4UMyHoeEOh8SI/YiSJ89QI70XQfOBDXERLCnTuvOM2LQriRPgraKuMtsjcBIGg079DFCt3xipS4+fRaVipVALzJmyEwKsQjeti7oA8jtQEZdOginTuvRWw+hiiJAjHLLv8F/rA976wAkKoYGtmyItXexrc/F+fmxPJciNnlO7BaNEb07Y/2z3Iei9MkTyzsuVU9y2oEf5NcZ9xJs43wBnJjsq7ZQjcETGTjROHiq6XSSCUIgkHdJ5KC7iM6OlybQktTfaS0yfbyQiSoqbeKOtwpBrclXI9j49llf2u3DxuIyUC9p5q/MZDcklciSjKo8GXiy9f7Sd4qrTiPgCkPNawErXyRpjvqOy9vuE1rtY8pEYUVfI53lQ6PLCnOjqfxx+KiiHa4+DAlldHTXsBrTl/vm5knZ2sD+VL/MVz95z/lRZd3CH/fGdaW0E6XGqsmGubej2i/xzAE++rBMH8EbI6Y3dzNxObnd6d5vs9mETeKa+sgb6BpJ5amRnLLs9BYwE1tBiC2ZbiWcRxEBeZNrZpXbgXwXTfaK8NwMCE84qg1VhI9uguG9Vq65fE0uQjwQjN6QiuWmwM0mUxF+BrPdspkkDPRczGm5UkGrjKs5v6cDK1AFizbfyCWsWZx2MM9mTI/dTZNm5XBIt4M+4pJuqhpf9b3f6cjJj7sZOWfdA2bTBMugHvmqpP+xlPwWcnQau2TbSKNc2aQ5ki0m//4A9AWPXg==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"RemoveChecksum defines a rpc handler method for MsgRemoveChecksum."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.lightclients.wasm.v1.Msg/RemoveChecksum"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+RemoveChecksum defines a rpc handler method for MsgRemoveChecksum.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgRemoveChecksum defines the request type for the MsgRemoveChecksum rpc.","type":"object","properties":{"checksum":{"type":"string","format":"byte","title":"checksum is the sha256 hash to be removed from the store"},"signer":{"type":"string","title":"signer address"}}}}},"description":"MsgRemoveChecksum defines the request type for the MsgRemoveChecksum rpc.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgStoreChecksumResponse defines the response type for the StoreCode rpc"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

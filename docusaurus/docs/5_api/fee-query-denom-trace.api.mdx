@@ -1,0 +1,72 @@
+---
+id: fee-query-denom-trace
+title: "DenomTrace queries a denomination trace information."
+description: "DenomTrace queries a denomination trace information."
+sidebar_label: "DenomTrace queries a denomination trace information."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VU1T2zAQ/SsanWCaYqC3nMpQ2nJL0/QEDKPY61hEloy0Cslk8t+7KzvBaRhgODSXyJLe7tu3H1pLVLMghzfyVwS/kncD6RrwCrWz14Ucyu8A6eT+G1hXT7zKQQ5ko7yqAcEzdC0LCLnXDYMIUqlQiSNtRQVLUTpfKzwWzouCLYijMhrTrZ80VkJPc9F4KPWSbpUCK2hPtU0sBLJPoW1riXZOiIAl950r+tLstlHIaw+PUXsg7ugjDGTIK6iVHK4lrhrGBPTazlIQSBEw9OST3GzuGBsaZwMEvn5+esp/+7FdiBDzHEKgKMT2OhPKnUWwyAjVNEbniWr2EBi27rHYt5e0fZZ23FkUOiQhth4Ec2ct024CZc8oMR5d3lrKR+UK5tIF6qYPkCMH6jmnqNu4krj3SdVDPr1Dco7R2y2RxwgBoXhHbl53P1UB7pORQ+98tu+gKwgPRq3IeRntTE8N6eHm0HfWJXUzaMvgwDLvkuVSW2gDyiulk/nGeczoy1owQpNz1KWmwhYxsEOWnIIk4wy7tcFFTyF3vN7k0/0GRKdU0eALFWVFtLBsSCvyB96Txw8V1uuy566A3i1NRmfg6Vqbunbry7lMVFFpE3q3lfdqxX2GUIe3fX1tj//tOJZBFYVm/sqM+pAkUU1tpWYvAnci9pXrNQAVpydLQr2jPNs+IfwMUG7rRWY0hjISOGQEsqEEny3Osl47hGzN02aTxk3pDhN5mSpqRiMtTk9yV2eNm+NnC/jk/Dx9eEeTb3z1eyIuRtdcKxoNh/lzMhnxlrikpDsDXdZVnrLejbq3DHPmFlS3LZluJaxDEShObgwXsFa2Z/KDAu6FvcsVwhKzxpAG7Cx6w2etuDeSxCUgy8thdwLTcnGW7D2LTJ/DNNRpGldEmMHrNc+FP95sNrz9mB6q4Q0tF8prNWUN+RHSgdeU2VKZAAc8d40kj8bdG3Es/sdb9aJA286y3FcLZSJ/0XIOq+27trmjexWogqTiANujC3p+GuyBDqYCv2S7Iv9xNaH++QvZ0sd7
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"DenomTrace queries a denomination trace information."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/apps/transfer/v1/denom_traces/{hash}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+DenomTrace queries a denomination trace information.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"hash (in hex format) or denom (full denom with ibc prefix) of the denomination trace information.","name":"hash","in":"path","required":true,"schema":{"type":"string","pattern":".+"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryDenomTraceResponse is the response type for the Query/DenomTrace RPC\nmethod.","type":"object","properties":{"denom_trace":{"description":"denom_trace returns the requested denomination trace information.","type":"object","properties":{"base_denom":{"description":"base denomination of the relayed fungible token.","type":"string"},"path":{"description":"path defines the chain of port/channel identifiers used for tracing the\nsource of the fungible token.","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

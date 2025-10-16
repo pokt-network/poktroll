@@ -1,0 +1,72 @@
+---
+id: evidence-msg-verify-invariant
+title: "VerifyInvariant defines a method to verify a particular invariant."
+description: "VerifyInvariant defines a method to verify a particular invariant."
+sidebar_label: "VerifyInvariant defines a method to verify a particular invariant."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VU1v2zAM/SuCLrukSdvdclpXBFgPw4I22yUoCkWmbbW2pEl02iDIfx8px62beC0wdDkEFkU+fj1SW4mqiHK6lN9jIW9H0nkICo2zV5mcytnaZGA10OXdLwgm31zZtQpGWZQjGeB3AxG/umwjp1upnUWgC/pU3ldGJ5zJfXSWZVGXUCv+yiDqYDzfkg/CPoAWAXyASFhRKFFDjKoAgU6skx7JvApodFOpIMzeSsOYQsKNB8J0q3vQHKIPnBAaiOy408W72mVNBXdW1XAcEUuFywWW8AyPojXpOYkYjC3kbtTDDa7BAcQDBWFiAq9j8Sn2XKTLQQ9UjAzCMXAr7/CU1q4hHJVlVL/IOfhg1oo8PsCGK8j6QjtjI59yADpUFdXKhc56wD//Rv+zbcwkE4Aoh6GBHQuidza2bTs/PT3O/ELERmtykjeV6NQZ68NoeL0HFRnkxkJbYlKbHOe9V+SyHbOwq16umgoHErGisfDkSRUyASFQK/4pn7e5r10GPS1DoAUxaiRzF2qFrejzuUyhojJV7GmrENSGdA1CHd/39aW93h7xaCSJmobjV9W8b5JKtKfMkOEgBQ/70PWJyYely97jXqJ6q0po3sWUicKSThPtYu3imNxFE8frsxUV5Ww80H6y4V5cvyzD2ZOqfQVvbJwusYHV8XLVzfyrRZO7YwZdlspYURgsm9VYu3ri3QOeWMBHFx7SIdCQi+vZzUJczK+YoAY5PvltsZizSFwS2xyJWropnei2j/U9YA6MyhzbYPZfwjqkbYN8yZWtle1BfkjnXhXhmTIITzjxFVWEXTeh4ru2qUv516YS3GFb6TEsmRJktt2uVISfodrtWEyNDvTiLekzKa+4lstbcleCSi1bbiUtXG5NO7wnCw6O1asmzdPhIO9GncUFLTWPb+re9lg7/3GzIOXV/g2u05TLoB55q9L/VEp+1Nk6jWaSbWWlbNGkWZMtJv/+AN9Z3lI=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"VerifyInvariant defines a method to verify a particular invariant."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.crisis.v1beta1.Msg/VerifyInvariant"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+VerifyInvariant defines a method to verify a particular invariant.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgVerifyInvariant represents a message to verify a particular invariance.","type":"object","properties":{"invariant_module_name":{"description":"name of the invariant module.","type":"string"},"invariant_route":{"description":"invariant_route is the msg's invariant route.","type":"string"},"sender":{"description":"sender is the account address of private key to send coins to fee collector account.","type":"string"}}}}},"description":"MsgVerifyInvariant represents a message to verify a particular invariance.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgVerifyInvariantResponse defines the Msg/VerifyInvariant response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

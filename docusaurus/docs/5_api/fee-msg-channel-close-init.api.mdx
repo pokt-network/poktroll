@@ -1,0 +1,72 @@
+---
+id: fee-msg-channel-close-init
+title: "ChannelCloseInit defines a rpc handler method for MsgChannelCloseInit."
+description: "ChannelCloseInit defines a rpc handler method for MsgChannelCloseInit."
+sidebar_label: "ChannelCloseInit defines a rpc handler method for MsgChannelCloseInit."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VUtPGzEQ/iuWzyGh9JZTA6Iqh6pRSE8pQl7vZNfgtV17Foii/PfOrBPYJgGkCnUPK3sen+fxjb2WqKokxwv5PVXyZiB9gKjQeHdVyrH8CkDy24taOQf2wvoEV86gHMgIv1tIeO7LlRyvpfYOwSEvVQjW6A5jdJe8Y1nSNTSKVyUkHU1gLeET+D62KGFpHCShRJMqkQhVFCvazcCqFUSBXpCPcWLyy9FasyOpdcYRjwbrrcH5kALFVQA6yRd3oDnwEDlFNJC6uLPXrSl5t7VNGI2r5IaMfcTXdMlUDuIRFX+D/58od8REoGAxtrBhQQrepZzo2enpYfknIrVaQ0rL1oqdOWN9XDtnW9TnbLEGQXajg3LszhdczsPO7aq6VK3FI6k40Tp4CmQKpYAYffy3jN7hiy+hZ2UItCISDOTSx0ZhFn0+k12oqIxNPWsVo1qRrUFo0vtnfcnqQ34NpCpLw/ErO+27dCVqqJ+qOup4lJpv8DIGLUhbWmJjA1j7UlCe4kibucTZghCDT102CmvajUyhh9pHGG6ZO3z4NDzGAHLhdsxebpbLJ9UEC/uDukuoN58vot1Y9ibVuKU/ZEwenYqmqC0ovmYU/D2eOMBHH++7TfTWitnl9VxMpldMSIMcjPw2n09ZJC6IXZ5EmV5Kd/RyqmGj94A5sAeIKQezXQnnkW4CzHdPwka5HuSHdeqvQjzTBOEJR8FSVfj4NlrW5SYu5CtNJLCDNtIrUjMDyGu9LlSCn9FuNiymxkZ6Lha0fFDRqILLubih02pQJXdtsZb3sOJc87yezDk2NrdtN0L7s7sZ7DwmdJMFfNP2pkfS6Y/rORkX2wes6QZbRvXIVyn9x1Lya8je3TR2srW0ylVtN14yY/L3B0jbjFc=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ChannelCloseInit defines a rpc handler method for MsgChannelCloseInit."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.core.channel.v1.Msg/ChannelCloseInit"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ChannelCloseInit defines a rpc handler method for MsgChannelCloseInit.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgChannelCloseInit defines a msg sent by a Relayer to Chain A\nto close a channel with Chain B.","type":"object","properties":{"channel_id":{"type":"string"},"port_id":{"type":"string"},"signer":{"type":"string"}}}}},"description":"MsgChannelCloseInit defines a msg sent by a Relayer to Chain A\nto close a channel with Chain B.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgChannelCloseInitResponse defines the Msg/ChannelCloseInit response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

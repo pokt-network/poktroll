@@ -1,0 +1,72 @@
+---
+id: evidence-query-account-mixin-81
+title: "Account returns account permissions."
+description: "Account returns account permissions."
+sidebar_label: "Account returns account permissions."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVd1v0zAQ/1csP4FUFgYvqE9UWxiV2lHajZdtqlzn2pgldrAvZVPV/507Jy3pugGiL3XO9/G73314I1GtguzfyK81+Ed515OuAq/QODvMZF+ma5OB1RCv5wOtXW1xbB6M/XAqe7JSXpWA4NnHRlr6ICOVZR5CoHtj6bNSmNPZw4/aeCCv6GvoyaBzKJXsbyQ+VmwW0Bu7ktvtHSuHytkAge/fvX3LfxkE7U3F2Eh7IEKtNYVZ1oXYqZ9QHO0sgkW2UFVVGB2zSb4HNtt0wj7x1+Q2bT0JEwTmsPcsGKRYOh+lkY6kNRHTyZkgFnKXcfw2G7f4DhqZI8+UomlyoWNpQjANmEMIk/1dEMpDjFR1ZJgrFMoK1cbNFcmcINqqW0vICCtgtNLG69qgWHhQ9+D/DquANRTHiKJ4R0Xz4ZYHmFZeEd1ZxJGTYoutE7Eta49cL1VdUGHkKP2WjuaXXy7T+fXlbJKeDT8N03NSAVuX3I0vKjQXsy/jdD6eXcz2ksFodCiYXU/S6XxwPh5eyrttTxamNDhnSPPaF+GZVA8VOOk6UGI/DebiSVjONuo3vJiAgXkZh1Vsk1t7PR215WKFXb001Y6LdSKGyP7pE7znlnIcSzyFwKFvrdoRT664+8jqCZwO2cp79ciDh1CG52ar/XWqcTQIVtQWHipqE0q/Afhf8/XnjtMug46WIacr8KRGM1YqbETv38kIFZUpuum8lOYLsT4218ds9HhXGcaviknXJFJU0nZRq2cN9yQ+s0KILay93c9Cd16YwGZVkP4KIlRej32ZaBdKF5J2dJP1adLah2TTbtRtXKlLd1y0s1wZK1bUMPXiRLsyqdw9vrGAP52/jx/eFYWYprMrMZgMuWEMFpzS56urCYvEGcFzJGoqrHSscLvR/+aYq7SmV6AB056EdShoI/Fl5QKWynZc/iNZB2nu64DwgElVUM7snIYlrtZI5I1siOQ8GirptObHakcnHfu7J4qempygsdlms1ABrn2x3bL4R3wQ+zd0XCtv1ILZojcuM4HPVL+lKgIcIdyPh3w1bV+81+L3gB4i37Wz5WZeq6LmLzrew2PnHd3yAstBZTQfDKG5JQKhwo7d0TTyQ7pvtov0ivr2F87Twl4=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Account returns account permissions."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/circuit/v1/accounts/{address}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Account returns account permissions.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"AccountResponse is the response type for the Query/Account RPC method.","type":"object","properties":{"permission":{"description":"Permissions are the permissions that an account has to trip\nor reset the circuit breaker.","type":"object","properties":{"level":{"description":"level is the level of permissions granted to this account.","type":"string","default":"LEVEL_NONE_UNSPECIFIED","enum":["LEVEL_NONE_UNSPECIFIED","LEVEL_SOME_MSGS","LEVEL_ALL_MSGS","LEVEL_SUPER_ADMIN"]},"limit_type_urls":{"description":"limit_type_urls is used with LEVEL_SOME_MSGS to limit the lists of Msg type\nURLs that the account can trip. It is an error to use limit_type_urls with\na level other than LEVEL_SOME_MSGS.","type":"array","items":{"type":"string"}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

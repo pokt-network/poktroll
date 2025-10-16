@@ -1,0 +1,72 @@
+---
+id: evidence-query-supply
+title: "Supply queries the number of NFTs from the given class, same as totalSupply of ERC721."
+description: "Supply queries the number of NFTs from the given class, same as totalSupply of ERC721."
+sidebar_label: "Supply queries the number of NFTs from the given class, same as totalSupply of ERC721."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VMFu2zAM/RVBpw3I6rYbNiCnFUW29TJkaXYqioKx6VitLLkSnTYI8u8jZSdwlg7dYcslsqgn8T2Sb6MJllGPb/SPFsNa3460bzAAGe+uCj3Wk5Up0OWYwnfXbdPYtR7pBgLUSBgEu9EFxjyYRlCMyS3EeGcKxX8+N0BYqCdDlaIKlSuJ8Y7Rg5O8YwTZAFW8DvjYmoD8PoUWRzrmFdagxxtN60ZwkYJxS73d3srh2HgXMUr8/PRU/g7zuVCxzXOMsWyt2h0/4Xdy7wgdCQKYmMkT7+w+Cmxz/Kxf3GMu6ZMhKxtJlU6UWX+vMjHx3L2jBKtKH9JuAmQdQs2ml4pFrLzwb4IIT6bjAbVvu8QOGY8031QDR3RrHH38MEimw+zed229wKB8qcBa9f3LPKoy+DrFlmaFTiXxWUP5jViyElpLL6jnVOvwuWHmXEcMgan8ExEPGee+wMEpJodLDEPCvPX+XKdUCYyNg9MQAkhbGsI6vv7W5y583E4jDUVhJH+w0yEkSVRzC8HyReBexKFyfZkfueZ8y29V+WNFRirycPDsKPIEtr+EEZPZ5afzM5G8b5qxXmIiJ1Mz1lnuY+1jxhOWrc4WLNJZFhM62+wGbZsmrfTHZb6swDjOg6p2cZL7Omv8A71zSE8+PKSP4LmRZpPrubqYXg367tt8PpUtdckt4Xmr6wnIU0/0k/7axVLXFdtJl0y/Us6TisyRg42PVIMbXPnf5D0QZl9rwmfKGssqSTptsBLrpL/RnfRibMneevl5FXeOOd57HXtWxWQEttksIOLPYLdb2X5MHjy+4eUKgoGF6Cv2aqKsueIl2IhHGe5HUL+Z9db5Vv2FC7/IbDdSTrJegW3li5cPuB469vaWz1YIBQ+p5NiFL9hnGxoAjyxBLHvfv18ncx6eX4dvRDc=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Supply queries the number of NFTs from the given class, same as totalSupply of ERC721."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/nft/v1beta1/supply/{class_id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Supply queries the number of NFTs from the given class, same as totalSupply of ERC721.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"class_id associated with the nft","name":"class_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QuerySupplyResponse is the response type for the Query/Supply RPC method","properties":{"amount":{"type":"string","format":"uint64","title":"amount is the number of all NFTs from the given class"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      
