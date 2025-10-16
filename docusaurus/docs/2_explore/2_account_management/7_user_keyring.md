@@ -12,6 +12,10 @@ machines to **AVOID** providing a password each time.
 
 **Only follow these instructions if you know what you're doing.**
 
+This whole page can be skipped if the `backend` in your `.pocket/config/client.toml` is set to `test`.
+
+If it is set to `os` or other, these instructions avoid having to enter your password every time.
+
 :::
 
 ## Table of Contents <!-- omit in toc -->
@@ -47,14 +51,6 @@ what a `backend` is, see [the official docs](https://docs.cosmos.network/v0.46/r
 
 This document will focus on how to use `pocketd` with the `os` backend without
 a password on a Debian machine, and assume you have read the Cosmos documentation.
-
-:::note Only required for non `test` keyring backends
-
-This whole page can be skipped if the `backend` in your `.pocket/config/client.toml` is set to `test`.
-
-If it is set to `os` or other, these instructions avoid having to enter your password every time.
-
-:::
 
 </details>
 

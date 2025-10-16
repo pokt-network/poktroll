@@ -45,28 +45,28 @@ Run the following commands on your local machine to create the required accounts
 
 ```bash
 # Create accounts
-pkd keys add olshansky_anvil_test_service_owner
-pkd keys add olshansky_anvil_test_app
-pkd keys add olshansky_anvil_test_gateway
-pkd keys add olshansky_anvil_test_supplier
+pocketd keys add olshansky_anvil_test_service_owner
+pocketd keys add olshansky_anvil_test_app
+pocketd keys add olshansky_anvil_test_gateway
+pocketd keys add olshansky_anvil_test_supplier
 
 # Export addresses
-export OLSHANSKY_ANVIL_TEST_SERVICE_OWNER_ADDR=$(pkd keys show olshansky_anvil_test_service_owner -a)
-export OLSHANSKY_ANVIL_TEST_APP_ADDR=$(pkd keys show olshansky_anvil_test_app -a)
-export OLSHANSKY_ANVIL_TEST_GATEWAY_ADDR=$(pkd keys show olshansky_anvil_test_gateway -a)
-export OLSHANSKY_ANVIL_TEST_SUPPLIER_ADDR=$(pkd keys show olshansky_anvil_test_supplier -a)
+export OLSHANSKY_ANVIL_TEST_SERVICE_OWNER_ADDR=$(pocketd keys show olshansky_anvil_test_service_owner -a)
+export OLSHANSKY_ANVIL_TEST_APP_ADDR=$(pocketd keys show olshansky_anvil_test_app -a)
+export OLSHANSKY_ANVIL_TEST_GATEWAY_ADDR=$(pocketd keys show olshansky_anvil_test_gateway -a)
+export OLSHANSKY_ANVIL_TEST_SUPPLIER_ADDR=$(pocketd keys show olshansky_anvil_test_supplier -a)
 
 # Fund accounts
-pkd_beta_fund $OLSHANSKY_ANVIL_TEST_SERVICE_OWNER_ADDR
-pkd_beta_fund $OLSHANSKY_ANVIL_TEST_APP_ADDR
-pkd_beta_fund $OLSHANSKY_ANVIL_TEST_GATEWAY_ADDR
-pkd_beta_fund $OLSHANSKY_ANVIL_TEST_SUPPLIER_ADDR
+pocketd tx bank send $FUNDING_ADDR $OLSHANSKY_ANVIL_TEST_SERVICE_OWNER_ADDR 100000000upokt --network=beta --fees=100upokt --unordered --timeout-duration=5s --yes
+pocketd tx bank send $FUNDING_ADDR $OLSHANSKY_ANVIL_TEST_APP_ADDR 100000000upokt --network=beta --fees=100upokt --unordered --timeout-duration=5s --yes
+pocketd tx bank send $FUNDING_ADDR $OLSHANSKY_ANVIL_TEST_GATEWAY_ADDR 100000000upokt --network=beta --fees=100upokt --unordered --timeout-duration=5s --yes
+pocketd tx bank send $FUNDING_ADDR $OLSHANSKY_ANVIL_TEST_SUPPLIER_ADDR 100000000upokt --network=beta --fees=100upokt --unordered --timeout-duration=5s --yes
 
 # Export private keys
-pkd keys export olshansky_anvil_test_service_owner --unsafe --unarmored-hex --yes
-pkd keys export olshansky_anvil_test_app --unsafe --unarmored-hex --yes
-pkd keys export olshansky_anvil_test_gateway --unsafe --unarmored-hex --yes
-pkd keys export olshansky_anvil_test_supplier --unsafe --unarmored-hex --yes
+pocketd keys export olshansky_anvil_test_service_owner --unsafe --unarmored-hex --yes
+pocketd keys export olshansky_anvil_test_app --unsafe --unarmored-hex --yes
+pocketd keys export olshansky_anvil_test_gateway --unsafe --unarmored-hex --yes
+pocketd keys export olshansky_anvil_test_supplier --unsafe --unarmored-hex --yes
 ```
 
 ### Import Accounts to Vultr Instance

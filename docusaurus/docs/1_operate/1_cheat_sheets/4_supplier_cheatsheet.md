@@ -193,7 +193,11 @@ source ~/.profile
    echo "Supplier address: $SUPPLIER_ADDR"
    ```
 
-2. Fund your account by going to [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/).
+2. Fund your account by going to [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) or running:
+
+```bash
+pocketd tx bank send $FUNDING_ADDR $SUPPLIER_ADDR 100000000upokt --network=beta --fees=100upokt --unordered --timeout-duration=5s --yes
+```
 
 3. Check balance:
 
@@ -201,23 +205,17 @@ source ~/.profile
    pocketd query bank balances $SUPPLIER_ADDR $BETA_NODE_FLAGS
    ```
 
-:::tip 🌿 Grove employees only
-
-<details>
-
-<summary>`pkd` helpers</summary>
+4.
 
 ```bash
 # Fund your account
-pkd_beta_fund $SUPPLIER_ADDR
+
 
 # Check balance
-pkd_beta_query bank balances $SUPPLIER_ADDR
+pocketd query --network=beta bank balances $SUPPLIER_ADDR
 ```
 
 </details>
-
-:::
 
 ## Supplier Configuration
 

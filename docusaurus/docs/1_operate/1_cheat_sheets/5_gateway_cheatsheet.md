@@ -204,12 +204,12 @@ source ~/.profile
 
 ```bash
 # Fund your account
-pkd_beta_fund $GATEWAY_ADDR
-pkd_beta_fund $APP_ADDR
+pocketd tx bank send $FUNDING_ADDR $GATEWAY_ADDR 100000000upokt --network=beta --fees=100upokt --unordered --timeout-duration=5s --yes
+pocketd tx bank send $FUNDING_ADDR $APP_ADDR 100000000upokt --network=beta --fees=100upokt --unordered --timeout-duration=5s --yes
 
 # Check balance
-pkd_beta_query bank balances $GATEWAY_ADDR
-pkd_beta_query bank balances $APP_ADDR
+pocketd query --network=beta bank balances $GATEWAY_ADDR
+pocketd query --network=beta bank balances $APP_ADDR
 ```
 
 </details>
