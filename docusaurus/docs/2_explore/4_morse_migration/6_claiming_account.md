@@ -146,22 +146,12 @@ Use one of the following faucets:
 - [Beta Testnet MACT/POKT Faucet](https://faucet.beta.testnet.pokt.network/)
 - [Mainnet MACT Faucet](https://faucet.pocket.network/)
 
-:::tip Grove Employees 🌿
-
-If you're a Grove Employee, you can use the helpers [here](https://www.notion.so/buildwithgrove/Playbook-Streamlining-rc-helpers-for-Shannon-Alpha-Beta-Main-Network-Environments-152a36edfff680019314d468fad88864?pvs=4) to fund the account like so:
-
 ```bash
 # Get the Shannon address
 pocketd keys show <your_shannon_key_name> -a
 
-# Fund the Shannon key with 1MPOKT
-pkd_<NETWORK>fund_pokt <your_shannon_address>
-# OR
-# Fund the Shannon key with 1MACT
-pkd_<NETWORK>fund_mact <your_shannon_address>
+pocketd tx bank send $FUNDING_ADDR <your_shannon_address> 100000000upokt --network=beta --fees=100upokt --unordered --timeout-duration=5s --yes
 ```
-
-:::
 
 ### 4. Ensure your Shannon account exists onchain
 

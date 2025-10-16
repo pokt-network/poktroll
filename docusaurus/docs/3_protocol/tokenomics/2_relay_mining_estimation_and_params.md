@@ -129,7 +129,7 @@ To be able to scale a single RelayMiner co-processor to handle billions of relay
 
 ### How do we prove the claim?
 
-Visit the [claim and proof lifecycle docs](../primitives/claim_and_proof_lifecycle.md) for more information.
+Visit the [claim and proof lifecycle docs](../primitives/2_claim_and_proof_lifecycle.md) for more information.
 
 ### Why is every relay the same number of compute units?
 

@@ -202,19 +202,19 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scr
 Export a key from your local machine:
 
 ```bash
-pkd keys export {key-name} --unsafe --unarmored-hex
+pocketd keys export {key-name} --unsafe --unarmored-hex --yes
 ```
 
 And import it into your instance:
 
 ```bash
-pocket keys import {key-name} {hex-priv-key}
+pocketd keys import {key-name} {hex-priv-key}
 ```
 
 Or create a new one:
 
 ```bash
-pocket keys add {key-name}
+pocketd keys add {key-name}
 ```
 
 ### Run a full node
