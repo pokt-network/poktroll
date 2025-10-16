@@ -493,7 +493,7 @@ func createTestSessionTree(t *testing.T) (relayer.SessionTree, string, func()) {
 	sessionTree, err := session.NewSessionTree(logger, sessionHeader, supplierAddr, tmpDir, false)
 	require.NoError(t, err)
 
-	walPath := filepath.Join(tmpDir, minedRelaysWALDirectoryPath, supplierAddr, sessionHeader.SessionId, ".wal")
+	walPath := filepath.Join(tmpDir, minedRelaysWALDirectoryPath, supplierAddr, sessionHeader.SessionId+".wal")
 
 	cleanup := func() {
 		_ = sessionTree.Delete()
