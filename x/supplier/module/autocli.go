@@ -36,6 +36,9 @@ Use the --dehydrated flag to exclude service_config_history and rev_share detail
 	pocketd query supplier list-suppliers --page 2 --limit 50
 	pocketd query supplier list-suppliers --service-id anvil --page 1 --limit 100
 	pocketd query supplier list-suppliers --service-id anvil --dehydrated`,
+					// TODO_TECHDEBT: Add CLI flags for operator_address and owner_address filters:
+					// - "operator_address": {Name: "operator-address", Shorthand: "o", Usage: "operator address to filter by", Hidden: false}
+					// - "owner_address": {Name: "owner-address", Shorthand: "w", Usage: "owner address to filter by", Hidden: false}
 					FlagOptions: map[string]*autocliv1.FlagOptions{
 						"service_id": {Name: "service-id", Shorthand: "s", Usage: "service id to filter by", Hidden: false},
 						"dehydrated": {Name: "dehydrated", Shorthand: "d", Usage: "return suppliers with some fields omitted for a smaller response payload (e.g. service_config_history, rev_share, etc..)", Hidden: false},
