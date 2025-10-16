@@ -34,7 +34,8 @@ func (s *suite) TheUserCreatesAServiceWithNameAndComputeUnitsFromAccountWithMeta
 		"--yes",
 	}
 
-	res := s.pocketd.RunCommandOnHost("", args...)
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "failed to create service with metadata: %v", err)
 	s.pocketd.result = res
 }
 
@@ -66,7 +67,8 @@ func (s *suite) TheUserUpdatesServiceWithMetadataFromFileFromAccount(
 		"--yes",
 	}
 
-	res := s.pocketd.RunCommandOnHost("", args...)
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "failed to update service with metadata: %v", err)
 	s.pocketd.result = res
 }
 
@@ -86,8 +88,8 @@ func (s *suite) AServiceExistsWithComputeUnitsAndOwner(
 		"--yes",
 	}
 
-	res := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, res.Err, "failed to create service %s: %v", serviceId, res.Err)
+	_, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "failed to create service %s: %v", serviceId, err)
 
 	// Wait for the service to be created
 	s.waitForTxResultEvent(newEventMsgTypeMatchFn("service", "AddService"))

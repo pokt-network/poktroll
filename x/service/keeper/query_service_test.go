@@ -12,6 +12,7 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // Prevent strconv unused error
@@ -66,6 +67,29 @@ func TestServiceQuerySingle(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestServiceMetadataExclusion(t *testing.T) {
+	keeper, ctx := keepertest.ServiceKeeper(t)
+
+	// Create a service with metadata
+	serviceWithMetadata := createNServices(keeper, ctx, 1)[0]
+	serviceWithMetadata.Metadata = &sharedtypes.Metadata{
+		ExperimentalApiSpecs: []byte(`{"openapi": "3.0.0", "info": {"title": "Test API"}}`),
+	}
+	keeper.SetService(ctx, serviceWithMetadata)
+
+	// Test AllServices query - metadata should be excluded
+	allServicesResp, err := keeper.AllServices(ctx, &types.QueryAllServicesRequest{})
+	require.NoError(t, err)
+	require.Len(t, allServicesResp.Service, 1)
+	require.Nil(t, allServicesResp.Service[0].Metadata, "AllServices should exclude metadata")
+
+	// Test single Service query - metadata should be included
+	singleServiceResp, err := keeper.Service(ctx, &types.QueryGetServiceRequest{Id: serviceWithMetadata.Id})
+	require.NoError(t, err)
+	require.NotNil(t, singleServiceResp.Service.Metadata, "Single service query should include metadata")
+	require.Equal(t, serviceWithMetadata.Metadata.ExperimentalApiSpecs, singleServiceResp.Service.Metadata.ExperimentalApiSpecs)
 }
 
 func TestServiceQueryPaginated(t *testing.T) {

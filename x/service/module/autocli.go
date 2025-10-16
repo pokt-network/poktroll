@@ -26,21 +26,32 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "AllServices",
 					Use:       "all-services",
 					Short:     "List all services registered on-chain",
-					Long: `
-- Lists all services currently registered in the network.
-- Supports pagination via flags if there are many services.
-`,
-					Example: `pocketd q service all-services`,
+					Long: `Lists all services currently registered in the network.
+
+NOTE: Service metadata (API specifications) is excluded from list queries
+to reduce payload size. Use 'show-service' to retrieve full service details
+including metadata for a specific service.
+
+Supports pagination via flags if there are many services.`,
+					Example: `pocketd q service all-services
+pocketd q service all-services --limit 50
+pocketd q service all-services --page 2`,
 				},
 				{
 					RpcMethod: "Service",
 					Use:       "show-service [service-id]",
-					Short:     "Show details for a specific service",
-					Long: `
-- Retrieve the service details by its unique on-chain id.
-- Shows all metadata and configuration for the specified service.
-`,
-					Example:        `pocketd q service show-service <service-id>`,
+					Short:     "Show full details for a specific service",
+					Long: `Retrieves complete service information by its unique on-chain ID.
+
+Returns all service details including:
+- Service ID, name, and compute units per relay
+- Owner address
+- Full metadata (API specifications up to 256 KiB)
+
+This is the only query that returns service metadata. Use 'all-services'
+for a lightweight list without metadata.`,
+					Example:        `pocketd q service show-service pocket
+pocketd q service show-service anvil --output json`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "id"}},
 				},
 				{

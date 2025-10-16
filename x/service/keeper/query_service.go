@@ -15,6 +15,8 @@ import (
 )
 
 // AllServices queries all services.
+// Service metadata is always excluded in list queries to reduce payload size.
+// Use the Service() query to retrieve a specific service with full metadata.
 func (k Keeper) AllServices(ctx context.Context, req *types.QueryAllServicesRequest) (*types.QueryAllServicesResponse, error) {
 	logger := k.Logger().With("method", "AllServices")
 
@@ -34,6 +36,10 @@ func (k Keeper) AllServices(ctx context.Context, req *types.QueryAllServicesRequ
 			logger.Error(err.Error())
 			return status.Error(codes.Internal, err.Error())
 		}
+
+		// ALWAYS strip metadata for list queries by default to reduce payload size
+		// Metadata is excluded regardless of dehydrated flag value
+		service.Metadata = nil
 
 		services = append(services, service)
 		return nil
