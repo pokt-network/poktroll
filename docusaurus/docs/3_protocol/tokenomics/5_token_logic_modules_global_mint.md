@@ -300,7 +300,7 @@ Sovereign Applications are no different than Gateway Applications in this respec
 They are smaller and a much less common use case, but will have to follow the same
 reimbursement process described above.
 
-_Read more about about their differences and similarities [here](../primitives/gateways.md)._
+_Read more about about their differences and similarities [here](../primitives/3_gateways.md)._
 
 ### What kind of resources are needed to scale and automate reimbursement? <!-- omit in toc -->
 
