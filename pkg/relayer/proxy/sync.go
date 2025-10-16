@@ -297,7 +297,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 	instructionTimes.Record(relayer.InstructionBuildServiceBackendRequest)
 
-	logger = logger.With("request_preparation_duration", time.Since(requestStartTime).String())
+	logger = logger.With(
+		"request_preparation_duration", time.Since(requestStartTime).String(),
+		"request_url", httpRequest.URL.String(),
+	)
 	relayer.CaptureRequestPreparationDuration(serviceId, requestStartTime)
 
 	// Check if context deadline already exceeded before making the backend call.
@@ -335,10 +338,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()
 	httpResponse, err := server.httpClient.Do(ctxWithRemainingTimeout, logger, httpRequest)
+
 	// Early close backend request body to free up pool resources.
 	CloseBody(logger, httpRequest.Body)
 	instructionTimes.Record(relayer.InstructionHTTPClientDo)
-	backendServiceProcessingEnd := time.Now()
 
 	// Add response preparation duration to the logger such that any log before errors will have
 	// as much request duration information as possible.
@@ -346,6 +349,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		"backend_request_duration", time.Since(serviceCallStartTime).String(),
 	)
 
+	// Handle relay response errors
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed sending the relay request to the native service")
 		// Capture the service call request duration metric.
@@ -371,109 +375,37 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	instructionTimes.Record(relayer.InstructionDeferCloseResponseBodyAndCaptureSvcDur)
 
-	// Check if the response is a stream
-	streamThis := IsStreamingResponse(httpResponse)
-
-	// Create empty relay response
-	relayResponse := &types.RelayResponse{
-		Meta:    types.RelayResponseMetadata{SessionHeader: meta.SessionHeader},
-		Payload: nil,
-	}
-
+	// Determine response type: streaming (SSE/NDJSON) or standard HTTP
+	isStreaming := isStreamingResponse(httpResponse)
+	// Handle streaming and non-streaming responses accordingly
+	var relayResponse *types.RelayResponse
 	var responseSize float64
-	if streamThis {
-		logger.Debug().Msg("Handling streaming request.")
+	if isStreaming {
+		logger.Debug().Msg("🚿 Handling streaming request.")
 
-		// Process and assign the relay response
-		relayResponse, responseSize, err = server.HandleHttpStream(httpResponse, writer, meta, logger)
+		// Process streaming response: signs each chunk individually
+		relayResponse, responseSize, err = server.handleHttpStream(ctxWithRemainingTimeout, logger, instructionTimes, relayRequest, httpResponse, writer)
 		if err != nil {
+			logger.Error().Err(err).Msg("❌ Failed handling the streaming response")
 			return relayRequest, err
 		}
-
 	} else {
-		logger.Debug().Msg("Handling normal request.")
+		logger.Debug().Msg("💧 Handling non-streaming request.")
 
-		// Serialize the service response to be sent back to the client.
-		// This will include the status code, headers, and body.
-		wrappedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
+		// Process non-streaming response: signs the entire response at once
+		relayResponse, responseSize, err = server.handleHttp(ctxWithRemainingTimeout, logger, instructionTimes, relayRequest, httpResponse, writer)
 		if err != nil {
-			logger.Error().Err(err).Msg("❌ Failed serializing the service response")
+			logger.Error().Err(err).Msg("❌ Failed handling the non-streaming response")
 			return relayRequest, err
 		}
-		// Early close backend response body to free up pool resources.
-		CloseBody(logger, httpResponse.Body)
-		instructionTimes.Record(relayer.InstructionSerializeHTTPResponse)
-
-		// Pass through all backend responses including errors.
-		// Allows clients to see real HTTP status codes from backend service.
-		// Log non-2XX status codes for monitoring but don't block response.
-		if httpResponse.StatusCode >= http.StatusMultipleChoices {
-			logger.Error().
-				Int("status_code", httpResponse.StatusCode).
-				Str("request_url", httpRequest.URL.String()).
-				Str("request_payload_first_bytes", polylog.Preview(string(relayRequest.Payload))).
-				Str("response_payload_first_bytes", polylog.Preview(string(wrappedHTTPResponse.BodyBz))).
-				Msg("backend service returned a non-2XX status code. Passing it through to the client.")
-		}
-		logger.Debug().
-			Str("relay_request_session_header", sessionHeader.String()).
-			Msg("building relay response protobuf from service response")
-
-		// Check context cancellation before building relay response to prevent signature race conditions
-		if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
-			logger.Warn().Err(ctxErr).Msg("⚠️ Context canceled before building relay response - preventing signature race condition")
-			return relayRequest, ErrRelayerProxyTimeout.Wrapf(
-				"request context canceled during response building: %v",
-				ctxErr,
-			)
-		}
-		instructionTimes.Record(relayer.InstructionCheckDeadlineBeforeResponse)
-
-		// Build the relay response using the original service's response.
-		// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
-		// was verified to be valid and has to be the same as the relayResponse session header.
-		relayResponse, err := server.newRelayResponse(responseBz, sessionHeader, supplierOperatorAddress)
-		if err != nil {
-			logger.Error().Err(err).Msg("❌ Failed building the relay response")
-			// The client should not have knowledge about the RelayMiner's issues with
-			// building the relay response. Reply with an internal error so that the
-			// original error is not exposed to the client.
-			return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
-		}
-		instructionTimes.Record(relayer.InstructionRelayResponseGenerated)
-
-		// Capture the time after response time for the relay.
-		responsePreparationEnd := time.Now()
-		// Add response preparation duration to the logger such that any log before errors will have
-		// as much request duration information as possible.
-		logger = logger.With(
-			"response_preparation_duration",
-			time.Since(backendServiceProcessingEnd).String(),
-		)
-		relayer.CaptureResponsePreparationDuration(serviceId, backendServiceProcessingEnd)
-		instructionTimes.Record(relayer.InstructionLoggerWithResponsePreparation)
-
-		relay := &types.Relay{Req: relayRequest, Res: relayResponse}
-
-		// Send the relay response to the client.
-		err = server.sendRelayResponse(relay.Res, writer)
-		logger = logger.With("send_response_duration", time.Since(responsePreparationEnd).String())
-		if err != nil {
-			// If the originHost cannot be parsed, reply with an internal error so that
-			// the original error is not exposed to the client.
-			clientError := ErrRelayerProxyInternalError.Wrap(err.Error())
-			// Log current time to highlight writer i/o timeout errors.
-			logger.Warn().Err(err).Time("current_time", time.Now()).Msg("❌ Failed sending relay response")
-			return relayRequest, clientError
-		}
-		instructionTimes.Record(relayer.InstructionResponseSent)
-
-		// Set response size
-		responseSize = float64(relayResponse.Size())
 	}
+	instructionTimes.Record(relayer.InstructionResponseSent)
 
 	// Create the relay response
-	relay := &types.Relay{Req: relayRequest, Res: relayResponse}
+	relay := &types.Relay{
+		Req: relayRequest,
+		Res: relayResponse,
+	}
 
 	// Log and capture metrics for the relay request.
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("relay request served successfully")
