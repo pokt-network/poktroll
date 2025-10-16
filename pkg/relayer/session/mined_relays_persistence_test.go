@@ -277,6 +277,8 @@ func TestMinedRelaysWAL_ThresholdFlush(t *testing.T) {
 	relayHash := randomBytes(t, 32)
 	wal.AppendMinedRelay(relayHash, bigPayload, 99)
 
+	time.Sleep(100 * time.Millisecond)
+
 	// After append, threshold exceeded path should have flushed buffer synchronously.
 	// Assert file now has non-zero size and in-memory buffer is empty.
 	walFileInfo, err := os.Stat(walPath)

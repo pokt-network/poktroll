@@ -36,6 +36,13 @@ const (
 	// TODO_TECHDEBT: Make this value configurable.
 	minedRelaysLogFlushInterval = 10 * time.Second
 
+	// minedRelaysWriteQueueSize is the buffer size for the channel queue used by
+	// the dedicated writer goroutine. A larger buffer provides more tolerance for
+	// burst traffic but uses more memory. If the queue fills up, AppendMinedRelay
+	// will detect backpressure.
+	// TODO_TECHDEBT: Make this value configurable.
+	minedRelaysWriteQueueSize = 100
+
 	// Encoding constants for the on-disk WAL format
 
 	// minedRelaysLogRelayPayloadLengthPrefixSizeBytes indicates the size of the
@@ -90,10 +97,21 @@ type minedRelaysWriteAheadLog struct {
 
 	// flushTicker triggers periodic flushes of the in-memory buffer to disk.
 	flushTicker *time.Ticker
+
+	// writeQueue is a buffered channel that holds buffers ready to be written to disk.
+	// The dedicated writer goroutine consumes from this queue, guaranteeing write order.
+	writeQueue chan []byte
+
+	// writerDone signals when the writer goroutine has finished processing all writes.
+	writerDone chan struct{}
+
+	// shutdownCh signals the writer goroutine to shut down gracefully.
+	shutdownCh chan struct{}
 }
 
 // NewMinedRelaysWriteAheadLog constructs a new minedRelaysWriteAheadLog, opening (or creating)
-// the underlying append-only file at the given path and starting the periodic flush loop.
+// the underlying append-only file at the given path and starting the periodic flush loop
+// and the dedicated writer goroutine.
 //
 // Paired with the SessionTree's in-memory SMST:
 // - Call this once per newly created SessionTree to start capturing mined relays
@@ -114,7 +132,13 @@ func NewMinedRelaysWriteAheadLog(logFilePath string, logger polylog.Logger) (*mi
 		logFile:          logFile,
 		logger:           logger,
 		flushTicker:      time.NewTicker(minedRelaysLogFlushInterval),
+		writeQueue:       make(chan []byte, minedRelaysWriteQueueSize),
+		writerDone:       make(chan struct{}, 1),
+		shutdownCh:       make(chan struct{}, 1),
 	}
+
+	// Start the dedicated writer goroutine for async, ordered disk writes
+	go wal.startWriter()
 
 	// Start the background periodic flush loop
 	go wal.runPeriodicFlushLoop()
@@ -135,9 +159,10 @@ func (wal *minedRelaysWriteAheadLog) AppendMinedRelay(relayHash []byte, relayPay
 
 	wal.bufferMu.Lock()
 	wal.bufferedLogBytes = append(wal.bufferedLogBytes, serializedEntry...)
+	shouldFlush := len(wal.bufferedLogBytes) > maxBufferedMinedRelaysBytesBeforeFlush
 	wal.bufferMu.Unlock()
 
-	if len(wal.bufferedLogBytes) > maxBufferedMinedRelaysBytesBeforeFlush {
+	if shouldFlush {
 		wal.flushTicker.Reset(minedRelaysLogFlushInterval)
 		if err := wal.flushBufferToDisk(); err != nil {
 			wal.logger.Error().Err(err).Msg("❌️ Failed to flush mined relays WAL buffer to disk after exceeding size threshold")
@@ -145,16 +170,37 @@ func (wal *minedRelaysWriteAheadLog) AppendMinedRelay(relayHash []byte, relayPay
 	}
 }
 
-// Close flushes any buffered entries, closes the underlying file.
+// Close flushes any buffered entries, closes the underlying file, and stops the writer goroutine.
 //
 // This is called when the relay miner is shutting down but the session may still be active.
-// - Flush persists any pending entries
-// - Close releases the OS file handle
+// - Stop the periodic flush ticker
+// - Flush any remaining buffered entries to the write queue
+// - Signal shutdown to the writer goroutine
+// - Wait for the writer to finish processing all queued writes
+// - Close the file handle
 func (wal *minedRelaysWriteAheadLog) Close() error {
-	wal.flushTicker.Stop()
-	if err := wal.flushBufferToDisk(); err != nil {
-		return err
+	// Check if WAL is already closed
+	select {
+	case <-wal.shutdownCh:
+		// Already closed, nothing to do
+		return nil
+	default:
 	}
+
+	wal.flushTicker.Stop()
+
+	// Flush any remaining buffered entries before shutting down the writer
+	// This ensures all buffered data is queued for writing
+	if err := wal.flushBufferToDisk(); err != nil {
+		// Log but don't fail the close operation
+		wal.logger.Error().Err(err).Msg("❌️ Failed to flush remaining buffer during WAL close")
+	}
+
+	// Signal the writer goroutine to shut down
+	close(wal.shutdownCh)
+
+	// Wait for the writer goroutine to finish processing all queued writes
+	<-wal.writerDone
 
 	return wal.logFile.Close()
 }
@@ -173,36 +219,83 @@ func (wal *minedRelaysWriteAheadLog) CloseAndRemove() error {
 	return os.Remove(wal.logFile.Name())
 }
 
-// flushBufferToDisk writes the buffered frames to the WAL file and syncs the data.
+// flushBufferToDisk queues the buffered frames for async write to disk.
+// This method is now non-blocking: it moves the buffer to the write queue and returns immediately.
+// The actual disk write is handled by the dedicated writer goroutine, which guarantees write order.
 func (wal *minedRelaysWriteAheadLog) flushBufferToDisk() error {
 	wal.bufferMu.Lock()
-	defer wal.bufferMu.Unlock()
 
 	// Nothing to flush, return early
 	if len(wal.bufferedLogBytes) == 0 {
+		wal.bufferMu.Unlock()
 		return nil
 	}
 
 	buffered := wal.bufferedLogBytes
 	wal.bufferedLogBytes = []byte{}
+	wal.bufferMu.Unlock()
 
-	if _, err := wal.logFile.Write(buffered); err != nil {
-		wal.logger.Error().Err(err).Msg("❌️ Failed to write mined relays WAL entries to file. ❗Check disk space and permissions. ❗Relay evidence may be lost on restart.")
-		return err
+	// Send buffer to writer goroutine (non-blocking check for backpressure)
+	select {
+	case <-wal.shutdownCh:
+		// WAL is closed, do not accept new writes
+		wal.logger.Warn().Msg("⚠️ Attempted to append to mined relays WAL after it was closed. Ignoring.")
+		return ErrSessionTreeWALClosed
+	case wal.writeQueue <- buffered:
+		// Successfully queued for async write
+		return nil
+	default:
+		// Queue is full - indicates write backpressure (disk is slow or stuck)
+		wal.logger.Error().
+			Int("queue_size", len(wal.writeQueue)).
+			Int("buffer_size_bytes", len(buffered)).
+			Msg("❌️ WAL write queue is full - backpressure detected. ❗Disk may be slow or full.")
+		return ErrSessionTreeWALWriteQueueFull
 	}
-
-	wal.logger.Info().Int("size_bytes", len(buffered)).Msg("✅️ Successfully flushed mined relays WAL buffer to disk.")
-
-	return nil
 }
 
 // runPeriodicFlushLoop wakes up on every ticker tick to flush any pending buffered entries.
 func (wal *minedRelaysWriteAheadLog) runPeriodicFlushLoop() {
-	for range wal.flushTicker.C {
-		if err := wal.flushBufferToDisk(); err != nil {
-			wal.logger.Error().Err(err).Msg("❌️ Periodic flush of mined relays WAL buffer failed")
+	for {
+		select {
+		case <-wal.flushTicker.C:
+			if err := wal.flushBufferToDisk(); err != nil {
+				wal.logger.Error().Err(err).Msg("❌️ Periodic flush of mined relays WAL buffer failed")
+			}
+		case <-wal.shutdownCh:
+			return
 		}
 	}
+}
+
+// startWriter initializes and runs the dedicated writer goroutine.
+// This goroutine consumes buffers from writeQueue and writes them to disk sequentially,
+// guaranteeing write order while keeping the flush operations non-blocking.
+func (wal *minedRelaysWriteAheadLog) startWriter() {
+	defer close(wal.writerDone)
+	for {
+		select {
+		case buffer := <-wal.writeQueue:
+			wal.writeToDisk(buffer)
+		case <-wal.shutdownCh:
+			// Drain remaining writes before shutting down
+			for len(wal.writeQueue) > 0 {
+				buffer := <-wal.writeQueue
+				wal.writeToDisk(buffer)
+			}
+			return
+		}
+	}
+}
+
+// writeToDisk performs the actual disk write operation.
+// This method is called exclusively by the writer goroutine to ensure sequential writes.
+func (wal *minedRelaysWriteAheadLog) writeToDisk(buffer []byte) {
+	if _, err := wal.logFile.Write(buffer); err != nil {
+		wal.logger.Error().Err(err).Msg("❌️ Failed to write mined relays WAL entries to file. ❗Check disk space and permissions. ❗Mined relays may be lost on restart.")
+		return
+	}
+	wal.logger.Info().Int("size_bytes", len(buffer)).Msg("✅️ Successfully flushed mined relays WAL buffer to disk.")
 }
 
 // ReconstructSMTFromMinedRelaysLog replays the mined relays write-ahead log from disk
@@ -297,15 +390,6 @@ func readExactlyNBytes(file *os.File, expected int, logger polylog.Logger) ([]by
 }
 
 // encodeMinedRelaysLogEntry serializes a single mined relay in the WAL format.
-// Format (little-endian):
-// - [4]  payload length (uint32)
-// - [8]  compute units (uint64)
-// - [N]  relay hash (fixed-size)
-// - [L]  payload bytes (opaque)
-//
-// - Fixed fields first enable simple and robust replay
-// - Length prefix allows payloads of varying sizes without delimiters
-// - Little-endian matches Go's binary package defaults and our protocol usage
 func encodeMinedRelaysLogEntry(relayHash []byte, relayPayload []byte, computeUnitsPerRelay uint64) []byte {
 	lengthPrefixBz := make([]byte, minedRelaysLogRelayPayloadLengthPrefixSizeBytes)
 	binary.LittleEndian.PutUint32(lengthPrefixBz, uint32(len(relayPayload)))
