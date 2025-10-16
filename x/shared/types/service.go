@@ -29,7 +29,8 @@ const (
 	// MaxServiceMetadataSizeBytes is the maximum allowed size for the experimental metadata payload.
 	// This cap is enforced onchain to prevent excessively large API specifications from bloating state.
 	// The experimental metadata bytes cannot exceed this limit.
-	MaxServiceMetadataSizeBytes = 100 * 1_024 // 102_400 bytes (100 KiB)
+	// TODO_POST_MAINNET: Consider making this a governance parameter for flexibility.
+	MaxServiceMetadataSizeBytes = 256 * 1_024 // 262_144 bytes (256 KiB)
 
 	regexServiceId   = "^[a-zA-Z0-9_-]+$"  // Define the regex pattern to match allowed characters
 	regexServiceName = "^[a-zA-Z0-9-_ ]+$" // Define the regex pattern to match allowed characters (allows spaces)
@@ -73,10 +74,10 @@ func (s *Service) ValidateBasic() error {
 
 // ValidateBasic performs basic validation of the metadata. Nil metadata is allowed.
 //
-// Note: This validation intentionally does NOT verify the content format (e.g., valid JSON, OpenAPI, etc.)
+// DEV_NOTE: This validation intentionally does NOT verify the content format (e.g., valid JSON, OpenAPI, etc.)
 // because the metadata is explicitly marked as "experimental" and may contain any serialized API spec format.
 // Future versions may add format-specific validation when dedicated fields are introduced.
-// See TODO(@future) in proto/pocket/shared/service.proto for planned openapi_ / openrpc_ fields.
+// TODO_IMPROVE: See comments on openapi/openrpc next steps in service.proto.
 func (metadata *Metadata) ValidateBasic() error {
 	if metadata == nil {
 		return nil

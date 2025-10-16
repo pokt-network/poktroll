@@ -27,6 +27,10 @@ Visit the [Service FAQ](../4_faq/1_service_faq.md) for more information about in
   - [3. What do I do next?](#3-what-do-i-do-next)
 - [How do I update an existing service's `compute_units_per_relay`?](#how-do-i-update-an-existing-services-compute_units_per_relay)
 - [Experimental: How do I add API specifications to a service?](#experimental-how-do-i-add-api-specifications-to-a-service)
+  - [Using a File](#using-a-file)
+  - [Using Base64-Encoded Data](#using-base64-encoded-data)
+  - [Updating Service Metadata](#updating-service-metadata)
+  - [Important Notes](#important-notes)
 
 ## Introduction
 
@@ -51,7 +55,7 @@ Service IDs are limited to `42` chars and descriptions are limited to `169` char
 
 :::danger Grove Employees Service Creation
 
-If you are a Grove Employee, you **ABSOLUTELY MUST** create all Mainnet Services using the Grove Master Gateway: `pokt1lf0kekv9zcv9v3wy4v6jx2wh7v4665s8e0sl9s` 
+If you are a Grove Employee, you **ABSOLUTELY MUST** create all Mainnet Services using the Grove Master Gateway: `pokt1lf0kekv9zcv9v3wy4v6jx2wh7v4665s8e0sl9s`
 
 :::
 
@@ -116,12 +120,14 @@ pocketd tx service add-service \
 
 :::warning Experimental Feature
 
-The service metadata feature is experimental and subject to change.
-The metadata payload is limited to 100 KiB when decoded.
+The onchain service metadata feature is experimental and subject to change.
+The metadata payload is limited to 256 KiB when decoded as of [#1825](https://github.com/pokt-network/poktroll/pull/1825).
 
 :::
 
-You can attach an API specification (OpenAPI, OpenRPC, etc.) to a service when creating or updating it.
+You can attach an API specification ([OpenAPI](https://www.openapis.org/), [OpenRPC](https://open-rpc.org/),
+etc.) to a service when creating or updating it.
+
 The API specification is stored on-chain and can be used by applications, gateways, and suppliers to understand the service's interface.
 
 ### Using a File
@@ -171,7 +177,7 @@ pocketd tx service add-service \
 ### Important Notes
 
 - The `--experimental--metadata-file` and `--experimental--metadata-base64` flags are mutually exclusive.
-- The decoded payload must be 100 KiB or less.
+- The decoded payload must be 256 KiB or less.
 - The metadata is stored on-chain as raw bytes and base64-encoded in JSON representations.
 - Only the service owner can update the service metadata.
 - To remove metadata from a service, update it without providing any metadata flags.

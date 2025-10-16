@@ -244,12 +244,12 @@ func TestCLI_UpdateServiceWithMetadata(t *testing.T) {
 	serviceName := "Update Test Service"
 
 	tests := []struct {
-		desc             string
-		initialMetadata  []byte
-		updatedMetadata  []byte
-		computeUnits     uint64
-		updatedCU        uint64
-		expectedErr      bool
+		desc            string
+		initialMetadata []byte
+		updatedMetadata []byte
+		computeUnits    uint64
+		updatedCU       uint64
+		expectedErr     bool
 	}{
 		{
 			desc:            "add metadata to service without metadata",
@@ -317,11 +317,11 @@ func TestCLI_UpdateServiceWithMetadata(t *testing.T) {
 
 			// Add updated metadata
 			if len(test.updatedMetadata) > 0 {
-				f, err := os.CreateTemp(t.TempDir(), "updated-*.json")
+				updatedFile, err := os.CreateTemp(t.TempDir(), "updated-*.json")
 				require.NoError(t, err)
-				require.NoError(t, os.WriteFile(f.Name(), test.updatedMetadata, 0o600))
-				require.NoError(t, f.Close())
-				updateArgs = append(updateArgs, fmt.Sprintf("--%s=%s", service.FlagExperimentalMetadataFile, f.Name()))
+				require.NoError(t, os.WriteFile(updatedFile.Name(), test.updatedMetadata, 0o600))
+				require.NoError(t, updatedFile.Close())
+				updateArgs = append(updateArgs, fmt.Sprintf("--%s=%s", service.FlagExperimentalMetadataFile, updatedFile.Name()))
 			}
 
 			updateOutput, err := clitestutil.ExecTestCLICmd(ctx, service.CmdAddService(), updateArgs)

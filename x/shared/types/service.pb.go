@@ -93,6 +93,8 @@ func (ConfigOptions) EnumDescriptor() ([]byte, []int) {
 }
 
 // Service message to encapsulate unique and semantic identifiers for a service on the network
+//
+// Next free index: 6
 type Service struct {
 	// For example, what if we want to request a session for a certain service but with some additional configs that identify it?
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -108,7 +110,7 @@ type Service struct {
 	// or make other updates to it.
 	OwnerAddress string `protobuf:"bytes,4,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
 	// Optional metadata containing an experimental API specification for the service.
-	// When exposed via JSON, this field is base64 encoded and MUST be <= 100 KiB when decoded.
+	// When exposed via JSON, this field is base64 encoded and MUST be <= 256 KiB when decoded.
 	Metadata *Metadata `protobuf:"bytes,5,opt,name=metadata,proto3" json:"metadata,omitempty"`
 }
 
@@ -431,9 +433,11 @@ func (m *ConfigOption) GetValue() string {
 
 // Metadata message to hold additional metadata for a service.
 // The raw bytes are stored on-chain and will be base64 encoded in JSON representations.
+//
+// Next free index: 2
 type Metadata struct {
-	// EXPERIMENTAL: Serialized API spec limited to 100 KiB when decoded.
-	// TODO(@future): support dedicated openapi_ / openrpc_ fields once formats stabilize.
+	// EXPERIMENTAL: Serialized API spec limited to 256 KiB when decoded.
+	// TODO_FUTURE: support dedicated openapi_ / openrpc_ fields once formats stabilize.
 	ExperimentalApiSpecs []byte `protobuf:"bytes,1,opt,name=experimental_api_specs,json=experimentalApiSpecs,proto3" json:"experimental_api_specs,omitempty"`
 }
 

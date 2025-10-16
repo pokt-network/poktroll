@@ -23,30 +23,6 @@ import (
 var _ = strconv.Itoa(0)
 
 // CmdAddService returns a CLI command for adding or updating a service on the network.
-//
-// This command allows any actor to add a new service or update an existing one (if they are the owner).
-// Services are uniquely identified by their ID and can optionally include experimental metadata
-// such as OpenAPI or OpenRPC specifications.
-//
-// Usage:
-//
-//	pocketd tx service add-service <service_id> <service_name> [compute_units_per_relay]
-//	  [--experimental--metadata-file <path> | --experimental--metadata-base64 <base64>]
-//	  --from <owner> [flags]
-//
-// Examples:
-//
-//	# Add a service without metadata
-//	pocketd tx service add-service "svc1" "My Service" 10 --from owner
-//
-//	# Add a service with metadata from file
-//	pocketd tx service add-service "svc1" "My Service" 10 \
-//	  --experimental--metadata-file ./openapi.json --from owner
-//
-//	# Update an existing service's compute units and metadata
-//	pocketd tx service add-service "svc1" "My Service" 20 \
-//	  --experimental--metadata-file ./openapi-v2.json --from owner
-//
 // TODO_POST_MAINNET(@red-0ne): Change `add-service` to `update-service` so the source owner can
 // update the compute units per relay for an existing service. Make it possible
 // to update a service (e.g. update # of compute units per relay). This will require
@@ -54,13 +30,30 @@ var _ = strconv.Itoa(0)
 // ensuring that only the owner can update it on chain, and tackling some of the tests in `service.feature`.
 func CmdAddService() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("add-service <service_id> <service_name> [compute_units_per_relay: default={%d}]", types.DefaultComputeUnitsPerRelay),
-		Short: "Add a new service to the network",
-		Long: `Add a new service to the network that will be available for applications,
-gateways and suppliers to use. The service id MUST be unique but the service name doesn't have to be.
+		Use:   fmt.Sprintf("add-service <service_id> <service_name> [compute_units_per_relay: default=%d]", types.DefaultComputeUnitsPerRelay),
+		Short: "Add or update a service on the network",
+		Long: `Add a new service or update an existing service on the network.
 
-Example:
-$ pocketd tx service add-service "svc1" "service_one" 1 --keyring-backend test --from $(SERVICE_OWNER) --network=<network> --home $(POCKETD_HOME)`,
+This command allows any actor to add a new service or update an existing one (if they are the owner).
+Services are uniquely identified by their ID and can optionally include experimental metadata
+such as OpenAPI or OpenRPC specifications (limited to 256 KiB).
+
+The service ID MUST be unique but the service name doesn't have to be.
+Only the service owner can update an existing service.`,
+		Example: `  # Add a basic service without metadata
+  pocketd tx service add-service "svc1" "My Service" 10 --from owner
+
+  # Add a service with metadata from a file
+  pocketd tx service add-service "svc1" "My Service" 10 \
+    --experimental--metadata-file ./openapi.json --from owner
+
+  # Add a service with base64-encoded metadata
+  pocketd tx service add-service "svc1" "My Service" 10 \
+    --experimental--metadata-base64 $(base64 -w0 ./openapi.json) --from owner
+
+  # Update an existing service's compute units and metadata
+  pocketd tx service add-service "svc1" "My Service" 20 \
+    --experimental--metadata-file ./openapi-v2.json --from owner`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			// Parse required arguments
@@ -115,8 +108,18 @@ $ pocketd tx service add-service "svc1" "service_one" 1 --keyring-backend test -
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
-	cmd.Flags().String(FlagExperimentalMetadataBase64, "", "Base64 encoded experimental API specification for the service (mutually exclusive with --experimental--metadata-file)")
-	cmd.Flags().String(FlagExperimentalMetadataFile, "", "Path to a file containing the experimental service API specification (mutually exclusive with --experimental--metadata-base64)")
+	cmd.Flags().String(
+		FlagExperimentalMetadataBase64,
+		"",
+		"Base64-encoded experimental API specification (OpenAPI, OpenRPC, etc.) for the service. "+
+			"Limited to 256 KiB when decoded. Mutually exclusive with --experimental--metadata-file.",
+	)
+	cmd.Flags().String(
+		FlagExperimentalMetadataFile,
+		"",
+		"Path to file containing experimental API specification (OpenAPI, OpenRPC, etc.) for the service. "+
+			"Limited to 256 KiB. Mutually exclusive with --experimental--metadata-base64.",
+	)
 
 	return cmd
 }
@@ -136,7 +139,7 @@ const (
 // 1. --experimental--metadata-base64: Base64-encoded metadata string
 // 2. --experimental--metadata-file: Path to a file containing the metadata
 //
-// The metadata payload must not exceed 100 KiB when decoded. This is typically used
+// The metadata payload must not exceed 256 KiB when decoded. This is typically used
 // to attach API specifications (OpenAPI, OpenRPC, etc.) to a service.
 //
 // Returns:
@@ -182,10 +185,10 @@ func parseServiceMetadata(cmd *cobra.Command) (*sharedtypes.Metadata, error) {
 		}
 	}
 
-	// Validate metadata size does not exceed the maximum allowed (100 KiB)
+	// Validate metadata size does not exceed the maximum allowed (256 KiB)
 	if len(apiSpecs) > sharedtypes.MaxServiceMetadataSizeBytes {
-		// TODO_IMPROVE(@future): Add validation hints suggesting user compress or reduce spec size
-		return nil, fmt.Errorf("experimental service metadata size %d exceeds max %d bytes (100 KiB)", len(apiSpecs), sharedtypes.MaxServiceMetadataSizeBytes)
+		// TODO_FUTURE: Add validation hints suggesting user compress or reduce spec size
+		return nil, fmt.Errorf("experimental service metadata size %d exceeds max %d bytes (256 KiB)", len(apiSpecs), sharedtypes.MaxServiceMetadataSizeBytes)
 	}
 
 	// Ensure metadata is not empty (if provided, it must contain data)

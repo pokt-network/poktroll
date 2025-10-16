@@ -101,8 +101,8 @@ func (s *suite) TheServiceShouldExistWithMetadata(serviceId string) {
 	require.NotEmpty(s, service.Metadata.ExperimentalApiSpecs, "service %s metadata is empty", serviceId)
 
 	// Verify the metadata size is reasonable
-	require.LessOrEqual(s, len(service.Metadata.ExperimentalApiSpecs), 102400,
-		"service %s metadata exceeds 100 KiB limit", serviceId)
+	require.LessOrEqual(s, len(service.Metadata.ExperimentalApiSpecs), 262144,
+		"service %s metadata exceeds 256 KiB limit", serviceId)
 
 	s.Logf("Service %s exists with %d bytes of metadata", serviceId, len(service.Metadata.ExperimentalApiSpecs))
 }
