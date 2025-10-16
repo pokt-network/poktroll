@@ -232,14 +232,17 @@ func (s *StorageModeTestSuite) TestProcessRestartDuringClaimWindow() {
 	s.relayerSessionsManager.Stop()
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
 
-	// Advance to the block where the claim window opens while the relayer sessions manager is stopped
-	s.blockPublishCh <- testblock.NewAnyTimesBlock(s.T(), s.emptyBlockHash, claimWindowOpenHeight)
-	s.advanceToBlock(claimWindowOpenHeight)
-
-	// Start the new relayer sessions manager
+	// Start the new relayer sessions manager BEFORE advancing blocks
+	// This ensures the manager processes blocks in real-time rather than from replay buffer
 	err := s.relayerSessionsManager.Start(s.ctx)
 	require.NoError(s.T(), err)
+
+	// Wait for manager to fully initialize before sending blocks
 	waitSimulateIO()
+
+	// Advance to the block where the claim window opens
+	// The manager is now running and will process these blocks as they're published
+	s.advanceToBlock(claimWindowOpenHeight)
 
 	// For in-memory modes, we should only proceed if the session was restored
 	// TODO_TECHDEBT(#1734): Remove this once we are better at managing in-memory sessions restarts
@@ -253,13 +256,18 @@ func (s *StorageModeTestSuite) TestProcessRestartDuringClaimWindow() {
 	sessionTree = s.getActiveSessionTree()
 	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader())
 
-	// TODO_TECHDEBT: This sleep is a workaround for the race condition where claim creation
-	// happens asynchronously via processClaimsAsync. The test expects GetClaimRoot() to return
-	// immediately after restart, but claim creation takes time. A proper fix would either:
-	// 1. Make claim restoration synchronous for previously flushed sessions during import, or
-	// 2. Add proper synchronization/waiting mechanisms in the test framework.
-	// This sleep should be removed once the underlying race condition is properly addressed.
-	time.Sleep(100 * time.Millisecond)
+	// Wait for claim root to be created asynchronously via processClaimsAsync
+	// Poll with timeout instead of fixed sleep to handle varying CI performance
+	// Use a long timeout as async claim processing involves multiple goroutines and observables
+	timeout := 20 * time.Second
+	checkInterval := 200 * time.Millisecond
+	claimRootReady := waitForCondition(
+		s.T(),
+		func() bool { return sessionTree.GetClaimRoot() != nil },
+		timeout,
+		checkInterval,
+	)
+	require.True(s.T(), claimRootReady, "Claim root should be created within timeout for storage mode: %s", s.getStorageModeName())
 
 	// Verify a claim root has been created after restart
 	claimRoot := sessionTree.GetClaimRoot()

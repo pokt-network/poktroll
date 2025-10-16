@@ -584,6 +584,47 @@ func (s *suite) TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPa
 	s.TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPathAndData(appName, supplierName, numRelays, serviceId, path, "")
 }
 
+func (s *suite) TheUserRunsRelayminerRelayForAppToSupplierWithPayload(appName, supplierName, payload string) {
+	// Get app and supplier addresses
+	appAddr := accNameToAddrMap[appName]
+	supplierAddr := accNameToAddrMap[supplierName]
+
+	// Get the supplier's endpoint URL from the supplier map
+	supplier, ok := operatorAccNameToSupplierMap[supplierName]
+	require.True(s, ok, "supplier %s not found in operatorAccNameToSupplierMap", supplierName)
+	require.NotEmpty(s, supplier.Services, "supplier %s has no services configured", supplierName)
+
+	// Find the anvil service and get its first endpoint URL
+	var endpointUrl string
+	for _, serviceConfig := range supplier.Services {
+		if serviceConfig.ServiceId == "anvil" {
+			require.NotEmpty(s, serviceConfig.Endpoints, "supplier %s has no endpoints for service anvil", supplierName)
+			endpointUrl = serviceConfig.Endpoints[0].Url
+			break
+		}
+	}
+	require.NotEmpty(s, endpointUrl, "supplier %s has no anvil service endpoint", supplierName)
+
+	// Build the relayminer relay command with all required flags
+	args := []string{
+		"relayminer",
+		"relay",
+		"--app=" + appAddr,
+		"--supplier=" + supplierAddr,
+		"--payload=" + payload,
+		"--supplier-public-endpoint-override=" + endpointUrl,
+		"--grpc-addr=" + defaultGRPCURL,
+		"--grpc-insecure=true",
+		keyRingFlag,
+		chainIdFlag,
+	}
+
+	// Execute the command
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error running relayminer relay from app %q to supplier %q due to: %v", appName, supplierName, err)
+	s.pocketd.result = res
+}
+
 func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
 	s.waitForNewBlockEvent(newEventTypeMatchFn(module, eventType))
 }
