@@ -241,11 +241,6 @@ func (s *StorageModeTestSuite) findActiveSessionTree() (relayer.SessionTree, boo
 	return nil, false
 }
 
-func (s *StorageModeTestSuite) hasActiveSessionTree() bool {
-	_, ok := s.findActiveSessionTree()
-	return ok
-}
-
 // setupNewRelayerSessionsManager creates and configures a new relayer sessions manager for testing
 func (s *StorageModeTestSuite) setupNewRelayerSessionsManager() relayer.RelayerSessionsManager {
 	// Create a new replay observable for blocks

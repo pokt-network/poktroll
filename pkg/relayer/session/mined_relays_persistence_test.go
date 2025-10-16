@@ -19,6 +19,10 @@ import (
 	"github.com/pokt-network/smt/kvstore/simplemap"
 )
 
+const (
+	tempMinedRelaysWAL = "mined_relays.wal"
+)
+
 func TestMinedRelaysWAL_CreateAndCloseFlushes(t *testing.T) {
 	// Create a temporary WAL file and ensure it's cleaned up at the end.
 	wal, walPath, cleanup := createTempWal(t)
@@ -303,7 +307,7 @@ func newTestLogger() polylog.Logger {
 // createTempWal creates a new WAL in a temporary directory and returns it plus a cleanup func.
 func createTempWal(t *testing.T) (*minedRelaysWriteAheadLog, string, func()) {
 	dir := t.TempDir()
-	filePath := filepath.Join(dir, "mined_relays.wal")
+	filePath := filepath.Join(dir, tempMinedRelaysWAL)
 	wal, err := NewMinedRelaysWriteAheadLog(filePath, newTestLogger())
 	require.NoError(t, err)
 	cleanup := func() { _ = wal.Close(); _ = os.RemoveAll(dir) }

@@ -32,7 +32,7 @@ const (
 	numIterations = 100
 
 	// Directory path for the mined relays WAL files
-	minedRelaysWALDirectoryPath = "mined_relays_wal"
+	minedRelaysWALDirectoryPath = "mined_relays"
 )
 
 // No significant performance gains were observed when using compact proofs compared

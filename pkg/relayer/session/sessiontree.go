@@ -21,7 +21,8 @@ import (
 var _ relayer.SessionTree = (*sessionTree)(nil)
 
 const (
-	minedRelaysWALDirectoryPath = "mined_relays_wal"
+	minedRelaysWALDirectoryPath = "mined_relays"
+	minedRelaysWALFileExtension = ".wal"
 )
 
 // sessionTree is an implementation of the SessionTree interface.
@@ -85,7 +86,7 @@ func NewSessionTree(
 
 	treeStore := simplemap.NewSimpleMap()
 
-	storePath := filepath.Join(storesDirectoryPath, minedRelaysWALDirectoryPath, supplierOperatorAddress, sessionHeader.SessionId)
+	storePath := filepath.Join(storesDirectoryPath, minedRelaysWALDirectoryPath, supplierOperatorAddress, sessionHeader.SessionId, minedRelaysWALFileExtension)
 
 	// Make sure storePath does not exist when creating a new SessionTree
 	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
@@ -98,6 +99,8 @@ func NewSessionTree(
 	if err := os.MkdirAll(storeDir, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create WAL directory %q: %w", storeDir, err)
 	}
+
+	logger.Debug().Msgf("📁 Created mined relays WAL directory %q", storeDir)
 
 	// Update the logger with the store path
 	logger = logger.With("store_path", storePath)
@@ -143,7 +146,7 @@ func importSessionTree(
 	supplierOperatorAddress := sessionSMT.SupplierOperatorAddress
 	applicationAddress := sessionSMT.SessionHeader.ApplicationAddress
 	serviceId := sessionSMT.SessionHeader.ServiceId
-	storePath := filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionId)
+	storePath := filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionId, minedRelaysWALFileExtension)
 
 	// Verify the storage path exists - if not, the session data is missing or corrupted
 	if _, err := os.Stat(storePath); err != nil {
@@ -161,6 +164,10 @@ func importSessionTree(
 		return nil, err
 	}
 
+	// Create the minedRelaysWAL corresponding to the SessionTree that is being restored.
+	// - This allows the session to continue accepting updates if it hasn't been claimed yet.
+	// - If the session has been claimed, the WAL will not be used anymore, but it is still
+	//   needed to be able to close and delete the session tree properly.
 	minedRelaysWAL, err := NewMinedRelaysWriteAheadLog(storePath, logger)
 	if err != nil {
 		return nil, err
@@ -361,15 +368,20 @@ func (st *sessionTree) Close() error {
 	defer st.sessionMu.Unlock()
 
 	// If the WAL is already closed or was never created, there is nothing to do.
+	// - This means that the session tree has already been closed or deleted.
+	// - It allows Close() to safely call Close multiple times.
 	if st.minedRelaysWAL == nil {
 		return nil
 	}
 
+	// Close the WAL file handle to ensure all buffered entries are flushed to disk.
+	// The WAL file itself is not deleted, allowing the session tree to be reconstructed.
 	if err := st.minedRelaysWAL.Close(); err != nil {
 		st.logger.Error().Err(err).Msg("Failed to close the minedRelaysWAL")
 		return err
 	}
 
+	// Set the WAL to nil to indicate it has been closed and prevent further use of the SessionTree.
 	st.minedRelaysWAL = nil
 
 	return nil
@@ -387,11 +399,15 @@ func (st *sessionTree) Delete() error {
 
 	st.isClaiming = false
 
+	// Clear the in-memory tree store to free up memory.
 	if err := st.treeStore.ClearAll(); err != nil {
 		logger.Error().Err(err).Msg("Failed to clear SimpleMap treeStore")
 		return err
 	}
 
+	// Check if the WAL is already closed preventing double close/remove attempts.
+	// - This allows Delete() to be safely called multiple times without error.
+	// - If the WAL is nil, it means it has already been closed or deleted.
 	if st.minedRelaysWAL == nil {
 		logger.Warn().Msg("minedRelaysWAL is nil, nothing to close or remove")
 		return nil
@@ -404,6 +420,12 @@ func (st *sessionTree) Delete() error {
 	}
 
 	st.minedRelaysWAL = nil
+
+	logger.Info().Msgf(
+		"🗑️ SessionTree for session %q and supplier %q successfully deleted",
+		st.sessionHeader.SessionId,
+		st.supplierOperatorAddress,
+	)
 
 	return nil
 }

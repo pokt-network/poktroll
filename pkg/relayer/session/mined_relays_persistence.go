@@ -11,6 +11,13 @@ package session
 // - On restart, deterministically replay the WAL to reconstruct the in-memory SMST
 //
 // The WAL file is stored in the same directory as the SMST store.
+//
+// This approach can handle high load scenarios without performance degradation:
+// - Mined relay appends are non-blocking memory operations (mutex + slice append)
+// - Disk writes happen asynchronously on a dedicated goroutine (never blocks relay processing)
+// - Batching amortizes syscall overhead (flush multiple relays at once, not per-relay)
+// - Adaptive thresholds prevent both memory bloat (size limit) and I/O storms (time interval)
+// - Each SessionTree has its own WAL file to avoid contention
 
 import (
 	"encoding/binary"
@@ -33,7 +40,6 @@ const (
 	// - Keeps memory usage bounded
 	// - Ensures timely persistence even if traffic is bursty
 	//
-
 	// High-throughput suppliers may need lower thresholds to prevent memory pressure.
 	// Low-resource environments may need lower thresholds to prevent OOM.
 	maxBufferedMinedRelaysBytesBeforeFlush = 10_000_000 // 10 MB
@@ -43,7 +49,6 @@ const (
 	// - Reduces potential loss window in case of abrupt termination
 	// - Smooths out I/O instead of writing every mined relay
 	//
-	// TODO_TECHDEBT: Make this value configurable via RelayMinerConfig.
 	// Testing environments may want faster flushes (e.g., 1s) for rapid iteration.
 	// Production may want longer intervals (e.g., 30s) to reduce I/O overhead.
 	minedRelaysLogFlushInterval = 10 * time.Second

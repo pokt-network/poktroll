@@ -63,7 +63,7 @@ type relayerSessionsManager struct {
 	// supplierClients is used to create claims and submit proofs for sessions.
 	supplierClients *supplier.SupplierClientMap
 
-	// storesDirectoryPath points to a path on disk where KVStore data files are created.
+	// storesDirectoryPath points to a path on disk where session related data files are created.
 	storesDirectoryPath string
 
 	// sessionSMTStore is a key-value store used to persist the metadata of
@@ -264,9 +264,9 @@ func (rs *relayerSessionsManager) Stop() {
 					logger.Error().Err(err).Msg("❌️ Failed to persist session metadata to storage during shutdown. ❗Check disk space and permissions. ❗Session data may be lost on restart.")
 				}
 
-				// Stop the session tree process and underlying key-value store.
+				// Stop the session tree process and flush its state to disk.
 				if err := sessionTree.Close(); err != nil {
-					logger.Error().Err(err).Msg("❌️ Failed to flush session tree store during shutdown. ❗Check disk permissions and kvstore integrity. ❗Resources may not be properly cleaned up.")
+					logger.Error().Err(err).Msg("❌️ Failed to flush session tree store during shutdown. ❗Check disk permissions and filesystem integrity. ❗Resources may not be properly cleaned up.")
 				}
 
 				logger.Debug().Msg("💾 Successfully stored session tree to disk during shutdown")
@@ -585,7 +585,7 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	smst, err := rs.ensureSessionTree(&relayMetadata)
 	if err != nil {
 		// TODO_IMPROVE: log additional info?
-		logger.Error().Err(err).Msg("❌️ Failed to ensure session tree exists for relay. ❗Check disk space and kvstore integrity. ❗Relay cannot be processed.")
+		logger.Error().Err(err).Msg("❌️ Failed to ensure session tree exists for relay. ❗Check disk space and filesystem integrity. ❗Relay cannot be processed.")
 		return err, false
 	}
 
@@ -599,7 +599,7 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	// This is independent of the relay difficulty target hash for each service, which is supplied by the tokenomics module.
 	if err := smst.Update(relay.Hash, relay.Bytes, serviceComputeUnitsPerRelay); err != nil {
 		// TODO_IMPROVE: log additional info?
-		logger.Error().Err(err).Msg("❌️ Failed to update session merkle tree with relay data. ❗Check disk space and kvstore integrity. ❗Relay evidence may be lost.")
+		logger.Error().Err(err).Msg("❌️ Failed to update session merkle tree with relay data. ❗Check disk space and permissions. ❗Relay evidence may be lost.")
 		return err, false
 	}
 
@@ -719,12 +719,12 @@ func (rs *relayerSessionsManager) deleteSessionTree(sessionTree relayer.SessionT
 	)
 
 	// IMPORTANT: Create sessionSMT BEFORE deleting the tree
-	// This ensures we retrieve the SMT root while the KVStore is still open.
+	// This ensures we retrieve the SMT root while the SessionTree is still open.
 	sessionSMT := sessionSMTFromSessionTree(sessionTree)
 
-	// Delete the session tree from the KVStore and close the underlying store.
+	// Delete the session tree from memory and delete its persisted state.
 	if err := sessionTree.Delete(); err != nil {
-		logger.Error().Err(err).Msg("❌️ Failed to delete session tree from kvstore. ❗Check disk permissions and kvstore integrity. ❗Session data may persist incorrectly.")
+		logger.Error().Err(err).Msg("❌️ Failed to delete session tree. ❗Check disk permissions and filesystem integrity. ❗Session data may persist incorrectly.")
 	}
 
 	// Delete the persisted session tree metadata from the disk store.

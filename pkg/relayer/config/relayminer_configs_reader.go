@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/docker/go-units"
@@ -18,6 +20,16 @@ var DefaultRequestTimeoutDuration time.Duration = time.Duration(DefaultRequestTi
 
 // DefaultMaxBodySize defines the default maximum HTTP body size as a string, used as a fallback if unspecified.
 const DefaultMaxBodySize = "20MB"
+
+// DefaultMinedRelaysStorePath is the default path for the mined relays storage.
+// It is used when the deprecated :memory: or :memory_pebble: values are found in the config.
+const DefaultMinedRelaysStorePath = ".pocket/smt"
+
+// Deprecated SMT store path values that should be replaced with the default path
+const (
+	DeprecatedSmtStorePathMemory       = ":memory:"
+	DeprecatedSmtStorePathMemoryPebble = ":memory_pebble:"
+)
 
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
 func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*RelayMinerConfig, error) {
@@ -63,7 +75,31 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 	if len(yamlRelayMinerConfig.SmtStorePath) == 0 {
 		return nil, ErrRelayMinerConfigInvalidSmtStorePath.Wrapf("smt store path is: '%s'", yamlRelayMinerConfig.SmtStorePath)
 	}
+
 	relayMinerConfig.SmtStorePath = yamlRelayMinerConfig.SmtStorePath
+
+	// Handle deprecated :memory: and :memory_pebble: entries for backwards compatibility
+	if relayMinerConfig.SmtStorePath == DeprecatedSmtStorePathMemory ||
+		relayMinerConfig.SmtStorePath == DeprecatedSmtStorePathMemoryPebble {
+
+		// Get the home directory
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, ErrRelayMinerConfigInvalidSmtStorePath.Wrapf(
+				"failed to get home directory for default SMT store path: %v", err,
+			)
+		}
+
+		// Use the default path: $HOME/.pocket/smt
+		defaultPath := filepath.Join(homeDir, DefaultMinedRelaysStorePath)
+		relayMinerConfig.SmtStorePath = defaultPath
+
+		// Log deprecation warning
+		logger.Warn().
+			Str("deprecated_value", yamlRelayMinerConfig.SmtStorePath).
+			Str("fallback_path", defaultPath).
+			Msg("Deprecated smt_store_path value detected. Using default persistent storage path. Please update your config file.")
+	}
 
 	// EnableOverServicing is a flag that indicates whether the relay miner
 	// should enable over-servicing for the relays it serves.
