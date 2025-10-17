@@ -3,6 +3,7 @@ package config_test
 import (
 	"net/url"
 	"os"
+	"path"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -24,6 +25,10 @@ func Test_ParseRelayMinerConfig_ReferenceExample(t *testing.T) {
 }
 
 func Test_ParseRelayMinerConfigs(t *testing.T) {
+	homeDir, err := os.UserHomeDir()
+	require.NoError(t, err)
+	defaultSMTStorePath := path.Join(homeDir, ".pocket/smt")
+
 	tests := []struct {
 		desc            string
 		inputConfigYAML string
@@ -453,6 +458,198 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 											"X-Type": "rest",
 										},
 									},
+								},
+								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			// TODO_TECHDEBT(@olshansky): Delete this test case once v0.1.31 is live.
+			desc: "valid: relay miner config with deprecated :memory: smt_store_path (backwards compatibility)",
+
+			inputConfigYAML: `
+				pocket_node:
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
+				default_signing_key_names: [ supplier1 ]
+				smt_store_path: ":memory:"
+				suppliers:
+				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
+				    service_config:
+				      backend_url: http://anvil.servicer:8545
+				`,
+
+			expectedErr: nil,
+			expectedConfig: &config.RelayMinerConfig{
+				PocketNode: &config.RelayMinerPocketNodeConfig{
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:26657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+				},
+				DefaultSigningKeyNames:       []string{"supplier1"},
+				SmtStorePath:                 defaultSMTStorePath,
+				DefaultRequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
+				Servers: map[string]*config.RelayMinerServerConfig{
+					"http://127.0.0.1:8080": {
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.RelayMinerServerTypeHTTP,
+						XForwardedHostLookup: false,
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+							"ethereum": {
+								ServiceId:  "ethereum",
+								ServerType: config.RelayMinerServerTypeHTTP,
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+									Headers:    map[string]string{},
+								},
+								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			// TODO_TECHDEBT(@olshansky): Delete this test case once v0.1.31 is live.
+			desc: "valid: relay miner config with deprecated :memory_pebble: smt_store_path (backwards compatibility)",
+
+			inputConfigYAML: `
+				pocket_node:
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
+				default_signing_key_names: [ supplier1 ]
+				smt_store_path: ":memory_pebble:"
+				suppliers:
+				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
+				    service_config:
+				      backend_url: http://anvil.servicer:8545
+				`,
+
+			expectedErr: nil,
+			expectedConfig: &config.RelayMinerConfig{
+				PocketNode: &config.RelayMinerPocketNodeConfig{
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:26657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+				},
+				DefaultSigningKeyNames:       []string{"supplier1"},
+				SmtStorePath:                 defaultSMTStorePath,
+				DefaultRequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
+				Servers: map[string]*config.RelayMinerServerConfig{
+					"http://127.0.0.1:8080": {
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.RelayMinerServerTypeHTTP,
+						XForwardedHostLookup: false,
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+							"ethereum": {
+								ServiceId:  "ethereum",
+								ServerType: config.RelayMinerServerTypeHTTP,
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+									Headers:    map[string]string{},
+								},
+								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid: relay miner config with disable_smt_persistence enabled",
+
+			inputConfigYAML: `
+				pocket_node:
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
+				default_signing_key_names: [ supplier1 ]
+				smt_store_path: /tmp/smt_stores
+				disable_smt_persistence: true
+				suppliers:
+				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
+				    service_config:
+				      backend_url: http://anvil.servicer:8545
+				`,
+
+			expectedErr: nil,
+			expectedConfig: &config.RelayMinerConfig{
+				PocketNode: &config.RelayMinerPocketNodeConfig{
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:26657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+				},
+				DefaultSigningKeyNames:       []string{"supplier1"},
+				SmtStorePath:                 "/tmp/smt_stores",
+				DisableSMTPersistence:        true,
+				DefaultRequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
+				Servers: map[string]*config.RelayMinerServerConfig{
+					"http://127.0.0.1:8080": {
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.RelayMinerServerTypeHTTP,
+						XForwardedHostLookup: false,
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+							"ethereum": {
+								ServiceId:  "ethereum",
+								ServerType: config.RelayMinerServerTypeHTTP,
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+								},
+								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid: relay miner config with disable_smt_persistence disabled (default)",
+
+			inputConfigYAML: `
+				pocket_node:
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
+				default_signing_key_names: [ supplier1 ]
+				smt_store_path: /tmp/smt_stores
+				disable_smt_persistence: false
+				suppliers:
+				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
+				    service_config:
+				      backend_url: http://anvil.servicer:8545
+				`,
+
+			expectedErr: nil,
+			expectedConfig: &config.RelayMinerConfig{
+				PocketNode: &config.RelayMinerPocketNodeConfig{
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:26657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+				},
+				DefaultSigningKeyNames:       []string{"supplier1"},
+				SmtStorePath:                 "/tmp/smt_stores",
+				DisableSMTPersistence:        false,
+				DefaultRequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
+				Servers: map[string]*config.RelayMinerServerConfig{
+					"http://127.0.0.1:8080": {
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.RelayMinerServerTypeHTTP,
+						XForwardedHostLookup: false,
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+							"ethereum": {
+								ServiceId:  "ethereum",
+								ServerType: config.RelayMinerServerTypeHTTP,
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
 								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
 							},

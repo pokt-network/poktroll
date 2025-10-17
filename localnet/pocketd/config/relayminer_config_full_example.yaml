@@ -3,7 +3,16 @@
 default_signing_key_names: [supplier1]
 
 # Path to the SMT KV store.
-smt_store_path: ":memory:" # OR ./path/to/smt_stores
+# TODO_TECHDEBT(@olshansky): Remove the commented ":memory:" example once v0.1.31 is live.
+smt_store_path: "/home/user/.pocket/smt"
+
+# Disable SMT persistence (Write-Ahead Log and recovery)
+#
+# NOTE: When disabled, all relay processing state is lost on restart.
+# Claims and proofs may be lost if the RelayMiner restarts before submission.
+#
+# Default: false (persistence enabled)
+disable_smt_persistence: false
 
 # Eager validation configuration for incoming relay requests
 # When enabled: All relay requests are validated immediately upon receipt against

@@ -152,7 +152,7 @@ func setupRelayerDependencies(
 		config.NewSupplySupplierClientsFn(signingKeyNames, cosmosflags.GasFlagAuto),
 		config.NewSupplyRelayAuthenticatorFn(signingKeyNames),
 		config.NewSupplyRelayerProxyFn(servicesConfigMap, relayMinerConfig.Ping.Enabled),
-		config.NewSupplyRelayerSessionsManagerFn(smtStorePath),
+		config.NewSupplyRelayerSessionsManagerFn(smtStorePath, relayMinerConfig.DisableSMTPersistence),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)

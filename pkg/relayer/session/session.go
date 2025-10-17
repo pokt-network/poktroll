@@ -27,25 +27,6 @@ import (
 // Ensure the relayerSessionsManager implements the RelayerSessions interface.
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
-// Session tree storage mode constants.
-//
-// TODO_TECHDEBT(#1734): Once in-memory modes are stabilized, do one of the following:
-// 1. Formalize this into a proper enum for storage types (disk, memory_simple, memory_pebble)
-// 2. Remove support for one approach based on performance/reliability testing
-const (
-	// ** DEV_NOTE: This is the current recommended mode for production. **
-	// InMemoryStoreFilename indicates SMTs should be stored using SimpleMap in memory.
-	// This provides pure Go map-based storage with no background processes or lifecycle management.
-	// Data will not be persisted to disk and will be lost on process restart.
-	InMemoryStoreFilename = ":memory:"
-
-	// InMemoryPebbleStoreFilename indicates SMTs should be stored using Pebble's in-memory VFS.
-	// This uses Pebble database engine but stores data in memory instead of disk.
-	// Has background processes and lifecycle management overhead compared to SimpleMap.
-	// Data will not be persisted to disk and will be lost on process restart.
-	InMemoryPebbleStoreFilename = ":memory_pebble:"
-)
-
 // SessionTreesMap is an alias type for a map of
 // supplierOperatorAddress ->  sessionEndHeight -> sessionId -> SessionTree.
 //
@@ -82,13 +63,11 @@ type relayerSessionsManager struct {
 	// supplierClients is used to create claims and submit proofs for sessions.
 	supplierClients *supplier.SupplierClientMap
 
-	// storesDirectoryPath points to a path on disk where KVStore data files are created.
-	// Special values:
-	// - ":memory:" - Uses SimpleMap for pure in-memory storage (recommended)
-	// - ":memory_pebble:" - Uses Pebble with in-memory VFS (experimental)
-	// Otherwise, session data is persisted to disk and can be restored after a process restart.
-	// TODO(#1734): Ensure in-memory modes avoid data loss on process restart.
+	// storesDirectoryPath points to a path on disk where session related data files are created.
 	storesDirectoryPath string
+
+	// smtPersistenceDisabled indicates whether or not to persist the SMT of work sessions to disk.
+	smtPersistenceDisabled bool
 
 	// sessionSMTStore is a key-value store used to persist the metadata of
 	// sessions created in order to recover the active ones in case of a restart.
@@ -169,16 +148,12 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
-	// For in-memory storage modes (SimpleMap or Pebble in-memory), use an empty string
-	// as the session metadata store directory, which creates a memory-backed Pebble store.
-	// Otherwise, use the storesDirectoryPath as the session metadata store directory.
-	// TODO(#1734): Design a solution for restoration even when using in-memory modes.
-	sessionSMTDir := ""
-	if rs.isInMemorySMT() {
-		rs.logger.Info().Msg("Using memory-backed session metadata store for in-memory SMT modes.")
-	} else {
-		sessionSMTDir = path.Join(rs.storesDirectoryPath, "sessions_metadata")
+	if rs.smtPersistenceDisabled {
+		return rs, nil
 	}
+
+	sessionSMTDir := path.Join(rs.storesDirectoryPath, sessionMetadataDirName)
+
 	// Initialize the session metadata store.
 	if rs.sessionSMTStore, err = pebble.NewKVStore(sessionSMTDir); err != nil {
 		return nil, err
@@ -209,16 +184,16 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 		block.Hash(),
 	)
 
-	// Restore previously active sessions from persistent storage by rehydrating
-	// the session tree map.
-	// This is crucial for:
-	//   - Preserving the relayer's state across restarts
-	//   - Ensuring no active sessions are lost when the process is interrupted
-	//   - Maintaining accumulated work when interruptions occur
-	if rs.isInMemorySMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
-		rs.logger.Info().Msg("Skipping session data restoration for in-memory SMT modes.")
+	// Check whether SMT persistence is disabled.
+	if rs.smtPersistenceDisabled {
+		rs.logger.Info().Msg("⚠️ SMT persistence is DISABLED. Starting with no session persistence. ⚠️")
 	} else {
+		// Restore previously active sessions from persistent storage by rehydrating
+		// the session tree map.
+		// This is crucial for:
+		//   - Preserving the relayer's state across restarts
+		//   - Ensuring no active sessions are lost when the process is interrupted
+		//   - Maintaining accumulated work when interruptions occur
 		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
 			return err
 		}
@@ -275,18 +250,19 @@ func (rs *relayerSessionsManager) Stop() {
 	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
 
-	// Skip persistence when using in-memory SMT modes as data is not saved to disk.
-	if rs.isInMemorySMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
-		rs.logger.Info().Msg("Skipping persistence of session data for in-memory SMT modes.")
-		return
-	}
 	rs.logger.Info().Msg("About to start persisting all session data to disk.")
 
 	// Lock the mutex before accessing and modifying the sessionsTrees map to ensure
 	// thread safety during shutdown.
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
+
+	// Short circuit SMT persistence if it is disabled.
+	if rs.smtPersistenceDisabled {
+		rs.logger.Warn().Msg("⚠️ SMT persistence is DISABLED. All pending session data will be lost. ⚠️")
+
+		return
+	}
 
 	// Persist each active session's state to disk and properly close the associated
 	// key-value stores. This ensures that all accumulated relay data (including root
@@ -307,9 +283,9 @@ func (rs *relayerSessionsManager) Stop() {
 					logger.Error().Err(err).Msg("❌️ Failed to persist session metadata to storage during shutdown. ❗Check disk space and permissions. ❗Session data may be lost on restart.")
 				}
 
-				// Stop the session tree process and underlying key-value store.
-				if _, err := sessionTree.Flush(); err != nil {
-					logger.Error().Err(err).Msg("❌️ Failed to flush session tree store during shutdown. ❗Check disk permissions and kvstore integrity. ❗Resources may not be properly cleaned up.")
+				// Stop the session tree process and flush its state to disk.
+				if err := sessionTree.Close(); err != nil {
+					logger.Error().Err(err).Msg("❌️ Failed to flush session tree store during shutdown. ❗Check disk permissions and filesystem integrity. ❗Resources may not be properly cleaned up.")
 				}
 
 				logger.Debug().Msg("💾 Successfully stored session tree to disk during shutdown")
@@ -367,12 +343,16 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 	// sessionTreeWithSessionId map for the given supplier operator address.
 	if !ok {
 		var err error
-		sessionTree, err = NewSessionTree(rs.logger, sessionHeader, supplierOperatorAddress, rs.storesDirectoryPath)
+		sessionTree, err = NewSessionTree(rs.logger, sessionHeader, supplierOperatorAddress, rs.storesDirectoryPath, rs.smtPersistenceDisabled)
 		if err != nil {
 			return nil, err
 		}
 
 		sessionTreesWithEndHeight[sessionHeader.SessionId] = sessionTree
+
+		if rs.smtPersistenceDisabled {
+			return sessionTree, nil
+		}
 
 		// Persist the newly created session tree metadata to disk.
 		if err := rs.persistSessionMetadata(sessionTree); err != nil {
@@ -534,11 +514,6 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 // validateConfig validates the relayerSessionsManager's configuration.
 // TODO_TEST: Add unit tests to validate these configurations.
 func (rs *relayerSessionsManager) validateConfig() error {
-	// No error if RM is configured to use in-memory SMT (either SimpleMap or Pebble).
-	if rs.storesDirectoryPath == InMemoryStoreFilename || rs.storesDirectoryPath == InMemoryPebbleStoreFilename {
-		return nil
-	}
-
 	// Return an error if the stores directory path is undefined.
 	if rs.storesDirectoryPath == "" {
 		return ErrSessionTreeUndefinedStoresDirectoryPath
@@ -633,7 +608,7 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	smst, err := rs.ensureSessionTree(&relayMetadata)
 	if err != nil {
 		// TODO_IMPROVE: log additional info?
-		logger.Error().Err(err).Msg("❌️ Failed to ensure session tree exists for relay. ❗Check disk space and kvstore integrity. ❗Relay cannot be processed.")
+		logger.Error().Err(err).Msg("❌️ Failed to ensure session tree exists for relay. ❗Check disk space and filesystem integrity. ❗Relay cannot be processed.")
 		return err, false
 	}
 
@@ -647,7 +622,7 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	// This is independent of the relay difficulty target hash for each service, which is supplied by the tokenomics module.
 	if err := smst.Update(relay.Hash, relay.Bytes, serviceComputeUnitsPerRelay); err != nil {
 		// TODO_IMPROVE: log additional info?
-		logger.Error().Err(err).Msg("❌️ Failed to update session merkle tree with relay data. ❗Check disk space and kvstore integrity. ❗Relay evidence may be lost.")
+		logger.Error().Err(err).Msg("❌️ Failed to update session merkle tree with relay data. ❗Check disk space and permissions. ❗Relay evidence may be lost.")
 		return err, false
 	}
 
@@ -767,12 +742,12 @@ func (rs *relayerSessionsManager) deleteSessionTree(sessionTree relayer.SessionT
 	)
 
 	// IMPORTANT: Create sessionSMT BEFORE deleting the tree
-	// This ensures we retrieve the SMT root while the KVStore is still open.
+	// This ensures we retrieve the SMT root while the SessionTree is still open.
 	sessionSMT := sessionSMTFromSessionTree(sessionTree)
 
-	// Delete the session tree from the KVStore and close the underlying store.
+	// Delete the session tree from memory and delete its persisted state.
 	if err := sessionTree.Delete(); err != nil {
-		logger.Error().Err(err).Msg("❌️ Failed to delete session tree from kvstore. ❗Check disk permissions and kvstore integrity. ❗Session data may persist incorrectly.")
+		logger.Error().Err(err).Msg("❌️ Failed to delete session tree. ❗Check disk permissions and filesystem integrity. ❗Session data may persist incorrectly.")
 	}
 
 	// Delete the persisted session tree metadata from the disk store.

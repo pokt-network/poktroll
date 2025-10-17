@@ -29,6 +29,7 @@ type YAMLRelayMinerConfig struct {
 	PocketNode                        YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
 	Pprof                             YAMLRelayMinerPprofConfig      `yaml:"pprof"`
 	SmtStorePath                      string                         `yaml:"smt_store_path"`
+	DisableSMTPersistence             bool                           `yaml:"disable_smt_persistence"`
 	Suppliers                         []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
 	Ping                              YAMLRelayMinerPingConfig       `yaml:"ping"`
 	EnableOverServicing               bool                           `yaml:"enable_over_servicing"`
@@ -115,6 +116,7 @@ type RelayMinerConfig struct {
 	Pprof                             *RelayMinerPprofConfig
 	Servers                           map[string]*RelayMinerServerConfig
 	SmtStorePath                      string
+	DisableSMTPersistence             bool
 	Ping                              *RelayMinerPingConfig
 	EnableOverServicing               bool
 	EnableEagerRelayRequestValidation bool

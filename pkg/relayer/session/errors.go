@@ -16,4 +16,6 @@ var (
 	ErrSessionRelayMetaHasNoServiceID          = sdkerrors.Register(codespace, 9, "service ID not specified in relay metadata")
 	ErrSessionRelayMetaHasInvalidServiceID     = sdkerrors.Register(codespace, 10, "service specified in relay metadata not found")
 	ErrSessionTreeInvalidStoresDirectoryPath   = sdkerrors.Register(codespace, 11, "session tree invalid stores directory path")
+	ErrSessionTreeWALWriteQueueFull            = sdkerrors.Register(codespace, 12, "session tree WAL write queue full")
+	ErrSessionTreeWALClosed                    = sdkerrors.Register(codespace, 13, "session tree WAL closed")
 )

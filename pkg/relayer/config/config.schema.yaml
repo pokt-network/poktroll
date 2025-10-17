@@ -40,11 +40,19 @@ properties:
   smt_store_path:
     description: |
       Path to the Sparse Merkle Tree store directory.
-      Special values:
-      - ":memory:" - Uses SimpleMap for pure in-memory storage (recommended for high performance)
-      - ":memory_pebble:" - Uses Pebble with in-memory VFS (experimental, higher overhead)
-      - Any other string - Path to disk directory for persistent storage
     type: string
+
+  # Disable SMT persistence (optional)
+  disable_smt_persistence:
+    description: |
+      Disable SMT persistence (Write-Ahead Log and recovery)
+
+      NOTE: When disabled, all relay processing state is lost on restart.
+      Claims and proofs may be lost if the RelayMiner restarts before submission.
+
+      Default: false (persistence enabled)
+    type: boolean
+    default: false
 
   # Enable over servicing (optional)
   enable_over_servicing:

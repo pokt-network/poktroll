@@ -12,7 +12,6 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 	"github.com/gogo/status"
-	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -68,16 +67,6 @@ type StorageModeTestSuite struct {
 	proofParams  prooftypes.Params
 
 	logger polylog.Logger
-}
-
-// TestStorageModeSimpleMap tests the ":memory:" (SimpleMap) storage mode
-func TestStorageModeSimpleMap(t *testing.T) {
-	suite.Run(t, &StorageModeTestSuite{storageDir: session.InMemoryStoreFilename})
-}
-
-// TestStorageModePebbleInMemory tests the ":memory_pebble:" storage mode
-func TestStorageModePebbleInMemory(t *testing.T) {
-	suite.Run(t, &StorageModeTestSuite{storageDir: session.InMemoryPebbleStoreFilename})
 }
 
 // TestStorageModeDisk tests the disk storage mode
@@ -156,7 +145,6 @@ func (s *StorageModeTestSuite) SetupTest() {
 
 	// Log which storage mode we're testing
 	s.logger.Info().
-		Str("storage_mode", s.getStorageModeName()).
 		Str("storage_path", s.storageDir).
 		Msg("Testing storage mode")
 }
@@ -167,50 +155,7 @@ func (s *StorageModeTestSuite) TearDownTest() {
 	s.relayerSessionsManager.Stop()
 
 	// Clean up temporary directory for disk storage only
-	if !s.isInMemorySMT() {
-		_ = os.RemoveAll(s.storageDir)
-	}
-}
-
-// TestClaimAndProofSubmission tests the complete claim and proof submission lifecycle
-// This is the critical test that should reveal the bug in Pebble in-memory mode
-func (s *StorageModeTestSuite) TestBasicClaimAndProofSubmission() {
-	// Get the session end height from the active session header
-	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
-
-	// Calculate when the claim window opens for this session
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
-	// Move to the block where the claim window opens (which should trigger claim creation)
-	s.advanceToBlock(claimWindowOpenHeight)
-
-	// Verify the session tree exists and a claim has been created
-	sessionTree := s.getActiveSessionTree()
-	claimRoot := sessionTree.GetClaimRoot()
-	require.NotNil(s.T(), claimRoot, "Claim root should be created for storage mode: %s", s.getStorageModeName())
-	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once for storage mode: %s", s.getStorageModeName())
-	require.Equal(s.T(), 0, s.submitProofCallCount, "SubmitProof should not be called at this step")
-
-	// Verify the claim tree has exactly one claim
-	count, err := smt.MerkleSumRoot(claimRoot).Count()
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), uint64(1), count, "Claim tree should have exactly one relay for storage mode: %s", s.getStorageModeName())
-
-	// Calculate when the proof window closes for this session
-	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
-
-	// Move to one block before the proof window closes (which should trigger proof submission)
-	s.advanceToBlock(proofWindowCloseHeight)
-
-	// This is the critical assertion - verify that a proof was submitted
-	// Note: This test should pass for all storage modes with our current implementation
-	// To reproduce the original bug where Pebble in-memory failed, you would need to:
-	// 1. Revert the sessionSMT preservation fix in sessiontree.go Flush() method
-	// 2. Remove the sessionSMT restoration logic in ProveClosest() method
-	// 3. Then this assertion would fail for Pebble in-memory mode only
-	require.Equal(s.T(), 1, s.submitProofCallCount, "SubmitProof should be called once for storage mode: %s", s.getStorageModeName())
-
-	// Verify the session tree has been removed after proof submission
-	require.False(s.T(), s.hasActiveSessionTree(), "Session tree should be removed after proof submission for storage mode: %s", s.getStorageModeName())
+	_ = os.RemoveAll(s.storageDir)
 }
 
 // TestProcessRestartDuringClaimWindow tests session persistence when restarted during claim window
@@ -244,14 +189,6 @@ func (s *StorageModeTestSuite) TestProcessRestartDuringClaimWindow() {
 	// The manager is now running and will process these blocks as they're published
 	s.advanceToBlock(claimWindowOpenHeight)
 
-	// For in-memory modes, we should only proceed if the session was restored
-	// TODO_TECHDEBT(#1734): Remove this once we are better at managing in-memory sessions restarts
-	if s.isInMemorySMT() {
-		// In-memory modes don't persist across restarts, so session should be gone
-		require.False(s.T(), s.hasActiveSessionTree(), "In-memory storage should not persist sessions across restarts for mode: %s", s.getStorageModeName())
-		return
-	}
-
 	// For disk storage, verify the session tree is still correctly loaded
 	sessionTree = s.getActiveSessionTree()
 	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader())
@@ -267,87 +204,14 @@ func (s *StorageModeTestSuite) TestProcessRestartDuringClaimWindow() {
 		timeout,
 		checkInterval,
 	)
-	require.True(s.T(), claimRootReady, "Claim root should be created within timeout for storage mode: %s", s.getStorageModeName())
+	require.True(s.T(), claimRootReady, "Claim root should be created within timeout")
 
 	// Verify a claim root has been created after restart
 	claimRoot := sessionTree.GetClaimRoot()
-	require.NotNil(s.T(), claimRoot, "Claim root should be created after restart for storage mode: %s", s.getStorageModeName())
+	require.NotNil(s.T(), claimRoot, "Claim root should be created after restart")
 
 	// Verify createClaim was called exactly once
-	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once after restart for storage mode: %s", s.getStorageModeName())
-}
-
-// TestInMemoryTreeStillSubmitsProofAfterFlush ensures that the in-memory tree still submits a proof after
-// a Flush is called on the RelaySessionManager.
-func (s *StorageModeTestSuite) TestInMemoryTreeStillSubmitsProofAfterFlush() {
-	// Only test in-memory modes since that's where the bug occurred
-	if !s.isInMemorySMT() {
-		s.T().Skip("Bug reproduction test only relevant for in-memory modes")
-		return
-	}
-
-	// Get the session end height from the active session header
-	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
-
-	// Calculate when the claim window opens and proof window closes
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
-	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
-
-	// Move to claim window and verify claim creation
-	s.advanceToBlock(claimWindowOpenHeight)
-	sessionTree := s.getActiveSessionTree()
-	claimRoot := sessionTree.GetClaimRoot()
-
-	require.NotNil(s.T(), claimRoot, "Claim should be created")
-	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once")
-
-	// Simulates a flush
-	sessionTree.Flush()
-
-	// Move to proof window
-	s.advanceToBlock(proofWindowCloseHeight)
-
-	// Without the fix, this assertion would FAIL for Pebble in-memory mode
-	// because the sessionSMT would be lost after Stop() during Flush()
-	// With the fix in place, this assertion passes
-	require.Equal(s.T(), 1, s.submitProofCallCount, "SubmitProof should be called - this would FAIL without the sessionSMT preservation fix")
-}
-
-// TestStorageSpecificBehavior tests storage-specific behaviors and edge cases
-func (s *StorageModeTestSuite) TestStorageSpecificBehavior() {
-	sessionTree := s.getActiveSessionTree()
-
-	switch s.storageDir {
-	case session.InMemoryStoreFilename:
-		// SimpleMap storage should work without calling Stop()
-		s.T().Log("Testing SimpleMap storage - should work without Stop()")
-
-	case session.InMemoryPebbleStoreFilename:
-		// Pebble in-memory requires proper lifecycle management
-		s.T().Log("Testing Pebble in-memory storage - requires Stop() for proper lifecycle")
-
-	default:
-		// Disk storage persists data
-		s.T().Log("Testing disk storage - data persists to disk")
-	}
-
-	// All storage modes should have the session tree at this point
-	require.NotNil(s.T(), sessionTree, "Session tree should exist for storage mode: %s", s.getStorageModeName())
-
-	// Verify session header matches
-	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader(), "Session header should match for storage mode: %s", s.getStorageModeName())
-}
-
-// getStorageModeName returns a human-readable name for the current storage mode
-func (s *StorageModeTestSuite) getStorageModeName() string {
-	switch s.storageDir {
-	case session.InMemoryStoreFilename:
-		return "SimpleMap"
-	case session.InMemoryPebbleStoreFilename:
-		return "PebbleInMemory"
-	default:
-		return "Disk"
-	}
+	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once after restart")
 }
 
 // getActiveSessionTree retrieves the current active session tree for testing purposes
@@ -375,11 +239,6 @@ func (s *StorageModeTestSuite) findActiveSessionTree() (relayer.SessionTree, boo
 	}
 
 	return nil, false
-}
-
-func (s *StorageModeTestSuite) hasActiveSessionTree() bool {
-	_, ok := s.findActiveSessionTree()
-	return ok
 }
 
 // setupNewRelayerSessionsManager creates and configures a new relayer sessions manager for testing
@@ -586,8 +445,4 @@ func (s *StorageModeTestSuite) advanceToBlock(height int64) {
 
 	// Wait for I/O operations to complete
 	waitSimulateIO()
-}
-
-func (s *StorageModeTestSuite) isInMemorySMT() bool {
-	return s.storageDir == session.InMemoryStoreFilename || s.storageDir == session.InMemoryPebbleStoreFilename
 }

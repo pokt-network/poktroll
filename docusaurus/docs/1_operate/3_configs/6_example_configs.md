@@ -12,7 +12,7 @@ This document is intended to serve as a reference for various example configurat
 ```yaml
 config:
   default_signing_key_names: [mainnet-prod-relayminer]
-  smt_store_path: ":memory:" # /home/pocket/.pocket
+  smt_store_path: /home/pocket/.pocket
   pocket_node:
     query_node_rpc_url: http://<YOUR_POKT_NODE>.<YOUR_TLD>:443
     query_node_grpc_url: tcp://<YOUR_POKT_NODE>.<YOUR_TLD>:443
@@ -34,7 +34,7 @@ config:
 ```yaml
 config:
   default_signing_key_names: [mainnet-prod-relayminer]
-  smt_store_path: ":memory:" # /home/pocket/.pocket
+  smt_store_path: /home/pocket/.pocket
   pocket_node:
     query_node_rpc_url: http://<YOUR_POKT_NODE>.<YOUR_TLD>:443
     query_node_grpc_url: tcp://<YOUR_POKT_NODE>.<YOUR_TLD>:443

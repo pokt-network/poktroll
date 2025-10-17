@@ -18,7 +18,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
-	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
 
 // startCmd returns the Cobra subcommand for running the relay miner.
@@ -131,6 +130,43 @@ Totals:
 'max_open_connections' = 7           (must be > 2 × 3 = 6)
 `)
 
+	fmt.Printf(`
+
+==========================================
+⚠️  SMT Store Path Configuration Notice ⚠️
+==========================================
+
+📦 Deprecated RelayMiner Config Values:
+---------------------------------------
+The following values for 'smt_store_path' are DEPRECATED:
+- ':memory:'
+- ':memory_pebble:'
+
+🔄 Backwards Compatibility:
+---------------------------
+If your config uses these deprecated values, the RelayMiner will
+automatically fallback to the default persistent storage path: $HOME/.pocket/smt
+
+✅ Recommended Action:
+----------------------
+The RelayMiner will systematically use in-memory SMTs but will back them up to disk
+to ensure data persistence across restarts.
+
+Please update your RelayMiner config file to use a persistent
+storage path instead of the deprecated values.
+
+Example:
+  smt_store_path: /home/your-user/.pocket/smt
+
+⚡ Why This Matters:
+--------------------
+Persistent storage ensures your session trees are preserved across
+RelayMiner restarts, improving reliability and performance.
+
+_TODO_TECHDEBT(@olshansky): Delete this banner once v0.1.31 is live_
+
+`)
+
 	// --- Parse relay miner configuration ---
 	// TODO_IMPROVE: Add logger level/output options to config.
 	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(logger, configContent)
@@ -139,14 +175,7 @@ Totals:
 		return err
 	}
 
-	switch relayMinerConfig.SmtStorePath {
-	case session.InMemoryStoreFilename:
-		logger.Warn().Msg(`🚨 SMT configured for SimpleMap in-memory storage. All session data will be LOST on RelayMiner restart. See #1734 for more info.`)
-	case session.InMemoryPebbleStoreFilename:
-		logger.Warn().Msg(`🚨 SMT configured for Pebble in-memory storage (EXPERIMENTAL). All session data will be LOST on RelayMiner restart. See #1734 for more info.`)
-	default:
-		logger.Debug().Msgf("SMT configured for persistent storage at: %s", relayMinerConfig.SmtStorePath)
-	}
+	logger.Debug().Msgf("SMT configured for persistent storage at: %s", relayMinerConfig.SmtStorePath)
 
 	// --- Log flag values ---
 	if err = logFlagValues(logger, cmd); err != nil {

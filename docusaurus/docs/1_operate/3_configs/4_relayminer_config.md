@@ -21,6 +21,7 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [`default_request_timeout_seconds`](#default_request_timeout_seconds)
   - [`default_max_body_size`](#default_max_body_size)
   - [`smt_store_path`](#smt_store_path)
+  - [`disable_smt_persistence`](#disable_smt_persistence)
   - [`enable_over_servicing`](#enable_over_servicing)
   - [`enable_eager_relay_request_validation`](#enable_eager_relay_request_validation)
   - [`metrics`](#metrics)
@@ -124,6 +125,7 @@ default_signing_key_names: [<string>, <string>]
 default_request_timeout_seconds: <uint64>
 default_max_body_size: <string>
 smt_store_path: <string>
+disable_smt_persistence: <boolean>
 enable_over_servicing: <boolean>
 enable_eager_relay_request_validation: <boolean>
 ```
@@ -176,22 +178,53 @@ The relative or absolute path to the directory where the `RelayMiner` will store
 the `SparseMerkleTree` data on disk. This directory is used to persist the `SMT`
 in a BadgerDB KV store data files.
 
-**In-memory storage options:**
+:::warning DEPRECATION NOTICE AND REQUIRED ACTION
 
-- `:memory:` - Uses SimpleMap (pure Go map) for in-memory storage. **Recommended**.
-- `:memory_pebble:` - Uses Pebble database with in-memory VFS. Experimental option with more overhead.
+The values `:memory:` and `:memory_pebble:` are **deprecated** and will automatically
+fallback to `$HOME/.pocket/smt` for backwards compatibility.
 
-:::warning TODO(#1734) Experimentation in flight
+**Action Required**: Update your configuration to use an explicit persistent storage path
+(e.g., `/home/user/.pocket/smt`) instead of these deprecated values.
 
-**This update is as of 08/2025.**
-
-In-memory storage enables relay miners to be significantly more performant. For this reason, `:memory:` is the recommended option.
-
-**Warning:** Prior to #1734, RelayMiner restarts will result in loss of session state.
-
-**Consideration**: Once experimentation is complete, there will either only be one in-memory storage option or a proper enum will be created (disk, memory_simple, memory_pebble).
+_TODO_TECHDEBT(@olshansky): Delete this warning section once v0.1.31 is live_
 
 :::
+
+### `disable_smt_persistence`
+
+:::danger Data Loss Risk
+
+When `disable_smt_persistence` is enabled:
+
+- Claims and proofs **will be lost if the RelayMiner restarts** before submission
+- This could result in **missed proof submissions** and potential slashing
+
+:::
+
+_`Optional`_ (default: `false`)
+
+Controls whether the Sparse Merkle Tree (SMT) Write-Ahead Log (WAL) and recovery
+mechanisms are disabled.
+
+When set to `true`:
+
+- **No WAL files** are written to disk during relay processing
+- **Session trees are not recovered** from disk on restart
+- The `RelayMiner` operates in **pure in-memory mode** for SMTs
+- All relay processing state is **lost on restart**
+
+**Default behavior (`false`):**
+
+- WAL files are written to disk for crash recovery
+- Session trees are automatically recovered on restart
+- Provides data durability and resilience across restarts
+
+**Example configuration:**
+
+```yaml
+smt_store_path: /home/user/.pocket/smt
+disable_smt_persistence: false # Recommended for production
+```
 
 ### `enable_over_servicing`
 
