@@ -2071,8 +2071,20 @@
                     },
                     {
                         "type": "string",
-                        "description": "unique service identifier to filter by",
+                        "description": "Optional filters that can be combined (AND logic)\n\nunique service identifier to filter by",
                         "name": "service_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "supplier operator address to filter by",
+                        "name": "operator_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "supplier owner address to filter by",
+                        "name": "owner_address",
                         "in": "query"
                     },
                     {
