@@ -11,6 +11,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeApplication) (*types.MsgStakeApplicationResponse, error) {
@@ -164,13 +165,17 @@ func (k Keeper) createApplication(
 	_ context.Context,
 	msg *types.MsgStakeApplication,
 ) types.Application {
-	return types.Application{
+	application := types.Application{
 		Address:                   msg.Address,
 		Stake:                     msg.Stake,
 		ServiceConfigs:            msg.Services,
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]types.UndelegatingGatewayList),
+		ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics),
 	}
+	initializeAppServiceUsageMetrics(&application)
+
+	return application
 }
 
 func (k Keeper) updateApplication(
@@ -199,5 +204,26 @@ func (k Keeper) updateApplication(
 	}
 	app.ServiceConfigs = msg.Services
 
+	initializeAppServiceUsageMetrics(app)
+
 	return nil
+}
+
+// initializeAppServiceUsageMetrics ensures that the application has usage metrics tracking for all its services
+// - Iterates through all service configs in the application
+// - Initializes metrics for newly added services with zero values
+// - Maintains existing metrics for services that already have them
+func initializeAppServiceUsageMetrics(application *types.Application) {
+	for _, serviceConfig := range application.ServiceConfigs {
+		if _, exists := application.ServiceUsageMetrics[serviceConfig.ServiceId]; exists {
+			// Service usage metrics already exist for this service, no need to initialize
+			continue
+		}
+
+		// Initialize zero metrics for newly staked services
+		// This ensures all services have tracking from the beginning
+		application.ServiceUsageMetrics[serviceConfig.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+			ServiceId: serviceConfig.ServiceId,
+		}
+	}
 }

@@ -37,8 +37,30 @@ func (s *Supplier) IsActive(queryHeight int64, serviceId string) bool {
 	return false
 }
 
+// UpdateServiceUsageMetrics increments the service usage metrics for a specific service
+// - Finds existing metrics for the service or initializes new ones
+// - Increments relay and compute unit counts by the provided values
+func (s *Supplier) UpdateServiceUsageMetrics(serviceId string, numRelays, numComputeUnits uint64) {
+	serviceUsageMetrics := &ServiceUsageMetrics{ServiceId: serviceId}
+	for _, existingServiceUsageMetrics := range s.ServiceUsageMetrics {
+		if existingServiceUsageMetrics.ServiceId == serviceId {
+			serviceUsageMetrics = existingServiceUsageMetrics
+			break
+		}
+	}
+
+	// Increment the metrics with the new relay and compute unit counts
+	// These values accumulate over time to represent total service usage
+	serviceUsageMetrics.TotalRelays += numRelays
+	serviceUsageMetrics.TotalComputeUnits += numComputeUnits
+
+	s.ServiceUsageMetrics[serviceId] = serviceUsageMetrics
+}
+
 // TODO_TECHDEBT: Consider removing this method and forcing the use of the keeper directly.
-// This requires the supplier to be hydrated, which is not always the case.
+// This method requires the supplier to be fully hydrated with ServiceConfigHistory populated.
+// If the supplier is not hydrated, this method will return an empty slice even if the supplier
+// has active service configurations, which can lead to incorrect behavior.
 //
 // GetActiveServiceConfigs returns a list of all service configurations that are active
 // at the specified block height.

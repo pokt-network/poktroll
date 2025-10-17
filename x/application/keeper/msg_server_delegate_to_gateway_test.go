@@ -44,6 +44,9 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 		ServiceConfigs:            stakeMsg.GetServices(),
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		ServiceUsageMetrics: map[string]*sharedtypes.ServiceUsageMetrics{
+			"svc1": {ServiceId: "svc1"},
+		},
 	}
 
 	// Stake the application & verify that the application exists
@@ -153,6 +156,12 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 		ServiceConfigs:            stakeMsg.GetServices(),
 		DelegateeGatewayAddresses: []string{gatewayAddr},
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics, 0),
+	}
+	for _, svc := range expectedApp.ServiceConfigs {
+		expectedApp.ServiceUsageMetrics[svc.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+			ServiceId: svc.ServiceId,
+		}
 	}
 	expectedEvent := &apptypes.EventRedelegation{
 		Application:      expectedApp,
@@ -289,6 +298,12 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 			ServiceConfigs:            stakeMsg.GetServices(),
 			DelegateeGatewayAddresses: gatewayAddresses[:i+1],
 			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+			ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics, 0),
+		}
+		for _, svc := range expectedApp.ServiceConfigs {
+			expectedApp.ServiceUsageMetrics[svc.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+				ServiceId: svc.ServiceId,
+			}
 		}
 		expectedEvent := &apptypes.EventRedelegation{
 			Application:      expectedApp,

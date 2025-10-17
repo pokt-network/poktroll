@@ -49,7 +49,26 @@ func (claim *Claim) GetNumEstimatedComputeUnits(
 	return new(big.Int).Div(numerator, denominator).Uint64(), nil
 }
 
+// GetNumEstimatedRelays returns the claim's estimated number of relays.
+//
+// This function calculates the estimated total number of relays that were actually served
+// off-chain by scaling the on-chain volume applicable relays using the relay mining
+// difficulty multiplier.
+func (claim *Claim) GetNumEstimatedRelays(
+	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
+) (numEstimatedRelays uint64, err error) {
+	numRelays, err := claim.GetNumRelays()
+	if err != nil {
+		return 0, err
+	}
+
+	targetHash := relayMiningDifficulty.GetTargetHash()
+
+	return protocol.GetNumEstimatedRelays(numRelays, targetHash), nil
+}
+
 // GetClaimeduPOKT returns the claim's token reward in uPOKT.
+//
 // At a high-level, the following is done:
 // estimatedOffchainComputeUnits = claim.NumVolumeApplicableComputeUnits * service.RelayMiningDifficulty
 // uPOKT = estimatedOffchainComputeUnits * chain.ComputeUnitsToTokenMultiplier / chain.ComputeUnitsCostGranularity

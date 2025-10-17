@@ -74,6 +74,7 @@ func (k Keeper) createSupplier(
 		Services:                make([]*sharedtypes.SupplierServiceConfig, 0),
 		ServiceConfigHistory:    make([]*sharedtypes.ServiceConfigUpdate, 0),
 		UnstakeSessionEndHeight: sharedtypes.SupplierNotUnstaking,
+		ServiceUsageMetrics:     make(map[string]*sharedtypes.ServiceUsageMetrics),
 	}
 
 	// Store the service configurations details of the newly created supplier.

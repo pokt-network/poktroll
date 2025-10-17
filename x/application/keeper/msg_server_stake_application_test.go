@@ -48,6 +48,12 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 		ServiceConfigs:            stakeMsg.GetServices(),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		DelegateeGatewayAddresses: make([]string, 0),
+		ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics),
+	}
+	for _, svc := range stakeMsg.GetServices() {
+		expectedApp.ServiceUsageMetrics[svc.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+			ServiceId: svc.ServiceId,
+		}
 	}
 
 	// Assert that the EventApplicationStaked event is emitted.
@@ -91,7 +97,6 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	_, err = srv.StakeApplication(ctx, updateStakeMsg)
 	require.NoError(t, err)
 
-	// Assert that the staked application is updated.
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, &upStake, foundApp.Stake)

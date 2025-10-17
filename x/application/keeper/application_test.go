@@ -15,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func init() {
@@ -62,6 +63,7 @@ func createNApplications(k appkeeper.Keeper, ctx context.Context, n int, testApp
 		apps[i].Address = strconv.Itoa(i)
 		// Setting pending undelegations since nullify.Fill() does not seem to do it.
 		apps[i].PendingUndelegations = make(map[uint64]apptypes.UndelegatingGatewayList)
+		apps[i].ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
 
 		for _, modifier := range testAppModifiers {
 			modifier(&apps[i])

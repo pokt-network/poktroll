@@ -119,8 +119,30 @@ func (sctx *settlementContext) FlushAllActorsToStore(ctx context.Context) {
 	for _, supplier := range sctx.settledSuppliers {
 		sctx.keeper.supplierKeeper.SetDehydratedSupplier(ctx, *supplier)
 		logger.Info(fmt.Sprintf("updated onchain supplier record with address %q", supplier.OperatorAddress))
+
+		// Update the supplier's usage metrics for each service
+		for _, serviceUsageMetrics := range supplier.ServiceUsageMetrics {
+			sctx.keeper.supplierKeeper.SetServiceUsageMetrics(
+				ctx,
+				supplier.OperatorAddress,
+				serviceUsageMetrics,
+			)
+			logger.Info(fmt.Sprintf(
+				"updated onchain supplier service usage metrics for supplier %q service %q",
+				supplier.OperatorAddress,
+				serviceUsageMetrics.ServiceId,
+			))
+		}
 	}
 	logger.Info(fmt.Sprintf("updated %d onchain supplier records", len(sctx.settledSuppliers)))
+
+	// Flush all Service records to the store
+	for _, service := range sctx.serviceMap {
+		svc := *service
+		sctx.keeper.serviceKeeper.SetService(ctx, svc)
+		logger.Info(fmt.Sprintf("updated onchain service record with ID %q", service.Id))
+	}
+	logger.Info(fmt.Sprintf("updated %d onchain service records", len(sctx.serviceMap)))
 }
 
 // ClaimCacheWarmUp warms up the settlement context's cache by based on the claim's properties.
@@ -137,7 +159,7 @@ func (sctx *settlementContext) ClaimCacheWarmUp(ctx context.Context, claim *proo
 
 	// Cache application
 	applicationAddress := claim.SessionHeader.ApplicationAddress
-	if err := sctx.cacheApplication(ctx, applicationAddress); err != nil {
+	if err := sctx.cacheApplication(ctx, applicationAddress, serviceId); err != nil {
 		return err
 	}
 
@@ -251,9 +273,10 @@ func (sctx *settlementContext) cacheSupplier(
 	if idx, ok := sctx.supplierMap[supplierOperatorAddress]; ok {
 		cachedSupplier := sctx.settledSuppliers[idx]
 
-		// Supplier is cached, ensure that it has a service configuration corresponding
-		// to the claim's service ID.
+		// Supplier is cached, ensure that it has a service configuration and service
+		// usage metrics corresponding to the claim's service ID.
 		sctx.cacheSupplierServiceConfig(ctx, cachedSupplier, serviceId)
+		sctx.hydrateSupplierServiceUsageMetrics(ctx, cachedSupplier, serviceId)
 
 		// Supplier is already cached
 		return nil
@@ -274,6 +297,9 @@ func (sctx *settlementContext) cacheSupplier(
 	// This is needed to ensure the dehydrated supplier has the correct service
 	// revenue share configuration for the claim settlement.
 	supplier.Services = sctx.keeper.supplierKeeper.GetSupplierActiveServiceConfig(ctx, &supplier, serviceId)
+
+	sctx.cacheSupplierServiceConfig(ctx, &supplier, serviceId)
+	sctx.hydrateSupplierServiceUsageMetrics(ctx, &supplier, serviceId)
 
 	// Store supplier in cache for future claim processing
 	idx := len(sctx.settledSuppliers)
@@ -311,18 +337,30 @@ func (sctx *settlementContext) cacheSupplierServiceConfig(
 // cacheApplication ensures the application for a claim is cached in the settlement context.
 //
 // This prevents repeated KV store lookups for the same application across multiple claims.
-func (sctx *settlementContext) cacheApplication(ctx context.Context, appAddress string) error {
-	if _, ok := sctx.applicationMap[appAddress]; ok {
-		// Application is already cached
+func (sctx *settlementContext) cacheApplication(
+	ctx context.Context,
+	appAddress string,
+	serviceId string,
+) error {
+	if idx, ok := sctx.applicationMap[appAddress]; ok {
+		cachedApplication := sctx.settledApplications[idx]
+
+		// Application is cached, ensure that it has a service usage metrics corresponding
+		// to the claim's service ID.
+		sctx.hydrateApplicationServiceUsageMetrics(ctx, cachedApplication, serviceId)
+
+		// Application already cached
 		return nil
 	}
 
 	// Retrieve the onchain staked application record
-	application, isAppFound := sctx.keeper.applicationKeeper.GetApplication(ctx, appAddress)
+	application, isAppFound := sctx.keeper.applicationKeeper.GetDehydratedApplication(ctx, appAddress)
 	if !isAppFound {
 		sctx.logger.Warn(fmt.Sprintf("application for claim with address %q not found", appAddress))
 		return tokenomicstypes.ErrTokenomicsApplicationNotFound
 	}
+
+	sctx.hydrateApplicationServiceUsageMetrics(ctx, &application, serviceId)
 
 	// Store application in cache for future claim processing
 	idx := len(sctx.settledApplications)
@@ -371,4 +409,58 @@ func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, se
 	sctx.relayMiningDifficultyMap[service.Id] = relayMiningDifficulty
 
 	return nil
+}
+
+// hydrateApplicationServiceUsageMetrics ensures application the service usage metrics hydrated
+// - Checks if the application already has metrics for the service in its in-memory representation
+// - If not, retrieves the latest metrics from storage and updates the application object
+func (sctx *settlementContext) hydrateApplicationServiceUsageMetrics(
+	ctx context.Context,
+	application *apptypes.Application,
+	serviceId string,
+) {
+	// Service usage metrics already cached, no need to update
+	if _, ok := application.ServiceUsageMetrics[serviceId]; ok {
+		return
+	}
+
+	// Hydrate the application service usage metrics with the claim's service ID.
+	// This is needed to ensure the dehydrated application has the correct service
+	// usage metrics for the claim settlement.
+	serviceUsageMetrics := sctx.keeper.applicationKeeper.GetServiceUsageMetrics(
+		ctx,
+		application.Address,
+		serviceId,
+	)
+	application.UpdateServiceUsageMetrics(
+		serviceId,
+		serviceUsageMetrics.TotalRelays,
+		serviceUsageMetrics.TotalComputeUnits,
+	)
+}
+
+// hydrateSupplierServiceUsageMetrics ensures the supplier service usage metrics are hydrated
+// - Checks if the supplier already has metrics for the service in its in-memory representation
+// - If not, retrieves the latest metrics from storage and updates the supplier object
+func (sctx *settlementContext) hydrateSupplierServiceUsageMetrics(
+	ctx context.Context,
+	supplier *sharedtypes.Supplier,
+	serviceId string,
+) {
+	// Service usage metrics already cached, no need to update
+	if _, ok := supplier.ServiceUsageMetrics[serviceId]; ok {
+		return
+	}
+
+	// Hydrate the supplier service usage metrics with the claim's service ID.
+	serviceUsageMetrics := sctx.keeper.supplierKeeper.GetServiceUsageMetrics(
+		ctx,
+		supplier.OperatorAddress,
+		serviceId,
+	)
+	supplier.UpdateServiceUsageMetrics(
+		serviceId,
+		serviceUsageMetrics.TotalRelays,
+		serviceUsageMetrics.TotalComputeUnits,
+	)
 }

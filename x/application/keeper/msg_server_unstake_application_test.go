@@ -96,9 +96,13 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert that the EventApplicationUnbondingEnd event is emitted.
+	// Create the expected app without service usage metrics since the event
+	// emits a dehydrated application to reduce event size and chain bloat
+	expectedApp := foundApp
+	expectedApp.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
 	expectedEvent, err = sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingEnd{
-			Application:        &foundApp,
+			Application:        &expectedApp,
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
 			SessionEndHeight:   unbondingSessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,

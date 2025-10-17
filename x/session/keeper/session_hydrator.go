@@ -132,7 +132,9 @@ func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error
 
 // hydrateSessionApplication hydrates the full Application actor based on the address provided
 func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrator) error {
-	foundApp, isAppFound := k.applicationKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
+	// Use dehydrated applications for better performance since service usage metrics
+	// are not needed for session formation, only application stake and service configs
+	foundApp, isAppFound := k.applicationKeeper.GetDehydratedApplication(ctx, sh.sessionHeader.ApplicationAddress)
 	if !isAppFound {
 		return types.ErrSessionAppNotFound.Wrapf(
 			"could not find app with address %q at height %d",

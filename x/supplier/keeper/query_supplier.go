@@ -76,6 +76,7 @@ func (k Keeper) Supplier(
 		k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
 	} else {
 		k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
+		k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
 	}
 
 	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
@@ -147,6 +148,7 @@ func (k Keeper) getAllSuppliers(
 				k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
 			} else {
 				k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
+				k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
 			}
 
 			suppliers = append(suppliers, supplier)
@@ -235,6 +237,7 @@ func (k Keeper) getAllServiceSuppliers(
 				k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
 			} else {
 				k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
+				k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
 			}
 
 			// Add the supplier to the results

@@ -28,6 +28,14 @@ message Service {
   // It is the only address that can update the service configuration (e.g. compute_units_per_relay),
   // or make other updates to it.
   string owner_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service owner / creator
+
+  // total_relays tracks the cumulative (monotonically increasing) onchain usage
+  // of this service since its creation.
+  uint64 total_relays = 5;
+
+  // total_compute_units tracks the cumulative (monotonically increasing) onchain
+  // compute units consumption of this service since its creation.
+  uint64 total_compute_units = 6;
 }
 
 // ApplicationServiceConfig holds the service configuration the application stakes for
@@ -90,3 +98,14 @@ message ConfigOption {
   string value = 2; // Config option value
 }
 
+// ServiceUsageMetrics tracks cumulative (monotonically increasing) onchain service usage
+// - Tracks total # of relays serviced
+// - Tracks total # of compute units consumed
+// - Updated during claim settlement
+message ServiceUsageMetrics {
+  string service_id = 1;
+  // TODO_TECHDEBT: Account for potential uint64 overflows in the distant future
+  // Use string representation of the total relays and compute units to avoid overflow issues
+  uint64 total_relays = 2;
+  uint64 total_compute_units = 3;
+}

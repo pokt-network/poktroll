@@ -77,6 +77,12 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 			ServiceConfigs:            stakeMsg.GetServices(),
 			DelegateeGatewayAddresses: expectedGatewayAddresses[:i+1],
 			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+			ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics),
+		}
+		for _, svc := range stakeMsg.GetServices() {
+			expectedApp.ServiceUsageMetrics[svc.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+				ServiceId: svc.ServiceId,
+			}
 		}
 		expectedRedelegationEvent := &apptypes.EventRedelegation{
 			Application:      expectedApp,
@@ -111,6 +117,12 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
 			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},
 		},
+		ServiceUsageMetrics: make(map[string]*sharedtypes.ServiceUsageMetrics),
+	}
+	for _, svc := range stakeMsg.GetServices() {
+		expectedApp.ServiceUsageMetrics[svc.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+			ServiceId: svc.ServiceId,
+		}
 	}
 
 	// Undelegate the application from the gateway
@@ -209,6 +221,12 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 		ServiceConfigs:            stakeMsg.GetServices(),
 		DelegateeGatewayAddresses: []string{gatewayAddr2},
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics, 0),
+	}
+	for _, svc := range stakeMsg.GetServices() {
+		expectedApp.ServiceUsageMetrics[svc.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+			ServiceId: svc.ServiceId,
+		}
 	}
 	expectedRedelegationEvent := &apptypes.EventRedelegation{
 		Application:      expectedApp,
@@ -282,6 +300,12 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 		ServiceConfigs:            stakeMsg.GetServices(),
 		DelegateeGatewayAddresses: []string{gatewayAddr},
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics),
+	}
+	for _, svc := range stakeMsg.GetServices() {
+		expectedApp.ServiceUsageMetrics[svc.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+			ServiceId: svc.ServiceId,
+		}
 	}
 	expectedRedelegationEvent := &apptypes.EventRedelegation{
 		Application:      expectedApp,
@@ -328,6 +352,12 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
 			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},
 		},
+		ServiceUsageMetrics: make(map[string]*sharedtypes.ServiceUsageMetrics, 0),
+	}
+	for _, svc := range stakeMsg.GetServices() {
+		expectedApp.ServiceUsageMetrics[svc.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+			ServiceId: svc.ServiceId,
+		}
 	}
 	expectedEvent := &apptypes.EventRedelegation{
 		Application:      expectedApp,

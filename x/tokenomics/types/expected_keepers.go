@@ -44,6 +44,8 @@ type BankKeeper interface {
 type ApplicationKeeper interface {
 	// Getters
 	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
+	GetDehydratedApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
+	GetServiceUsageMetrics(ctx context.Context, applicationAddress, serviceId string) sharedtypes.ServiceUsageMetrics
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	GetParams(ctx context.Context) (params apptypes.Params)
 
@@ -99,10 +101,12 @@ type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetDehydratedSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetSupplierActiveServiceConfig(ctx context.Context, supplier *sharedtypes.Supplier, serviceId string) (activeServiceConfigs []*sharedtypes.SupplierServiceConfig)
+	GetServiceUsageMetrics(ctx context.Context, supplierAddressAddress, serviceId string) sharedtypes.ServiceUsageMetrics
 
 	// Setters
 	SetAndIndexDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 	SetDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	SetServiceUsageMetrics(ctx context.Context, supplierAddressAddress string, serviceUsageMetrics *sharedtypes.ServiceUsageMetrics)
 }
 
 type ServiceKeeper interface {

@@ -44,6 +44,9 @@ message Application {
 
   // Information about pending application transfers
   PendingApplicationTransfer pending_transfer = 7;
+
+  // service_usage_metrics tracks the onchain services consumed by this application.
+  map<string, pocket.shared.ServiceUsageMetrics> service_usage_metrics = 8;
 }
 
 // UndelegatingGatewayList is used as the Value of `pending_undelegations`.

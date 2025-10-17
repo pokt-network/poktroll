@@ -264,6 +264,7 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		UnstakeSessionEndHeight:   uint64(sessionEndHeight),
+		ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics),
 	}
 }
 
@@ -290,8 +291,9 @@ func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expecte
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	sessionEndHeight := s.keepers.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
+	dehydratedApp := expectedApp.DehydratedApplication()
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-		Application:        expectedApp,
+		Application:        &dehydratedApp,
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,

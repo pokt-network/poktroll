@@ -978,6 +978,7 @@ func newSupplierStakeMsg(
 		Stake:                &initialStake,
 		Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
 		ServiceConfigHistory: serviceConfigHistory,
+		ServiceUsageMetrics:  make(map[string]*sharedtypes.ServiceUsageMetrics),
 	}
 
 	return msg, expectedSupplier
