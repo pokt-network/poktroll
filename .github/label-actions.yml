@@ -2,21 +2,13 @@
 devnet-test-e2e:
   prs:
     comment: |
-      The `devnet-test-e2e` label now only builds and pushes a fresh image; CI no longer runs the DevNet E2E tests automatically.
-
-      After the image build completes, run the tests manually from the repo root:
-
+      Run:
       ```bash
-      gcloud container clusters get-credentials protocol-us-central1 --zone us-central1 --project protocol-us-central1-d505
-      COMMITHASH=$(git rev-parse --short HEAD)
-      IMAGE_TAG=sha-${COMMITHASH} \
-      NAMESPACE=devnet-issue-{issue-id} \
-      JOB_NAME=e2e-test-${COMMITHASH} \
-      POCKET_NODE=tcp://devnet-issue-{issue-id}-validator-pocketd:26657 \
-      bash .github/workflows-helpers/run-e2e-test.sh
+      make localnet_up
+      make acc_initialize_pubkeys
+      make test_e2e
+      # Insert a screenshot
       ```
-
-      You may need to run `make trigger_ci` to submit an empty commit that kicks off the build.
 
     label:
       - devnet
