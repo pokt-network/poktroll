@@ -25,20 +25,27 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:     "List all suppliers on Pocket Network",
 					Long: `Retrieves a paginated list of all suppliers currently registered on Pocket Network, including all their details.
 
-The command supports optional filtering by service ID and pagination parameters.
+The command supports optional filtering by service ID, operator address, owner address, and pagination parameters.
+Multiple filters can be combined (AND logic).
 Returns supplier addresses, staked amounts, service details, and current status.
 
 Use the --dehydrated flag to exclude service_config_history and rev_share details for more compact output.`,
 
 					Example: `	pocketd query supplier list-suppliers
 	pocketd query supplier list-suppliers --service-id anvil
+	pocketd query supplier list-suppliers --operator-address pokt1abc...xyz
+	pocketd query supplier list-suppliers --owner-address pokt1owner...xyz
+	pocketd query supplier list-suppliers --service-id anvil --operator-address pokt1abc...xyz
+	pocketd query supplier list-suppliers --service-id anvil --owner-address pokt1owner...xyz
 	pocketd query supplier list-suppliers --dehydrated
 	pocketd query supplier list-suppliers --page 2 --limit 50
 	pocketd query supplier list-suppliers --service-id anvil --page 1 --limit 100
 	pocketd query supplier list-suppliers --service-id anvil --dehydrated`,
 					FlagOptions: map[string]*autocliv1.FlagOptions{
-						"service_id": {Name: "service-id", Shorthand: "s", Usage: "service id to filter by", Hidden: false},
-						"dehydrated": {Name: "dehydrated", Shorthand: "d", Usage: "return suppliers with some fields omitted for a smaller response payload (e.g. service_config_history, rev_share, etc..)", Hidden: false},
+						"service_id":       {Name: "service-id", Shorthand: "s", Usage: "service id to filter by", Hidden: false},
+						"operator_address": {Name: "operator-address", Usage: "operator address to filter by", Hidden: false},
+						"owner_address":    {Name: "owner-address", Usage: "owner address to filter by", Hidden: false},
+						"dehydrated":       {Name: "dehydrated", Shorthand: "d", Usage: "return suppliers with some fields omitted for a smaller response payload (e.g. service_config_history, rev_share, etc..)", Hidden: false},
 					},
 				},
 				{

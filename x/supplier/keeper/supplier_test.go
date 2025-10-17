@@ -432,9 +432,7 @@ func TestSuppliers_QueryAll_Filters(t *testing.T) {
 				Offset: 0,
 				Limit:  uint64(len(suppliers)),
 			},
-			Filter: &types.QueryAllSuppliersRequest_ServiceId{
-				ServiceId: serviceId,
-			},
+			ServiceId: serviceId,
 		}
 		resp, err := keeper.AllSuppliers(ctx, req)
 		require.NoError(t, err)

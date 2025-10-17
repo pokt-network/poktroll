@@ -15,7 +15,8 @@ import (
 )
 
 // AllSuppliers returns a paginated list of all suppliers in the store.
-// If a serviceId is provided, it filters suppliers to only those starting for that service.
+// Supports filtering by service_id, operator_address, and/or owner_address.
+// Multiple filters can be combined (AND logic).
 // The returned suppliers are fully hydrated with their service configurations and history.
 func (k Keeper) AllSuppliers(
 	ctx context.Context,
@@ -31,11 +32,23 @@ func (k Keeper) AllSuppliers(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if req.GetServiceId() == "" {
-		return k.getAllSuppliers(ctx, logger, req)
-	} else {
+	// Determine the most efficient query strategy based on filters
+	hasServiceId := req.GetServiceId() != ""
+	hasOperatorAddress := req.GetOperatorAddress() != ""
+	hasOwnerAddress := req.GetOwnerAddress() != ""
+
+	// Strategy 1: Direct lookup by operator_address (most efficient)
+	if hasOperatorAddress && !hasServiceId && !hasOwnerAddress {
+		return k.getSupplierByOperator(ctx, logger, req)
+	}
+
+	// Strategy 2: Filter by service_id (using service index)
+	if hasServiceId {
 		return k.getAllServiceSuppliers(ctx, logger, req)
 	}
+
+	// Strategy 3: Filter by owner_address or no filters (full scan)
+	return k.getAllSuppliers(ctx, logger, req)
 }
 
 // Supplier retrieves a specific supplier by operator address.
@@ -68,7 +81,34 @@ func (k Keeper) Supplier(
 	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
 }
 
+// getSupplierByOperator retrieves a single supplier by operator address.
+// This is the most efficient query path when only operator_address is specified.
+func (k Keeper) getSupplierByOperator(
+	ctx context.Context,
+	logger log.Logger,
+	req *types.QueryAllSuppliersRequest,
+) (*types.QueryAllSuppliersResponse, error) {
+	supplier, found := k.GetDehydratedSupplier(ctx, req.GetOperatorAddress())
+	if !found {
+		// Return empty list if supplier not found (consistent with filtered query behavior)
+		return &types.QueryAllSuppliersResponse{Supplier: []sharedtypes.Supplier{}, Pagination: nil}, nil
+	}
+
+	// Conditionally hydrate supplier fields based on dehydrated flag
+	if req.GetDehydrated() {
+		k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
+	} else {
+		k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
+	}
+
+	return &types.QueryAllSuppliersResponse{
+		Supplier:   []sharedtypes.Supplier{supplier},
+		Pagination: nil,
+	}, nil
+}
+
 // getAllSuppliers retrieves all suppliers from the store with pagination support.
+// Optionally filters by owner_address if specified.
 // Each supplier's service configurations are fully hydrated before being returned.
 func (k Keeper) getAllSuppliers(
 	ctx context.Context,
@@ -78,6 +118,8 @@ func (k Keeper) getAllSuppliers(
 	supplierStore := k.getSupplierStore(ctx)
 
 	var suppliers []sharedtypes.Supplier
+	ownerFilter := req.GetOwnerAddress()
+	operatorFilter := req.GetOperatorAddress()
 
 	pageRes, err := query.Paginate(
 		supplierStore,
@@ -88,6 +130,16 @@ func (k Keeper) getAllSuppliers(
 				err = fmt.Errorf("unmarshaling supplier with key (hex): %x: %+v", key, err)
 				logger.Error(err.Error())
 				return status.Error(codes.Internal, err.Error())
+			}
+
+			// Apply owner_address filter if specified
+			if ownerFilter != "" && supplier.OwnerAddress != ownerFilter {
+				return nil
+			}
+
+			// Apply operator_address filter if specified
+			if operatorFilter != "" && supplier.OperatorAddress != operatorFilter {
+				return nil
 			}
 
 			// Conditionally hydrate supplier fields based on dehydrated flag
@@ -111,6 +163,7 @@ func (k Keeper) getAllSuppliers(
 
 // getAllServiceSuppliers retrieves all suppliers that are staked for specific service.
 // Only returns suppliers with active service configurations at the current block height.
+// Optionally filters by operator_address and/or owner_address.
 func (k Keeper) getAllServiceSuppliers(
 	ctx context.Context,
 	logger log.Logger,
@@ -128,6 +181,10 @@ func (k Keeper) getAllServiceSuppliers(
 	// Initialize a map to track which suppliers have been processed to avoid
 	// duplicate suppliers in the results
 	selectedSuppliersMap := make(map[string]struct{})
+
+	// Get additional filters
+	ownerFilter := req.GetOwnerAddress()
+	operatorFilter := req.GetOperatorAddress()
 
 	// Iterate over all service config updates for the specified service
 	pageRes, err := query.Paginate(
@@ -147,6 +204,11 @@ func (k Keeper) getAllServiceSuppliers(
 				return nil
 			}
 
+			// Apply operator_address filter if specified
+			if operatorFilter != "" && serviceConfigUpdate.OperatorAddress != operatorFilter {
+				return nil
+			}
+
 			// Skip suppliers that have already been added to the results
 			if _, ok := selectedSuppliersMap[serviceConfigUpdate.OperatorAddress]; ok {
 				return nil
@@ -161,6 +223,11 @@ func (k Keeper) getAllServiceSuppliers(
 				err = fmt.Errorf("unmarshaling supplier with key (hex): %x: %+v", key, err)
 				logger.Error(err.Error())
 				return status.Error(codes.Internal, err.Error())
+			}
+
+			// Apply owner_address filter if specified
+			if ownerFilter != "" && supplier.OwnerAddress != ownerFilter {
+				return nil
 			}
 
 			// Conditionally load service configurations and history into the supplier object

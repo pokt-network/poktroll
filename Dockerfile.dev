@@ -5,16 +5,21 @@
 
 FROM golang:1.24.3 AS base
 
-# Install build dependencies including CGO toolchain
+# TODO_INVESTIGATE: CGO builds disabled - https://github.com/pokt-network/poktroll/discussions/1822
+# Install build dependencies; CGO remains disabled downstream.
 RUN apt update && \
     apt-get install -y \
     build-essential pkg-config \
     ca-certificates net-tools kubernetes-client \
     curl jq yq make vim less dnsutils rsync
 
+# CGO builds disabled; rely on pure-Go toolchain for dev containers.
+ENV CGO_ENABLED=0
+# TODO_INVESTIGATE: Original CGO settings - https://github.com/pokt-network/poktroll/discussions/1822
+# Install build dependencies including CGO toolchain
 # Enable CGO and set build flags for secp256k1
-ENV CGO_ENABLED=1
-ENV CGO_CFLAGS="-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration"
+# ENV CGO_ENABLED=1
+# ENV CGO_CFLAGS="-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration"
 
 # Enable faster module downloading.
 ENV GOPROXY=https://proxy.golang.org

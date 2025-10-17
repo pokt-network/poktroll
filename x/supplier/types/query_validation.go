@@ -27,17 +27,34 @@ func (query *QueryGetSupplierRequest) ValidateBasic() error {
 func (query *QueryAllSuppliersRequest) ValidateBasic() error {
 	logger := polylog.Ctx(context.TODO())
 
-	switch filter := query.Filter.(type) {
-	case *QueryAllSuppliersRequest_ServiceId:
-		// If the service ID is set, check if it's valid
-		if filter.ServiceId != "" {
-			if err := sharedtypes.IsValidServiceId(filter.ServiceId); err != nil {
-				return ErrSupplierInvalidServiceId.Wrapf("%v", err.Error())
-			}
-		}
+	// Track if any filter is set
+	hasFilter := false
 
-	default:
-		// No filter is set
+	// Validate service_id if provided
+	if query.ServiceId != "" {
+		hasFilter = true
+		if err := sharedtypes.IsValidServiceId(query.ServiceId); err != nil {
+			return ErrSupplierInvalidServiceId.Wrapf("%v", err.Error())
+		}
+	}
+
+	// Validate operator_address if provided
+	if query.OperatorAddress != "" {
+		hasFilter = true
+		if _, err := sdk.AccAddressFromBech32(query.OperatorAddress); err != nil {
+			return ErrSupplierInvalidAddress.Wrapf("invalid operator address %s; (%v)", query.OperatorAddress, err)
+		}
+	}
+
+	// Validate owner_address if provided
+	if query.OwnerAddress != "" {
+		hasFilter = true
+		if _, err := sdk.AccAddressFromBech32(query.OwnerAddress); err != nil {
+			return ErrSupplierInvalidAddress.Wrapf("invalid owner address %s; (%v)", query.OwnerAddress, err)
+		}
+	}
+
+	if !hasFilter {
 		logger.Info().Msg("No specific filter set when listing suppliers")
 	}
 
