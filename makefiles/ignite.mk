@@ -18,8 +18,11 @@
 # CGO=0 uses pure-Go secp256k1 (portable). CGO=1 uses Decred (C-backed).
 
 IGNITE_CMD ?= ignite chain build
-IGNITE_BASE_CGO_ENABLED   := CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration" $(IGNITE_CMD) --build.tags="ethereum_secp256k1"
+# TODO_INVESTIGATE: CGO build path disabled - https://github.com/pokt-network/poktroll/discussions/1822
+# NOTE(@automation): CGO build path is disabled; keep the explicit CGO_DISABLED command for all targets.
+#IGNITE_BASE_CGO_ENABLED   := CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration" $(IGNITE_CMD) --build.tags="ethereum_secp256k1"
 IGNITE_BASE_CGO_DISABLED  := CGO_ENABLED=0 $(IGNITE_CMD)
+IGNITE_BASE_DEFAULT       := $(IGNITE_BASE_CGO_DISABLED)
 
 # Release targets
 LINUX_TARGETS  := -t linux:amd64 -t linux:arm64
@@ -40,11 +43,11 @@ CC_LINUX_ARM64 ?= aarch64-linux-gnu-gcc
 
 .PHONY: ignite_build
 ignite_build: ignite_check_version ## Build the pocketd binary using Ignite (development mode)
-	$(IGNITE_BASE_CGO_ENABLED) --skip-proto --debug -v -o ./bin
+	$(IGNITE_BASE_DEFAULT) --skip-proto --debug -v -o ./bin
 
 .PHONY: ignite_pocketd_build
 ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary to GOPATH/bin
-	$(IGNITE_BASE_CGO_ENABLED) --skip-proto --debug -v -o $(shell go env GOPATH)/bin
+	$(IGNITE_BASE_DEFAULT) --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
 .PHONY: ignite_serve
 ignite_serve: ignite_check_version ## Start a local blockchain node for development
@@ -58,7 +61,7 @@ ignite_serve_reset: ignite_check_version ## Start a local blockchain node with s
 
 .PHONY: ignite_release_local
 ignite_release_local: ignite_check_version ## Build production binary for current architecture only
-	$(IGNITE_BASE_CGO_ENABLED) --release -o release
+	$(IGNITE_BASE_DEFAULT) --release -o release
 
 .PHONY: ignite_release_cgo_disabled
 ignite_release_cgo_disabled: ignite_check_version ## CGO=0 release with default names (linux + darwin)
@@ -67,25 +70,39 @@ ignite_release_cgo_disabled: ignite_check_version ## CGO=0 release with default 
 		-o release
 	$(MAKE) _ignite_rename_archives
 
+# TODO_INVESTIGATE: CGO-enabled release targets disabled - https://github.com/pokt-network/poktroll/discussions/1822
+# To re-enable: Uncomment the target implementations below and comment out the stub targets
 .PHONY: ignite_release_cgo_enabled_linux_amd64
-ignite_release_cgo_enabled_linux_amd64: ignite_check_version ## CGO=1 release for linux/amd64 (_cgo suffix)
-	CC=$(CC_LINUX_AMD64) $(IGNITE_BASE_CGO_ENABLED) \
-		--release -t linux:amd64 \
-		--release.prefix pocket_cgo \
-		-o release
+ignite_release_cgo_enabled_linux_amd64:
+	@echo "CGO-enabled release (linux/amd64) is disabled."
+
+# ignite_release_cgo_enabled_linux_amd64: ignite_check_version ## CGO=1 release for linux/amd64 (_cgo suffix)
+# 	CC=$(CC_LINUX_AMD64) $(IGNITE_BASE_CGO_ENABLED) \
+# 		--release -t linux:amd64 \
+# 		--release.prefix pocket_cgo \
+# 		-o release
 
 .PHONY: ignite_release_cgo_enabled_linux_arm64
-ignite_release_cgo_enabled_linux_arm64: ignite_check_version ## CGO=1 release for linux/arm64 (_cgo suffix)
-	CC=$(CC_LINUX_ARM64) $(IGNITE_BASE_CGO_ENABLED) \
-		--release -t linux:arm64 \
-		--release.prefix pocket_cgo \
-		-o release
+ignite_release_cgo_enabled_linux_arm64:
+	@echo "CGO-enabled release (linux/arm64) is disabled."
+
+# ignite_release_cgo_enabled_linux_arm64: ignite_check_version ## CGO=1 release for linux/arm64 (_cgo suffix)
+# 	CC=$(CC_LINUX_ARM64) $(IGNITE_BASE_CGO_ENABLED) \
+# 		--release -t linux:arm64 \
+# 		--release.prefix pocket_cgo \
+# 		-o release
 
 .PHONY: ignite_release_cgo_enabled
 ignite_release_cgo_enabled: ignite_release_cgo_enabled_linux_amd64 ignite_release_cgo_enabled_linux_arm64
+	@echo "CGO-enabled release builds are intentionally skipped."
 
+# TODO_INVESTIGATE: CGO builds disabled - https://github.com/pokt-network/poktroll/discussions/1822
+# To re-enable: Uncomment the line below to include both CGO and non-CGO variants
 .PHONY: ignite_release
-ignite_release: ignite_release_cgo_disabled ignite_release_cgo_enabled ## Build production binaries for all architectures
+ignite_release: ignite_release_cgo_disabled ## Build production binaries for all architectures
+	@echo "Skipping CGO-enabled release artifacts (disabled)."
+
+# ignite_release: ignite_release_cgo_disabled ignite_release_cgo_enabled ## Build production binaries for all architectures
 
 ######################################
 ### Ignite Release Post-Processing ###
