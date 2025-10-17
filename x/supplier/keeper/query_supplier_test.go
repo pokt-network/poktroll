@@ -141,9 +141,7 @@ func TestSupplierQueryFilterByServiceId(t *testing.T) {
 	firstServiceId := suppliers[0].Services[0].ServiceId
 
 	request := &types.QueryAllSuppliersRequest{
-		Filter: &types.QueryAllSuppliersRequest_ServiceId{
-			ServiceId: firstServiceId,
-		},
+		ServiceId: firstServiceId,
 		Pagination: &query.PageRequest{
 			Limit: uint64(len(suppliers)),
 		},
@@ -233,9 +231,7 @@ func TestSupplierQueryDehydrated(t *testing.T) {
 		firstServiceId := suppliers[0].Services[0].ServiceId
 
 		request := &types.QueryAllSuppliersRequest{
-			Filter: &types.QueryAllSuppliersRequest_ServiceId{
-				ServiceId: firstServiceId,
-			},
+			ServiceId:  firstServiceId,
 			Dehydrated: true,
 			Pagination: &query.PageRequest{
 				Limit: uint64(len(suppliers)),
@@ -437,5 +433,269 @@ func TestSupplierShowDehydrated(t *testing.T) {
 		require.Len(t, supplier.Services, 1)
 		require.NotNil(t, supplier.Services[0].RevShare, "Hydrated supplier services should have rev_share")
 		require.Len(t, supplier.Services[0].RevShare, 2, "Should have 2 rev_share entries")
+	})
+}
+
+func TestSupplierQueryFilterByOperatorAddress(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
+
+	t.Run("FilterByOperatorAddress", func(t *testing.T) {
+		// Query by first supplier's operator address
+		request := &types.QueryAllSuppliersRequest{
+			OperatorAddress: suppliers[0].OperatorAddress,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+
+		// Should return exactly one supplier
+		require.Len(t, resp.Supplier, 1)
+		require.Equal(t, suppliers[0].OperatorAddress, resp.Supplier[0].OperatorAddress)
+	})
+
+	t.Run("FilterByOperatorAddress_NotFound", func(t *testing.T) {
+		// Query by non-existent operator address
+		nonExistentAddr := sample.AccAddressBech32()
+		request := &types.QueryAllSuppliersRequest{
+			OperatorAddress: nonExistentAddr,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+
+		// Should return empty list
+		require.Len(t, resp.Supplier, 0)
+	})
+}
+
+func TestSupplierQueryFilterByOwnerAddress(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
+
+	t.Run("FilterByOwnerAddress", func(t *testing.T) {
+		// Query by first supplier's owner address
+		request := &types.QueryAllSuppliersRequest{
+			OwnerAddress: suppliers[0].OwnerAddress,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+
+		// Should return at least one supplier (could be more if multiple suppliers share the same owner)
+		require.GreaterOrEqual(t, len(resp.Supplier), 1)
+
+		// Verify all returned suppliers have the filtered owner address
+		for _, supplier := range resp.Supplier {
+			require.Equal(t, suppliers[0].OwnerAddress, supplier.OwnerAddress)
+		}
+	})
+
+	t.Run("FilterByOwnerAddress_NotFound", func(t *testing.T) {
+		// Query by non-existent owner address
+		nonExistentAddr := sample.AccAddressBech32()
+		request := &types.QueryAllSuppliersRequest{
+			OwnerAddress: nonExistentAddr,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+
+		// Should return empty list
+		require.Len(t, resp.Supplier, 0)
+	})
+}
+
+func TestSupplierQueryFilterCombinations(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
+
+	// Get the first service ID from the first supplier
+	firstServiceId := suppliers[0].Services[0].ServiceId
+
+	t.Run("FilterByServiceId_And_OperatorAddress", func(t *testing.T) {
+		// Query by service_id and operator_address
+		request := &types.QueryAllSuppliersRequest{
+			ServiceId:       firstServiceId,
+			OperatorAddress: suppliers[0].OperatorAddress,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+
+		// Should return exactly one supplier
+		require.Len(t, resp.Supplier, 1)
+		require.Equal(t, suppliers[0].OperatorAddress, resp.Supplier[0].OperatorAddress)
+
+		// Verify the supplier has the filtered service
+		hasService := false
+		for _, service := range resp.Supplier[0].Services {
+			if service.ServiceId == firstServiceId {
+				hasService = true
+				break
+			}
+		}
+		require.True(t, hasService, "Supplier should have the filtered service")
+	})
+
+	t.Run("FilterByServiceId_And_OwnerAddress", func(t *testing.T) {
+		// Query by service_id and owner_address
+		request := &types.QueryAllSuppliersRequest{
+			ServiceId:    firstServiceId,
+			OwnerAddress: suppliers[0].OwnerAddress,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+
+		// Should return at least one supplier
+		require.GreaterOrEqual(t, len(resp.Supplier), 1)
+
+		// Verify all returned suppliers have the filtered owner and service
+		for _, supplier := range resp.Supplier {
+			require.Equal(t, suppliers[0].OwnerAddress, supplier.OwnerAddress)
+
+			hasService := false
+			for _, service := range supplier.Services {
+				if service.ServiceId == firstServiceId {
+					hasService = true
+					break
+				}
+			}
+			require.True(t, hasService, "Supplier should have the filtered service")
+		}
+	})
+
+	t.Run("FilterByAllThree", func(t *testing.T) {
+		// Query by service_id, operator_address, and owner_address
+		request := &types.QueryAllSuppliersRequest{
+			ServiceId:       firstServiceId,
+			OperatorAddress: suppliers[0].OperatorAddress,
+			OwnerAddress:    suppliers[0].OwnerAddress,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+
+		// Should return exactly one supplier
+		require.Len(t, resp.Supplier, 1)
+		require.Equal(t, suppliers[0].OperatorAddress, resp.Supplier[0].OperatorAddress)
+		require.Equal(t, suppliers[0].OwnerAddress, resp.Supplier[0].OwnerAddress)
+
+		// Verify the supplier has the filtered service
+		hasService := false
+		for _, service := range resp.Supplier[0].Services {
+			if service.ServiceId == firstServiceId {
+				hasService = true
+				break
+			}
+		}
+		require.True(t, hasService, "Supplier should have the filtered service")
+	})
+
+	t.Run("FilterByServiceId_And_OperatorAddress_NoMatch", func(t *testing.T) {
+		// Query by service_id of supplier[0] and operator_address of supplier[1]
+		// This should return empty if suppliers don't share the same service
+		request := &types.QueryAllSuppliersRequest{
+			ServiceId:       firstServiceId,
+			OperatorAddress: suppliers[1].OperatorAddress,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+
+		// Should return empty list (suppliers have separate services in createNSuppliers)
+		require.Len(t, resp.Supplier, 0)
+	})
+}
+
+func TestSupplierQueryFilterWithDehydration(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 3)
+
+	// Add RevShare data to test dehydration
+	supplierWithRevShare := suppliers[0]
+	supplierWithRevShare.Services[0].RevShare = []*sharedtypes.ServiceRevenueShare{
+		{
+			Address:            sample.AccAddressBech32(),
+			RevSharePercentage: 50,
+		},
+		{
+			Address:            sample.AccAddressBech32(),
+			RevSharePercentage: 50,
+		},
+	}
+	supplierWithRevShare.ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		supplierWithRevShare.OperatorAddress,
+		supplierWithRevShare.Services,
+		1,
+		sharedtypes.NoDeactivationHeight,
+	)
+	supplierModuleKeepers.SetAndIndexDehydratedSupplier(ctx, supplierWithRevShare)
+
+	t.Run("FilterByOperatorAddress_Dehydrated", func(t *testing.T) {
+		request := &types.QueryAllSuppliersRequest{
+			OperatorAddress: supplierWithRevShare.OperatorAddress,
+			Dehydrated:      true,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+		require.Len(t, resp.Supplier, 1)
+
+		supplier := resp.Supplier[0]
+		require.Nil(t, supplier.ServiceConfigHistory, "Dehydrated supplier should not have service config history")
+		require.NotNil(t, supplier.Services, "Dehydrated supplier should still have services")
+		require.Nil(t, supplier.Services[0].RevShare, "Dehydrated supplier services should not have rev_share")
+	})
+
+	t.Run("FilterByOwnerAddress_Dehydrated", func(t *testing.T) {
+		request := &types.QueryAllSuppliersRequest{
+			OwnerAddress: supplierWithRevShare.OwnerAddress,
+			Dehydrated:   true,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+		require.GreaterOrEqual(t, len(resp.Supplier), 1)
+
+		// Verify all returned suppliers are dehydrated
+		for _, supplier := range resp.Supplier {
+			require.Nil(t, supplier.ServiceConfigHistory, "Dehydrated supplier should not have service config history")
+			require.NotNil(t, supplier.Services, "Dehydrated supplier should still have services")
+			for _, service := range supplier.Services {
+				require.Nil(t, service.RevShare, "Dehydrated supplier services should not have rev_share")
+			}
+		}
 	})
 }

@@ -11,7 +11,7 @@ load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
 load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
 load("./tiltfiles/static-nginx.Tiltfile", "provision_static_nginx")
-load("./tiltfiles/env.Tiltfile", "build_env", "build_cmd", "TARGET_GOOS", "TARGET_GOARCH", "IGNITE_CMD", "IGNITE_CGO_CFLAGS")
+load("./tiltfiles/env.Tiltfile", "build_env", "build_cmd", "TARGET_GOOS", "TARGET_GOARCH", "IGNITE_CMD", "CGO_DISABLED_ENV")
 
 
 # Avoid the header
@@ -157,8 +157,10 @@ if localnet_config["hot-reloading"]:
     # Given the complexity of containerized environments, CGO, static/dynamic linking, darwin/linux, etc.
     # it is not currently possible to enable CGO cross-compilation.
 
-    # Cross-compilation for container use - uses appropriate build tags and CGO settings.
-    # Automatically selects Decred (no CGO) for cross-compilation or Ethereum (CGO) for native builds.
+    # TODO_INVESTIGATE: CGO builds disabled - https://github.com/pokt-network/poktroll/discussions/1822
+    # Cross-compilation for container use - uses pure-Go configuration for consistency across hosts.
+    # Original: Cross-compilation for container use - uses appropriate build tags and CGO settings.
+    # Original: Automatically selects Decred (no CGO) for cross-compilation or Ethereum (CGO) for native builds.
     local_resource(
         "hot-reload: pocketd (bin)",
         "%s --output=./bin" % build_cmd(TARGET_GOOS, TARGET_GOARCH),
@@ -169,13 +171,17 @@ if localnet_config["hot-reloading"]:
     )
 
     # Hot reload the local pocketd binary used by the CLI (host architecture).
-    # Always uses CGO + ethereum_secp256k1 for optimal performance on host.
+    # TODO_INVESTIGATE: CGO builds disabled - https://github.com/pokt-network/poktroll/discussions/1822
+    # CGO path disabled; rely on pure-Go build for stability across environments.
+    # Original: Always uses CGO + ethereum_secp256k1 for optimal performance on host.
     local_resource(
         "hot-reload: pocketd (host)",
-        '%s %s -o $(go env GOPATH)/bin' % (IGNITE_CGO_CFLAGS, IGNITE_CMD),
+        '%s -o $(go env GOPATH)/bin' % IGNITE_CMD,
+        # Original: '%s %s -o $(go env GOPATH)/bin' % (IGNITE_CGO_CFLAGS, IGNITE_CMD),
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
         resource_deps=[PROTO_RESOURCE],
+        env=CGO_DISABLED_ENV,
     )
 
 # Build an image with a pocketd binary
@@ -220,6 +226,11 @@ helm_resource(
 )
 
 # Provision RelayMiners
+# Build dependency list for relayminers
+relayminer_deps = ["validator", "anvil", "nginx-chainid"]
+if localnet_config["rest"]["enabled"]:
+    relayminer_deps.append("rest")
+
 actor_number = 0
 for x in range(localnet_config["relayminers"]["count"]):
     actor_number = actor_number + 1
@@ -285,7 +296,7 @@ for x in range(localnet_config["relayminers"]["count"]):
     k8s_resource(
         "relayminer" + str(actor_number),
         labels=["suppliers"],
-        resource_deps=["validator", "anvil"],
+        resource_deps=relayminer_deps,
         links=[
             link(
                 "http://localhost:3003/d/relayminer/relayminer?orgId=1&var-relayminer=relayminer" + str(actor_number),
@@ -342,12 +353,12 @@ for x in range(localnet_config["path_gateways"]["count"]):
     if localnet_config["path_local_repo"]["enabled"]:
         path_image_deps = ["path-local"]
         path_image_keys = [("image.repository", "image.tag")]
-        path_deps=["path-local"]
+        path_deps=["path-local", "relayminer" + str(actor_number)]
         resource_flags.append("--set=global.imagePullPolicy=Never")
     else:
         path_image_deps = []
         path_image_keys = []
-        path_deps=[]
+        path_deps=["relayminer" + str(actor_number)]
 
     configmap_create(
         "path-config-" + str(actor_number),
