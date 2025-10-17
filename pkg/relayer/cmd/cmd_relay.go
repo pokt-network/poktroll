@@ -516,7 +516,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 
 			// Unmarshal the HTTP response body into jsonMap
 			var jsonMap map[string]interface{}
-			if err := json.Unmarshal(backendHttpResponse.BodyBz, &jsonMap); err != nil {
+			if err = json.Unmarshal(backendHttpResponse.BodyBz, &jsonMap); err != nil {
 				logger.Error().Err(err).Msgf("❌ Error unmarshaling response into a JSON map %d", i)
 				continue
 			}
