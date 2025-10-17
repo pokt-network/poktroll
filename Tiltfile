@@ -226,6 +226,11 @@ helm_resource(
 )
 
 # Provision RelayMiners
+# Build dependency list for relayminers
+relayminer_deps = ["validator", "anvil", "nginx-chainid"]
+if localnet_config["rest"]["enabled"]:
+    relayminer_deps.append("rest")
+
 actor_number = 0
 for x in range(localnet_config["relayminers"]["count"]):
     actor_number = actor_number + 1
@@ -291,7 +296,7 @@ for x in range(localnet_config["relayminers"]["count"]):
     k8s_resource(
         "relayminer" + str(actor_number),
         labels=["suppliers"],
-        resource_deps=["validator", "anvil"],
+        resource_deps=relayminer_deps,
         links=[
             link(
                 "http://localhost:3003/d/relayminer/relayminer?orgId=1&var-relayminer=relayminer" + str(actor_number),
@@ -348,12 +353,12 @@ for x in range(localnet_config["path_gateways"]["count"]):
     if localnet_config["path_local_repo"]["enabled"]:
         path_image_deps = ["path-local"]
         path_image_keys = [("image.repository", "image.tag")]
-        path_deps=["path-local"]
+        path_deps=["path-local", "relayminer" + str(actor_number)]
         resource_flags.append("--set=global.imagePullPolicy=Never")
     else:
         path_image_deps = []
         path_image_keys = []
-        path_deps=[]
+        path_deps=["relayminer" + str(actor_number)]
 
     configmap_create(
         "path-config-" + str(actor_number),
