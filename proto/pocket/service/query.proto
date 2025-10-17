@@ -54,6 +54,11 @@ message QueryParamsResponse {
 message QueryGetServiceRequest {
   // TODO_IMPROVE: We could support getting services by name.
   string id = 1;
+
+  // if false (default), include full service data including metadata.
+  // if true, exclude metadata to reduce payload size.
+  // For backwards compatibility and typical use cases, the default is false.
+  bool dehydrated = 2;
 }
 
 message QueryGetServiceResponse {

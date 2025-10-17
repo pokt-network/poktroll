@@ -26,18 +26,20 @@ service_add: ## Add a new service (must specify SERVICE_ID, SERVICE_NAME, COMPUT
 service_add_with_metadata_file: ## Internal Helper: Add a service with metadata from file (must specify SERVICE_ID, SERVICE_NAME, COMPUTE_UNITS, SERVICE_OWNER, METADATA_FILE env vars)
 	pocketd --home=$(POCKETD_HOME) tx service add-service \
 		$(SERVICE_ID) "$(SERVICE_NAME)" $(COMPUTE_UNITS) \
-		--experimental--metadata-file $(METADATA_FILE) \
+		--experimental-metadata-file $(METADATA_FILE) \
 		--from $(SERVICE_OWNER) --keyring-backend test --node $(POCKET_NODE) -y
 
 .PHONY: service_add_with_metadata_base64
-service_add_with_metadata_base64: ## Add a service with base64-encoded metadata (must specify SERVICE_ID, SERVICE_NAME, COMPUTE_UNITS, SERVICE_OWNER, METADATA_BASE64 env vars)
+# Internal Helper: Add a service with base64-encoded metadata (must specify SERVICE_ID, SERVICE_NAME, COMPUTE_UNITS, SERVICE_OWNER, METADATA_BASE64 env vars)
+service_add_with_metadata_base64:
 	pocketd --home=$(POCKETD_HOME) tx service add-service \
 		$(SERVICE_ID) "$(SERVICE_NAME)" $(COMPUTE_UNITS) \
-		--experimental--metadata-base64 $(METADATA_BASE64) \
+		--experimental-metadata-base64 $(METADATA_BASE64) \
 		--from $(SERVICE_OWNER) --keyring-backend test --node $(POCKET_NODE) -y
 
 .PHONY: service_pocket_add_metadata_file
-service_pocket_add_metadata_file: ## Add the pocket service with OpenAPI specification metadata
+# Internal Helper: Add the pocket service with OpenAPI specification metadata
+service_pocket_add_metadata_file:
 	SERVICE_ID=pocket \
 	SERVICE_NAME="Pocket Network RPC" \
 	COMPUTE_UNITS=1 \

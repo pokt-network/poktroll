@@ -28,14 +28,21 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:     "List all services registered on-chain",
 					Long: `Lists all services currently registered in the network.
 
-NOTE: Service metadata (API specifications) is excluded from list queries
-to reduce payload size. Use 'show-service' to retrieve full service details
-including metadata for a specific service.
+By default, service metadata (API specifications) is excluded to reduce payload size.
+Use --dehydrated=false to include full metadata for all services.
 
 Supports pagination via flags if there are many services.`,
 					Example: `pocketd q service all-services
 pocketd q service all-services --limit 50
-pocketd q service all-services --page 2`,
+pocketd q service all-services --page 2
+pocketd q service all-services --dehydrated=false`,
+					FlagOptions: map[string]*autocliv1.FlagOptions{
+						"dehydrated": {
+							Name:         "dehydrated",
+							Usage:        "Exclude service metadata to reduce payload size (default true)",
+							DefaultValue: "true",
+						},
+					},
 				},
 				{
 					RpcMethod: "Service",
@@ -46,13 +53,19 @@ pocketd q service all-services --page 2`,
 Returns all service details including:
 - Service ID, name, and compute units per relay
 - Owner address
-- Full metadata (API specifications up to 256 KiB)
+- Full metadata (API specifications up to 256 KiB) by default
 
-This is the only query that returns service metadata. Use 'all-services'
-for a lightweight list without metadata.`,
-					Example:        `pocketd q service show-service pocket
-pocketd q service show-service anvil --output json`,
+Use the --dehydrated flag to exclude metadata and reduce payload size.`,
+					Example: `pocketd q service show-service pocket
+pocketd q service show-service anvil --output json
+pocketd q service show-service pocket --dehydrated`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "id"}},
+					FlagOptions: map[string]*autocliv1.FlagOptions{
+						"dehydrated": {
+							Name:  "dehydrated",
+							Usage: "Exclude service metadata to reduce payload size",
+						},
+					},
 				},
 				{
 					RpcMethod: "RelayMiningDifficultyAll",

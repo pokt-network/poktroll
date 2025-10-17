@@ -317,8 +317,8 @@ func TestCLI_UpdateServiceWithMetadata(t *testing.T) {
 
 			// Add updated metadata
 			if len(test.updatedMetadata) > 0 {
-				updatedFile, err := os.CreateTemp(t.TempDir(), "updated-*.json")
-				require.NoError(t, err)
+				updatedFile, fileErr := os.CreateTemp(t.TempDir(), "updated-*.json")
+				require.NoError(t, fileErr)
 				require.NoError(t, os.WriteFile(updatedFile.Name(), test.updatedMetadata, 0o600))
 				require.NoError(t, updatedFile.Close())
 				updateArgs = append(updateArgs, fmt.Sprintf("--%s=%s", service.FlagExperimentalMetadataFile, updatedFile.Name()))

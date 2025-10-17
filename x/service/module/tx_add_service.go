@@ -45,15 +45,15 @@ Only the service owner can update an existing service.`,
 
   # Add a service with metadata from a file
   pocketd tx service add-service "svc1" "My Service" 10 \
-    --experimental--metadata-file ./openapi.json --from owner
+    --experimental-metadata-file ./openapi.json --from owner
 
   # Add a service with base64-encoded metadata
   pocketd tx service add-service "svc1" "My Service" 10 \
-    --experimental--metadata-base64 $(base64 -w0 ./openapi.json) --from owner
+    --experimental-metadata-base64 $(base64 -w0 ./openapi.json) --from owner
 
   # Update an existing service's compute units and metadata
   pocketd tx service add-service "svc1" "My Service" 20 \
-    --experimental--metadata-file ./openapi-v2.json --from owner`,
+    --experimental-metadata-file ./openapi-v2.json --from owner`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			// Parse required arguments
@@ -112,13 +112,13 @@ Only the service owner can update an existing service.`,
 		FlagExperimentalMetadataBase64,
 		"",
 		"Base64-encoded experimental API specification (OpenAPI, OpenRPC, etc.) for the service. "+
-			"Limited to 256 KiB when decoded. Mutually exclusive with --experimental--metadata-file.",
+			"Limited to 256 KiB when decoded. Mutually exclusive with --experimental-metadata-file.",
 	)
 	cmd.Flags().String(
 		FlagExperimentalMetadataFile,
 		"",
 		"Path to file containing experimental API specification (OpenAPI, OpenRPC, etc.) for the service. "+
-			"Limited to 256 KiB. Mutually exclusive with --experimental--metadata-base64.",
+			"Limited to 256 KiB. Mutually exclusive with --experimental-metadata-base64.",
 	)
 
 	return cmd
@@ -127,17 +127,17 @@ Only the service owner can update an existing service.`,
 const (
 	// FlagExperimentalMetadataBase64 is the flag name for providing base64-encoded
 	// experimental service metadata (API specifications like OpenAPI, OpenRPC, etc.)
-	FlagExperimentalMetadataBase64 = "experimental--metadata-base64"
+	FlagExperimentalMetadataBase64 = "experimental-metadata-base64"
 
 	// FlagExperimentalMetadataFile is the flag name for providing a file path
 	// containing experimental service metadata (API specifications)
-	FlagExperimentalMetadataFile = "experimental--metadata-file"
+	FlagExperimentalMetadataFile = "experimental-metadata-file"
 )
 
 // parseServiceMetadata parses experimental service metadata from command-line flags.
 // It supports two mutually exclusive ways of providing metadata:
-// 1. --experimental--metadata-base64: Base64-encoded metadata string
-// 2. --experimental--metadata-file: Path to a file containing the metadata
+// 1. --experimental-metadata-base64: Base64-encoded metadata string
+// 2. --experimental-metadata-file: Path to a file containing the metadata
 //
 // The metadata payload must not exceed 256 KiB when decoded. This is typically used
 // to attach API specifications (OpenAPI, OpenRPC, etc.) to a service.
@@ -160,7 +160,7 @@ func parseServiceMetadata(cmd *cobra.Command) (*sharedtypes.Metadata, error) {
 
 	// Ensure only one metadata source is provided
 	if metadataBase64 != "" && metadataFile != "" {
-		return nil, errors.New("--experimental--metadata-base64 and --experimental--metadata-file cannot be used together")
+		return nil, errors.New("--experimental-metadata-base64 and --experimental-metadata-file cannot be used together")
 	}
 
 	// If no metadata is provided, return nil (metadata is optional)
@@ -175,7 +175,7 @@ func parseServiceMetadata(cmd *cobra.Command) (*sharedtypes.Metadata, error) {
 		metadataBase64 = strings.TrimSpace(metadataBase64)
 		apiSpecs, err = base64.StdEncoding.DecodeString(metadataBase64)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode experimental--metadata-base64 value: %w", err)
+			return nil, fmt.Errorf("failed to decode experimental-metadata-base64 value: %w", err)
 		}
 	} else {
 		// Read metadata from file

@@ -79,17 +79,144 @@ func TestServiceMetadataExclusion(t *testing.T) {
 	}
 	keeper.SetService(ctx, serviceWithMetadata)
 
-	// Test AllServices query - metadata should be excluded
-	allServicesResp, err := keeper.AllServices(ctx, &types.QueryAllServicesRequest{})
+	// Test AllServices query with dehydrated=true (default) - metadata should be excluded
+	allServicesResp, err := keeper.AllServices(ctx, &types.QueryAllServicesRequest{Dehydrated: true})
 	require.NoError(t, err)
 	require.Len(t, allServicesResp.Service, 1)
-	require.Nil(t, allServicesResp.Service[0].Metadata, "AllServices should exclude metadata")
+	require.Nil(t, allServicesResp.Service[0].Metadata, "AllServices should exclude metadata when dehydrated=true")
 
-	// Test single Service query - metadata should be included
+	// Test single Service query - metadata should be included by default
 	singleServiceResp, err := keeper.Service(ctx, &types.QueryGetServiceRequest{Id: serviceWithMetadata.Id})
 	require.NoError(t, err)
-	require.NotNil(t, singleServiceResp.Service.Metadata, "Single service query should include metadata")
+	require.NotNil(t, singleServiceResp.Service.Metadata, "Single service query should include metadata by default")
 	require.Equal(t, serviceWithMetadata.Metadata.ExperimentalApiSpecs, singleServiceResp.Service.Metadata.ExperimentalApiSpecs)
+}
+
+func TestServiceQueryDehydrated(t *testing.T) {
+	keeper, ctx := keepertest.ServiceKeeper(t)
+
+	// Create a service with metadata
+	serviceWithMetadata := createNServices(keeper, ctx, 1)[0]
+	testMetadata := &sharedtypes.Metadata{
+		ExperimentalApiSpecs: []byte(`{"openapi": "3.0.0", "info": {"title": "Test API", "version": "1.0.0"}}`),
+	}
+	serviceWithMetadata.Metadata = testMetadata
+	keeper.SetService(ctx, serviceWithMetadata)
+
+	tests := []struct {
+		name               string
+		request            *types.QueryGetServiceRequest
+		expectMetadata     bool
+		expectMetadataNull bool
+	}{
+		{
+			name: "dehydrated=false includes metadata",
+			request: &types.QueryGetServiceRequest{
+				Id:         serviceWithMetadata.Id,
+				Dehydrated: false,
+			},
+			expectMetadata:     true,
+			expectMetadataNull: false,
+		},
+		{
+			name: "dehydrated=true excludes metadata",
+			request: &types.QueryGetServiceRequest{
+				Id:         serviceWithMetadata.Id,
+				Dehydrated: true,
+			},
+			expectMetadata:     false,
+			expectMetadataNull: true,
+		},
+		{
+			name: "default (no flag) includes metadata",
+			request: &types.QueryGetServiceRequest{
+				Id: serviceWithMetadata.Id,
+				// Dehydrated not set, defaults to false
+			},
+			expectMetadata:     true,
+			expectMetadataNull: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			resp, err := keeper.Service(ctx, test.request)
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			require.NotNil(t, resp.Service)
+
+			if test.expectMetadataNull {
+				require.Nil(t, resp.Service.Metadata, "Metadata should be nil when dehydrated=true")
+			} else if test.expectMetadata {
+				require.NotNil(t, resp.Service.Metadata, "Metadata should not be nil when dehydrated=false")
+				require.Equal(t, testMetadata.ExperimentalApiSpecs, resp.Service.Metadata.ExperimentalApiSpecs)
+			}
+		})
+	}
+}
+
+func TestAllServicesQueryDehydrated(t *testing.T) {
+	keeper, ctx := keepertest.ServiceKeeper(t)
+
+	// Create multiple services with metadata
+	services := createNServices(keeper, ctx, 3)
+	for i := range services {
+		services[i].Metadata = &sharedtypes.Metadata{
+			ExperimentalApiSpecs: []byte(`{"openapi": "3.0.0", "info": {"title": "Test API ` + string(rune('A'+i)) + `"}}`),
+		}
+		keeper.SetService(ctx, services[i])
+	}
+
+	tests := []struct {
+		name               string
+		request            *types.QueryAllServicesRequest
+		expectMetadata     bool
+		expectMetadataNull bool
+	}{
+		{
+			name: "dehydrated=true excludes metadata (default behavior)",
+			request: &types.QueryAllServicesRequest{
+				Dehydrated: true,
+			},
+			expectMetadata:     false,
+			expectMetadataNull: true,
+		},
+		{
+			name: "dehydrated=false includes metadata",
+			request: &types.QueryAllServicesRequest{
+				Dehydrated: false,
+			},
+			expectMetadata:     true,
+			expectMetadataNull: false,
+		},
+		{
+			name:    "default (no flag) includes metadata (proto default is false)",
+			request: &types.QueryAllServicesRequest{
+				// Dehydrated not set, defaults to false (proto default)
+			},
+			expectMetadata:     true,
+			expectMetadataNull: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			resp, err := keeper.AllServices(ctx, test.request)
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			require.Len(t, resp.Service, 3, "Should return all 3 services")
+
+			// Check metadata for all services in the response
+			for i, service := range resp.Service {
+				if test.expectMetadataNull {
+					require.Nil(t, service.Metadata, "Service %d metadata should be nil when dehydrated=true", i)
+				} else if test.expectMetadata {
+					require.NotNil(t, service.Metadata, "Service %d metadata should not be nil when dehydrated=false", i)
+					require.NotEmpty(t, service.Metadata.ExperimentalApiSpecs, "Service %d should have API specs", i)
+				}
+			}
+		})
+	}
 }
 
 func TestServiceQueryPaginated(t *testing.T) {
