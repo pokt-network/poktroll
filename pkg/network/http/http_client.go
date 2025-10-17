@@ -102,8 +102,7 @@ func NewDefaultHTTPClientWithDebugMetrics() *HTTPClientWithDebugMetrics {
 		IdleConnTimeout:     90 * time.Second,           // Reduced from 300s - shorter idle to free resources
 
 		// Timeout settings optimized for quick failure detection
-		TLSHandshakeTimeout:   5 * time.Second, // Fast TLS timeout since handshakes typically complete in ~100ms
-		ResponseHeaderTimeout: 5 * time.Second, // Header timeout to allow for server processing time
+		TLSHandshakeTimeout: 5 * time.Second, // Fast TLS timeout since handshakes typically complete in ~100ms
 
 		// Performance optimizations
 		DisableKeepAlives:  false, // Enable connection reuse to reduce connection overhead

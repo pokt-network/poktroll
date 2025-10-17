@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"sync"
 
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
@@ -37,7 +38,8 @@ func CloseBody(logger polylog.Logger, body io.ReadCloser) {
 		return
 	}
 
-	if err := body.Close(); err != nil {
+	// Close the body and ignore errors if the body is already closed.
+	if err := body.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
 		logger.Error().Err(err).Msg("❌ Failed to close request body")
 	}
 }
