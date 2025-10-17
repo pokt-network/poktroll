@@ -3,9 +3,8 @@
 default_signing_key_names: [supplier1]
 
 # Path to the SMT KV store.
-# DEPRECATED: ":memory:" and ":memory_pebble:" will fallback to $HOME/.pocket/smt
-# Use an explicit path for persistent storage (recommended)
-smt_store_path: ":memory:" # OR ./path/to/smt_stores (e.g., /home/user/.pocket/smt)
+# TODO_TECHDEBT(@olshansky): Remove the commented ":memory:" example once v0.1.31 is live.
+smt_store_path: "/home/user/.pocket/smt"
 
 # Disable SMT persistence (Write-Ahead Log and recovery)
 #

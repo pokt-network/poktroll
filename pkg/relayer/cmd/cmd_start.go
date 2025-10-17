@@ -163,6 +163,8 @@ Example:
 Persistent storage ensures your session trees are preserved across
 RelayMiner restarts, improving reliability and performance.
 
+_TODO_TECHDEBT(@olshansky): Delete this banner once v0.1.31 is live_
+
 `)
 
 	// --- Parse relay miner configuration ---

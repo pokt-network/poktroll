@@ -42,7 +42,7 @@ const (
 	//
 	// High-throughput suppliers may need lower thresholds to prevent memory pressure.
 	// Low-resource environments may need lower thresholds to prevent OOM.
-	maxBufferedMinedRelaysBytesBeforeFlush = 10_000_000 // 10 MB
+	maxBufferedMinedRelaysBytesBeforeFlush = 10_000_000 // 10MB
 
 	// minedRelaysLogFlushInterval is the periodic cadence for background buffer flushes.
 	// Even if the threshold is not hit, this ensures regular persistence:
@@ -353,6 +353,8 @@ func (wal *minedRelaysWriteAheadLog) writeToDisk(buffer []byte) {
 // - For each relay, read fields in order and feed them into a fresh, in-memory SMST via Update
 // - Stop on clean EOF; any other read error is logged/returned
 // - The resulting trie represents the exact pre-crash state (deterministic replay)
+//
+// Returns the reconstructed SMST or an error if replay fails
 func ReconstructSMTFromMinedRelaysLog(
 	minedRelaysLogFilePath string,
 	treeStore kvstore.MapStore,

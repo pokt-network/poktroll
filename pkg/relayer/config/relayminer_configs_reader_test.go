@@ -467,6 +467,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			},
 		},
 		{
+			// TODO_TECHDEBT(@olshansky): Delete this test case once v0.1.31 is live.
 			desc: "valid: relay miner config with deprecated :memory: smt_store_path (backwards compatibility)",
 
 			inputConfigYAML: `
@@ -514,6 +515,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			},
 		},
 		{
+			// TODO_TECHDEBT(@olshansky): Delete this test case once v0.1.31 is live.
 			desc: "valid: relay miner config with deprecated :memory_pebble: smt_store_path (backwards compatibility)",
 
 			inputConfigYAML: `

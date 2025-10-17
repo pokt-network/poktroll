@@ -178,7 +178,7 @@ The relative or absolute path to the directory where the `RelayMiner` will store
 the `SparseMerkleTree` data on disk. This directory is used to persist the `SMT`
 in a BadgerDB KV store data files.
 
-:::warning Deprecated Values
+:::warning DEPRECATION NOTICE AND REQUIRED ACTION
 
 The values `:memory:` and `:memory_pebble:` are **deprecated** and will automatically
 fallback to `$HOME/.pocket/smt` for backwards compatibility.
@@ -186,9 +186,20 @@ fallback to `$HOME/.pocket/smt` for backwards compatibility.
 **Action Required**: Update your configuration to use an explicit persistent storage path
 (e.g., `/home/user/.pocket/smt`) instead of these deprecated values.
 
+_TODO_TECHDEBT(@olshansky): Delete this warning section once v0.1.31 is live_
+
 :::
 
 ### `disable_smt_persistence`
+
+:::danger Data Loss Risk
+
+When `disable_smt_persistence` is enabled:
+
+- Claims and proofs **will be lost if the RelayMiner restarts** before submission
+- This could result in **missed proof submissions** and potential slashing
+
+:::
 
 _`Optional`_ (default: `false`)
 
@@ -196,20 +207,14 @@ Controls whether the Sparse Merkle Tree (SMT) Write-Ahead Log (WAL) and recovery
 mechanisms are disabled.
 
 When set to `true`:
+
 - **No WAL files** are written to disk during relay processing
 - **Session trees are not recovered** from disk on restart
 - The `RelayMiner` operates in **pure in-memory mode** for SMTs
 - All relay processing state is **lost on restart**
 
-:::danger Data Loss Risk
-
-When `disable_smt_persistence` is enabled:
-- Claims and proofs **will be lost if the RelayMiner restarts** before submission
-- This could result in **missed proof submissions** and potential slashing
-
-:::
-
 **Default behavior (`false`):**
+
 - WAL files are written to disk for crash recovery
 - Session trees are automatically recovered on restart
 - Provides data durability and resilience across restarts

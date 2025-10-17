@@ -25,6 +25,7 @@ const DefaultMaxBodySize = "20MB"
 // It is used when the deprecated :memory: or :memory_pebble: values are found in the config.
 const DefaultMinedRelaysStorePath = ".pocket/smt"
 
+// TODO_TECHDEBT(@olshansky): Delete this section once v0.1.31 is live.
 // Deprecated SMT store path values that should be replaced with the default path
 const (
 	DeprecatedSmtStorePathMemory       = ":memory:"
@@ -78,6 +79,7 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 
 	relayMinerConfig.SmtStorePath = yamlRelayMinerConfig.SmtStorePath
 
+	// TODO_TECHDEBT(@olshansky): Delete this section once v0.1.31 is live.
 	// Handle deprecated :memory: and :memory_pebble: entries for backwards compatibility
 	if relayMinerConfig.SmtStorePath == DeprecatedSmtStorePathMemory ||
 		relayMinerConfig.SmtStorePath == DeprecatedSmtStorePathMemoryPebble {

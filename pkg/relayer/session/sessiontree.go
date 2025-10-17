@@ -221,9 +221,9 @@ func importSessionTree(
 	// the claimedRoot at the appropriate time.
 	//
 	// This design allows:
-	// 1. Sessions to continue accumulating relays after restart
-	// 2. The claim creation process to work correctly by calling Flush()
-	// 3. The same root to be generated since the imported SMT has the persisted state
+	// - Sessions to continue accumulating relays after restart
+	// - The claim creation process to work correctly by calling Flush()
+	// - The same root to be generated since the imported SMT has the persisted state
 	sessionTree.claimedRoot = nil  // Keep nil to allow updates
 	sessionTree.isClaiming = false // Not yet in the claiming pipeline
 
