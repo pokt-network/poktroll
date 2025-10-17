@@ -11,6 +11,8 @@ option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // Service message to encapsulate unique and semantic identifiers for a service on the network
+//
+// Next free index: 6
 message Service {
   // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
   string id = 1; // Unique identifier for the service
@@ -28,6 +30,10 @@ message Service {
   // It is the only address that can update the service configuration (e.g. compute_units_per_relay),
   // or make other updates to it.
   string owner_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service owner / creator
+
+  // Optional metadata containing an experimental API specification for the service.
+  // When exposed via JSON, this field is base64 encoded and MUST be <= 256 KiB when decoded.
+  Metadata metadata = 5;
 }
 
 // ApplicationServiceConfig holds the service configuration the application stakes for
@@ -90,3 +96,12 @@ message ConfigOption {
   string value = 2; // Config option value
 }
 
+// Metadata message to hold additional metadata for a service.
+// The raw bytes are stored on-chain and will be base64 encoded in JSON representations.
+//
+// Next free index: 2
+message Metadata {
+  // EXPERIMENTAL: Serialized API spec limited to 256 KiB when decoded.
+  // TODO_FUTURE: support dedicated openapi_ / openrpc_ fields once formats stabilize.
+  bytes experimental_api_specs = 1;
+}

@@ -34,6 +34,10 @@ func validateServiceList(serviceList []sharedtypes.Service) error {
 	serviceIDMap := make(map[string]struct{})
 	serviceNameMap := make(map[string]struct{})
 	for _, service := range serviceList {
+		if err := service.ValidateBasic(); err != nil {
+			return err
+		}
+
 		serviceID := string(ServiceKey(service.Id))
 		if _, ok := serviceIDMap[serviceID]; ok {
 			return ErrServiceDuplicateIndex.Wrapf("duplicated ID for service: %v", service)

@@ -26,6 +26,11 @@ Visit the [Service FAQ](../4_faq/1_service_faq.md) for more information about in
   - [2. Query for the Service](#2-query-for-the-service)
   - [3. What do I do next?](#3-what-do-i-do-next)
 - [How do I update an existing service's `compute_units_per_relay`?](#how-do-i-update-an-existing-services-compute_units_per_relay)
+- [Experimental: How do I add API specifications to a service?](#experimental-how-do-i-add-api-specifications-to-a-service)
+  - [Using a File](#using-a-file)
+  - [Using Base64-Encoded Data](#using-base64-encoded-data)
+  - [Updating Service Metadata](#updating-service-metadata)
+  - [Important Notes](#important-notes)
 
 ## Introduction
 
@@ -50,7 +55,7 @@ Service IDs are limited to `42` chars and descriptions are limited to `169` char
 
 :::danger Grove Employees Service Creation
 
-If you are a Grove Employee, you **ABSOLUTELY MUST** create all Mainnet Services using the Grove Master Gateway: `pokt1lf0kekv9zcv9v3wy4v6jx2wh7v4665s8e0sl9s` 
+If you are a Grove Employee, you **ABSOLUTELY MUST** create all Mainnet Services using the Grove Master Gateway: `pokt1lf0kekv9zcv9v3wy4v6jx2wh7v4665s8e0sl9s`
 
 :::
 
@@ -67,7 +72,7 @@ For example, assuming you have an account with the name $USER (`pocketd keys sho
 ```bash
 pocketd tx service add-service \
    "svc-$USER" "service description for $USER" 13 \
-   --fees 300upokt --from $USER \
+    --fees 300upokt --from $USER \
    --network=beta
 ```
 
@@ -84,6 +89,37 @@ For example:
 ```bash
 pocketd query service show-service "svc-$USER" \
  --network=beta --output json | jq
+```
+
+#### Query without metadata (dehydrated)
+
+If you want to query a service without its metadata (API specifications) to reduce payload size:
+
+```bash
+pocketd query service show-service ${SERVICE_ID} --dehydrated
+```
+
+For example:
+
+```bash
+pocketd query service show-service "svc-$USER" \
+ --dehydrated --network=beta --output json | jq
+```
+
+This is useful when you only need basic service information (ID, name, compute units, owner) without the full API specification.
+
+#### Query all services
+
+To list all services:
+
+```bash
+pocketd query service all-services
+```
+
+By default, this excludes metadata to reduce payload size. To include metadata for all services:
+
+```bash
+pocketd query service all-services --dehydrated=false
 ```
 
 ### 3. What do I do next?
@@ -107,6 +143,73 @@ For example:
 ```bash
 pocketd tx service add-service \
    "svc-$USER" "service description for $USER" 20 \
-   --fees 300upokt --from $USER \
+    --fees 300upokt --from $USER \
    --network=beta
 ```
+
+## Experimental: How do I add API specifications to a service?
+
+:::warning Experimental Feature
+
+The onchain service metadata feature is experimental and subject to change.
+The metadata payload is limited to 256 KiB when decoded as of [#1825](https://github.com/pokt-network/poktroll/pull/1825).
+
+:::
+
+You can attach an API specification ([OpenAPI](https://www.openapis.org/), [OpenRPC](https://open-rpc.org/),
+etc.) to a service when creating or updating it.
+
+The API specification is stored on-chain and can be used by applications, gateways, and suppliers to understand the service's interface.
+
+### Using a File
+
+To attach an API specification from a file:
+
+```bash
+pocketd tx service add-service \
+    ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
+    --experimental-metadata-file ./openapi.json \
+    --fees 300upokt --from ${SERVICE_OWNER} --network=beta
+```
+
+For example, to create a service for the Pocket network with its OpenAPI specification:
+
+```bash
+pocketd tx service add-service \
+   "pocket" "Pocket Network RPC" 1 \
+    --experimental-metadata-file ./docs/static/openapi.json \
+    --fees 300upokt --from $USER \
+   --network=beta
+```
+
+### Using Base64-Encoded Data
+
+Alternatively, you can provide the API specification as base64-encoded data:
+
+```bash
+pocketd tx service add-service \
+    ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
+    --experimental-metadata-base64 $(base64 -w0 ./openapi.json) \
+    --fees 300upokt --from ${SERVICE_OWNER} --network=beta
+```
+
+### Updating Service Metadata
+
+To update the metadata of an existing service, use the same `add-service` command with new metadata:
+
+```bash
+pocketd tx service add-service \
+   "pocket" "Pocket Network RPC" 1 \
+    --experimental-metadata-file ./docs/static/openapi-v2.json \
+    --fees 300upokt --from $USER \
+   --network=beta
+```
+
+### Important Notes
+
+- The `--experimental-metadata-file` and `--experimental-metadata-base64` flags are mutually exclusive.
+- The decoded payload must be 256 KiB or less.
+- The metadata is stored on-chain as raw bytes and base64-encoded in JSON representations.
+- Only the service owner can update the service metadata.
+- To remove metadata from a service, update it without providing any metadata flags.
+- Updating metadata replaces the entire previous metadata (not a partial update).

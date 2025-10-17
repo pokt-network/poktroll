@@ -2473,6 +2473,9 @@ paths:
 
           The Bech32 address of the service owner / creator
         type: string
+      metadata:
+        description: Optional experimental metadata describing the service API; exposed as base64 and limited to 100 KiB when decoded.
+        $ref: "#/definitions/pocket.shared.Metadata"
   pocket.shared.ServiceConfigUpdate:
     description: |-
       ServiceConfigUpdate tracks a change in a supplier's service configurations
@@ -2511,6 +2514,14 @@ paths:
         type: string
         format: uint64
         title: The percentage of revenue share the recipient will receive
+  pocket.shared.Metadata:
+    type: object
+    title: Metadata message to hold additional metadata for a service
+    properties:
+      experimental_api_specs:
+        description: EXPERIMENTAL payload for API specs, limited to 100 KiB when decoded
+        type: string
+        format: byte
   pocket.shared.Supplier:
     type: object
     title: Supplier represents an actor in Pocket Network that provides RPC services

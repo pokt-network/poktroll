@@ -19,4 +19,5 @@ var (
 	ErrSharedInvalidServiceId            = sdkerrors.Register(ModuleName, 1108, "invalid service ID")
 	ErrSharedInvalidServiceName          = sdkerrors.Register(ModuleName, 1109, "invalid service name")
 	ErrSharedInvalidComputeUnitsPerRelay = sdkerrors.Register(ModuleName, 1110, "invalid compute units per relay")
+	ErrSharedInvalidServiceMetadata      = sdkerrors.Register(ModuleName, 1111, "invalid service metadata")
 )

@@ -2549,7 +2549,7 @@ definitions:
         description: The Bech32 address of the service owner.
         type: string
       service:
-        title: The Service being added to the network
+        title: The Service being added to the network, including optional experimental metadata
         $ref: '#/definitions/pocket.shared.Service'
   pocket.service.MsgAddServiceResponse:
     type: object
@@ -2814,6 +2814,18 @@ definitions:
     enum:
       - UNKNOWN_CONFIG
       - TIMEOUT
+  pocket.shared.Metadata:
+    description: |-
+      Metadata message to hold additional metadata for a service.
+      The raw bytes are stored on-chain and will be base64 encoded in JSON representations.
+    type: object
+    properties:
+      experimental_api_specs:
+        description: |-
+          EXPERIMENTAL: Serialized API spec limited to 100 KiB when decoded.
+          TODO(@future): support dedicated openapi_ / openrpc_ fields once formats stabilize.
+        type: string
+        format: byte
   pocket.shared.MsgUpdateParam:
     description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
     type: object
@@ -2989,6 +3001,11 @@ definitions:
         description: Unique identifier for the service
         type: string
         title: For example, what if we want to request a session for a certain service but with some additional configs that identify it?
+      metadata:
+        description: |-
+          Optional metadata containing an experimental API specification for the service.
+          When exposed via JSON, this field is base64 encoded and MUST be <= 100 KiB when decoded.
+        $ref: '#/definitions/pocket.shared.Metadata'
       name:
         description: (Optional) Human readable description of the service
         type: string

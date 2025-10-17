@@ -26,22 +26,46 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "AllServices",
 					Use:       "all-services",
 					Short:     "List all services registered on-chain",
-					Long: `
-- Lists all services currently registered in the network.
-- Supports pagination via flags if there are many services.
-`,
-					Example: `pocketd q service all-services`,
+					Long: `Lists all services currently registered in the network.
+
+By default, service metadata (API specifications) is excluded to reduce payload size.
+Use --dehydrated=false to include full metadata for all services.
+
+Supports pagination via flags if there are many services.`,
+					Example: `pocketd q service all-services
+pocketd q service all-services --limit 50
+pocketd q service all-services --page 2
+pocketd q service all-services --dehydrated=false`,
+					FlagOptions: map[string]*autocliv1.FlagOptions{
+						"dehydrated": {
+							Name:         "dehydrated",
+							Usage:        "Exclude service metadata to reduce payload size (default true)",
+							DefaultValue: "true",
+						},
+					},
 				},
 				{
 					RpcMethod: "Service",
 					Use:       "show-service [service-id]",
-					Short:     "Show details for a specific service",
-					Long: `
-- Retrieve the service details by its unique on-chain id.
-- Shows all metadata and configuration for the specified service.
-`,
-					Example:        `pocketd q service show-service <service-id>`,
+					Short:     "Show full details for a specific service",
+					Long: `Retrieves complete service information by its unique on-chain ID.
+
+Returns all service details including:
+- Service ID, name, and compute units per relay
+- Owner address
+- Full metadata (API specifications up to 256 KiB) by default
+
+Use the --dehydrated flag to exclude metadata and reduce payload size.`,
+					Example: `pocketd q service show-service pocket
+pocketd q service show-service anvil --output json
+pocketd q service show-service pocket --dehydrated`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "id"}},
+					FlagOptions: map[string]*autocliv1.FlagOptions{
+						"dehydrated": {
+							Name:  "dehydrated",
+							Usage: "Exclude service metadata to reduce payload size",
+						},
+					},
 				},
 				{
 					RpcMethod: "RelayMiningDifficultyAll",

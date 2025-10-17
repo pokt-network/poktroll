@@ -54,6 +54,11 @@ message QueryParamsResponse {
 message QueryGetServiceRequest {
   // TODO_IMPROVE: We could support getting services by name.
   string id = 1;
+
+  // if false (default), include full service data including metadata.
+  // if true, exclude metadata to reduce payload size.
+  // For backwards compatibility and typical use cases, the default is false.
+  bool dehydrated = 2;
 }
 
 message QueryGetServiceResponse {
@@ -62,6 +67,11 @@ message QueryGetServiceResponse {
 
 message QueryAllServicesRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
+
+  // if false, include full service data including metadata.
+  // if true (default behavior), exclude metadata to reduce payload size.
+  // For backwards compatibility and performance, the default is true.
+  bool dehydrated = 2;
 }
 
 message QueryAllServicesResponse {

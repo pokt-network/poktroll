@@ -14,7 +14,7 @@ var validUrlSchemes = []string{"http", "https", "ws", "wss"}
 
 const (
 	// ComputeUnitsPerRelayMax is the maximum allowed compute_units_per_relay value when adding or updating a service.
-	ComputeUnitsPerRelayMax uint64 = 2 << 20 // 1048576 (2^20)
+	ComputeUnitsPerRelayMax uint64 = 2 << 20 // 1_048_576 (2^20)
 
 	// TODO_IMPROVE: Consider making these configurable via governance parameters.
 	// The current values were selected arbitrarily simply to avoid excessive onchain bloat.
@@ -25,6 +25,12 @@ const (
 	// Limit the name of the service to 169 characters
 	// TODO_TECHDEBT: Rename "service name" to "service description"
 	maxServiceNameLength = 169
+
+	// MaxServiceMetadataSizeBytes is the maximum allowed size for the experimental metadata payload.
+	// This cap is enforced onchain to prevent excessively large API specifications from bloating state.
+	// The experimental metadata bytes cannot exceed this limit.
+	// TODO_POST_MAINNET: Consider making this a governance parameter for flexibility.
+	MaxServiceMetadataSizeBytes = 256 * 1_024 // 262_144 bytes (256 KiB)
 
 	regexServiceId   = "^[a-zA-Z0-9_-]+$"  // Define the regex pattern to match allowed characters
 	regexServiceName = "^[a-zA-Z0-9-_ ]+$" // Define the regex pattern to match allowed characters (allows spaces)
@@ -57,6 +63,35 @@ func (s *Service) ValidateBasic() error {
 
 	if err := ValidateComputeUnitsPerRelay(s.ComputeUnitsPerRelay); err != nil {
 		return ErrSharedInvalidService.Wrapf("%s", err)
+	}
+
+	if err := s.Metadata.ValidateBasic(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ValidateBasic performs basic validation of the metadata. Nil metadata is allowed.
+//
+// DEV_NOTE: This validation intentionally does NOT verify the content format (e.g., valid JSON, OpenAPI, etc.)
+// because the metadata is explicitly marked as "experimental" and may contain any serialized API spec format.
+// Future versions may add format-specific validation when dedicated fields are introduced.
+// TODO_IMPROVE: See comments on openapi/openrpc next steps in service.proto.
+func (metadata *Metadata) ValidateBasic() error {
+	if metadata == nil {
+		return nil
+	}
+
+	if len(metadata.ExperimentalApiSpecs) == 0 {
+		return ErrSharedInvalidServiceMetadata.Wrap("metadata experimental_api_specs must not be empty")
+	}
+
+	if len(metadata.ExperimentalApiSpecs) > MaxServiceMetadataSizeBytes {
+		return ErrSharedInvalidServiceMetadata.Wrapf(
+			"metadata experimental_api_specs exceeds maximum size: got %d bytes, max %d bytes",
+			len(metadata.ExperimentalApiSpecs), MaxServiceMetadataSizeBytes,
+		)
 	}
 
 	return nil

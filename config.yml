@@ -20,7 +20,7 @@ accounts:
   - name: app1
     mnemonic: "mention spy involve verb exercise fiction catalog order agent envelope mystery text defy sing royal fringe return face alpha knife wonder vocal virus drum"
     coins:
-      - 100000000upokt
+      - 100000000000upokt
   - name: app2
     mnemonic: "material little labor strong search device trick amateur action crouch invite glide provide elite mango now paper sense found hamster neglect work install bulk"
     coins:

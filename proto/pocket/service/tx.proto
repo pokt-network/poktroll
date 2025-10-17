@@ -71,11 +71,10 @@ message MsgUpdateParamResponse {
 message MsgAddService {
   option (cosmos.msg.v1.signer) = "owner_address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
   string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service owner.
-  pocket.shared.Service service = 2 [(gogoproto.nullable) = false]; // The Service being added to the network
+  pocket.shared.Service service = 2 [(gogoproto.nullable) = false]; // The Service being added to the network, including optional experimental metadata
 }
 
 message MsgAddServiceResponse {
   // pocket.shared.Service service = 1;
   reserved 1;
 }
-

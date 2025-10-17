@@ -1,0 +1,65 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Pocket Network API",
+    "description": "Pocket Network Shannon TestNet API specification for E2E testing",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://shannon-testnet.poktroll.com",
+      "description": "Shannon TestNet"
+    }
+  ],
+  "paths": {
+    "/v1/query/application/params": {
+      "get": {
+        "summary": "Get application module parameters",
+        "description": "Returns the current parameters of the application module",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "params": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/query/service/list": {
+      "get": {
+        "summary": "List all services",
+        "description": "Returns a list of all registered services on the network",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "services": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

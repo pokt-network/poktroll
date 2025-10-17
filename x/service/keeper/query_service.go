@@ -15,6 +15,8 @@ import (
 )
 
 // AllServices queries all services.
+// By default (dehydrated=true), metadata is excluded to reduce payload size.
+// Set dehydrated=false to include full metadata for all services.
 func (k Keeper) AllServices(ctx context.Context, req *types.QueryAllServicesRequest) (*types.QueryAllServicesResponse, error) {
 	logger := k.Logger().With("method", "AllServices")
 
@@ -33,6 +35,12 @@ func (k Keeper) AllServices(ctx context.Context, req *types.QueryAllServicesRequ
 			err = fmt.Errorf("unable to unmarshal service with key (hex): %x: %w", key, err)
 			logger.Error(err.Error())
 			return status.Error(codes.Internal, err.Error())
+		}
+
+		// Strip metadata if dehydrated flag is set (default behavior)
+		// For backwards compatibility and performance, dehydrated defaults to true
+		if req.Dehydrated {
+			service.Metadata = nil
 		}
 
 		services = append(services, service)
@@ -56,6 +64,11 @@ func (k Keeper) Service(ctx context.Context, req *types.QueryGetServiceRequest) 
 	if !found {
 		msg := fmt.Sprintf("service ID not found: %q", req.GetId())
 		return nil, status.Error(codes.NotFound, msg)
+	}
+
+	// Strip metadata if dehydrated flag is set
+	if req.Dehydrated {
+		service.Metadata = nil
 	}
 
 	return &types.QueryGetServiceResponse{Service: service}, nil
