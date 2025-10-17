@@ -159,7 +159,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		ClaimedBalance:          expectedClaimedUnstakedTokens.String(),
 		ClaimedApplicationStake: applicationStake.String(),
 		SessionEndHeight:        expectedSessionEndHeight,
-		Application:             &expectedApp,
+		ApplicationAddress:      expectedApp.Address,
 	}
 	claimEvents := events.FilterEvents[*migrationtypes.EventMorseApplicationClaimed](t, ctx.EventManager().Events())
 	require.Equal(t, 1, len(claimEvents))
