@@ -1,7 +1,7 @@
 Feature: Stake App Namespaces
 
     # This test assume the account for app5 IS NOT STAKED at genesis
-    Scenario: User can stake an Application waiting for it to unbond
+    Scenario: User can stake an Application
         Given the user has the pocketd binary installed
         And the user verifies the "application" for account "app5" is not staked
         And the account "app5" has a balance greater than "1000070" uPOKT

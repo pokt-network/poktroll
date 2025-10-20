@@ -152,6 +152,13 @@ var allUpgrades = []upgrades.Upgrade{
 	// - tokenomics update: "proposer" reward distributed to all validators/delegators
 	// - supplier stake message handling & authorization
 	upgrades.Upgrade_0_1_29,
+
+	// v0.1.30 - upgrade to:
+	// - Supplier service config update logic before activation fix
+	// - Experimental onchain metadata support
+	// - RelayMiner performance improvements (signatures, caching, etc)
+	// - New recovery wallets and docs
+	upgrades.Upgrade_0_1_30,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
