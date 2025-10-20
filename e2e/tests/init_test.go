@@ -605,6 +605,16 @@ func (s *suite) TheUserRunsRelayminerRelayForAppToSupplierWithPayload(appName, s
 	}
 	require.NotEmpty(s, endpointUrl, "supplier %s has no anvil service endpoint", supplierName)
 
+	// When running on localhost (LocalNet using Tilt, but not a remote k8s environment),
+	// translate k8s internal hostnames to localhost.
+	// Check if we're connecting to a local node by examining the gRPC URL.
+	// If it's localhost/127.0.0.1, we're running locally and need to translate k8s service names.
+	isLocal := strings.Contains(defaultGRPCURL, "localhost") || strings.Contains(defaultGRPCURL, "127.0.0.1")
+	if isLocal && strings.Contains(endpointUrl, "relayminer1") {
+		// The k8s endpoint "http://relayminer1:8545" becomes "http://localhost:8085" on the host
+		endpointUrl = "http://localhost:8085"
+	}
+
 	// Build the relayminer relay command with all required flags
 	args := []string{
 		"relayminer",
@@ -659,6 +669,7 @@ func (s *suite) TheUserWaitsForTheSupplierForAccountUnbondingPeriodToFinish(accN
 
 func (s *suite) TheApplicationForAccountIsInThePeriod(appName, periodName string) {
 	_, ok := accNameToAppMap[appName]
+	fmt.Println("application:", accNameToAppMap)
 	require.True(s, ok, "application %s not found", appName)
 
 	var (
@@ -683,6 +694,7 @@ func (s *suite) TheApplicationForAccountIsInThePeriod(appName, periodName string
 	s.waitForTxResultEvent(newEventMsgTypeMatchFn("application", msgType))
 
 	application := s.getApplicationInfo(appName)
+	fmt.Println("application:", application)
 	require.True(s, isAppInState(application))
 }
 
