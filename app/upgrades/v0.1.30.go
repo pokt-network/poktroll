@@ -15,8 +15,14 @@ const (
 )
 
 // Upgrade_0_1_30 handles the upgrade to release `v0.1.30`.
-// This upgrade adds:
+// This upgrade includes:
+// - Fix for IsSessionEndHeight logic (was inverted, affecting unbonding timing)
 // - Fix for supplier service config update logic before activation (issue #1794)
+// - Optional Service.metadata field addition (backwards compatible proto change)
+// - Query improvements: supplier filters by operator/owner, service dehydration
+// - Migration allowlist updates for account recovery
+//
+// See: https://github.com/pokt-network/poktroll/pull/1847
 var Upgrade_0_1_30 = Upgrade{
 	PlanName: Upgrade_0_1_30_PlanName,
 	// No KVStore migrations in this upgrade.
@@ -28,13 +34,21 @@ var Upgrade_0_1_30 = Upgrade{
 		keepers *keepers.Keepers,
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
-		// Add new parameters by:
-		// 1. Inspecting the diff between vPREV..vNEXT
-		// 2. Manually inspect changes in ignite's config.yml
-		// 3. Update the upgrade handler here accordingly
-		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
+		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.29..v0.1.30
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			// No state migrations are required for this upgrade because:
+			// 1. Proto changes are backwards compatible:
+			//    - Service.metadata is optional; existing services deserialize with nil metadata
+			//    - ValidateBasic() explicitly allows nil metadata (x/shared/types/service.go:67)
+			// 2. No new parameters were added (config.yml contains only test account changes)
+			// 3. No new KVStore keys or module stores were introduced
+			// 4. Logic fixes (IsSessionEndHeight, supplier config updates) are forward-looking:
+			//    - They only affect new transactions and future state transitions
+			//    - Existing on-chain state remains valid and compatible
+			// 5. Query-only changes (supplier filters, service dehydration) don't affect consensus
+			//
+			// All changes are backwards compatible and require no data transformation.
 			return vm, nil
 		}
 	},
