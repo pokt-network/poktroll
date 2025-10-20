@@ -16,12 +16,10 @@ const (
 
 // Upgrade_0_1_30 handles the upgrade to release `v0.1.30`.
 // This upgrade includes:
-// - Fix for IsSessionEndHeight logic (was inverted, affecting unbonding timing)
-// - Fix for supplier service config update logic before activation (issue #1794)
-// - Optional Service.metadata field addition (backwards compatible proto change)
-// - Query improvements: supplier filters by operator/owner, service dehydration
-// - Migration allowlist updates for account recovery
-//
+// - Supplier service config update logic before activation fix
+// - Experimental onchain metadata support
+// - RelayMiner performance improvements (signatures, caching, etc)
+// - New recovery wallets and docs
 // See: https://github.com/pokt-network/poktroll/pull/1847
 var Upgrade_0_1_30 = Upgrade{
 	PlanName: Upgrade_0_1_30_PlanName,

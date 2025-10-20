@@ -1,27 +1,3 @@
-// vNEXT_Template.go - Canonical Upgrade Template
-//
-// ────────────────────────────────────────────────────────────────
-// TEMPLATE PURPOSE:
-//   - This file is the canonical TEMPLATE for all future onchain upgrade files in the poktroll repo.
-//   - DO NOT add upgrade-specific logic or changes to this file.
-//   - YOU SHOULD NEVER NEED TO CHANGE THIS FILE
-//
-// USAGE INSTRUCTIONS:
-//  1. To start a new upgrade cycle, rename vNEXT.go to the target version (e.g., v0.1.14.go) and update all identifiers accordingly:
-//     cp ./app/upgrades/vNEXT.go ./app/upgrades/v0.1.14.go
-//  2. Then, copy this file to vNEXT.go:
-//     cp ./app/upgrades/vNEXT_Template.go ./app/upgrades/vNEXT.go
-//  3. Look for the word "Template" in `vNEXT.go` and replace it with an empty string.
-//  4. Make all upgrade-specific changes in vNEXT.go only.
-//  5. To reset, restore, or start a new upgrade cycle, repeat from step 1.
-//  6. Update the last entry in the `allUpgrades` slice in `app/upgrades.go` to point to the new upgrade version variable.
-//
-// vNEXT_Template.go should NEVER be modified for upgrade-specific logic.
-// Only update this file to improve the template itself.
-//
-//	See also: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
-//
-// ────────────────────────────────────────────────────────────────
 package upgrades
 
 import (
@@ -38,14 +14,14 @@ import (
 // upgrade version number and update comment versions.
 
 const (
-	Upgrade_NEXTTemplate_PlanName = "vNEXT"
+	Upgrade_NEXT_PlanName = "vNEXT"
 )
 
-// Upgrade_NEXTTemplate handles the upgrade to release `vNEXT`.
+// Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
-// - ...
-var Upgrade_NEXTTemplate = Upgrade{
-	PlanName: Upgrade_NEXTTemplate_PlanName,
+// - Fix for supplier service config update logic before activation (issue #1794)
+var Upgrade_NEXT = Upgrade{
+	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{},
 

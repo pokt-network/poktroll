@@ -154,7 +154,10 @@ var allUpgrades = []upgrades.Upgrade{
 	upgrades.Upgrade_0_1_29,
 
 	// v0.1.30 - upgrade to:
-	// - Fix for supplier service config update logic before activation (issue #1794)
+	// - Supplier service config update logic before activation fix
+	// - Experimental onchain metadata support
+	// - RelayMiner performance improvements (signatures, caching, etc)
+	// - New recovery wallets and docs
 	upgrades.Upgrade_0_1_30,
 }
 
