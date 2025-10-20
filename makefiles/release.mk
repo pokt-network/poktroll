@@ -62,7 +62,7 @@ INFO_URL := https://dev.poktroll.com/explore/account_management/pocketd_cli?_hig
 define print_next_steps
 	$(call print_info_section,Next Steps)
 	@echo "  $(BOLD)1.$(RESET) Push the new tag: $(CYAN)git push origin $(1)$(RESET)"
-	@echo "  $(BOLD)2.$(RESET) Draft the release with gh: $(CYAN)gh release create $(1) $(if $(2),--prerelease,) --generate-notes$(RESET)"
+	@echo "  $(BOLD)2.$(RESET) Draft the release with gh: $(CYAN)gh release create $(1) --prerelease --generate-notes$(RESET)"
 	@echo ""
 	@repo_url=$$(gh repo view --json url -q .url); \
 		echo "$(BOLD)Release URL:$(RESET) $(CYAN)$${repo_url}/releases/tag/$(1)$(RESET)"
@@ -126,7 +126,7 @@ release_tag_dev: ## Tag a new dev release for unmerged PRs (e.g. v1.0.1-dev-feat
 	@echo "$(BOLD)Branch:$(RESET) $(CYAN)$(CURRENT_BRANCH)$(RESET)"
 	@echo "$(BOLD)Commit:$(RESET) $(CYAN)$(SHORT_COMMIT)$(RESET)"
 	@echo ""
-	$(call print_next_steps,$(NEW_TAG),pre-release)
+	$(call print_next_steps,$(NEW_TAG))
 	$(call print_cleanup_commands,$(NEW_TAG))
 	$(call print_additional_info)
 

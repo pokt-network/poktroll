@@ -121,7 +121,7 @@ This requires jumping back and forth between some of the steps on this page.
    - Use the tag above to auto-generate the release notes
 
 3. **Set as a pre-release** (change to `latest release` after upgrade completes).
-4. Trigger the workflow to build new release artifacts by running:
+4. Check if the [Release Artifacts Workflow is running](https://github.com/pokt-network/poktroll/actions/workflows/release-artifacts.yml). If not, trigger it by running:
 
    ```bash
    gh workflow run "Release artifacts"
