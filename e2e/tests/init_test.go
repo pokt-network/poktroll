@@ -669,7 +669,6 @@ func (s *suite) TheUserWaitsForTheSupplierForAccountUnbondingPeriodToFinish(accN
 
 func (s *suite) TheApplicationForAccountIsInThePeriod(appName, periodName string) {
 	_, ok := accNameToAppMap[appName]
-	fmt.Println("application:", accNameToAppMap)
 	require.True(s, ok, "application %s not found", appName)
 
 	var (
@@ -694,7 +693,6 @@ func (s *suite) TheApplicationForAccountIsInThePeriod(appName, periodName string
 	s.waitForTxResultEvent(newEventMsgTypeMatchFn("application", msgType))
 
 	application := s.getApplicationInfo(appName)
-	fmt.Println("application:", application)
 	require.True(s, isAppInState(application))
 }
 
