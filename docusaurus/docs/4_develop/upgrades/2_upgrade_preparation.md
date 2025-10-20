@@ -39,13 +39,13 @@ Instructions to create a new upgrade and apply it to both Alpha & Beta TesNet.
 No amount of code reviews or testing can fully catch this. Here is a suggested and opinionated potential solution:
 
 1. Start a session of [Claude code](https://www.anthropic.com/claude-code) or CLI agent of choice
-2. Identify the tag of the previous MainNet release (e.g. `v0.1.28`)
+2. Identify the tag of the previous MainNet release (e.g. `v0.1.20`)
 3. Ask Claude the following:
 
    ```bash
    You are a senior CosmosSDK protocol engineer in charge of the next protocol upgrade.
 
-   Do a git diff v0.1.28.
+   Do a git diff v0.1.20.
 
    Identify any potential bugs, edge cases or issues.
 
@@ -63,7 +63,9 @@ No amount of code reviews or testing can fully catch this. Here is a suggested a
    cp app/upgrades/vNEXT.go app/upgrades/v0.1.21.go
    ```
 
-3. Open `v0.1.21.go` and replace all instances of `vNEXT` with `v0.1.21`.
+3. Open `app/upgrades/v0.1.21.go` and:
+   - Replace all instances of `vNEXT` with `v0.1.21`.
+   - Replace all instances of `_NEXT_` with `_0_1_21_`.
 4. Remove all the general purpose template comments from `v0.1.21.go`.
 5. Open `app/upgrades.go` and:
 
@@ -76,7 +78,7 @@ No amount of code reviews or testing can fully catch this. Here is a suggested a
    cp app/upgrades/vNEXT_Template.go app/upgrades/vNEXT.go
    ```
 
-7. Open `vNEXT.go` and remove all instances of `Template`.
+7. Open `app/upgrades/vNEXT.go` and remove all instances of `Template`.
 8. Create a PR with these changes and merge it. [v0.1.21 PR Example](https://github.com/pokt-network/poktroll/pull/1520):
 9. Note that the upgrade handler MAY need business logic related to onchain state changes. See [other upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference.
 
