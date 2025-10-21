@@ -35,8 +35,13 @@ Docs: <a href="https://docs.pokt.network">docs.pokt.network</a>
 
 ## Targets
 
-**Test mode:** Pocket Network Bot Testing Group only
-**Production:** All 18 groups (BitGet, ByBit, CoinEx, Gate.io, Kraken, KuCoin, MEXC, OKX, etc.)
+**Test mode:**
+- Pocket Network Bot Testing Group only
+
+**Production:**
+- 18 groups total
+- Exchanges: BitGet, ByBit, CoinEx, Gate.io, Kraken, KuCoin, MEXC, OKX, etc.
+- Community: The Poktopus Den
 
 ## Rules
 
