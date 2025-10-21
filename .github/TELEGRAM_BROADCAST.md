@@ -15,8 +15,7 @@ make telegram_broadcast_msg MSG_FILE=message.html
 ## Message Format
 
 Use HTML for formatting:
-- `<b>bold</b>`, `<i>italic</i>`, `<code>code</code>`
-- `<a href="url">link</a>`, `<br>` for line breaks
+Non-exhaustive examples: `<b>bold</b>`, `<i>italic</i>`, `<code>code</code>`, `<a href="url">link</a>`, `<br>`. etc.
 
 **Example:**
 ```html
