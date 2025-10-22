@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"fmt"
+
 	//"sync"
 
 	"cosmossdk.io/depinject"

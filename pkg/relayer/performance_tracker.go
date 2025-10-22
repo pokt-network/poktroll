@@ -52,6 +52,9 @@ import (
 //   and measures seconds.
 
 // Instruction labels for metrics.
+//
+// When adding new instructions, maintain alphabetical order within each section
+// and update the metrics documentation accordingly.
 const (
 	// --- General proxy sync flow ---
 
@@ -104,7 +107,7 @@ type SpanRecord struct {
 //   - false => Finish() enqueues to a lock-free buffer; caller must Flush()
 //
 // BufferCap:
-//   - Capacity for the MPMC queue when RecordOnFinish=false (default 4096).
+//   - Capacity for the MPMC queue when RecordOnFinish=false (default 4_096).
 //
 // ConstantLabels:
 //   - Constant labels attached to each observation; a "service_id" key is
@@ -146,7 +149,7 @@ type PerfTracker struct {
 // Derived contexts (WithTimeout/WithDeadline) inherit the value.
 func WithPerf(parent context.Context, opts PerfOptions) context.Context {
 	if opts.BufferCap <= 0 {
-		opts.BufferCap = 4096
+		opts.BufferCap = 4_096
 	}
 	// Ensure a service_id label exists.
 	if opts.ConstantLabels == nil {
@@ -228,7 +231,7 @@ func EnsurePerf(
 func EnsurePerfBuffered(ctx context.Context, serviceID string) (context.Context, *PerfTracker, func()) {
 	return EnsurePerf(ctx, serviceID, PerfOptions{
 		RecordOnFinish: false,
-		BufferCap:      2048,
+		BufferCap:      2_048,
 	})
 }
 
