@@ -218,7 +218,7 @@ This section is intended for core protocol developers only.
 
 This section is intended **only for core protocol developers**.
 
-It is also only intended for for dev releases of the `pocketd` CLI.
+It is also only intended for dev releases of the `pocketd` CLI.
 
 If you are publishing an official protocol upgrade accompanies by a CLI update, visit the [release procedure docs](../../4_develop/upgrades/2_upgrade_preparation.md).
 
@@ -253,7 +253,7 @@ The [release artifacts workflow](https://github.com/pokt-network/poktroll/action
 
 Wait for the release artifacts to be built and published to GitHub.
 
-The artifacts will be attached an an `Asset` to your [release](https://github.com/pokt-network/poktroll/releases) once the workflow completes.
+The artifacts will be attached as an `Asset` to your [release](https://github.com/pokt-network/poktroll/releases) once the workflow completes.
 
 ### 4. Verify via the `pocketd-install.sh` script
 
