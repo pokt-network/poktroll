@@ -49,20 +49,38 @@ We'll use `v0.1.29` as an example for this section.
 
 ### 3.1 Choose a height
 
-1. Visit the [MainNet Grafana Dashboard](https://grafana.poktroll.com/goto/5XmC4RjNR?orgId=1) to get the current height of the blockchain
+1. Visit the [MainNet Grafana Dashboard](https://grafana.poktroll.com/goto/8MB3RPRDg?orgId=1) to get the current height of the blockchain
 2. Review the latest block times of the network by checking network stats, [grove's infra](https://github.com/buildwithgrove/infrastructure/blob/dfbc02c57bbc5e61ae860393ec35d45b6a6fc3d5/environments/protocol/vultr-sgp/kubernetes-manifests/mainnet/config-files.yaml#L505) or [config.toml](https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/mainnet/config.toml); _usually 30s per block_.
-3. Determine a future height that gives the ecosystem a few days to prepare.
-4. For your particular upgrade (e.g. `v0.1.29`), update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.29_main.json`:
+3. Account for the fact that session tokenomics can take `1-10s` as of writing depending on how much traffic the network is managing.
+4. Determine a future height that gives the ecosystem a few days to prepare. See the `tip` below.
+5. For your particular upgrade (e.g. `v0.1.29`), update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.29_main.json`:
+
+:::tip Determining future block height
+
+You can ask ChatGPT to help you determine the future block height. For example:
+
+```text
+We need to pick the block height for a future release.
+- Current block height: 482210
+- Block time: 30s
+- Session overhead: every 30 minutes, there account for an extra 10 seconds
+- Current time: 10:00am PST on 10/27/2025
+- Target release time: 10:00am PST on 10/28/2025
+
+What block height should we set?
+```
+
+:::
 
 ### 3.2 Submit the Upgrade on MainNet
 
-Run the following command and follow the instructions:
+Run the following command:
 
 ```bash
 ./tools/scripts/upgrades/submit_upgrade.sh main v0.1.29 --instruction-only
 ```
 
-You should end up running a command similar to the following:
+Look for `Submit the upgrade transaction`. You should end up running a command similar to the following:
 
 ```bash
 pocketd \
