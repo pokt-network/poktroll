@@ -1,0 +1,8 @@
+📢 Pocket Network Upgrade Preparation 📢
+
+`v0.1.30` will be going live within the next 1-2 hours, as scheduled.
+
+The onchain upgrade height was updated to `484473` to ensure stay on schedule with the previous announcement.
+
+Find all the details here: https://github.com/pokt-network/poktroll/releases/tag/v0.1.30.
+
