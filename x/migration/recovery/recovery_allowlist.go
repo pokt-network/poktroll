@@ -638,8 +638,8 @@ var knownRecoveryRequestedAllowlist = []string{
 	"BFA5E910FF9024B6D1B62741078605FFB0EA18AB",
 
 	// https://github.com/pokt-network/poktroll/issues/1814
-	"3b5e804b37bff591f9f86e307c81d21fdb5355d4",
-	"18cc4d01fb572b07a7286a16cc23edd0dfa7fc1d",
+    "3B5E804B37BFF591F9F86E307C81D21FDB5355D4",
+    "18CC4D01FB572B07A7286A16CC23EDD0DFA7FC1D",
 
 	// https://github.com/pokt-network/poktroll/issues/1852
 	"CB6C69F82B3B360E200DF877604DE2704985D24F",
