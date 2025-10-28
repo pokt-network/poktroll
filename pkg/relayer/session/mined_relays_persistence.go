@@ -338,7 +338,7 @@ func (wal *minedRelaysWriteAheadLog) writeToDisk(buffer []byte) {
 		wal.logger.Error().Err(err).Msg("❌️ Failed to sync mined relays WAL to disk. ❗Relay evidence may be lost on crash.")
 	}
 
-	wal.logger.Info().Int("size_bytes", len(buffer)).Msg("✅️ Successfully flushed mined relays WAL buffer to disk.")
+	wal.logger.Debug().Int("size_bytes", len(buffer)).Msg("✅️ Successfully flushed mined relays WAL buffer to disk.")
 }
 
 // ReconstructSMTFromMinedRelaysLog replays the mined relays write-ahead log from disk
