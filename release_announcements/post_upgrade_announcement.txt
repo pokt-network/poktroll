@@ -1,0 +1,17 @@
+📢 Pocket Network Upgrade Complete 📢
+
+The network successfully upgraded to `v0.1.30` at height `484,473` around 11am PST on Tuesday (10/28/2025).
+
+Please make sure update your binaries and full nodes to the latest:
+https://github.com/pokt-network/poktroll/releases/tag/v0.1.30
+
+Snapshots are available here: https://snapshots.us-nj.poktroll.com/ 💾
+
+❓ What's new ❓
+- On-chain Service Metadata: Base64-encoded metadata + new CLI flags (experimental).
+- RelayMiner: Optimistic relaying, timing metrics, signer caching, better difficulty handling.
+- Performance: Faster crypto proofs, cleaner session logic, CGO disabled for stability.
+- Infra & Tooling: LevelDB inspector, CI fixes, pocket-knife scripts.
+- Governance & Recovery: New allowlist entries, Ledger recovery completed, stall detection added.
+- Docs: Upgrades, probabilistic proofs, and dev walkthroughs refreshed.
+
