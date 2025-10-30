@@ -63,7 +63,7 @@ Streamlines deployment on Kubernetes clusters
 
 [GitHub Repo](https://github.com/eddyzags/pocket-network-helm-chart)
 
-## [Pocket Knife](https://github.com/buildwithgrove/pocket-knife/)
+## [Pocket Knife](https://github.com/pokt-network/pocket-knife)
 
 A python syntactic sugar wrapper for `pocketd` — streamlined for bulk operations.
 
@@ -74,4 +74,4 @@ A python syntactic sugar wrapper for `pocketd` — streamlined for bulk operatio
 - Batch unstake hundreds of operators with automatic gas estimation, transaction tracking, and error reporting.
 - and many more features!
 
-[GitHub Repo](https://github.com/buildwithgrove/pocket-knife)
+[GitHub Repo](https://github.com/pokt-network/pocket-knife)
