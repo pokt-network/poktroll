@@ -67,7 +67,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	expectedEvent, err := sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingBegin{
-			Application:        &foundApp,
+			ApplicationAddress: foundApp.Address,
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -98,7 +98,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	// Assert that the EventApplicationUnbondingEnd event is emitted.
 	expectedEvent, err = sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingEnd{
-			Application:        &foundApp,
+			ApplicationAddress: foundApp.Address,
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
 			SessionEndHeight:   unbondingSessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -160,7 +160,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	// Assert that the EventApplicationUnbondingBegin event is emitted.
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-		Application:        &foundApp,
+		ApplicationAddress: foundApp.Address,
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
@@ -191,8 +191,8 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	expectedApp := &restakedApp
 	expectedApp.DelegateeGatewayAddresses = make([]string, 0)
 	expectedAppUnbondingCanceledEvent := &apptypes.EventApplicationUnbondingCanceled{
-		Application:      expectedApp,
-		SessionEndHeight: sessionEndHeight,
+		ApplicationAddress: expectedApp.Address,
+		SessionEndHeight:   sessionEndHeight,
 	}
 	events = sdk.UnwrapSDKContext(ctx).EventManager().Events()
 	appUnbondingEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingCanceled](t, events)
