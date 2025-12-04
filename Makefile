@@ -27,6 +27,31 @@ PNF_ADDRESS = pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw
 
 MODULES := application gateway pocket service session supplier proof tokenomics
 
+# Patterns for classified help categories
+HELP_PATTERNS := \
+	'^(help|help-params|help-unclassified|list):' \
+	'^(ignite_build|ignite_pocketd_build|ignite_serve|ignite_serve_reset|ignite_release.*|cosmovisor_start_node):' \
+	'^(go_develop|go_develop_and_test|proto_regen|go_mockgen|go_testgen_fixtures|go_testgen_accounts|go_imports):' \
+	'^(test_all|test_unit|test_e2e|test_integration|test_timing|test_govupgrade|test_e2e_relay|go_test_verbose|go_test):' \
+	'^(go_lint|go_vet|go_sec|gosec_version_fix|check_todos):' \
+	'^(localnet_up|localnet_up_quick|localnet_down|localnet_regenesis|localnet_cancel_upgrade|localnet_show_upgrade_plan):' \
+	'^testnet_.*:' \
+	'^(acc_.*|pocketd_addr|pocketd_key):' \
+	'^query_.*:' \
+	'^app_.*:' \
+	'^supplier_.*:' \
+	'^gateway_.*:' \
+	'^(relay_.*|claim_.*|ping_.*):' \
+	'^session_.*:' \
+	'^ibc_.*:' \
+	'^release_.*:' \
+	'^docker_test_.*:' \
+	'^(go_docs|docusaurus_.*|gen_.*_docs):' \
+	'^(install_.*|check_.*|grove_.*|act_.*|trigger_ci|docker_wipe):' \
+	'^telegram_.*:' \
+	'^claudesync_.*:' \
+	'^params_.*:'
+
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git log -1 --format='%H')
 
@@ -439,3 +464,53 @@ include ./makefiles/ignite.mk
 include ./makefiles/release.mk
 include ./makefiles/tools.mk
 include ./makefiles/ibc.mk
+
+###############################
+###  Global Error Handling  ###
+###############################
+
+# Catch-all rule for undefined targets
+# This must be defined AFTER includes so color variables are available
+# and it acts as a fallback for any undefined target
+%:
+	@echo ""
+	@echo "$(RED)❌ Error: Unknown target '$(BOLD)$@$(RESET)$(RED)'$(RESET)"
+	@echo ""
+	@if echo "$@" | grep -q "^localnet"; then \
+		echo "$(YELLOW)💡 Hint: LocalNet targets available:$(RESET)"; \
+		echo "   Run: $(CYAN)make help$(RESET) and check the '🌐 LocalNet Operations' section"; \
+	elif echo "$@" | grep -q "^testnet"; then \
+		echo "$(YELLOW)💡 Hint: TestNet targets available:$(RESET)"; \
+		echo "   Run: $(CYAN)make help$(RESET) and check the '🔗 TestNet Operations' section"; \
+	elif echo "$@" | grep -q "^app"; then \
+		echo "$(YELLOW)💡 Hint: Application targets available:$(RESET)"; \
+		echo "   Run: $(CYAN)make help$(RESET) and check the '🛡️ Applications' section"; \
+	elif echo "$@" | grep -q "^supplier"; then \
+		echo "$(YELLOW)💡 Hint: Supplier targets available:$(RESET)"; \
+		echo "   Run: $(CYAN)make help$(RESET) and check the '🏭 Suppliers' section"; \
+	elif echo "$@" | grep -q "^gateway"; then \
+		echo "$(YELLOW)💡 Hint: Gateway targets available:$(RESET)"; \
+		echo "   Run: $(CYAN)make help$(RESET) and check the '🌉 Gateways' section"; \
+	elif echo "$@" | grep -q "^test"; then \
+		echo "$(YELLOW)💡 Hint: Testing targets available:$(RESET)"; \
+		echo "   Run: $(CYAN)make help$(RESET) and check the '🧪 Testing' section"; \
+	elif echo "$@" | grep -q "^params"; then \
+		echo "$(YELLOW)💡 Hint: Parameter management targets available:$(RESET)"; \
+		echo "   Run: $(CYAN)make help-params$(RESET) to see all parameter commands"; \
+	elif echo "$@" | grep -q "^ignite"; then \
+		echo "$(YELLOW)💡 Hint: Ignite/build targets available:$(RESET)"; \
+		echo "   Run: $(CYAN)make help$(RESET) and check the '🔨 Build & Run' section"; \
+	elif echo "$@" | grep -q "^go_"; then \
+		echo "$(YELLOW)💡 Hint: Go development targets available:$(RESET)"; \
+		echo "   Run: $(CYAN)make help$(RESET) and check the '⚙️ Development' or '✅ Linting & Quality' sections"; \
+	elif echo "$@" | grep -q "^docker"; then \
+		echo "$(YELLOW)💡 Hint: Docker targets available:$(RESET)"; \
+		echo "   Run: $(CYAN)make help$(RESET) and check the '🐳 Docker Testing' section"; \
+	else \
+		echo "$(YELLOW)💡 Available help commands:$(RESET)"; \
+		echo "   $(CYAN)make help$(RESET)              - See all available targets"; \
+		echo "   $(CYAN)make help-params$(RESET)       - See parameter management commands"; \
+		echo "   $(CYAN)make help-unclassified$(RESET) - See uncategorized targets"; \
+	fi
+	@echo ""
+	@exit 1
