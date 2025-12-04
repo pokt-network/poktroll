@@ -700,22 +700,35 @@ func processStreamRequest(ctx context.Context,
 			continue
 		}
 
-		// This is SSE, unmarshal
-		trimmedPrefix := strings.TrimPrefix(stringBody, "data: ")
-		stringJson := strings.TrimSuffix(trimmedPrefix, "\n")
-		if len(stringJson) == 0 {
-			// this was probably a delimiter
-			continue
-		} else if stringJson == "[DONE]" {
-			// SSE end
-			logger.Info().Msgf("✅ SSE Done")
-		} else {
-			// Umarshal
-			err = unmarshalAndPrintResponse([]byte(stringJson), logger)
-			if err != nil {
-				logger.Info().Msgf("Received: %s | Stripped: %s", stringBody, stringJson)
-				return err
+		// This is batched SSE, split and unmarshal
+
+		// Split by newlines to get individual SSE lines
+		linesBatched := strings.Split(stringBody, "data: ")
+		for _, batchLine := range linesBatched {
+			// Skip empty lines
+			if len(strings.TrimSpace(batchLine)) == 0 {
+				continue
 			}
+
+			// Process single SSE line
+			// trimmedPrefix := strings.TrimPrefix(batchLine, "data: ")
+			stringJson := strings.TrimRight(batchLine, "\n")
+			if len(stringJson) == 0 {
+				// this was probably a delimiter
+				continue
+			} else if stringJson == "[DONE]" {
+				// SSE end
+				logger.Info().Msgf("✅ SSE Done")
+			} else {
+				// Umarshal
+				err = unmarshalAndPrintResponse([]byte(stringJson), logger)
+				if err != nil {
+					logger.Info().Msgf("Received: %s | Stripped: %s", batchLine, stringJson)
+					logger.Info().Str("stringBody", stringBody).Msg("Raw data")
+					return err
+				}
+			}
+
 		}
 	}
 	return nil
