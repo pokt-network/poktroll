@@ -6,6 +6,8 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+
+	hacmd "github.com/pokt-network/poktroll/pkg/ha/cmd"
 )
 
 // RelayerCmd returns the Cobra root command for the relayminer CLI.
@@ -54,5 +56,6 @@ For help, run: relayminer --help
 
 	cmd.AddCommand(startCmd())
 	cmd.AddCommand(relayCmd())
+	cmd.AddCommand(hacmd.HARelayerCmd())
 	return cmd
 }

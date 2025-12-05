@@ -31,6 +31,8 @@ localnet/*/config/*.json
 !localnet/pocketd/config/app.toml
 !localnet/pocketd/config/client.toml
 !localnet/pocketd/config/config.toml
+localnet/ha/*
+
 
 # Macos
 .DS_Store
