@@ -1,0 +1,53 @@
+# Common configuration for HA RelayMiners
+chainId: "pocket"
+grpcInsecure: true
+queryCaching: false
+
+config:
+  # HA RelayMiner specific configuration
+  ha_mode: true
+
+  # Redis configuration for HA
+  redis:
+    url: "redis://redis:6379"
+    stream_prefix: "ha:relays"
+    max_stream_len: 100000
+
+  # Metrics configuration
+  metrics:
+    enabled: true
+    addr: :9090
+
+  # Pocket node configuration
+  pocket_node:
+    query_node_rpc_url: tcp://validator-pocket-validator:26657
+    query_node_grpc_url: tcp://validator-pocket-validator:9090
+    tx_node_rpc_url: tcp://validator-pocket-validator:26657
+
+  # Listen address for relay requests
+  listen_addr: "0.0.0.0:8545"
+
+  # Services will be dynamically configured in Tiltfile
+  services: {}
+
+  # Default validation mode (eager or optimistic)
+  default_validation_mode: "optimistic"
+
+  # Default request timeout in seconds
+  default_request_timeout_seconds: 30
+
+  # Default max body size in bytes (10MB)
+  default_max_body_size_bytes: 10485760
+
+  # Grace period extra blocks beyond on-chain config
+  grace_period_extra_blocks: 2
+
+  # pprof configuration
+  pprof:
+    enabled: true
+    addr: localhost:6060
+
+  # Ping/health check configuration
+  ping:
+    enabled: true
+    addr: localhost:8081

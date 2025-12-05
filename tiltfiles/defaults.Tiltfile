@@ -88,6 +88,7 @@ path_local_repo:
 
 relayminers:
   # Number of relay miner nodes to run
+  # IMPORTANT: Set to 0 when using ha_relayminers (they are mutually exclusive)
   count: 1
   delve:
     # Enable delve debugger for relay miners
@@ -95,6 +96,20 @@ relayminers:
   logs:
     # Log level for relay miners (e.g., debug, info, warn)
     level: debug
+
+ha_relayminers:
+  # Enable HA (High Availability) relay miners
+  # When enabled, relay miners use Redis for shared state and can scale horizontally
+  # IMPORTANT: Mutually exclusive with standard relayminers - set relayminers.count to 0 when enabling
+  enabled: false
+  # Number of HA relay miner instances to run
+  count: 1
+  logs:
+    # Log level for HA relay miners
+    level: debug
+  redis:
+    # Deploy Redis for HA relay miner coordination
+    enabled: true
 
 rest:
   # Whether to enable the REST server
