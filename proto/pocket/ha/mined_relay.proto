@@ -1,0 +1,60 @@
+syntax = "proto3";
+package pocket.ha;
+
+option go_package = "github.com/pokt-network/poktroll/pkg/ha/transport";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "gogoproto/gogo.proto";
+
+// MinedRelayMessage is the message format for mined relays transported via Redis Streams
+// from the horizontally-scaled Relayer instances to the singleton Miner service.
+//
+// This message contains all data needed to:
+// 1. Deduplicate relays (via relay_hash)
+// 2. Route to correct SMST (via session_id, supplier_operator_address)
+// 3. Aggregate into session tree (via relay_bytes, compute_units_per_relay)
+message MinedRelayMessage {
+  // relay_hash is the SHA256 hash of the serialized relay.
+  // Used for deduplication and as the SMST key.
+  bytes relay_hash = 1;
+
+  // relay_bytes is the serialized relay (RelayRequest + RelayResponse).
+  // Stored as-is in the SMST as the value.
+  bytes relay_bytes = 2;
+
+  // compute_units_per_relay is the weight of this relay for tokenomics.
+  // Used as the SMST weight parameter.
+  uint64 compute_units_per_relay = 3;
+
+  // session_id identifies which session this relay belongs to.
+  // Used to route the relay to the correct SessionTree.
+  string session_id = 4;
+
+  // session_end_height is the block height at which the session ends.
+  // Used for session lifecycle management and TTL calculations.
+  int64 session_end_height = 5;
+
+  // supplier_operator_address is the bech32 address of the supplier operator.
+  // Used to route the relay to the correct supplier's Redis stream.
+  string supplier_operator_address = 6;
+
+  // service_id is the on-chain service ID this relay was served for.
+  // Used for metrics and validation.
+  string service_id = 7;
+
+  // application_address is the bech32 address of the application that sent the relay.
+  // Used for deduplication scoping and metrics.
+  string application_address = 8;
+
+  // arrival_block_height is the block height when the relay arrived at the Relayer.
+  // Pinned at receipt time to avoid grace period race conditions.
+  int64 arrival_block_height = 9;
+
+  // published_at_unix_nano is the Unix timestamp (nanoseconds) when the relay was published.
+  // Used for latency metrics and debugging.
+  int64 published_at_unix_nano = 10;
+
+  // session_start_height is the block height at which the session started.
+  // Used for session lifecycle management and SessionHeader construction.
+  int64 session_start_height = 11;
+}

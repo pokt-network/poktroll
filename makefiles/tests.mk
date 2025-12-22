@@ -103,3 +103,26 @@ itest: check_go_version ## Run tests iteratively (see usage for more)
 .PHONY: test_gen_fixtures
 test_gen_fixtures: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race ./pkg/relayer/miner/gen/*.go
+
+##########################
+### HA RelayMiner Tests ##
+##########################
+
+.PHONY: test_ha_unit
+test_ha_unit: ## Run HA RelayMiner unit tests (fast, uses miniredis)
+	go test -count=1 -v -race -tags test ./pkg/ha/...
+
+.PHONY: test_ha_e2e
+test_ha_e2e: ## Run HA RelayMiner E2E tests (uses testcontainers with real Redis)
+	go test -count=1 -v -timeout=5m -tags=e2e,test ./e2e/ha/...
+
+.PHONY: test_ha_e2e_relayer
+test_ha_e2e_relayer: ## Run HA Relayer E2E tests only
+	go test -count=1 -v -timeout=5m -tags=e2e,test ./e2e/ha/... -run "TestHARelayer"
+
+.PHONY: test_ha_e2e_miner
+test_ha_e2e_miner: ## Run HA Miner E2E tests only (leader election, WAL recovery)
+	go test -count=1 -v -timeout=5m -tags=e2e,test ./e2e/ha/... -run "TestHAMiner"
+
+.PHONY: test_ha_all
+test_ha_all: test_ha_unit test_ha_e2e ## Run all HA RelayMiner tests (unit + E2E)
