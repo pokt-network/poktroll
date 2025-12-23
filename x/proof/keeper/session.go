@@ -55,6 +55,24 @@ func (k Keeper) queryAndValidateSessionHeader(
 		)
 	}
 
+	// Validate that the session header's derivative fields match the onchain session.
+	// This ensures the claim message has correct session metadata.
+	if sessionHeader.GetSessionStartBlockHeight() != onChainSession.GetHeader().GetSessionStartBlockHeight() {
+		return nil, types.ErrProofInvalidSessionId.Wrapf(
+			"session start block height does not match; expected %d, got %d",
+			onChainSession.GetHeader().GetSessionStartBlockHeight(),
+			sessionHeader.GetSessionStartBlockHeight(),
+		)
+	}
+
+	if sessionHeader.GetSessionEndBlockHeight() != onChainSession.GetHeader().GetSessionEndBlockHeight() {
+		return nil, types.ErrProofInvalidSessionId.Wrapf(
+			"session end block height does not match; expected %d, got %d",
+			onChainSession.GetHeader().GetSessionEndBlockHeight(),
+			sessionHeader.GetSessionEndBlockHeight(),
+		)
+	}
+
 	// NB: it is redundant to assert that the service ID in the request matches the
 	// onchain session service ID because the session is queried using the service
 	// ID as a parameter. Either a different session (i.e. different session ID)
