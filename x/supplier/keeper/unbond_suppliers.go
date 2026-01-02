@@ -100,10 +100,11 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 		// Emit an event which signals that the supplier has successfully unbonded.
 		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		unbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
-			Supplier:           &supplier,
 			Reason:             unbondingReason,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
+			OperatorAddress:    supplier.OperatorAddress,
+			OwnerAddress:       supplier.OwnerAddress,
 		}
 		if eventErr := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); eventErr != nil {
 			logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", unbondingEndEvent, eventErr))

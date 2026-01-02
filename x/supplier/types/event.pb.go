@@ -9,7 +9,7 @@ import (
 	_ "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
-	types "github.com/pokt-network/poktroll/x/shared/types"
+	_ "github.com/pokt-network/poktroll/x/shared/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -110,12 +110,15 @@ func (m *EventSupplierStaked) GetOperatorAddress() string {
 // EventSupplierUnbondingBegin is emitted when an application unstake message
 // is committed onchain, indicating that the supplier will now begin unbonding.
 type EventSupplierUnbondingBegin struct {
-	Supplier *types.Supplier         `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier"`
-	Reason   SupplierUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=pocket.supplier.SupplierUnbondingReason" json:"reason"`
+	Reason SupplierUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=pocket.supplier.SupplierUnbondingReason" json:"reason"`
 	// The session end height of the last session in which the supplier unbonding began.
 	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 	// The height at which supplier unbonding will end.
 	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_end_height"`
+	// The operator address of the supplier.
+	OperatorAddress string `protobuf:"bytes,5,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
+	// The owner address of the supplier.
+	OwnerAddress string `protobuf:"bytes,6,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
 }
 
 func (m *EventSupplierUnbondingBegin) Reset()         { *m = EventSupplierUnbondingBegin{} }
@@ -147,13 +150,6 @@ func (m *EventSupplierUnbondingBegin) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventSupplierUnbondingBegin proto.InternalMessageInfo
 
-func (m *EventSupplierUnbondingBegin) GetSupplier() *types.Supplier {
-	if m != nil {
-		return m.Supplier
-	}
-	return nil
-}
-
 func (m *EventSupplierUnbondingBegin) GetReason() SupplierUnbondingReason {
 	if m != nil {
 		return m.Reason
@@ -175,16 +171,33 @@ func (m *EventSupplierUnbondingBegin) GetUnbondingEndHeight() int64 {
 	return 0
 }
 
+func (m *EventSupplierUnbondingBegin) GetOperatorAddress() string {
+	if m != nil {
+		return m.OperatorAddress
+	}
+	return ""
+}
+
+func (m *EventSupplierUnbondingBegin) GetOwnerAddress() string {
+	if m != nil {
+		return m.OwnerAddress
+	}
+	return ""
+}
+
 // EventSupplierUnbondingEnd is emitted when an supplier has completed
 // unbonding. The unbonding period is determined by the shared param,
 // supplier_unbonding_period_sessions.
 type EventSupplierUnbondingEnd struct {
-	Supplier *types.Supplier         `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier"`
-	Reason   SupplierUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=pocket.supplier.SupplierUnbondingReason" json:"reason"`
+	Reason SupplierUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=pocket.supplier.SupplierUnbondingReason" json:"reason"`
 	// The session end height of the session in which the supplier unbonding endeded.
 	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 	// The height at which supplier unbonding will end.
 	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_end_height"`
+	// The operator address of the supplier.
+	OperatorAddress string `protobuf:"bytes,5,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
+	// The owner address of the supplier.
+	OwnerAddress string `protobuf:"bytes,6,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
 }
 
 func (m *EventSupplierUnbondingEnd) Reset()         { *m = EventSupplierUnbondingEnd{} }
@@ -216,13 +229,6 @@ func (m *EventSupplierUnbondingEnd) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventSupplierUnbondingEnd proto.InternalMessageInfo
 
-func (m *EventSupplierUnbondingEnd) GetSupplier() *types.Supplier {
-	if m != nil {
-		return m.Supplier
-	}
-	return nil
-}
-
 func (m *EventSupplierUnbondingEnd) GetReason() SupplierUnbondingReason {
 	if m != nil {
 		return m.Reason
@@ -244,15 +250,31 @@ func (m *EventSupplierUnbondingEnd) GetUnbondingEndHeight() int64 {
 	return 0
 }
 
+func (m *EventSupplierUnbondingEnd) GetOperatorAddress() string {
+	if m != nil {
+		return m.OperatorAddress
+	}
+	return ""
+}
+
+func (m *EventSupplierUnbondingEnd) GetOwnerAddress() string {
+	if m != nil {
+		return m.OwnerAddress
+	}
+	return ""
+}
+
 // EventSupplierUnbondingCanceled is emitted when an supplier which was unbonding
 // successfully (re-)stakes before the unbonding period has elapsed. An EventSupplierStaked
 // event will also be emitted immediately after this event.
 type EventSupplierUnbondingCanceled struct {
-	Supplier *types.Supplier `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier"`
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 	// The exact height at which the supplier unbonding was canceled.
 	Height int64 `protobuf:"varint,3,opt,name=height,proto3" json:"height"`
-	// The session end height of the session in which the supplier unbonding was canceled.
-	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+	// The operator address of the supplier.
+	OperatorAddress string `protobuf:"bytes,4,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
+	// The owner address of the supplier.
+	OwnerAddress string `protobuf:"bytes,5,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
 }
 
 func (m *EventSupplierUnbondingCanceled) Reset()         { *m = EventSupplierUnbondingCanceled{} }
@@ -284,11 +306,11 @@ func (m *EventSupplierUnbondingCanceled) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventSupplierUnbondingCanceled proto.InternalMessageInfo
 
-func (m *EventSupplierUnbondingCanceled) GetSupplier() *types.Supplier {
+func (m *EventSupplierUnbondingCanceled) GetSessionEndHeight() int64 {
 	if m != nil {
-		return m.Supplier
+		return m.SessionEndHeight
 	}
-	return nil
+	return 0
 }
 
 func (m *EventSupplierUnbondingCanceled) GetHeight() int64 {
@@ -298,11 +320,18 @@ func (m *EventSupplierUnbondingCanceled) GetHeight() int64 {
 	return 0
 }
 
-func (m *EventSupplierUnbondingCanceled) GetSessionEndHeight() int64 {
+func (m *EventSupplierUnbondingCanceled) GetOperatorAddress() string {
 	if m != nil {
-		return m.SessionEndHeight
+		return m.OperatorAddress
 	}
-	return 0
+	return ""
+}
+
+func (m *EventSupplierUnbondingCanceled) GetOwnerAddress() string {
+	if m != nil {
+		return m.OwnerAddress
+	}
+	return ""
 }
 
 // EventSupplierServiceConfigActivated is emitted when a supplier service configuration
@@ -378,46 +407,46 @@ func init() { proto.RegisterFile("pocket/supplier/event.proto", fileDescriptor_0
 
 var fileDescriptor_0ff4bce83a0142ab = []byte{
 	// 634 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x55, 0xcf, 0x6e, 0xd3, 0x30,
-	0x1c, 0xae, 0xdb, 0x69, 0xda, 0x0c, 0x62, 0x21, 0x0c, 0xd6, 0x6d, 0x90, 0x4e, 0x9d, 0x10, 0x1d,
-	0xd2, 0x12, 0x6d, 0x3c, 0x41, 0xd2, 0x85, 0x91, 0xd1, 0x25, 0x53, 0xb2, 0x82, 0xe0, 0x12, 0xa5,
-	0x89, 0x49, 0xad, 0x76, 0x76, 0x14, 0x7b, 0x05, 0xde, 0x82, 0xa7, 0xe0, 0x09, 0x38, 0x23, 0x2e,
-	0x48, 0x5c, 0x90, 0x26, 0xb8, 0xec, 0x54, 0xa1, 0xee, 0xd6, 0xa7, 0x40, 0xcb, 0x9f, 0x8e, 0xb2,
-	0x16, 0x84, 0xb4, 0x23, 0x27, 0xdb, 0xdf, 0xf7, 0xf9, 0xf7, 0xe7, 0x73, 0xec, 0xc0, 0xd5, 0x88,
-	0xfa, 0x1d, 0xc4, 0x15, 0x76, 0x1c, 0x45, 0x5d, 0x8c, 0x62, 0x05, 0xf5, 0x10, 0xe1, 0x72, 0x14,
-	0x53, 0x4e, 0xc5, 0x85, 0x94, 0x94, 0x73, 0x72, 0x65, 0xd9, 0xa7, 0xec, 0x88, 0x32, 0x37, 0xa1,
-	0x95, 0x74, 0x91, 0x6a, 0x57, 0x16, 0x43, 0x1a, 0xd2, 0x14, 0x3f, 0x9f, 0x65, 0xa8, 0x94, 0x6a,
-	0x94, 0x96, 0xc7, 0x90, 0xd2, 0xdb, 0x6a, 0x21, 0xee, 0x6d, 0x29, 0x3e, 0xc5, 0x24, 0xe3, 0xef,
-	0xe6, 0xe9, 0xdb, 0x5e, 0x8c, 0x82, 0x51, 0x15, 0x29, 0x5b, 0x7d, 0x0f, 0xe0, 0x2d, 0xfd, 0xbc,
-	0x1e, 0x27, 0xc3, 0x1d, 0xee, 0x75, 0x50, 0x20, 0xee, 0x40, 0x91, 0x21, 0xc6, 0x30, 0x25, 0x2e,
-	0x22, 0x81, 0xdb, 0x46, 0x38, 0x6c, 0xf3, 0x72, 0x71, 0x0d, 0xd4, 0x4a, 0xda, 0x9d, 0x61, 0xbf,
-	0x32, 0x81, 0xb5, 0x85, 0x0c, 0xd3, 0x49, 0xf0, 0x24, 0x41, 0xc4, 0x3a, 0x14, 0x68, 0x84, 0x62,
-	0x8f, 0xd3, 0xd8, 0xf5, 0x82, 0x20, 0x46, 0x8c, 0x95, 0x4b, 0x6b, 0xa0, 0x36, 0xaf, 0x95, 0xbf,
-	0x7d, 0xd8, 0x5c, 0xcc, 0xba, 0x53, 0x53, 0xc6, 0xe1, 0x31, 0x26, 0xa1, 0xbd, 0x90, 0xef, 0xc8,
-	0xe0, 0xbd, 0x99, 0x39, 0x20, 0x14, 0xab, 0x9f, 0x8a, 0x70, 0x75, 0xac, 0xd0, 0x26, 0x69, 0x51,
-	0x12, 0x60, 0x12, 0x6a, 0x28, 0xc4, 0x44, 0x54, 0xe1, 0x5c, 0xde, 0x5a, 0x19, 0xac, 0x81, 0xda,
-	0xb5, 0xed, 0x25, 0x39, 0xf7, 0x36, 0xe9, 0x5c, 0xce, 0x37, 0x6a, 0xd7, 0x87, 0xfd, 0xca, 0x48,
-	0x6c, 0x8f, 0x66, 0x62, 0x03, 0xce, 0xc6, 0xc8, 0x63, 0x94, 0x24, 0x7d, 0xde, 0xd8, 0xae, 0xc9,
-	0xbf, 0x1d, 0x8e, 0x7c, 0x29, 0xb7, 0x9d, 0xe8, 0x35, 0x38, 0xec, 0x57, 0xb2, 0xbd, 0x76, 0x36,
-	0x4e, 0x71, 0xb0, 0xf4, 0x8f, 0x0e, 0xee, 0xc1, 0xc5, 0xe3, 0x3c, 0xd9, 0xaf, 0x71, 0x66, 0x92,
-	0x38, 0xe5, 0x61, 0xbf, 0x32, 0x91, 0xb7, 0xc5, 0x11, 0x3a, 0x8a, 0x55, 0xfd, 0x58, 0x84, 0xcb,
-	0x93, 0x2d, 0xd4, 0x49, 0xf0, 0xdf, 0xc0, 0xbf, 0x1b, 0xf8, 0x15, 0x40, 0x69, 0xb2, 0x81, 0x75,
-	0x8f, 0xf8, 0xa8, 0x8b, 0xae, 0xc4, 0xc5, 0x2a, 0x9c, 0x1d, 0xeb, 0x35, 0xf1, 0x26, 0xab, 0x2a,
-	0x1b, 0xaf, 0xe6, 0x7a, 0x56, 0xbf, 0x03, 0xb8, 0x3e, 0x7e, 0xf9, 0x51, 0xdc, 0xc3, 0x3e, 0xaa,
-	0x53, 0xf2, 0x0a, 0x87, 0xaa, 0xcf, 0x71, 0xcf, 0xe3, 0x28, 0x10, 0x35, 0x78, 0xd3, 0x4b, 0x17,
-	0xe7, 0x21, 0xc7, 0x92, 0xdd, 0x1e, 0xf6, 0x2b, 0x97, 0x49, 0x5b, 0xb8, 0x80, 0xae, 0xf0, 0x29,
-	0x10, 0xef, 0x41, 0xc8, 0xd2, 0x12, 0x5d, 0x1c, 0x24, 0x47, 0x38, 0x6f, 0xcf, 0x67, 0x88, 0x11,
-	0xa4, 0x2f, 0xc5, 0xc3, 0xcf, 0x00, 0x2e, 0x4d, 0xf9, 0xce, 0xc4, 0x0d, 0x78, 0xdf, 0x69, 0x1e,
-	0x1c, 0x34, 0x0c, 0xdd, 0x76, 0x9b, 0xa6, 0x66, 0x99, 0x3b, 0x86, 0xb9, 0xeb, 0xda, 0xba, 0xea,
-	0x58, 0xa6, 0xdb, 0x34, 0x9d, 0x03, 0xbd, 0x6e, 0x3c, 0x36, 0xf4, 0x1d, 0xa1, 0x20, 0x3e, 0x80,
-	0xeb, 0xd3, 0xa5, 0xcf, 0xac, 0x46, 0xd3, 0x3c, 0x54, 0xed, 0x17, 0x02, 0x10, 0x37, 0xe1, 0xc6,
-	0x74, 0xa1, 0xa6, 0x37, 0xac, 0xe7, 0xee, 0xbe, 0x61, 0xba, 0xce, 0xa1, 0xfa, 0x54, 0x17, 0x8a,
-	0x7f, 0x8e, 0xbb, 0x6f, 0xec, 0xda, 0xea, 0xa1, 0x61, 0x99, 0x42, 0x49, 0xb3, 0xbe, 0x0c, 0x24,
-	0x70, 0x32, 0x90, 0xc0, 0xe9, 0x40, 0x02, 0x3f, 0x06, 0x12, 0x78, 0x77, 0x26, 0x15, 0x4e, 0xce,
-	0xa4, 0xc2, 0xe9, 0x99, 0x54, 0x78, 0xb9, 0x15, 0x62, 0xde, 0x3e, 0x6e, 0xc9, 0x3e, 0x3d, 0x52,
-	0x22, 0xda, 0xe1, 0x9b, 0x04, 0xf1, 0xd7, 0x34, 0xee, 0x24, 0x8b, 0x98, 0x76, 0xbb, 0xca, 0x9b,
-	0x8b, 0x3f, 0x0e, 0x7f, 0x1b, 0x21, 0xd6, 0x9a, 0x4d, 0x9e, 0xfc, 0x47, 0x3f, 0x03, 0x00, 0x00,
-	0xff, 0xff, 0xbf, 0xd6, 0xac, 0xb6, 0x91, 0x06, 0x00, 0x00,
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x55, 0x41, 0x6e, 0xd3, 0x40,
+	0x14, 0x8d, 0xe3, 0x36, 0xa2, 0x23, 0xa0, 0x66, 0x28, 0x90, 0xb6, 0xe0, 0x54, 0xad, 0x10, 0x2d,
+	0x52, 0x63, 0x15, 0xd6, 0x2c, 0xec, 0xd4, 0x14, 0x97, 0xd4, 0xae, 0xec, 0x06, 0x04, 0x1b, 0xcb,
+	0xb1, 0x07, 0x67, 0x94, 0x74, 0xc6, 0xf2, 0x4c, 0x53, 0x38, 0x00, 0x62, 0xcb, 0x82, 0x33, 0x70,
+	0x02, 0xae, 0x80, 0xc4, 0xb2, 0x82, 0x4d, 0x57, 0x11, 0x4a, 0x77, 0x39, 0x05, 0xaa, 0xed, 0x34,
+	0x84, 0x26, 0x45, 0x85, 0x8a, 0x15, 0x2b, 0x7b, 0xde, 0x7b, 0xff, 0xcf, 0xff, 0xef, 0x6b, 0x66,
+	0xc0, 0x7c, 0x44, 0xfd, 0x26, 0xe2, 0x0a, 0xdb, 0x8b, 0xa2, 0x16, 0x46, 0xb1, 0x82, 0xda, 0x88,
+	0xf0, 0x72, 0x14, 0x53, 0x4e, 0xe1, 0x74, 0x4a, 0x96, 0xfb, 0xe4, 0xdc, 0xac, 0x4f, 0xd9, 0x2e,
+	0x65, 0x6e, 0x42, 0x2b, 0xe9, 0x22, 0xd5, 0xce, 0xcd, 0x84, 0x34, 0xa4, 0x29, 0x7e, 0xfc, 0x97,
+	0xa1, 0x72, 0xaa, 0x51, 0xea, 0x1e, 0x43, 0x4a, 0x7b, 0xad, 0x8e, 0xb8, 0xb7, 0xa6, 0xf8, 0x14,
+	0x93, 0x8c, 0xbf, 0xdd, 0xdf, 0xbe, 0xe1, 0xc5, 0x28, 0x38, 0xa9, 0x22, 0x65, 0x17, 0x3f, 0x0a,
+	0xe0, 0xba, 0x7e, 0x5c, 0x8f, 0x93, 0xe1, 0x0e, 0xf7, 0x9a, 0x28, 0x80, 0xeb, 0x00, 0x32, 0xc4,
+	0x18, 0xa6, 0xc4, 0x45, 0x24, 0x70, 0x1b, 0x08, 0x87, 0x0d, 0x5e, 0xcc, 0x2f, 0x08, 0xcb, 0xa2,
+	0x76, 0xb3, 0xd7, 0x29, 0x8d, 0x60, 0x6d, 0x29, 0xc3, 0x74, 0x12, 0x3c, 0x49, 0x10, 0x58, 0x01,
+	0x12, 0x8d, 0x50, 0xec, 0x71, 0x1a, 0xbb, 0x5e, 0x10, 0xc4, 0x88, 0xb1, 0xa2, 0xb8, 0x20, 0x2c,
+	0x4f, 0x69, 0xc5, 0xaf, 0x9f, 0x56, 0x67, 0xb2, 0xee, 0xd4, 0x94, 0x71, 0x78, 0x8c, 0x49, 0x68,
+	0x4f, 0xf7, 0x23, 0x32, 0x78, 0x73, 0xe2, 0x92, 0x20, 0xe5, 0x17, 0xdf, 0x89, 0x60, 0x7e, 0xa8,
+	0xd0, 0x1a, 0xa9, 0x53, 0x12, 0x60, 0x12, 0x6a, 0x28, 0xc4, 0x04, 0x56, 0x41, 0x21, 0x46, 0x1e,
+	0xa3, 0x24, 0x29, 0xf2, 0xea, 0x83, 0xe5, 0xf2, 0x2f, 0xce, 0x96, 0x4f, 0x05, 0xda, 0x89, 0x5e,
+	0x03, 0xbd, 0x4e, 0x29, 0x8b, 0xb5, 0xb3, 0xef, 0x98, 0xf6, 0xc5, 0x73, 0xb6, 0xbf, 0x09, 0x66,
+	0xf6, 0xfa, 0x9b, 0xfd, 0x9c, 0x67, 0x22, 0xc9, 0x53, 0xec, 0x75, 0x4a, 0x23, 0x79, 0x1b, 0x9e,
+	0xa0, 0x67, 0x5b, 0x39, 0x79, 0x4e, 0x2b, 0xe1, 0x23, 0x70, 0x85, 0xee, 0x13, 0x34, 0xc8, 0x50,
+	0xf8, 0x4d, 0x86, 0xcb, 0x89, 0x7c, 0x78, 0x12, 0x6f, 0x45, 0x30, 0x3b, 0x7a, 0x12, 0x3a, 0x09,
+	0xfe, 0xcf, 0xe1, 0x9f, 0xcd, 0xe1, 0x43, 0x1e, 0xc8, 0xa3, 0xe7, 0x50, 0xf1, 0x88, 0x8f, 0x5a,
+	0x17, 0x76, 0x8a, 0x17, 0x41, 0x61, 0xc8, 0xf8, 0x64, 0x50, 0x99, 0x3a, 0xfb, 0x8e, 0xb4, 0x65,
+	0xe2, 0xaf, 0x6d, 0x99, 0xfc, 0x03, 0x5b, 0xbe, 0x09, 0x60, 0x69, 0xf8, 0x46, 0x43, 0x71, 0x1b,
+	0xfb, 0xa8, 0x42, 0xc9, 0x2b, 0x1c, 0xaa, 0x3e, 0xc7, 0x6d, 0x8f, 0xa3, 0x00, 0x6a, 0xe0, 0x9a,
+	0x97, 0x2e, 0x8e, 0x0d, 0x18, 0xb2, 0xe6, 0x46, 0xaf, 0x53, 0x3a, 0x4d, 0xda, 0xd2, 0x00, 0xba,
+	0xc0, 0xfb, 0x0d, 0xde, 0x01, 0x80, 0xa5, 0x25, 0xba, 0x38, 0x48, 0x4d, 0xb3, 0xa7, 0x32, 0xc4,
+	0x08, 0xd2, 0xae, 0xee, 0x7f, 0x16, 0xc0, 0xad, 0x31, 0x07, 0x07, 0xae, 0x80, 0xbb, 0x4e, 0x6d,
+	0x7b, 0xbb, 0x6a, 0xe8, 0xb6, 0x5b, 0x33, 0x35, 0xcb, 0x5c, 0x37, 0xcc, 0x0d, 0xd7, 0xd6, 0x55,
+	0xc7, 0x32, 0xdd, 0x9a, 0xe9, 0x6c, 0xeb, 0x15, 0xe3, 0xb1, 0xa1, 0xaf, 0x4b, 0x39, 0x78, 0x0f,
+	0x2c, 0x8d, 0x97, 0x3e, 0xb3, 0xaa, 0x35, 0x73, 0x47, 0xb5, 0x5f, 0x48, 0x02, 0x5c, 0x05, 0x2b,
+	0xe3, 0x85, 0x9a, 0x5e, 0xb5, 0x9e, 0xbb, 0x5b, 0x86, 0xe9, 0x3a, 0x3b, 0xea, 0x53, 0x5d, 0xca,
+	0x9f, 0x9d, 0x77, 0xcb, 0xd8, 0xb0, 0xd5, 0x1d, 0xc3, 0x32, 0x25, 0x51, 0xb3, 0xbe, 0x74, 0x65,
+	0xe1, 0xa0, 0x2b, 0x0b, 0x87, 0x5d, 0x59, 0xf8, 0xde, 0x95, 0x85, 0xf7, 0x47, 0x72, 0xee, 0xe0,
+	0x48, 0xce, 0x1d, 0x1e, 0xc9, 0xb9, 0x97, 0x6b, 0x21, 0xe6, 0x8d, 0xbd, 0x7a, 0xd9, 0xa7, 0xbb,
+	0x4a, 0x44, 0x9b, 0x7c, 0x95, 0x20, 0xbe, 0x4f, 0xe3, 0x66, 0xb2, 0x88, 0x69, 0xab, 0xa5, 0xbc,
+	0x1e, 0x3c, 0xa3, 0xfc, 0x4d, 0x84, 0x58, 0xbd, 0x90, 0xbc, 0x63, 0x0f, 0x7f, 0x04, 0x00, 0x00,
+	0xff, 0xff, 0x29, 0xdf, 0x95, 0x0c, 0x66, 0x07, 0x00, 0x00,
 }
 
 func (m *EventSupplierStaked) Marshal() (dAtA []byte, err error) {
@@ -475,6 +504,20 @@ func (m *EventSupplierUnbondingBegin) MarshalToSizedBuffer(dAtA []byte) (int, er
 	_ = i
 	var l int
 	_ = l
+	if len(m.OwnerAddress) > 0 {
+		i -= len(m.OwnerAddress)
+		copy(dAtA[i:], m.OwnerAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.OwnerAddress)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.OperatorAddress) > 0 {
+		i -= len(m.OperatorAddress)
+		copy(dAtA[i:], m.OperatorAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.OperatorAddress)))
+		i--
+		dAtA[i] = 0x2a
+	}
 	if m.UnbondingEndHeight != 0 {
 		i = encodeVarintEvent(dAtA, i, uint64(m.UnbondingEndHeight))
 		i--
@@ -489,18 +532,6 @@ func (m *EventSupplierUnbondingBegin) MarshalToSizedBuffer(dAtA []byte) (int, er
 		i = encodeVarintEvent(dAtA, i, uint64(m.Reason))
 		i--
 		dAtA[i] = 0x10
-	}
-	if m.Supplier != nil {
-		{
-			size, err := m.Supplier.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -525,6 +556,20 @@ func (m *EventSupplierUnbondingEnd) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	_ = i
 	var l int
 	_ = l
+	if len(m.OwnerAddress) > 0 {
+		i -= len(m.OwnerAddress)
+		copy(dAtA[i:], m.OwnerAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.OwnerAddress)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.OperatorAddress) > 0 {
+		i -= len(m.OperatorAddress)
+		copy(dAtA[i:], m.OperatorAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.OperatorAddress)))
+		i--
+		dAtA[i] = 0x2a
+	}
 	if m.UnbondingEndHeight != 0 {
 		i = encodeVarintEvent(dAtA, i, uint64(m.UnbondingEndHeight))
 		i--
@@ -539,18 +584,6 @@ func (m *EventSupplierUnbondingEnd) MarshalToSizedBuffer(dAtA []byte) (int, erro
 		i = encodeVarintEvent(dAtA, i, uint64(m.Reason))
 		i--
 		dAtA[i] = 0x10
-	}
-	if m.Supplier != nil {
-		{
-			size, err := m.Supplier.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -575,6 +608,20 @@ func (m *EventSupplierUnbondingCanceled) MarshalToSizedBuffer(dAtA []byte) (int,
 	_ = i
 	var l int
 	_ = l
+	if len(m.OwnerAddress) > 0 {
+		i -= len(m.OwnerAddress)
+		copy(dAtA[i:], m.OwnerAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.OwnerAddress)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.OperatorAddress) > 0 {
+		i -= len(m.OperatorAddress)
+		copy(dAtA[i:], m.OperatorAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.OperatorAddress)))
+		i--
+		dAtA[i] = 0x22
+	}
 	if m.Height != 0 {
 		i = encodeVarintEvent(dAtA, i, uint64(m.Height))
 		i--
@@ -584,18 +631,6 @@ func (m *EventSupplierUnbondingCanceled) MarshalToSizedBuffer(dAtA []byte) (int,
 		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
 		i--
 		dAtA[i] = 0x10
-	}
-	if m.Supplier != nil {
-		{
-			size, err := m.Supplier.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -675,10 +710,6 @@ func (m *EventSupplierUnbondingBegin) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Supplier != nil {
-		l = m.Supplier.Size()
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	if m.Reason != 0 {
 		n += 1 + sovEvent(uint64(m.Reason))
 	}
@@ -687,6 +718,14 @@ func (m *EventSupplierUnbondingBegin) Size() (n int) {
 	}
 	if m.UnbondingEndHeight != 0 {
 		n += 1 + sovEvent(uint64(m.UnbondingEndHeight))
+	}
+	l = len(m.OperatorAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.OwnerAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
 }
@@ -697,10 +736,6 @@ func (m *EventSupplierUnbondingEnd) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Supplier != nil {
-		l = m.Supplier.Size()
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	if m.Reason != 0 {
 		n += 1 + sovEvent(uint64(m.Reason))
 	}
@@ -709,6 +744,14 @@ func (m *EventSupplierUnbondingEnd) Size() (n int) {
 	}
 	if m.UnbondingEndHeight != 0 {
 		n += 1 + sovEvent(uint64(m.UnbondingEndHeight))
+	}
+	l = len(m.OperatorAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.OwnerAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
 }
@@ -719,15 +762,19 @@ func (m *EventSupplierUnbondingCanceled) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Supplier != nil {
-		l = m.Supplier.Size()
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	if m.SessionEndHeight != 0 {
 		n += 1 + sovEvent(uint64(m.SessionEndHeight))
 	}
 	if m.Height != 0 {
 		n += 1 + sovEvent(uint64(m.Height))
+	}
+	l = len(m.OperatorAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.OwnerAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
 }
@@ -888,42 +935,6 @@ func (m *EventSupplierUnbondingBegin) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventSupplierUnbondingBegin: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Supplier", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Supplier == nil {
-				m.Supplier = &types.Supplier{}
-			}
-			if err := m.Supplier.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
@@ -981,6 +992,70 @@ func (m *EventSupplierUnbondingBegin) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OperatorAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OwnerAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OwnerAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1031,42 +1106,6 @@ func (m *EventSupplierUnbondingEnd) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventSupplierUnbondingEnd: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Supplier", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Supplier == nil {
-				m.Supplier = &types.Supplier{}
-			}
-			if err := m.Supplier.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
@@ -1124,6 +1163,70 @@ func (m *EventSupplierUnbondingEnd) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OperatorAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OwnerAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OwnerAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1174,42 +1277,6 @@ func (m *EventSupplierUnbondingCanceled) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventSupplierUnbondingCanceled: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Supplier", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Supplier == nil {
-				m.Supplier = &types.Supplier{}
-			}
-			if err := m.Supplier.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
@@ -1248,6 +1315,70 @@ func (m *EventSupplierUnbondingCanceled) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OperatorAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OwnerAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OwnerAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])

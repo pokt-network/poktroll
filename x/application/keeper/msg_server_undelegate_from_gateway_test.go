@@ -79,8 +79,8 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		}
 		expectedRedelegationEvent := &apptypes.EventRedelegation{
-			Application:      expectedApp,
-			SessionEndHeight: sessionEndHeight,
+			ApplicationAddress: expectedApp.Address,
+			SessionEndHeight:   sessionEndHeight,
 		}
 		require.EqualValues(t, expectedRedelegationEvent, redelegationEvent)
 	}
@@ -126,8 +126,8 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	redelgationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	lastEventIdx := len(redelgationEvents) - 1
 	expectedEvent := &apptypes.EventRedelegation{
-		Application:      expectedApp,
-		SessionEndHeight: sessionEndHeight,
+		ApplicationAddress: expectedApp.Address,
+		SessionEndHeight:   sessionEndHeight,
 	}
 	require.Equal(t, int(maxDelegatedGateways)+1, len(redelgationEvents))
 	require.EqualValues(t, expectedEvent, redelgationEvents[lastEventIdx])
@@ -211,8 +211,8 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
 	expectedRedelegationEvent := &apptypes.EventRedelegation{
-		Application:      expectedApp,
-		SessionEndHeight: sessionEndHeight,
+		ApplicationAddress: expectedApp.Address,
+		SessionEndHeight:   sessionEndHeight,
 	}
 
 	events = sdkCtx.EventManager().Events()
@@ -284,8 +284,8 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
 	expectedRedelegationEvent := &apptypes.EventRedelegation{
-		Application:      expectedApp,
-		SessionEndHeight: sessionEndHeight,
+		ApplicationAddress: expectedApp.Address,
+		SessionEndHeight:   sessionEndHeight,
 	}
 
 	events := sdkCtx.EventManager().Events()
@@ -330,8 +330,8 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 		},
 	}
 	expectedEvent := &apptypes.EventRedelegation{
-		Application:      expectedApp,
-		SessionEndHeight: sessionEndHeight,
+		ApplicationAddress: expectedApp.Address,
+		SessionEndHeight:   sessionEndHeight,
 	}
 	for _, event := range redelegationEvents {
 		require.EqualValues(t, expectedEvent, event)

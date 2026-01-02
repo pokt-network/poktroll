@@ -138,16 +138,17 @@ func (k Keeper) StakeApplication(
 	if wasAppUnbonding {
 		sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdk.UnwrapSDKContext(ctx).BlockHeight())
 		events = append(events, &types.EventApplicationUnbondingCanceled{
-			Application:      &foundApp,
-			SessionEndHeight: sessionEndHeight,
+			ApplicationAddress: foundApp.Address,
+			SessionEndHeight:   sessionEndHeight,
 		})
 	}
 
 	// ALWAYS emit an application staked event.
 	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	events = append(events, &types.EventApplicationStaked{
-		Application:      &foundApp,
-		SessionEndHeight: k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight),
+		ApplicationAddress: foundApp.Address,
+		Stake:              foundApp.Stake.String(),
+		SessionEndHeight:   k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight),
 	})
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

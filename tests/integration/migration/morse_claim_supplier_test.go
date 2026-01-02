@@ -481,19 +481,21 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 
 		// Assert that the expected events were emitted.
 		expectedMorseSupplierClaimEvent := &migrationtypes.EventMorseSupplierClaimed{
-			SessionEndHeight:     expectedSessionEndHeight,
-			ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance().String(),
-			MorseNodeAddress:     unbondingSupplierFixture.GetActor().Address.String(),
-			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-			ClaimedSupplierStake: expectedSupplierStake.String(),
-			Supplier:             expectedSupplier,
+			SessionEndHeight:        expectedSessionEndHeight,
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
+			MorseNodeAddress:        unbondingSupplierFixture.GetActor().Address.String(),
+			ClaimSignerType:         migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
+			ClaimedSupplierStake:    expectedSupplierStake.String(),
+			SupplierOperatorAddress: expectedSupplier.OperatorAddress,
+			SupplierOwnerAddress:    expectedSupplier.OwnerAddress,
 			// MorseOutputAddress: (intentionally omitted, custodial case),
 		}
 		expectedSupplierUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:           expectedSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   expectedSessionEndHeight,
 			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),
+			OperatorAddress:    expectedSupplier.OperatorAddress,
+			OwnerAddress:       expectedSupplier.OwnerAddress,
 		}
 
 		// Claim events
@@ -604,19 +606,21 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 
 		// Assert that the expected events were emitted.
 		expectedMorseSupplierClaimEvent := &migrationtypes.EventMorseSupplierClaimed{
-			SessionEndHeight:     expectedSessionEndHeight,
-			ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance().String(),
-			MorseNodeAddress:     morseClaimMsg.GetMorseSignerAddress(),
-			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-			ClaimedSupplierStake: expectedSupplierStake.String(),
-			Supplier:             expectedSupplier,
+			SessionEndHeight:        expectedSessionEndHeight,
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
+			MorseNodeAddress:        morseClaimMsg.GetMorseSignerAddress(),
+			ClaimSignerType:         migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
+			ClaimedSupplierStake:    expectedSupplierStake.String(),
+			SupplierOperatorAddress: expectedSupplier.OperatorAddress,
+			SupplierOwnerAddress:    expectedSupplier.OwnerAddress,
 			// MorseOutputAddress: (intentionally omitted, custodial case),
 		}
 		expectedSupplierUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
-			Supplier:           expectedSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   expectedSessionEndHeight,
 			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),
+			OperatorAddress:    expectedSupplier.OperatorAddress,
+			OwnerAddress:       expectedSupplier.OwnerAddress,
 		}
 
 		// Supplier claimed event.
@@ -830,13 +834,14 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 
 		// Assert that the expected events were emitted.
 		expectedMorseSupplierClaimEvent := &migrationtypes.EventMorseSupplierClaimed{
-			SessionEndHeight:     expectedSessionEndHeight,
-			ClaimedBalance:       morseOperatorClaimableAccount.GetUnstakedBalance().String(),
-			MorseNodeAddress:     nonCustodialSupplierFixture.GetActor().Address.String(),
-			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-			ClaimedSupplierStake: expectedSupplierStake.String(),
-			Supplier:             expectedSupplier,
-			MorseOutputAddress:   morseOwnerAddress,
+			SessionEndHeight:        expectedSessionEndHeight,
+			ClaimedBalance:          morseOperatorClaimableAccount.GetUnstakedBalance().String(),
+			MorseNodeAddress:        nonCustodialSupplierFixture.GetActor().Address.String(),
+			ClaimSignerType:         migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR,
+			ClaimedSupplierStake:    expectedSupplierStake.String(),
+			SupplierOperatorAddress: expectedSupplier.OperatorAddress,
+			SupplierOwnerAddress:    expectedSupplier.OwnerAddress,
+			MorseOutputAddress:      morseOwnerAddress,
 		}
 
 		// Claim events
