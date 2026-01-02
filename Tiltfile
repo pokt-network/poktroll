@@ -225,7 +225,14 @@ helm_resource(
     image_keys=[("image.repository", "image.tag")],
 )
 
-# Provision RelayMiners
+# Provision RelayMiners (standard mode - mutually exclusive with HA mode)
+# Check for mutual exclusivity between standard and HA relayminers
+ha_enabled = localnet_config.get("ha_relayminers", {}).get("enabled", False)
+standard_count = localnet_config["relayminers"]["count"]
+
+if ha_enabled and standard_count > 0:
+    fail("ERROR: relayminers and ha_relayminers are mutually exclusive. Set relayminers.count to 0 when ha_relayminers.enabled is true, or disable ha_relayminers.")
+
 # Build dependency list for relayminers
 relayminer_deps = ["validator", "anvil", "nginx-chainid"]
 if localnet_config["rest"]["enabled"]:
@@ -314,6 +321,66 @@ for x in range(localnet_config["relayminers"]["count"]):
             str(6069 + actor_number)
             + ":6060",  # Relayminer pprof port. relayminer1 - exposes 6070, relayminer2 exposes 6071, etc.
             str(7000 + actor_number) + ":8081", # Relayminer ping port. relayminer1 - exposes 7001, relayminer2 exposes 7002, etc.
+        ],
+    )
+
+# =====================================================
+# Provision HA RelayMiners (if enabled)
+# =====================================================
+if localnet_config.get("ha_relayminers", {}).get("enabled", False):
+    print("HA RelayMiners enabled - using custom HA deployment (not helm chart)")
+
+    # Deploy Redis for HA mode
+    if localnet_config.get("ha_relayminers", {}).get("redis", {}).get("enabled", True):
+        k8s_yaml(["localnet/kubernetes/redis.yaml"])
+        k8s_resource("redis", labels=["ha_infrastructure"], port_forwards=["6379:6379"])
+
+    # Deploy HA Relayers and Miners using custom K8s manifests (NOT helm chart)
+    # Relayers: pocketd relayminer ha relayer
+    # Miners: pocketd relayminer ha miner
+    k8s_yaml(["localnet/kubernetes/ha-relayminer.yaml"])
+
+    # Configure HA Relayer 1 (HTTP proxy)
+    k8s_resource(
+        "ha-relayer1",
+        labels=["ha_relayers"],
+        resource_deps=["validator", "anvil", "nginx-chainid", "redis", "rest"],
+        port_forwards=[
+            "8095:8545",   # Relay endpoint
+            "9080:9090",   # Metrics
+            "7011:8081",   # Health check
+        ],
+    )
+
+    # Configure HA Relayer 2 (HTTP proxy)
+    k8s_resource(
+        "ha-relayer2",
+        labels=["ha_relayers"],
+        resource_deps=["validator", "anvil", "nginx-chainid", "redis", "rest"],
+        port_forwards=[
+            "8096:8545",   # Relay endpoint
+            "9081:9090",   # Metrics
+            "7012:8081",   # Health check
+        ],
+    )
+
+    # Configure HA Miner 1 (SMST builder)
+    k8s_resource(
+        "ha-miner1",
+        labels=["ha_miners"],
+        resource_deps=["validator", "redis"],
+        port_forwards=[
+            "9082:9091",   # Metrics
+        ],
+    )
+
+    # Configure HA Miner 2 (SMST builder)
+    k8s_resource(
+        "ha-miner2",
+        labels=["ha_miners"],
+        resource_deps=["validator", "redis"],
+        port_forwards=[
+            "9083:9091",   # Metrics
         ],
     )
 

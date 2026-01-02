@@ -1,0 +1,367 @@
+# HA RelayMiner Deployment - Separate Relayer and Miner components
+# Relayers: pocketd relayminer ha relayer
+# Miners: pocketd relayminer ha miner
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-relayer-config
+data:
+  config.yaml: |
+    listen_addr: "0.0.0.0:8545"
+
+    redis:
+      url: "redis://redis:6379"
+      stream_prefix: "ha:relays"
+      max_stream_len: 100000
+
+    pocket_node:
+      query_node_rpc_url: "tcp://validator-pocket-validator:26657"
+      query_node_grpc_url: "tcp://validator-pocket-validator:9090"
+
+    services:
+      anvil:
+        id: "anvil"
+        backend_url: "http://anvil:8547/"
+        validation_mode: "optimistic"
+        request_timeout_seconds: 30
+
+      static:
+        id: "static"
+        backend_url: "http://nginx-chainid/"
+        validation_mode: "optimistic"
+        request_timeout_seconds: 30
+
+      rest:
+        id: "rest"
+        backend_url: "http://rest:10000/"
+        validation_mode: "optimistic"
+        request_timeout_seconds: 30
+
+    default_validation_mode: "optimistic"
+    default_request_timeout_seconds: 30
+    default_max_body_size_bytes: 10485760
+    grace_period_extra_blocks: 2
+
+    metrics:
+      enabled: true
+      addr: "0.0.0.0:9090"
+
+    health_check:
+      enabled: true
+      addr: "0.0.0.0:8081"
+---
+# HA Relayer 1 - HTTP proxy that publishes to Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ha-relayer1
+  labels:
+    app: ha-relayer
+    instance: "1"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ha-relayer
+      instance: "1"
+  template:
+    metadata:
+      labels:
+        app: ha-relayer
+        instance: "1"
+    spec:
+      containers:
+        - name: ha-relayer
+          image: pocketd
+          imagePullPolicy: Never
+          command:
+            - pocketd
+            - relayminer
+            - ha
+            - relayer
+            - --config=/config/config.yaml
+            - --redis-url=redis://redis:6379
+          ports:
+            - containerPort: 8545
+              name: relay
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8081
+              name: health
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: keys
+              mountPath: /root/.pocket/keyring-test
+              readOnly: true
+          env:
+            - name: POCKET_NODE
+              value: "tcp://validator-pocket-validator:26657"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+      volumes:
+        - name: config
+          configMap:
+            name: ha-relayer-config
+        - name: keys
+          secret:
+            secretName: pocketd-keys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-relayer1
+  labels:
+    app: ha-relayer
+    instance: "1"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8545
+      targetPort: 8545
+      name: relay
+    - port: 9090
+      targetPort: 9090
+      name: metrics
+    - port: 8081
+      targetPort: 8081
+      name: health
+  selector:
+    app: ha-relayer
+    instance: "1"
+---
+# HA Relayer 2 - HTTP proxy that publishes to Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ha-relayer2
+  labels:
+    app: ha-relayer
+    instance: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ha-relayer
+      instance: "2"
+  template:
+    metadata:
+      labels:
+        app: ha-relayer
+        instance: "2"
+    spec:
+      containers:
+        - name: ha-relayer
+          image: pocketd
+          imagePullPolicy: Never
+          command:
+            - pocketd
+            - relayminer
+            - ha
+            - relayer
+            - --config=/config/config.yaml
+            - --redis-url=redis://redis:6379
+          ports:
+            - containerPort: 8545
+              name: relay
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8081
+              name: health
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: keys
+              mountPath: /root/.pocket/keyring-test
+              readOnly: true
+          env:
+            - name: POCKET_NODE
+              value: "tcp://validator-pocket-validator:26657"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+      volumes:
+        - name: config
+          configMap:
+            name: ha-relayer-config
+        - name: keys
+          secret:
+            secretName: pocketd-keys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-relayer2
+  labels:
+    app: ha-relayer
+    instance: "2"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8545
+      targetPort: 8545
+      name: relay
+    - port: 9090
+      targetPort: 9090
+      name: metrics
+    - port: 8081
+      targetPort: 8081
+      name: health
+  selector:
+    app: ha-relayer
+    instance: "2"
+---
+# HA Miner 1 - Consumes from Redis, builds SMST
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ha-miner1
+  labels:
+    app: ha-miner
+    instance: "1"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ha-miner
+      instance: "1"
+  template:
+    metadata:
+      labels:
+        app: ha-miner
+        instance: "1"
+    spec:
+      containers:
+        - name: ha-miner
+          image: pocketd
+          imagePullPolicy: Never
+          command:
+            - pocketd
+            - relayminer
+            - ha
+            - miner
+            - --supplier=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+            - --redis-url=redis://redis:6379
+            - --consumer-group=ha-miners
+            - --consumer-name=ha-miner-1
+            - --stream-prefix=ha:relays
+          ports:
+            - containerPort: 9091
+              name: metrics
+          volumeMounts:
+            - name: keys
+              mountPath: /root/.pocket/keyring-test
+              readOnly: true
+          env:
+            - name: POCKET_NODE
+              value: "tcp://validator-pocket-validator:26657"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+      volumes:
+        - name: keys
+          secret:
+            secretName: pocketd-keys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-miner1
+  labels:
+    app: ha-miner
+    instance: "1"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9091
+      targetPort: 9091
+      name: metrics
+  selector:
+    app: ha-miner
+    instance: "1"
+---
+# HA Miner 2 - Consumes from Redis, builds SMST
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ha-miner2
+  labels:
+    app: ha-miner
+    instance: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ha-miner
+      instance: "2"
+  template:
+    metadata:
+      labels:
+        app: ha-miner
+        instance: "2"
+    spec:
+      containers:
+        - name: ha-miner
+          image: pocketd
+          imagePullPolicy: Never
+          command:
+            - pocketd
+            - relayminer
+            - ha
+            - miner
+            - --supplier=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+            - --redis-url=redis://redis:6379
+            - --consumer-group=ha-miners
+            - --consumer-name=ha-miner-2
+            - --stream-prefix=ha:relays
+          ports:
+            - containerPort: 9091
+              name: metrics
+          volumeMounts:
+            - name: keys
+              mountPath: /root/.pocket/keyring-test
+              readOnly: true
+          env:
+            - name: POCKET_NODE
+              value: "tcp://validator-pocket-validator:26657"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+      volumes:
+        - name: keys
+          secret:
+            secretName: pocketd-keys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-miner2
+  labels:
+    app: ha-miner
+    instance: "2"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9091
+      targetPort: 9091
+      name: metrics
+  selector:
+    app: ha-miner
+    instance: "2"

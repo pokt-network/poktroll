@@ -1,0 +1,15 @@
+# Configuration for HA RelayMiner 1
+config:
+  # Signing key configuration
+  signing_key_name: supplier1
+  default_signing_key_names: [supplier1]
+
+  # Supplier operator address (will be populated during deployment)
+  supplier_address: "" # Auto-populated from keyring
+
+  # Consumer configuration for the miner component
+  consumer_group: "ha-miners"
+  consumer_name: "ha-miner-1"
+
+  # Services will be dynamically configured in Tiltfile
+  services: {}

@@ -1,0 +1,48 @@
+# HA Relayer Configuration for LocalNet
+# This file is used by the `pocketd relayminer ha start` command
+
+listen_addr: "0.0.0.0:8545"
+
+redis:
+  url: "redis://redis:6379"
+  stream_prefix: "ha:relays"
+  max_stream_len: 100000
+
+pocket_node:
+  query_node_rpc_url: "tcp://validator-pocket-validator:26657"
+  query_node_grpc_url: "tcp://validator-pocket-validator:9090"
+
+# Service configurations (dynamically populated)
+services:
+  anvil:
+    id: "anvil"
+    backend_url: "http://anvil:8547/"
+    validation_mode: "optimistic"
+    request_timeout_seconds: 30
+    health_check:
+      enabled: true
+      endpoint: "/"
+      interval_seconds: 10
+      timeout_seconds: 5
+      unhealthy_threshold: 3
+      healthy_threshold: 2
+
+  static:
+    id: "static"
+    backend_url: "http://nginx-chainid/"
+    validation_mode: "optimistic"
+    request_timeout_seconds: 30
+
+default_validation_mode: "optimistic"
+default_request_timeout_seconds: 30
+default_max_body_size_bytes: 10485760
+
+grace_period_extra_blocks: 2
+
+metrics:
+  enabled: true
+  addr: "0.0.0.0:9090"
+
+health_check:
+  enabled: true
+  addr: "0.0.0.0:8081"
