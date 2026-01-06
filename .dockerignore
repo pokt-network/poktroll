@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+*.exe
+*.test
+*.out
+coverage.txt
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Documentation (not needed in dev image)
+docs/
+docusaurus/
+
+# Local development
+.tiltbuild/
+
+# Large migration data files (435MB+ of JSON exports)
+tools/scripts/migration/
+
+# CI/CD configs (not needed in image)
+.github/
+.circleci/
+
+# OS files
+.DS_Store
+Thumbs.db
