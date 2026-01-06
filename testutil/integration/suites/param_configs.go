@@ -244,6 +244,7 @@ var (
 			DaoRewardAddress:                sample.AccAddressBech32(),
 			GlobalInflationPerClaim:         0.666,
 			MintEqualsBurnClaimDistribution: tokenomicstypes.DefaultMintEqualsBurnClaimDistribution,
+			MintRatio:                       tokenomicstypes.DefaultMintRatio, // PIP-41: deflationary mint mechanism
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeMintAllocationPercentages:       tokenomicstypes.MsgUpdateParam_AsMintAllocationPercentages{},

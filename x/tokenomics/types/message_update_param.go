@@ -67,6 +67,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateGlobalInflationPerClaim(msg.GetAsFloat())
+	case ParamMintRatio:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsFloat](msg); err != nil {
+			return err
+		}
+		return ValidateMintRatio(msg.GetAsFloat())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

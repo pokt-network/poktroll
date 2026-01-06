@@ -3,8 +3,10 @@ package token_logic_module
 import (
 	"context"
 	"fmt"
+	"math/big"
 
 	cosmoslog "cosmossdk.io/log"
+	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/pocket"
@@ -104,29 +106,57 @@ func (tlmbem *tlmRelayBurnEqualsMint) processApplicationBurn() error {
 }
 
 // processTokenomicsMint mints new tokens to the tokenomics module.
-// It is equivalent to the amount being burnt from the application stake.
+// PIP-41: The minted amount is settlementAmount * mint_ratio, enabling deflation.
+// When mint_ratio < 1, fewer tokens are minted than burned, permanently removing
+// tokens from circulation.
 // These funds will be distributed to the supplier and other actors.
 func (tlmbem *tlmRelayBurnEqualsMint) processTokenomicsMint() error {
-	// Mint the total settlement amount to the tokenomics module for distribution
+	settlementAmount := tlmbem.tlmCtx.SettlementCoin.Amount
+
+	// PIP-41: Apply mint ratio for deflationary mechanism
+	mintRatio := tlmbem.tlmCtx.TokenomicsParams.GetMintRatio()
+
+	// Convert mint ratio to rational for precise calculation
+	mintRatioRat, err := encoding.Float64ToRat(mintRatio)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting mint_ratio: %v", err)
+	}
+
+	// Calculate minted amount = settlement * mint_ratio
+	mintAmountRat := new(big.Rat).Mul(
+		new(big.Rat).SetInt(settlementAmount.BigInt()),
+		mintRatioRat,
+	)
+	mintAmount := math.NewIntFromBigInt(new(big.Int).Quo(mintAmountRat.Num(), mintAmountRat.Denom()))
+	mintCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, mintAmount)
+
+	// Mint the (potentially reduced) amount to the tokenomics module for distribution
+	// The difference between burned and minted is permanently removed (deflation)
 	tlmbem.tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
 		OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_TOKENOMICS_CLAIM_DISTRIBUTION_MINT,
 		DestinationModule: tokenomicstypes.ModuleName,
-		Coin:              tlmbem.tlmCtx.SettlementCoin,
+		Coin:              mintCoin,
 	})
-	tlmbem.logger.Info(fmt.Sprintf("operation queued: mint (%v) coins to tokenomics module for distributed settlement", tlmbem.tlmCtx.SettlementCoin))
+
+	deflationAmount := settlementAmount.Sub(mintAmount)
+	tlmbem.logger.Info(fmt.Sprintf(
+		"operation queued: mint (%v) coins to tokenomics module for distributed settlement (mint_ratio: %v, deflation: %v)",
+		mintCoin, mintRatio, deflationAmount,
+	))
 
 	return nil
 }
 
 // processRewardDistribution handles the mint=burn reward distribution.
 //
-// This function distributes the settlement amount according to mint=burn claim
-// distribution percentages instead of giving the full amount to the supplier.
+// This function distributes the MINTED amount (not burned amount) according to
+// mint=burn claim distribution percentages.
 //
-// The total amount minted equals the settlement amount, but it's distributed among
-// supplier, DAO, proposer, source owner, and application based on the configured percentages.
+// PIP-41: The distribution amount equals settlementAmount * mint_ratio, ensuring
+// we only distribute tokens that were actually minted. When mint_ratio < 1,
+// fewer tokens are distributed than burned.
 func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
-	tlmbem.logger.Info("Mint=burn TLM: distributing settlement amount according to mint equals burn claim distribution percentages")
+	tlmbem.logger.Info("Mint=burn TLM: distributing minted amount according to mint equals burn claim distribution percentages")
 
 	// === PARAMETER EXTRACTION ===
 
@@ -134,39 +164,52 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 	mintEqualsBurnClaimDistribution := tlmbem.tlmCtx.TokenomicsParams.GetMintEqualsBurnClaimDistribution()
 	settlementAmount := tlmbem.tlmCtx.SettlementCoin.Amount
 
+	// PIP-41: Apply mint ratio to get the actual amount to distribute
+	// This must match the amount minted in processTokenomicsMint()
+	mintRatio := tlmbem.tlmCtx.TokenomicsParams.GetMintRatio()
+	mintRatioRat, err := encoding.Float64ToRat(mintRatio)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting mint_ratio: %v", err)
+	}
+	mintAmountRat := new(big.Rat).Mul(
+		new(big.Rat).SetInt(settlementAmount.BigInt()),
+		mintRatioRat,
+	)
+	distributionAmount := math.NewIntFromBigInt(new(big.Int).Quo(mintAmountRat.Num(), mintAmountRat.Denom()))
+
 	// === ALLOCATION CALCULATIONS ===
-	// Calculate how much each participant gets from the settlement amount
+	// Calculate how much each participant gets from the MINTED amount (not burned amount)
 
 	// Calculate supplier allocation
 	supplierAllocationRat, err := encoding.Float64ToRat(mintEqualsBurnClaimDistribution.Supplier)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting supplier allocation percentage: %v", err)
 	}
-	supplierAmount := calculateAllocationAmount(settlementAmount, supplierAllocationRat)
+	supplierAmount := calculateAllocationAmount(distributionAmount, supplierAllocationRat)
 
 	// Calculate proposer allocation
 	proposerAllocationRat, err := encoding.Float64ToRat(mintEqualsBurnClaimDistribution.Proposer)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting proposer allocation percentage: %v", err)
 	}
-	proposerAmount := calculateAllocationAmount(settlementAmount, proposerAllocationRat)
+	proposerAmount := calculateAllocationAmount(distributionAmount, proposerAllocationRat)
 
 	// Calculate source owner allocation
 	sourceOwnerAllocationRat, err := encoding.Float64ToRat(mintEqualsBurnClaimDistribution.SourceOwner)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting source owner allocation percentage: %v", err)
 	}
-	sourceOwnerAmount := calculateAllocationAmount(settlementAmount, sourceOwnerAllocationRat)
+	sourceOwnerAmount := calculateAllocationAmount(distributionAmount, sourceOwnerAllocationRat)
 
 	// Calculate application allocation
 	applicationAllocationRat, err := encoding.Float64ToRat(mintEqualsBurnClaimDistribution.Application)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting application allocation percentage: %v", err)
 	}
-	applicationAmount := calculateAllocationAmount(settlementAmount, applicationAllocationRat)
+	applicationAmount := calculateAllocationAmount(distributionAmount, applicationAllocationRat)
 
-	// DAO gets the remainder to ensure all settlement tokens are distributed
-	daoAmount := settlementAmount.Sub(supplierAmount).Sub(proposerAmount).Sub(sourceOwnerAmount).Sub(applicationAmount)
+	// DAO gets the remainder to ensure all MINTED tokens are distributed
+	daoAmount := distributionAmount.Sub(supplierAmount).Sub(proposerAmount).Sub(sourceOwnerAmount).Sub(applicationAmount)
 
 	// === REWARD DISTRIBUTION ===
 	// Distribute settlement amount to each participant according to allocation percentages
@@ -259,15 +302,18 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 
 	// === VALIDATION ===
 
-	// Verify all settlement coins are distributed
+	// Verify all MINTED coins are distributed (not burned amount)
 	totalDistributed := supplierAmount.Add(proposerAmount).Add(sourceOwnerAmount).Add(daoAmount).Add(applicationAmount)
-	if !totalDistributed.Equal(settlementAmount) {
+	if !totalDistributed.Equal(distributionAmount) {
 		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
-			"total distributed amount (%s) does not equal settlement amount (%s)",
-			totalDistributed, settlementAmount,
+			"total distributed amount (%s) does not equal minted amount (%s)",
+			totalDistributed, distributionAmount,
 		)
 	}
-	tlmbem.logger.Info(fmt.Sprintf("operation queued: distributed (%v) total settlement coins to all participants", totalDistributed))
+	tlmbem.logger.Info(fmt.Sprintf(
+		"operation queued: distributed (%v) total minted coins to all participants (mint_ratio: %v)",
+		totalDistributed, mintRatio,
+	))
 
 	return nil
 }

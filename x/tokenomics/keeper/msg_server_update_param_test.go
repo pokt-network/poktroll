@@ -104,3 +104,77 @@ func TestMsgUpdateParam_UpdateGlobalInflationPerClaimOnly(t *testing.T) {
 	// Ensure the other parameters are unchanged
 	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(tokenomicstypes.KeyGlobalInflationPerClaim))
 }
+
+// TestMsgUpdateParam_UpdateMintRatioOnly tests updating the MintRatio parameter (PIP-41).
+func TestMsgUpdateParam_UpdateMintRatioOnly(t *testing.T) {
+	// PIP-41 target: 0.975 (2.5% deflation)
+	expectedMintRatio := 0.975
+
+	// Set the parameters to their default values
+	k, msgSrv, ctx := setupMsgServer(t)
+	defaultParams := tokenomicstypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, expectedMintRatio, defaultParams.MintRatio)
+
+	// Update the mint ratio.
+	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      tokenomicstypes.ParamMintRatio,
+		AsType:    &tokenomicstypes.MsgUpdateParam_AsFloat{AsFloat: expectedMintRatio},
+	}
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	// Query the updated params from the keeper
+	updatedParams := k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.MintRatio, updatedParams.MintRatio)
+	require.Equal(t, expectedMintRatio, updatedParams.MintRatio)
+
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(tokenomicstypes.KeyMintRatio))
+}
+
+// TestMsgUpdateParam_UpdateMintRatioInvalid tests that invalid MintRatio values are rejected.
+func TestMsgUpdateParam_UpdateMintRatioInvalid(t *testing.T) {
+	tests := []struct {
+		desc         string
+		mintRatio    float64
+		expectErrMsg string
+	}{
+		{
+			desc:         "greater than 1",
+			mintRatio:    1.1,
+			expectErrMsg: "mint_ratio must be in range (0, 1]",
+		},
+		{
+			desc:         "negative value",
+			mintRatio:    -0.5,
+			expectErrMsg: "mint_ratio must be in range (0, 1]",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			// Set the parameters to their default values
+			k, msgSrv, ctx := setupMsgServer(t)
+			defaultParams := tokenomicstypes.DefaultParams()
+			require.NoError(t, k.SetParams(ctx, defaultParams))
+
+			// Attempt to update the mint ratio with invalid value
+			updateParamMsg := &tokenomicstypes.MsgUpdateParam{
+				Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+				Name:      tokenomicstypes.ParamMintRatio,
+				AsType:    &tokenomicstypes.MsgUpdateParam_AsFloat{AsFloat: test.mintRatio},
+			}
+			_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), test.expectErrMsg)
+
+			// Ensure the parameter was not updated
+			updatedParams := k.GetParams(ctx)
+			require.Equal(t, defaultParams.MintRatio, updatedParams.MintRatio)
+		})
+	}
+}
