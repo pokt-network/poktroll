@@ -119,7 +119,7 @@ curl -s ${POCKET_RPC_ENDPONT}/abci_info | jq '.result.response.version'
 For example, for Beta TestNet, we got the RPC endpoint from [here](../../2_explore/1_tools/2_shannon_beta.md) and ran:
 
 ```bash
-curl -s https://shannon-testnet-grove-rpc.beta.poktroll.com/abci_info | jq '.result.response.version'
+curl -s https://sauron-rpc.beta.infra.pocket.network/abci_info | jq '.result.response.version'
 ```
 
 ## How do I check for applied upgrades?
@@ -140,7 +140,7 @@ The source of truth for releases is the [GitHub releases page](https://github.co
 
 ## Should I use Grove's public RPC endpoint?
 
-While the [beta RPC endpoint](https://shannon-testnet-grove-rpc.beta.poktroll.com) is available, it's recommended to set up your own RPC endpoint.
+While the [beta RPC endpoint](https://sauron-rpc.beta.infra.pocket.network/) is available, it's recommended to set up your own RPC endpoint.
 
 This is especially true if you're running a Supplier or Indexer, as there's no guarantee the public endpoints can handle all community traffic.
 

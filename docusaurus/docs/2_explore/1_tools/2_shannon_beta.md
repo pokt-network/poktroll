@@ -15,16 +15,16 @@ sidebar_position: 2
 
 We provide `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
-- **RPC**: `https://shannon-testnet-grove-rpc.beta.poktroll.com`
-- **gRPC**: `https://shannon-testnet-grove-grpc.beta.poktroll.com`
-- **REST**: `https://shannon-testnet-grove-api.beta.poktroll.com`
+- **RPC**: `https://sauron-rpc.beta.infra.pocket.network`
+- **gRPC**: `https://sauron-grpc.beta.infra.pocket.network`
+- **REST**: `https://sauron-api.beta.infra.pocket.network`
 
 ### Beta JSON-RPC Example
 
 Using `curl`:
 
 ```bash
-curl -X POST https://shannon-testnet-grove-rpc.beta.poktroll.com/block
+curl -X POST https://sauron-rpc.beta.infra.pocket.network/block
 ```
 
 Using the `pocketd` binary:

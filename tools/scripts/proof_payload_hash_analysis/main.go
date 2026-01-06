@@ -32,7 +32,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
-const defaultRPCEndpoint = "https://shannon-grove-rpc.mainnet.poktroll.com"
+const defaultRPCEndpoint = "https://sauron-rpc.infra.pocket.network"
 
 // Global counters for tracking the analysis results across all transactions.
 // These accumulate data as we process each block's transactions.

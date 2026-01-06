@@ -246,13 +246,13 @@ beta)
     AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
     FROM_KEY="pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
     CHAIN_ID="pocket-beta"
-    NODE="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
+    NODE="--node=https://sauron-rpc.beta.infra.pocket.network/"
     ;;
 main)
     AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
     FROM_KEY="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
     CHAIN_ID="pocket"
-    NODE="--node=https://shannon-grove-rpc.mainnet.poktroll.com"
+    NODE="--node=https://sauron-rpc.infra.pocket.network"
     ;;
 *)
     echo "Error: Unknown environment '$ENVIRONMENT'. Use: local, alpha, beta, or main" >&2

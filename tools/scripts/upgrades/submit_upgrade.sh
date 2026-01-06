@@ -135,17 +135,17 @@ alpha)
     GRAFANA_DASHBOARD="https://grafana.poktroll.com/goto/6u7cD7PHg?orgId=1"
     ;;
 beta)
-    RPC_ENDPOINT="https://shannon-testnet-grove-rpc.beta.poktroll.com"
+    RPC_ENDPOINT="https://sauron-rpc.beta.infra.pocket.network/"
     FROM_ACCOUNT="pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
     CHAIN_ID="pocket-beta"
-    NODE_FLAG="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
+    NODE_FLAG="--node=https://sauron-rpc.beta.infra.pocket.network/"
     GRAFANA_DASHBOARD="https://grafana.poktroll.com/goto/haNungjHg?orgId=1"
     ;;
 main)
-    RPC_ENDPOINT="https://shannon-grove-rpc.mainnet.poktroll.com"
+    RPC_ENDPOINT="https://sauron-rpc.infra.pocket.network"
     FROM_ACCOUNT="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
     CHAIN_ID="pocket"
-    NODE_FLAG="--node=https://shannon-grove-rpc.mainnet.poktroll.com"
+    NODE_FLAG="--node=https://sauron-rpc.infra.pocket.network"
     GRAFANA_DASHBOARD="https://grafana.poktroll.com/goto/K3BXngjHR?orgId=1"
     ;;
 *)

@@ -165,9 +165,9 @@ export APP_ADDR=$(pocketd keys show application -a)
 export GATEWAY_ADDR=$(pocketd keys show gateway -a)
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --yes"
 export BETA_NODE_FLAGS="--network=beta"
-export BETA_RPC_URL="https://shannon-testnet-grove-rpc.beta.poktroll.com"
-export BETA_GRPC_URL="https://shannon-testnet-grove-grpc.beta.poktroll.com:443"
-export BETA_GRPC_URL_RAW="shannon-testnet-grove-grpc.beta.poktroll.com:443"
+export BETA_RPC_URL="https://sauron-rpc.beta.infra.pocket.network"
+export BETA_GRPC_URL="https://sauron-grpc.beta.infra.pocket.network/:443"
+export BETA_GRPC_URL_RAW="sauron-grpc.beta.infra.pocket.network:443"
 EOF
 ```
 

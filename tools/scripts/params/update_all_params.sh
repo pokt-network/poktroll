@@ -66,7 +66,7 @@ get_beta_config() {
   from) echo "pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e" ;;
   keyring_backend) echo "test" ;;
   chain_id) echo "pocket-beta" ;;
-  node) echo "https://shannon-testnet-grove-rpc.beta.poktroll.com" ;;
+  node) echo "https://sauron-rpc.beta.infra.pocket.network" ;;
   home) echo "~/.pocket_prod" ;;
   fees) echo "200upokt" ;;
   esac
@@ -77,7 +77,7 @@ get_main_config() {
   from) echo "pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh" ;;
   keyring_backend) echo "test" ;;
   chain_id) echo "pocket" ;;
-  node) echo "https://shannon-grove-rpc.mainnet.poktroll.com" ;;
+  node) echo "https://sauron-rpc.infra.pocket.network" ;;
   home) echo "~/.pocket_prod" ;;
   fees) echo "1000upokt" ;;
   esac

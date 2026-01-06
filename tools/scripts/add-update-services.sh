@@ -13,8 +13,8 @@ show_help() {
     echo "Arguments:"
     echo "  SERVICES_FILE  Path to tab-separated or whitespace-separated file with columns: service_id, service_description, CUTTM"
     echo "  NETWORK        Network to use: 'main' or 'beta'"
-    echo "                 - main: https://shannon-grove-rpc.mainnet.poktroll.com (pocket)"
-    echo "                 - beta: https://shannon-testnet-grove-rpc.beta.poktroll.com (pocket-beta)"
+    echo "                 - main: https://sauron-rpc.infra.pocket.network/ (pocket)"
+    echo "                 - beta: https://sauron-rpc.beta.infra.pocket.network (pocket-beta)"
     echo "  ADDRESS        Address/key name for the --from flag (e.g., my-key)"
     echo "  HOME_DIR       Directory path for the --home flag (default: ~/.pocket)"
     echo
@@ -85,11 +85,11 @@ HOME_DIR=${4:-~/.pocket}
 # Validate network and set corresponding values
 case $NETWORK in
     main)
-        NODE_URL="https://shannon-grove-rpc.mainnet.poktroll.com"
+        NODE_URL="https://sauron-rpc.infra.pocket.network/"
         CHAIN_ID="pocket"
         ;;
     beta)
-        NODE_URL="https://shannon-testnet-grove-rpc.beta.poktroll.com"
+        NODE_URL="https://sauron-rpc.beta.infra.pocket.network/"
         CHAIN_ID="pocket-beta"
         ;;
     *)

@@ -139,13 +139,13 @@ Track your validator's balance changes across block heights:
 ACCOUNT_ADDR="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
 
 # Get latest block height from mainnet RPC
-latest_height=$(curl -s https://shannon-grove-rpc.mainnet.poktroll.com/status | jq -r '.result.sync_info.latest_block_height')
+latest_height=$(curl -s https://sauron-rpc.infra.pocket.network/status | jq -r '.result.sync_info.latest_block_height')
 
 # Check balance every 100 blocks for the last 1000 blocks
 for ((h=latest_height-1000; h<latest_height; h+=100)); do
   echo -n "Height $h: "
   curl -s -H "x-cosmos-block-height: $h" \
-    https://shannon-grove-api.mainnet.poktroll.com/cosmos/bank/v1beta1/balances/$ACCOUNT_ADDR \
+    https://sauron-api.infra.pocket.network/cosmos/bank/v1beta1/balances/$ACCOUNT_ADDR \
     | jq -r '.balances[]? | select(.denom=="upokt") | .amount // "0"'
 done
 ```

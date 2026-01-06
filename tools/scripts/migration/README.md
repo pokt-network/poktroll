@@ -10,7 +10,7 @@ It can be verified like so:
 
 ```bash
 pocketd query \
-    --node=https://shannon-grove-rpc.mainnet.poktroll.com tx \
+    --node=https://sauron-rpc.infra.pocket.network tx \
     --type=hash E4E74523CAC90E021AD181DBD1C6569AB0FD53FFBA2C4C639C963918F80869B3 \
     >> /tmp/E4E74523CAC90E021AD181DBD1C6569AB0FD53FFBA2C4C639C963918F80869B3.txt
 ```

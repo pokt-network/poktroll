@@ -218,9 +218,9 @@ default_signing_key_names:
   - olshansky_anvil_test_supplier
 smt_store_path: /root/.pocket/smt
 pocket_node:
-  query_node_rpc_url: https://shannon-testnet-grove-rpc.beta.poktroll.com
-  query_node_grpc_url: https://shannon-testnet-grove-grpc.beta.poktroll.com:443
-  tx_node_rpc_url: https://shannon-testnet-grove-rpc.beta.poktroll.com
+  query_node_rpc_url: https://sauron-rpc.beta.infra.pocket.network
+  query_node_grpc_url: https://sauron-grpc.beta.infra.pocket.network:443
+  tx_node_rpc_url: https://sauron-rpc.beta.infra.pocket.network
 suppliers:
   - service_id: "olshansky_anvil_test" # change if not using Anvil
     service_config:
@@ -265,8 +265,8 @@ In a separate shell, send a test relay:
 pocketd relayminer relay --keyring-backend=test  \
   --app=$(pocketd keys show olshansky_anvil_test_app -a --keyring-backend=test) \
   --supplier=$(pocketd keys show olshansky_anvil_test_supplier -a --keyring-backend=test) \
-  --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
-  --grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 \
+  --node=https://sauron-rpc.beta.infra.pocket.network \
+  --grpc-addr=sauron-grpc.beta.infra.pocket.network:443 \
   --grpc-insecure=false \
   --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 ```
@@ -276,7 +276,7 @@ pocketd relayminer relay --keyring-backend=test  \
 Check if your RelayMiner created any claims:
 
 ```bash
-pocketd query txs --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
+pocketd query txs --node=https://sauron-rpc.beta.infra.pocket.network \
         --query="tx.height>20000 AND message.action='/pocket.proof.MsgCreateClaim'" \
         --limit 10 --page 1 -o json | jq '[.txs[].tx.body.messages[] | select(."@type" == "/pocket.proof.MsgCreateClaim") | .supplier_operator_address] | unique'
 ```

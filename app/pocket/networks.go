@@ -40,14 +40,14 @@ const (
 
 const (
 	LocalNetRPCURL     = "http://localhost:26657"
-	AlphaTestNetRPCURL = "https://shannon-testnet-grove-rpc.alpha.poktroll.com"
-	BetaTestNetRPCURL  = "https://shannon-testnet-grove-rpc.beta.poktroll.com"
-	MainNetRPCURL      = "https://shannon-grove-rpc.mainnet.poktroll.com"
+	AlphaTestNetRPCURL = "https://shannon-testnet-grove-rpc.alpha.poktroll.com" // not active
+	BetaTestNetRPCURL  = "https://sauron-rpc.beta.infra.pocket.network"
+	MainNetRPCURL      = "https://sauron-rpc.infra.pocket.network"
 
 	LocalNetGRPCAddr = "localhost:9090"
-	AlphaNetGRPCAddr = "shannon-testnet-grove-grpc.alpha.poktroll.com:443"
-	BetaNetGRPCAddr  = "shannon-testnet-grove-grpc.beta.poktroll.com:443"
-	MainNetGRPCAddr  = "shannon-grove-grpc.mainnet.poktroll.com:443"
+	AlphaNetGRPCAddr = "shannon-testnet-grove-grpc.alpha.poktroll.com:443" // not active
+	BetaNetGRPCAddr  = "sauron-grpc.beta.infra.pocket.network:443"
+	MainNetGRPCAddr  = "sauron-grpc.infra.pocket.network:443"
 
 	LocalNetFaucetBaseURL     = "http://localhost:8080"
 	AlphaTestNetFaucetBaseURL = "https://shannon-testnet-grove-faucet.alpha.poktroll.com"

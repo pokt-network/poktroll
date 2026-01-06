@@ -15,10 +15,10 @@ sidebar_position: 1
 
 We provide `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
-- **RPC**: `https://shannon-grove-rpc.mainnet.poktroll.com`
+- **RPC**: `https://sauron-rpc.infra.pocket.network`
 - **RPC**: `https://rpc-pocket.blockval.io`
-- **gRPC**: `https://shannon-grove-grpc.mainnet.poktroll.com`
-- **REST**: `https://shannon-grove-api.mainnet.poktroll.com`
+- **gRPC**: `https://sauron-grpc.infra.pocket.network`
+- **REST**: `https://sauron-api.infra.pocket.network`
 - **REST**: `https://api-pocket.blockval.io`
 
 ### MainNet JSON-RPC Example
@@ -26,7 +26,7 @@ We provide `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 Using `curl`:
 
 ```bash
-curl -X POST https://shannon-grove-rpc.mainnet.poktroll.com/block
+curl -X POST https://sauron-rpc.infra.pocket.network/block
 ```
 
 Using the `pocketd` binary:

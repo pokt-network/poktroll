@@ -40,12 +40,12 @@ grpcurl -plaintext <host>:<port> list
 If `grpc-insecure=false`, then it **MUST** be an HTTPS port, with TLS.
 
 The Grove team exposed one such endpoint on one of our validators for Beta Testnet
-at `https://shannon-testnet-grove-grpc.beta.poktroll.com:443`.
+at `https://sauron-grpc.beta.infra.pocket.network/:443`.
 
 It can be validated with:
 
 ```bash
-grpcurl shannon-testnet-grove-grpc.beta.poktroll.com:443 list
+grpcurl https://sauron-grpc.beta.infra.pocket.network:443 list
 ```
 
 Note that no `-plaintext` flag is required when an endpoint is TLS terminated and

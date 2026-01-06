@@ -85,8 +85,8 @@ For more info, run 'relay --help'.`,
   pocketd relayminer relay \
 	--app=pokt12fj3xlqg6d20fl4ynuejfqd3fkqmq25rs3yf7g \
 	--supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
-	--node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
-	--grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 \
+	--node=https://sauron-rpc.beta.infra.pocket.network/ \
+	--grpc-addr=sauron-grpc.beta.infra.pocket.network:443 \
 	--payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 `,
 		RunE: runRelay,
