@@ -15,24 +15,18 @@ jobs:
     steps:
       - name: Free disk space
         run: |
-          echo "Before cleanup:"
-          df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           docker system prune -af
-          echo "After cleanup:"
-          df -h
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
           go-version: "1.24.3"
+          cache: true
 
       - name: Install CI dependencies
         run: make install_ci_deps
@@ -102,7 +96,7 @@ jobs:
 
       - name: Build and push Docker image
         if: (github.ref == 'refs/heads/main') || (contains(github.event.pull_request.labels.*.name, 'push-image')) || (contains(github.event.pull_request.labels.*.name, 'devnet-test-e2e'))
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -123,18 +117,18 @@ jobs:
       GKE_CLUSTER: protocol-us-central1
       GKE_ZONE: us-central1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           sparse-checkout: |
             .github
 
       - id: "auth"
         name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@v1"
+        uses: "google-github-actions/auth@v2"
         with:
           credentials_json: "${{ secrets.GKE_PROTOCOL_US_CENTRAL }}"
 
-      - uses: google-github-actions/get-gke-credentials@v1
+      - uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_ZONE }}
