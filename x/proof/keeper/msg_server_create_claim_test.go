@@ -704,6 +704,187 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	require.Len(t, claimCreatedEvents, 0)
 }
 
+func TestMsgServer_CreateClaim_SessionHeaderPreservation(t *testing.T) {
+	// This test verifies that claims preserve the session header from the message,
+	// not from the queried session. This is critical for historical claims where
+	// parameters may have changed since the session occurred.
+	blockHeight := int64(1)
+	keepers, ctx := keepertest.NewProofModuleKeepers(t, keepertest.WithBlockHeight(blockHeight))
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+
+	supplierOperatorAddr := sample.AccAddressBech32()
+	appAddr := sample.AccAddressBech32()
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddressBech32(),
+	}
+
+	supplierServices := []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id}}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
+	keepers.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
+		OperatorAddress:      supplierOperatorAddr,
+		Services:             supplierServices,
+		ServiceConfigHistory: serviceConfigHistory,
+	})
+
+	keepers.SetApplication(ctx, apptypes.Application{
+		Address:        appAddr,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+	})
+
+	keepers.SetService(ctx, *service)
+
+	sessionRes, err := keepers.GetSession(ctx, &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: appAddr,
+		ServiceId:          service.Id,
+		BlockHeight:        blockHeight,
+	})
+	require.NoError(t, err)
+
+	sessionHeader := sessionRes.GetSession().GetHeader()
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	claimHeight := sharedtypes.GetClaimWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+
+	sdkCtx = sdkCtx.WithBlockHeight(claimHeight)
+	ctx = sdkCtx
+
+	// Create a custom session header with specific values that we want to preserve
+	customSessionHeader := &sessiontypes.SessionHeader{
+		ApplicationAddress:      sessionHeader.ApplicationAddress,
+		ServiceId:               sessionHeader.ServiceId,
+		SessionId:               sessionHeader.SessionId,
+		SessionStartBlockHeight: sessionHeader.SessionStartBlockHeight,
+		SessionEndBlockHeight:   sessionHeader.SessionEndBlockHeight,
+	}
+
+	claimMsg := prooftypes.NewMsgCreateClaim(
+		supplierOperatorAddr,
+		customSessionHeader,
+		defaultMerkleRoot,
+	)
+
+	_, err = srv.CreateClaim(ctx, claimMsg)
+	require.NoError(t, err)
+
+	// Verify the claim was stored with the exact session header from the message
+	claimRes, err := keepers.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
+	require.NoError(t, err)
+	require.Len(t, claimRes.GetClaims(), 1)
+
+	storedClaim := claimRes.GetClaims()[0]
+	storedHeader := storedClaim.GetSessionHeader()
+
+	// CRITICAL: The stored claim must have the session header from the message,
+	// not from the queried session. This ensures historical accuracy.
+	require.Equal(t, customSessionHeader.SessionId, storedHeader.SessionId,
+		"claim should preserve session ID from message")
+	require.Equal(t, customSessionHeader.ApplicationAddress, storedHeader.ApplicationAddress,
+		"claim should preserve application address from message")
+	require.Equal(t, customSessionHeader.ServiceId, storedHeader.ServiceId,
+		"claim should preserve service ID from message")
+	require.Equal(t, customSessionHeader.SessionStartBlockHeight, storedHeader.SessionStartBlockHeight,
+		"claim should preserve session start height from message")
+	require.Equal(t, customSessionHeader.SessionEndBlockHeight, storedHeader.SessionEndBlockHeight,
+		"claim should preserve session end height from message")
+}
+
+func TestMsgServer_CreateClaim_SessionAlignmentValidation(t *testing.T) {
+	// This test verifies that claims with mismatched session start/end block heights
+	// are rejected to ensure session metadata correctness.
+	blockHeight := int64(1)
+	keepers, ctx := keepertest.NewProofModuleKeepers(t, keepertest.WithBlockHeight(blockHeight))
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+
+	supplierOperatorAddr := sample.AccAddressBech32()
+	appAddr := sample.AccAddressBech32()
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddressBech32(),
+	}
+
+	supplierServices := []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id}}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
+	keepers.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
+		OperatorAddress:      supplierOperatorAddr,
+		Services:             supplierServices,
+		ServiceConfigHistory: serviceConfigHistory,
+	})
+
+	keepers.SetApplication(ctx, apptypes.Application{
+		Address:        appAddr,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+	})
+
+	keepers.SetService(ctx, *service)
+
+	sessionRes, err := keepers.GetSession(ctx, &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: appAddr,
+		ServiceId:          service.Id,
+		BlockHeight:        blockHeight,
+	})
+	require.NoError(t, err)
+
+	sessionHeader := sessionRes.GetSession().GetHeader()
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	claimHeight := sharedtypes.GetClaimWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+
+	sdkCtx = sdkCtx.WithBlockHeight(claimHeight)
+	ctx = sdkCtx
+
+	tests := []struct {
+		desc                    string
+		sessionStartBlockHeight int64
+		sessionEndBlockHeight   int64
+		expectedErrContains     string
+	}{
+		{
+			desc:                    "mismatched session start block height (incremented)",
+			sessionStartBlockHeight: sessionHeader.SessionStartBlockHeight + 1,
+			sessionEndBlockHeight:   sessionHeader.SessionEndBlockHeight + 1,
+			expectedErrContains:     "session start block height does not match",
+		},
+		{
+			desc:                    "mismatched session end block height",
+			sessionStartBlockHeight: sessionHeader.SessionStartBlockHeight,
+			sessionEndBlockHeight:   sessionHeader.SessionEndBlockHeight + 1,
+			expectedErrContains:     "session end block height does not match",
+		},
+		{
+			desc:                    "both start and end heights mismatched by different offsets",
+			sessionStartBlockHeight: sessionHeader.SessionStartBlockHeight + 2,
+			sessionEndBlockHeight:   sessionHeader.SessionEndBlockHeight + 3,
+			expectedErrContains:     "session start block height does not match",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			invalidHeader := &sessiontypes.SessionHeader{
+				ApplicationAddress:      sessionHeader.ApplicationAddress,
+				ServiceId:               sessionHeader.ServiceId,
+				SessionId:               sessionHeader.SessionId,
+				SessionStartBlockHeight: test.sessionStartBlockHeight,
+				SessionEndBlockHeight:   test.sessionEndBlockHeight,
+			}
+
+			claimMsg := prooftypes.NewMsgCreateClaim(
+				supplierOperatorAddr,
+				invalidHeader,
+				defaultMerkleRoot,
+			)
+
+			_, err := srv.CreateClaim(ctx, claimMsg)
+			require.Error(t, err)
+			require.ErrorContains(t, err, test.expectedErrContains,
+				"should reject claim with mismatched session heights")
+		})
+	}
+}
+
 func newTestClaimMsg(
 	t *testing.T,
 	sessionStartHeight int64,
