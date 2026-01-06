@@ -228,3 +228,80 @@ Feature: Tokenomics Namespace
 
         # The application stake should decrease by the full settlement amount
         And the "application" stake of "app1" should be "42000" uPOKT "less" than before
+
+    # PIP-41: Deflationary Mint Mechanism
+    # When mint_ratio < 1.0, fewer tokens are minted than burned, creating deflation.
+    # See: https://forum.pokt.network/t/pip-41-introducing-a-deflationary-mint-mechanism-for-shannon-tokenomics/5622
+    Scenario: PIP-41 Deflation when mint_ratio is 0.975 (2.5% deflation)
+        # Baseline
+        Given the user has the pocketd binary installed
+
+        # Network preparation and validation
+        And an account exists for "supplier1"
+        And the "supplier" account for "supplier1" is staked
+        And an account exists for "app1"
+        And the "application" account for "app1" is staked
+        And the service "anvil" registered for application "app1" has a compute units per relay of "100"
+
+        # Configure shared parameters
+        And the "shared" module parameters are set as follows
+            | compute_units_to_tokens_multiplier | 42 | int64 |
+        And all "shared" module params should be updated
+
+        # Configure tokenomics parameters for PIP-41 deflation test
+        # mint_ratio = 0.975 means 97.5% of burned tokens are minted (2.5% deflation)
+        And the "tokenomics" module parameters are set as follows
+            | name                                             | value | type  |
+            | dao_reward_address                               | pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw | string |
+            | mint_ratio                                       | 0.975 | float |
+            | global_inflation_per_claim                       | 0     | float |
+            | mint_equals_burn_claim_distribution.dao          | 0.1   | float |
+            | mint_equals_burn_claim_distribution.proposer     | 0.0   | float |
+            | mint_equals_burn_claim_distribution.supplier     | 0.9   | float |
+            | mint_equals_burn_claim_distribution.source_owner | 0.0   | float |
+            | mint_equals_burn_claim_distribution.application  | 0.0   | float |
+        And all "tokenomics" module params should be updated
+
+        # Configure proof parameters - no proof required for simplicity
+        And the "proof" module parameters are set as follows
+            | name                         | value   | type  |
+            | proof_request_probability    | 0       | float |
+            | proof_requirement_threshold  | 50000   | coin  |
+            | proof_missing_penalty        | 320     | coin  |
+            | proof_submission_fee         | 1000000 | coin  |
+        And all "proof" module params should be updated
+
+        # Record balances BEFORE servicing
+        And the user remembers the balance of "supplier1" as "supplier1_initial_balance"
+        And the user remembers the balance of the DAO as "dao_initial_balance"
+
+        # Start servicing relays
+        When the supplier "supplier1" has serviced a session with "10" relays for service "anvil" for application "app1"
+
+        # Wait for the Claim lifecycle (no proof required)
+        And the user should wait for the "proof" module "CreateClaim" Message to be submitted
+        And the user should wait for the ClaimSettled event with "NOT_REQUIRED" proof requirement to be broadcast
+
+        # Validate PIP-41 deflation results
+        #
+        # Burn amount (from application): 42000 uPOKT = 10 relays * 100 CU * 42 multiplier
+        # Mint amount (with deflation):   40950 uPOKT = 42000 * 0.975 (mint_ratio)
+        # Deflation:                       1050 uPOKT permanently removed from circulation
+        #
+        # Distribution of minted 40950 uPOKT:
+        # - Supplier allocation 90%: 36855 uPOKT (floor of 40950 * 0.9)
+        # - DAO allocation 10%:       4095 uPOKT (remainder: 40950 - 36855)
+        #
+        # Note: Supplier receives 36832 after shareholder revenue share distribution
+        # (23 uPOKT goes to other shareholders based on LocalNet supplier config)
+
+        # The supplier should receive 90% of the MINTED amount minus shareholder distribution
+        Then the account balance of "supplier1" should be "36832" uPOKT "more" than "supplier1_initial_balance"
+
+        # The DAO receives its 10% allocation (40950 - 36855 = 4095)
+        # Note: The 23 uPOKT difference goes to other supplier shareholders, not DAO
+        And the DAO balance should be "4095" uPOKT "more" than "dao_initial_balance"
+
+        # The application stake should decrease by the FULL burn amount (not the minted amount)
+        # This is the key PIP-41 behavior: burn > mint creates deflation
+        And the "application" stake of "app1" should be "42000" uPOKT "less" than before
