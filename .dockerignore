@@ -14,8 +14,7 @@ coverage.txt
 *.swp
 *.swo
 
-# Documentation (not needed in dev image)
-docs/
+# Documentation site (not Go code)
 docusaurus/
 
 # Local development
