@@ -31,8 +31,11 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 	// Track unique suppliers whose configurations were pruned
 	deactivatedConfigsSuppliers := make(map[string]bool)
 
-	// Retrieve all service configurations that should be deactivated at the current height
-	deactivatedServiceConfigsIterator := k.GetDeactivatedServiceConfigUpdatesIterator(ctx, currentHeight)
+	// Retrieve all service configurations that were deactivated at or before the current height.
+	// We use a range iterator because configs may not be pruned at their exact deactivation height
+	// (the proof window typically hasn't closed yet), and we need to find them later when the
+	// proof window has closed.
+	deactivatedServiceConfigsIterator := k.GetDeactivatedServiceConfigUpdatesRangeIterator(ctx, currentHeight)
 	defer deactivatedServiceConfigsIterator.Close()
 
 	for ; deactivatedServiceConfigsIterator.Valid(); deactivatedServiceConfigsIterator.Next() {
@@ -49,9 +52,12 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 		// However, claims can still be submitted for sessions that ENDED before deactivation.
 		// We must keep the config until the proof window closes for those sessions.
 		//
-		// Calculate: deactivationHeight + proof_window_close_offset
-		// This ensures the config is available for historical session queries during claim validation.
-		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, serviceConfigUpdate.DeactivationHeight)
+		// The deactivation height is set to the FIRST block of the next session (see
+		// msg_server_unstake_supplier.go). Therefore, the LAST block where the config
+		// was active is DeactivationHeight - 1, which falls within the last active session.
+		// We calculate the proof window for that session.
+		lastActiveHeight := serviceConfigUpdate.DeactivationHeight - 1
+		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, lastActiveHeight)
 
 		if currentHeight <= proofWindowCloseHeight {
 			// Config is still needed for claim validation - skip pruning
