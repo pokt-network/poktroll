@@ -159,6 +159,11 @@ var allUpgrades = []upgrades.Upgrade{
 	// - RelayMiner performance improvements (signatures, caching, etc)
 	// - New recovery wallets and docs
 	upgrades.Upgrade_0_1_30,
+
+	// v0.1.31 - upgrade to:
+	// - PIP-41: Add mint_ratio parameter for deflationary mint mechanism
+	// - Default value 1.0 (no deflation), governance can set to 0.975 for 2.5% deflation
+	upgrades.Upgrade_0_1_31,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

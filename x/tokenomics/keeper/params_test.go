@@ -247,3 +247,70 @@ func TestParams_ValidateGlobalInflationPerClaim(t *testing.T) {
 		})
 	}
 }
+
+// TestParams_ValidateMintRatio tests the validation of the MintRatio parameter (PIP-41).
+func TestParams_ValidateMintRatio(t *testing.T) {
+	tests := []struct {
+		desc        string
+		mintRatio   any
+		expectedErr error
+	}{
+		{
+			desc:        "invalid type - string",
+			mintRatio:   "0.975",
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid.Wrap("invalid parameter type: string"),
+		},
+		{
+			desc:        "invalid type - int",
+			mintRatio:   1,
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid.Wrap("invalid parameter type: int"),
+		},
+		{
+			desc:        "negative value",
+			mintRatio:   float64(-0.5),
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("mint_ratio must be in range (0, 1]: got %f", float64(-0.5)),
+		},
+		{
+			desc:        "greater than 1",
+			mintRatio:   float64(1.1),
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("mint_ratio must be in range (0, 1]: got %f", float64(1.1)),
+		},
+		{
+			desc:      "zero (allowed for upgrade compatibility)",
+			mintRatio: float64(0),
+			// Zero is allowed during validation - ValidateBasic sets it to default
+			expectedErr: nil,
+		},
+		{
+			desc:        "valid 0.975 (PIP-41 target)",
+			mintRatio:   float64(0.975),
+			expectedErr: nil,
+		},
+		{
+			desc:        "valid 1.0 (default - no deflation)",
+			mintRatio:   tokenomicstypes.DefaultMintRatio,
+			expectedErr: nil,
+		},
+		{
+			desc:        "valid edge case - very small",
+			mintRatio:   float64(0.001),
+			expectedErr: nil,
+		},
+		{
+			desc:        "valid edge case - exactly 1",
+			mintRatio:   float64(1.0),
+			expectedErr: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := tokenomicstypes.ValidateMintRatio(test.mintRatio)
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

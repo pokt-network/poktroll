@@ -363,6 +363,12 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.MintEqualsBurnClaimDistribution = mintEqualsBurnClaimDistribution.value.(tokenomicstypes.MintEqualsBurnClaimDistribution)
 		}
 
+		// PIP-41: Handle mint_ratio parameter for deflationary mint mechanism
+		mintRatio, ok := paramsMap[tokenomicstypes.ParamMintRatio]
+		if ok {
+			params.MintRatio = mintRatio.value.(float64)
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&tokenomicstypes.QueryParamsResponse{

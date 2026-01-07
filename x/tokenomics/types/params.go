@@ -43,6 +43,13 @@ var (
 		Application: 0.0,
 	}
 
+	// PIP-41: MintRatio for deflationary mint mechanism
+	// mint_ratio controls what proportion of burned tokens are minted (0.0 < mint_ratio <= 1.0)
+	// A value of 0.975 means 97.5% of burned tokens are minted, 2.5% permanently removed
+	KeyMintRatio     = []byte("MintRatio")
+	ParamMintRatio   = "mint_ratio"
+	DefaultMintRatio = float64(1.0) // Default: no deflation (mint equals burn)
+
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
 
@@ -57,12 +64,14 @@ func NewParams(
 	mintAllocationPercentages MintAllocationPercentages,
 	globalInflationPerClaim float64,
 	mintEqualsBurnClaimDistribution MintEqualsBurnClaimDistribution,
+	mintRatio float64,
 ) Params {
 	return Params{
 		DaoRewardAddress:                daoRewardAddress,
 		MintAllocationPercentages:       mintAllocationPercentages,
 		GlobalInflationPerClaim:         globalInflationPerClaim,
 		MintEqualsBurnClaimDistribution: mintEqualsBurnClaimDistribution,
+		MintRatio:                       mintRatio,
 	}
 }
 
@@ -73,6 +82,7 @@ func DefaultParams() Params {
 		DefaultMintAllocationPercentages,
 		DefaultGlobalInflationPerClaim,
 		DefaultMintEqualsBurnClaimDistribution,
+		DefaultMintRatio,
 	)
 }
 
@@ -99,6 +109,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.MintEqualsBurnClaimDistribution,
 			ValidateMintEqualsBurnClaimDistribution,
 		),
+		paramtypes.NewParamSetPair(
+			KeyMintRatio,
+			&p.MintRatio,
+			ValidateMintRatio,
+		),
 	}
 }
 
@@ -120,10 +135,20 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	if err := ValidateMintRatio(params.MintRatio); err != nil {
+		return err
+	}
+
 	// If MintEqualsBurnClaimDistribution is zero-valued (e.g., because Ignite CLI couldn't parse it),
 	// set it to the default value
 	if params.MintEqualsBurnClaimDistribution.Sum() == 0 {
 		params.MintEqualsBurnClaimDistribution = DefaultMintEqualsBurnClaimDistribution
+	}
+
+	// If MintRatio is zero-valued (e.g., from an upgrade before this field existed),
+	// set it to the default value (1.0 = no deflation)
+	if params.MintRatio == 0 {
+		params.MintRatio = DefaultMintRatio
 	}
 
 	return nil
@@ -272,6 +297,29 @@ func ValidateMintEqualsBurnClaimDistribution(mintEqualsBurnClaimDistributionAny 
 	sum := mintEqualsBurnClaimDistribution.Sum()
 	if math.Abs(sum-1) > epsilon {
 		return ErrTokenomicsParamInvalid.Wrapf("mint equals burn claim distribution percentages do not add to 1.0: got %f", sum)
+	}
+
+	return nil
+}
+
+// ValidateMintRatio validates the MintRatio param.
+// PIP-41: mint_ratio must be in range (0, 1] where:
+// - 0 is exclusive (must mint something)
+// - 1 is inclusive (can mint 100% = no deflation)
+func ValidateMintRatio(mintRatioAny any) error {
+	mintRatio, ok := mintRatioAny.(float64)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", mintRatioAny)
+	}
+
+	// Allow 0 as a special case for backward compatibility during upgrades
+	// ValidateBasic will set it to default (1.0)
+	if mintRatio == 0 {
+		return nil
+	}
+
+	if mintRatio < 0 || mintRatio > 1 {
+		return ErrTokenomicsParamInvalid.Wrapf("mint_ratio must be in range (0, 1]: got %f", mintRatio)
 	}
 
 	return nil

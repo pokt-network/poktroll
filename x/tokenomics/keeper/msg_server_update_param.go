@@ -60,6 +60,11 @@ func (k msgServer) UpdateParam(
 		logger = logger.With("param_value", msg.GetAsMintEqualsBurnClaimDistribution())
 		params.MintEqualsBurnClaimDistribution = *msg.GetAsMintEqualsBurnClaimDistribution()
 
+	// MintRatio (PIP-41: deflationary mint mechanism)
+	case tokenomicstypes.ParamMintRatio:
+		logger = logger.With("param_value", msg.GetAsFloat())
+		params.MintRatio = msg.GetAsFloat()
+
 	// Default
 	default:
 		return nil, status.Error(
