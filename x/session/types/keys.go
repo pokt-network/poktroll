@@ -19,7 +19,7 @@ var (
 	// ParamsHistoryKeyPrefix is the prefix for storing historical session params.
 	// Key format: ParamsHistoryKeyPrefix | BigEndian(effectiveHeight)
 	// This enables efficient range queries to find params effective at a given height.
-	ParamsHistoryKeyPrefix = []byte("params_history/")
+	ParamsHistoryKeyPrefix = []byte("session_params_history/")
 )
 
 func KeyPrefix(p string) []byte { return []byte(p) }
