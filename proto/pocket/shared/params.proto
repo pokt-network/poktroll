@@ -84,3 +84,15 @@ message Params {
   // were not in effect during their creation.
   uint64 compute_unit_cost_granularity = 11 [(gogoproto.jsontag) = "compute_unit_cost_granularity", (gogoproto.moretags) = "yaml:\"compute_unit_cost_granularity\""];
 }
+
+// ParamsUpdate stores a snapshot of shared parameters
+// along with the height at which they became effective.
+// This enables historical parameter lookups for session calculations.
+message ParamsUpdate {
+  // effective_height is the block height at which these params became effective.
+  // Parameters are activated at session boundaries, not immediately upon governance change.
+  int64 effective_height = 1 [(gogoproto.jsontag) = "effective_height"];
+
+  // params is the snapshot of shared params that were effective starting at effective_height.
+  Params params = 2 [(gogoproto.jsontag) = "params"];
+}

@@ -27,6 +27,9 @@ type BankKeeper interface {
 // SharedKeeper defines the expected interface needed to retrieve shared information.
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
+	// GetParamsAtHeight returns the session params that were effective at the given height.
+	// This is used for historical session queries to ensure correct session boundaries.
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 }
 

@@ -55,24 +55,6 @@ func (k Keeper) queryAndValidateSessionHeader(
 		)
 	}
 
-	// Validate that the session header's derivative fields match the onchain session.
-	// This ensures the claim message has correct session metadata.
-	if sessionHeader.GetSessionStartBlockHeight() != onChainSession.GetHeader().GetSessionStartBlockHeight() {
-		return nil, types.ErrProofInvalidSessionId.Wrapf(
-			"session start block height does not match; expected %d, got %d",
-			onChainSession.GetHeader().GetSessionStartBlockHeight(),
-			sessionHeader.GetSessionStartBlockHeight(),
-		)
-	}
-
-	if sessionHeader.GetSessionEndBlockHeight() != onChainSession.GetHeader().GetSessionEndBlockHeight() {
-		return nil, types.ErrProofInvalidSessionId.Wrapf(
-			"session end block height does not match; expected %d, got %d",
-			onChainSession.GetHeader().GetSessionEndBlockHeight(),
-			sessionHeader.GetSessionEndBlockHeight(),
-		)
-	}
-
 	// NB: it is redundant to assert that the service ID in the request matches the
 	// onchain session service ID because the session is queried using the service
 	// ID as a parameter. Either a different session (i.e. different session ID)
@@ -104,9 +86,13 @@ func (k Keeper) validateClaimWindow(
 	supplierOperatorAddr string,
 ) error {
 	logger := k.Logger().With("method", "validateClaimWindow")
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+
+	// Use historical params to calculate claim window boundaries.
+	// This ensures the window is calculated based on params that were effective
+	// when the session was active, not current params.
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
 
 	// Get the claim window open and close heights for the given session header.
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
@@ -173,8 +159,12 @@ func (k Keeper) validateProofWindow(
 ) error {
 	logger := k.Logger().With("method", "validateProofWindow")
 
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+
+	// Use historical params to calculate proof window boundaries.
+	// This ensures the window is calculated based on params that were effective
+	// when the session was active, not current params.
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
 
 	// Get the proof window open and close heights for the given session header.
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)

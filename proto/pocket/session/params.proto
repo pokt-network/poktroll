@@ -16,3 +16,15 @@ message Params {
   // (application:supplier pair for a given session number).
   uint64 num_suppliers_per_session = 3 [(gogoproto.jsontag) = "num_suppliers_per_session", (gogoproto.moretags) = "yaml:\"num_suppliers_per_session\""];
 }
+
+// ParamsUpdate stores a snapshot of session parameters
+// along with the height at which they became effective.
+// This enables historical parameter lookups for session calculations.
+message ParamsUpdate {
+  // effective_height is the block height at which these params became effective.
+  // Parameters are activated at session boundaries, not immediately upon governance change.
+  int64 effective_height = 1 [(gogoproto.jsontag) = "effective_height"];
+
+  // params is the snapshot of session params that were effective starting at effective_height.
+  Params params = 2 [(gogoproto.jsontag) = "params"];
+}

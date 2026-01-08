@@ -53,6 +53,12 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *sessiontypes.MsgUpdateP
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	if err := k.RecordParamsHistory(ctx, params); err != nil {
+		err = fmt.Errorf("unable to record params history: %w", err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	if err := k.SetParams(ctx, params); err != nil {
 		err = fmt.Errorf("unable to set params: %w", err)
 		logger.Error(err.Error())
