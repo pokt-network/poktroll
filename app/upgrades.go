@@ -163,6 +163,8 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.31 - upgrade to:
 	// - PIP-41: Add mint_ratio parameter for deflationary mint mechanism
 	// - Default value 1.0 (no deflation), governance can set to 0.975 for 2.5% deflation
+	// - Historical parameter tracking for session and shared modules
+	// - Ensures session boundary calculations remain correct after param changes
 	upgrades.Upgrade_0_1_31,
 }
 

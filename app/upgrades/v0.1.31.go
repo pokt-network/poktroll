@@ -18,11 +18,19 @@ const (
 )
 
 // Upgrade_0_1_31 handles the upgrade to release `v0.1.31`.
-// This upgrade implements PIP-41: Deflationary Mint Mechanism
-// - Adds new `mint_ratio` parameter to tokenomics module
-// - Default value is 1.0 (no deflation - backward compatible)
-// - Governance can later set to 0.975 to enable 2.5% deflation
-// See: https://forum.pokt.network/t/pip-41-introducing-a-deflationary-mint-mechanism-for-shannon-tokenomics/5622
+// This upgrade implements:
+//
+// 1. PIP-41: Deflationary Mint Mechanism
+//   - Adds new `mint_ratio` parameter to tokenomics module
+//   - Default value is 1.0 (no deflation - backward compatible)
+//   - Governance can later set to 0.975 to enable 2.5% deflation
+//   - See: https://forum.pokt.network/t/pip-41-introducing-a-deflationary-mint-mechanism-for-shannon-tokenomics/5622
+//
+// 2. Historical Parameter Tracking
+//   - Initializes param history for shared and session modules at upgrade height
+//   - Ensures session boundary calculations remain correct after param changes
+//   - Fixes claim/proof validation failures when params change mid-session
+//   - See: https://github.com/pokt-network/poktroll/issues/543
 var Upgrade_0_1_31 = Upgrade{
 	PlanName: Upgrade_0_1_31_PlanName,
 	// No KVStore migrations in this upgrade.
@@ -67,10 +75,45 @@ var Upgrade_0_1_31 = Upgrade{
 			return nil
 		}
 
+		// Initialize historical parameter tracking for session and shared modules.
+		// This ensures GetParamsAtHeight returns correct params for any height >= upgrade height.
+		initializeParamsHistory := func(ctx context.Context, logger cosmoslog.Logger, upgradeHeight int64) error {
+			logger.Info("Initializing historical params tracking", "upgrade_plan_name", Upgrade_0_1_31_PlanName)
+
+			// Initialize shared params history at the upgrade height.
+			sharedParams := keepers.SharedKeeper.GetParams(ctx)
+			if err := keepers.SharedKeeper.SetParamsAtHeight(ctx, upgradeHeight, sharedParams); err != nil {
+				logger.Error("Failed to initialize shared params history", "error", err)
+				return err
+			}
+			logger.Info("Initialized shared params history",
+				"effective_height", upgradeHeight,
+				"num_blocks_per_session", sharedParams.NumBlocksPerSession,
+			)
+
+			// Initialize session params history at the upgrade height.
+			sessionParams := keepers.SessionKeeper.GetParams(ctx)
+			if err := keepers.SessionKeeper.SetParamsAtHeight(ctx, upgradeHeight, sessionParams); err != nil {
+				logger.Error("Failed to initialize session params history", "error", err)
+				return err
+			}
+			logger.Info("Initialized session params history",
+				"effective_height", upgradeHeight,
+				"num_suppliers_per_session", sessionParams.NumSuppliersPerSession,
+			)
+
+			return nil
+		}
+
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
+			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+			logger := sdkCtx.Logger()
 
 			if err := applyNewParameters(ctx, logger); err != nil {
+				return vm, err
+			}
+
+			if err := initializeParamsHistory(ctx, logger, sdkCtx.BlockHeight()); err != nil {
 				return vm, err
 			}
 
