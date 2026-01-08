@@ -30,16 +30,19 @@ func TestParamsHistory(t *testing.T) {
 	require.NoError(t, err)
 
 	// 3. Verify history
+	// First entry is at the current height (10), not height 1, because we only
+	// vouch for params we know now - not what they may have been at genesis.
 	history := k.GetAllParamsHistory(ctx)
 	require.Equal(t, 2, len(history))
-	require.Equal(t, int64(1), history[0].EffectiveHeight)
+	require.Equal(t, int64(10), history[0].EffectiveHeight)
 	require.Equal(t, params0, *history[0].Params)
 	require.Equal(t, int64(11), history[1].EffectiveHeight)
 	require.Equal(t, newParams, *history[1].Params)
 
 	// 4. Verify GetParamsAtHeight
-	require.Equal(t, params0, k.GetParamsAtHeight(ctx, 1))
-	require.Equal(t, params0, k.GetParamsAtHeight(ctx, 10))
+	// Heights before the first recorded entry fall back to current params
+	require.Equal(t, params0, k.GetParamsAtHeight(ctx, 1))  // fallback to current
+	require.Equal(t, params0, k.GetParamsAtHeight(ctx, 10)) // exact match
 	require.Equal(t, newParams, k.GetParamsAtHeight(ctx, 11))
 	require.Equal(t, newParams, k.GetParamsAtHeight(ctx, 100))
 }

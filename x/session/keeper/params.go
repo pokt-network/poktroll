@@ -120,9 +120,11 @@ func (k Keeper) RecordParamsHistory(ctx context.Context, newParams types.Params)
 	// Check if history is empty (first param update since genesis or upgrade)
 	history := k.GetAllParamsHistory(ctx)
 	if len(history) == 0 {
-		// Initialize history with the current (old) params at height 1.
-		// These params have been effective since genesis.
-		if err := k.SetParamsAtHeight(ctx, 1, oldParams); err != nil {
+		// Initialize history with the current (old) params at the current height.
+		// We use current height rather than height 1 because we can only vouch for
+		// the params we know now - not what they may have been at genesis.
+		// For heights before this, GetParamsAtHeight falls back to current params.
+		if err := k.SetParamsAtHeight(ctx, currentHeight, oldParams); err != nil {
 			return fmt.Errorf("failed to initialize session params history: %w", err)
 		}
 	}
