@@ -48,4 +48,7 @@ type SupplierKeeper interface {
 // SharedKeeper defines the expected interface needed to retrieve shared parameters
 type SharedKeeper interface {
 	GetParams(ctx context.Context) (params sharedtypes.Params)
+	// GetParamsAtHeight returns the session params that were effective at the given height.
+	// This is used for historical session queries to ensure correct session boundaries.
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) (params sharedtypes.Params)
 }

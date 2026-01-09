@@ -86,9 +86,13 @@ func (k Keeper) validateClaimWindow(
 	supplierOperatorAddr string,
 ) error {
 	logger := k.Logger().With("method", "validateClaimWindow")
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+
+	// Use historical params to calculate claim window boundaries.
+	// This ensures the window is calculated based on params that were effective
+	// when the session was active, not current params.
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
 
 	// Get the claim window open and close heights for the given session header.
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
@@ -155,8 +159,12 @@ func (k Keeper) validateProofWindow(
 ) error {
 	logger := k.Logger().With("method", "validateProofWindow")
 
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+
+	// Use historical params to calculate proof window boundaries.
+	// This ensures the window is calculated based on params that were effective
+	// when the session was active, not current params.
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
 
 	// Get the proof window open and close heights for the given session header.
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)

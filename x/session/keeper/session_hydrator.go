@@ -97,9 +97,9 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	// TODO_MAINNET_MIGRATION(@red-0ne, #543): If the num_blocks_per_session param
-	// has ever been changed, this function may cause unexpected behavior for historical sessions.
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	// Use historical params to ensure session boundaries are calculated correctly
+	// even if NumBlocksPerSession or other session params have changed since the query height.
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sh.blockHeight)
 	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
 	sh.session.SessionNumber = sharedtypes.GetSessionNumber(&sharedParams, sh.blockHeight)
 
@@ -170,15 +170,9 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
-	// TODO_MAINNET: Use the number of suppliers per session used at query height (i.e. sh.blockHeight).
-	// Currently, the session is hydrated with the "current" (i.e. latest block)
-	// NumSuppliersPerSession param value.
-	// We need to account for the value at query height to ensure:
-	// - The session is hydrated with the correct historical number of suppliers
-	// - Changes between query height and current height are properly handled
-	// Refer to the following discussion for more details:
-	// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992214953
-	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
+	// Use historical params to ensure deterministic session hydration for historical heights.
+	params := k.GetParamsAtHeight(ctx, sh.blockHeight)
+	numSuppliersPerSession := int(params.NumSuppliersPerSession)
 
 	// Map supplier operator addresses to random weights for deterministic sorting.
 	// This ensures fair distribution when:
@@ -309,7 +303,9 @@ func (k Keeper) GetSessionId(
 	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	// Use historical params to ensure session ID is calculated correctly
+	// for historical queries.
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, blockHeight)
 	return GetSessionId(&sharedParams, appAddr, serviceId, blockHashBz, blockHeight)
 }
 

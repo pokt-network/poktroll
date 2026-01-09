@@ -88,6 +88,31 @@ func (k Keeper) GetDeactivatedServiceConfigUpdatesIterator(
 	return sharedtypes.NewRecordIterator(serviceConfigUpdateIterator, serviceConfigAccessor)
 }
 
+// GetDeactivatedServiceConfigUpdatesRangeIterator returns an iterator over service
+// configuration updates that were deactivated at or before the specified block height.
+//
+// This leverages the lexicographical ordering of big-endian encoded heights to
+// efficiently iterate over all configs with deactivationHeight <= maxDeactivationHeight.
+// This is used by the EndBlocker to find all deactivated configs that may need pruning.
+func (k Keeper) GetDeactivatedServiceConfigUpdatesRangeIterator(
+	ctx context.Context,
+	maxDeactivationHeight int64,
+) sharedtypes.RecordIterator[sharedtypes.ServiceConfigUpdate] {
+	deactivationHeightStore := k.getServiceConfigUpdateDeactivationHeightStore(ctx)
+	serviceConfigUpdateStore := k.getServiceConfigUpdatesStore(ctx)
+
+	// Create end key using maxDeactivationHeight+1 to make the bound exclusive
+	// This gives us all configs with deactivationHeight <= maxDeactivationHeight
+	endKeyBz := make([]byte, 8)
+	binary.BigEndian.PutUint64(endKeyBz, uint64(maxDeactivationHeight+1))
+
+	// Use range iterator from beginning to maxDeactivationHeight (exclusive)
+	serviceConfigUpdateIterator := deactivationHeightStore.Iterator(nil, endKeyBz)
+
+	serviceConfigAccessor := serviceConfigUpdateFromPrimaryKeyAccessorFn(serviceConfigUpdateStore, k.cdc)
+	return sharedtypes.NewRecordIterator(serviceConfigUpdateIterator, serviceConfigAccessor)
+}
+
 // deleteDeactivatedServiceConfigUpdate removes a deactivated service configuration
 // update from all indexes.
 //

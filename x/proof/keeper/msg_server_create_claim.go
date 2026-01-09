@@ -47,9 +47,13 @@ func (k msgServer) CreateClaim(
 	defer k.finalizeCreateClaimTelemetry(session, msg, isExistingClaim, numRelays, numClaimComputeUnits, err)
 
 	// Construct and insert claim
+	// IMPORTANT: Use the session header from the message, not the queried session.
+	// Claims are for historical sessions, and we must preserve the exact session
+	// header that the supplier is claiming for, even if querying the session now
+	// returns slightly different data due to parameter changes or state differences.
 	claim = types.Claim{
 		SupplierOperatorAddress: msg.GetSupplierOperatorAddress(),
-		SessionHeader:           session.GetHeader(),
+		SessionHeader:           msg.GetSessionHeader(),
 		RootHash:                msg.GetRootHash(),
 	}
 
