@@ -17,13 +17,12 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func SharedKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
-	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
+	storeKey := storetypes.NewKVStoreKey(sharedtypes.StoreKey)
 
 	db := dbm.NewMemDB()
 	stateStore := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
