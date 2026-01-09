@@ -83,6 +83,7 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 		log.NewNopLogger(),
 		authority.String(),
 		mockBankKeeper,
+		sharedKeeper,
 	)
 
 	supplierKeeper := keeper.NewKeeper(

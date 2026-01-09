@@ -223,6 +223,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		log.NewNopLogger(),
 		authority.String(),
 		bankKeeper,
+		sharedKeeper,
 	)
 
 	// Construct a real supplier keeper to add suppliers to sessions.

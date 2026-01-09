@@ -613,9 +613,11 @@ func (k Keeper) settleClaim(
 	}
 
 	// Get the relay mining difficulty for the service that this claim is for.
-	serviceId := claim.GetSessionHeader().GetServiceId()
+	sessionHeader := claim.GetSessionHeader()
+	serviceId := sessionHeader.GetServiceId()
+	sessionStartHeight := sessionHeader.GetSessionStartBlockHeight()
 	var relayMiningDifficulty servicetypes.RelayMiningDifficulty
-	relayMiningDifficulty, err = settlementContext.GetRelayMiningDifficulty(serviceId)
+	relayMiningDifficulty, err = settlementContext.GetRelayMiningDifficulty(serviceId, sessionStartHeight)
 	if err != nil {
 		return nil, err
 	}

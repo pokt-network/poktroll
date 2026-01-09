@@ -524,6 +524,7 @@ func NewTokenomicsModuleKeepers(
 		log.NewNopLogger(),
 		authority.String(),
 		bankKeeper,
+		sharedKeeper,
 	)
 
 	if params, ok := cfg.moduleParams[servicetypes.ModuleName]; ok {

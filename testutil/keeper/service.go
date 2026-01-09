@@ -75,12 +75,16 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 			},
 		).AnyTimes()
 
+	// Create a real SharedKeeper for the service keeper to use
+	sharedKeeper, _ := SharedKeeper(t)
+
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
 		mockBankKeeper,
+		sharedKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())

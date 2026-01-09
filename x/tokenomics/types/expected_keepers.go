@@ -112,6 +112,10 @@ type ServiceKeeper interface {
 	// Getters
 	GetService(ctx context.Context, serviceID string) (sharedtypes.Service, bool)
 	GetRelayMiningDifficulty(ctx context.Context, serviceID string) (servicetypes.RelayMiningDifficulty, bool)
+	// GetRelayMiningDifficultyAtHeight returns the relay mining difficulty that was
+	// effective at the given height for a specific service. This is used for historical
+	// difficulty lookups during settlement.
+	GetRelayMiningDifficultyAtHeight(ctx context.Context, serviceID string, height int64) (servicetypes.RelayMiningDifficulty, bool)
 	GetParams(ctx context.Context) servicetypes.Params
 
 	// Setters

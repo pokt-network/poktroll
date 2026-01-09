@@ -105,6 +105,37 @@ var Upgrade_0_1_31 = Upgrade{
 			return nil
 		}
 
+		// Initialize relay mining difficulty history for all services.
+		// This ensures GetRelayMiningDifficultyAtHeight returns correct difficulty for any height >= upgrade height.
+		initializeDifficultyHistory := func(ctx context.Context, logger cosmoslog.Logger, upgradeHeight int64) error {
+			logger.Info("Initializing relay mining difficulty history", "upgrade_plan_name", Upgrade_0_1_31_PlanName)
+
+			// Get all existing difficulties
+			allDifficulties := keepers.ServiceKeeper.GetAllRelayMiningDifficulty(ctx)
+
+			for _, difficulty := range allDifficulties {
+				// Check if history already exists for this service
+				existingHistory := keepers.ServiceKeeper.GetRelayMiningDifficultyHistoryForService(ctx, difficulty.ServiceId)
+
+				if len(existingHistory) == 0 {
+					// Initialize history with current difficulty at upgrade height
+					if err := keepers.ServiceKeeper.SetRelayMiningDifficultyAtHeight(ctx, upgradeHeight, difficulty); err != nil {
+						logger.Error("Failed to initialize difficulty history",
+							"service_id", difficulty.ServiceId,
+							"error", err,
+						)
+						return err
+					}
+					logger.Info("Initialized difficulty history",
+						"service_id", difficulty.ServiceId,
+						"effective_height", upgradeHeight,
+					)
+				}
+			}
+
+			return nil
+		}
+
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 			logger := sdkCtx.Logger()
@@ -114,6 +145,10 @@ var Upgrade_0_1_31 = Upgrade{
 			}
 
 			if err := initializeParamsHistory(ctx, logger, sdkCtx.BlockHeight()); err != nil {
+				return vm, err
+			}
+
+			if err := initializeDifficultyHistory(ctx, logger, sdkCtx.BlockHeight()); err != nil {
 				return vm, err
 			}
 

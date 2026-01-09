@@ -32,3 +32,15 @@ message RelayMiningDifficulty {
     // be one source of truth, somewhere on chain, to stay in sync with the SMT
     // configuration.
 }
+
+// RelayMiningDifficultyUpdate stores a snapshot of relay mining difficulty
+// along with the height at which it became effective.
+// This enables historical lookups of difficulty that was active during a session.
+message RelayMiningDifficultyUpdate {
+    // effective_height is the block height at which this difficulty became effective.
+    // Difficulty changes are activated at session boundaries, not immediately.
+    int64 effective_height = 1 [(gogoproto.jsontag) = "effective_height"];
+
+    // difficulty is the snapshot of relay mining difficulty effective at this height.
+    RelayMiningDifficulty difficulty = 2 [(gogoproto.jsontag) = "difficulty"];
+}

@@ -119,15 +119,10 @@ func (k msgServer) CreateClaim(
 	serviceId := session.GetHeader().GetServiceId()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
-	// TODO_CRITICAL(#1789): Ensure to use the RelayMiningDifficulty from the correct session.
-	// Issue:
-	// - The current implementation gets the difficulty for the current session.
-	// - This is incorrect as claims are submitted for previous sessions.
-	// - The difficulty used for validation should match the difficulty that was active during the session when the work was performed.
-	// Solution:
-	// - Implement GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
-	// - Use the historical difficulty value that was active during the claim's session.
-	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+	// Get the relay mining difficulty that was effective at the session start height.
+	// This ensures we use the correct difficulty that was active when relays were mined.
+	sessionStartHeight := claim.SessionHeader.GetSessionStartBlockHeight()
+	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 
 	// Emit the appropriate event based on whether the claim was created or updated.

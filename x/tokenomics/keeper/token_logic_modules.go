@@ -112,7 +112,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		return err
 	}
 
-	relayMiningDifficulty, err := settlementContext.GetRelayMiningDifficulty(sessionHeader.ServiceId)
+	relayMiningDifficulty, err := settlementContext.GetRelayMiningDifficulty(sessionHeader.ServiceId, sessionHeader.SessionStartBlockHeight)
 	if err != nil {
 		return err
 	}
