@@ -24,6 +24,8 @@ import (
 	"github.com/pokt-network/poktroll/testutil/service/mocks"
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var (
@@ -35,16 +37,19 @@ var (
 
 func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	t.Helper()
-	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
+	serviceStoreKey := storetypes.NewKVStoreKey(types.StoreKey)
+	sharedStoreKey := storetypes.NewKVStoreKey(sharedtypes.StoreKey)
 
 	db := dbm.NewMemDB()
 	stateStore := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
-	stateStore.MountStoreWithDB(storeKey, storetypes.StoreTypeIAVL, db)
+	stateStore.MountStoreWithDB(serviceStoreKey, storetypes.StoreTypeIAVL, db)
+	stateStore.MountStoreWithDB(sharedStoreKey, storetypes.StoreTypeIAVL, db)
 	require.NoError(t, stateStore.LoadLatestVersion())
 
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
+	logger := log.NewNopLogger()
 
 	ctrl := gomock.NewController(t)
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
@@ -75,18 +80,28 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 			},
 		).AnyTimes()
 
-	k := keeper.NewKeeper(
+	// Create a real SharedKeeper for the service keeper to use
+	sharedKeeper := sharedkeeper.NewKeeper(
 		cdc,
-		runtime.NewKVStoreService(storeKey),
-		log.NewNopLogger(),
+		runtime.NewKVStoreService(sharedStoreKey),
+		logger,
 		authority.String(),
-		mockBankKeeper,
 	)
 
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	k := keeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(serviceStoreKey),
+		logger,
+		authority.String(),
+		mockBankKeeper,
+		sharedKeeper,
+	)
+
+	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
 
 	// Initialize params
 	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams()))
 
 	return k, ctx
 }

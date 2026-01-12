@@ -64,6 +64,10 @@ type SharedKeeper interface {
 type ServiceKeeper interface {
 	GetService(ctx context.Context, serviceID string) (sharedtypes.Service, bool)
 	GetRelayMiningDifficulty(ctx context.Context, serviceID string) (servicetypes.RelayMiningDifficulty, bool)
+	// GetRelayMiningDifficultyAtHeight returns the relay mining difficulty that was
+	// effective at the given height for a specific service. This is used for historical
+	// difficulty lookups during claim/proof validation.
+	GetRelayMiningDifficultyAtHeight(ctx context.Context, serviceID string, height int64) (servicetypes.RelayMiningDifficulty, bool)
 	// Only used for testing & simulation
 	SetService(ctx context.Context, service sharedtypes.Service)
 	SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficulty servicetypes.RelayMiningDifficulty)

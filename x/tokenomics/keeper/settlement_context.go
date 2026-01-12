@@ -129,9 +129,10 @@ func (sctx *settlementContext) ClaimCacheWarmUp(ctx context.Context, claim *proo
 		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
 	}
 
-	// Cache service and difficulty
+	// Cache service and difficulty using the session start height to get historical difficulty
 	serviceId := claim.SessionHeader.ServiceId
-	if err := sctx.cacheServiceAndDifficulty(ctx, serviceId); err != nil {
+	sessionStartHeight := claim.SessionHeader.SessionStartBlockHeight
+	if err := sctx.cacheServiceAndDifficulty(ctx, serviceId, sessionStartHeight); err != nil {
 		return err
 	}
 
@@ -163,15 +164,18 @@ func (sctx *settlementContext) GetApplicationInitialStake(appAddress string) (co
 	)
 }
 
-// GetRelayMiningDifficulty retrieves the cached relay mining difficulty for a specific service.
-func (sctx *settlementContext) GetRelayMiningDifficulty(serviceId string) (servicetypes.RelayMiningDifficulty, error) {
-	if relayMiningDifficulty, ok := sctx.relayMiningDifficultyMap[serviceId]; ok {
+// GetRelayMiningDifficulty retrieves the cached relay mining difficulty for a specific service at a given session height.
+func (sctx *settlementContext) GetRelayMiningDifficulty(serviceId string, sessionStartHeight int64) (servicetypes.RelayMiningDifficulty, error) {
+	// Generate cache key that includes session height
+	cacheKey := fmt.Sprintf("%s@%d", serviceId, sessionStartHeight)
+
+	if relayMiningDifficulty, ok := sctx.relayMiningDifficultyMap[cacheKey]; ok {
 		return relayMiningDifficulty, nil
 	}
 
-	sctx.logger.Error(fmt.Sprintf("relay mining difficulty for service with ID %q not found", serviceId))
+	sctx.logger.Error(fmt.Sprintf("relay mining difficulty for service with ID %q at session start height %d not found", serviceId, sessionStartHeight))
 	return servicetypes.RelayMiningDifficulty{}, tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf(
-		"relay mining difficulty for service with ID %q not found", serviceId,
+		"relay mining difficulty for service with ID %q at session start height %d not found", serviceId, sessionStartHeight,
 	)
 }
 
@@ -341,34 +345,40 @@ func (sctx *settlementContext) cacheApplication(ctx context.Context, appAddress 
 
 // cacheServiceAndDifficulty ensures the service and its relay mining difficulty are cached in the settlement context.
 //
-// This prevents repeated KV store lookups across multiple claims targeting the same service.
-func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, serviceId string) error {
-	if _, ok := sctx.serviceMap[serviceId]; ok {
-		// Service is already cached
+// This prevents repeated KV store lookups across multiple claims targeting the same service at the same session height.
+func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, serviceId string, sessionStartHeight int64) error {
+	// Generate cache key that includes session height
+	cacheKey := fmt.Sprintf("%s@%d", serviceId, sessionStartHeight)
+
+	if _, ok := sctx.relayMiningDifficultyMap[cacheKey]; ok {
+		// Difficulty for this service/session combination is already cached
 		return nil
 	}
 
-	// Retrieve the service record
-	service, isServiceFound := sctx.keeper.serviceKeeper.GetService(ctx, serviceId)
-	if !isServiceFound {
-		sctx.logger.Warn(fmt.Sprintf("service with ID %q not found", serviceId))
-		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", serviceId)
+	// Retrieve the service record (service doesn't change per session, so cache by serviceId only)
+	if _, ok := sctx.serviceMap[serviceId]; !ok {
+		service, isServiceFound := sctx.keeper.serviceKeeper.GetService(ctx, serviceId)
+		if !isServiceFound {
+			sctx.logger.Warn(fmt.Sprintf("service with ID %q not found", serviceId))
+			return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", serviceId)
+		}
+		sctx.serviceMap[serviceId] = &service
 	}
-	sctx.serviceMap[serviceId] = &service
 
-	// Retrieve or create the relay mining difficulty for the service
-	relayMiningDifficulty, found := sctx.keeper.serviceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
+	// Retrieve difficulty that was effective at the session start height
+	relayMiningDifficulty, found := sctx.keeper.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
 	if !found {
 		targetNumRelays := sctx.keeper.serviceKeeper.GetParams(ctx).TargetNumRelays
 		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
 			ctx,
 			sctx.logger,
-			service.Id,
+			serviceId,
 			targetNumRelays,
 			targetNumRelays,
 		)
 	}
-	sctx.relayMiningDifficultyMap[service.Id] = relayMiningDifficulty
+	// Store with composite key (serviceId + session height)
+	sctx.relayMiningDifficultyMap[cacheKey] = relayMiningDifficulty
 
 	return nil
 }

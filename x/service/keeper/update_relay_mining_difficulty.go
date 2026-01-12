@@ -13,6 +13,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var (
@@ -34,8 +35,16 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 ) (difficultyPerServiceMap map[string]types.RelayMiningDifficulty, err error) {
 	logger := k.Logger().With("method", "UpdateRelayMiningDifficulty")
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
 
 	difficultyPerServiceMap = make(map[string]types.RelayMiningDifficulty, len(relaysPerServiceMap))
+
+	// Get shared params to calculate session boundaries
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	// Calculate when new difficulty becomes effective: next session start
+	currentSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := currentSessionEndHeight + 1
 
 	// Iterate over the relaysPerServiceMap deterministically by sorting the keys.
 	// This ensures that the order of the keys is consistent across different nodes.
@@ -79,19 +88,30 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		// relative starting difficulty has to be kept constant.
 		difficultyHash := protocol.ComputeNewDifficultyTargetHash(protocol.BaseRelayDifficultyHashBz, targetNumRelays, newRelaysEma)
 
-		// TODO_CRITICAL(#1789): Ensure difficulty changes do not happen mid-session.
-		// Issue:
-		// - Suppliers mine relays with difficulty D1 at session start
-		// - When submitting proofs, the difficulty may have changed to D2
-		// - Valid proofs submitted with D1 will be rejected.
-		// Solution:
-		// - Only apply difficulty changes at session boundaries (next session start height)
+		// Initialize history if empty (first update for this service since upgrade)
+		existingHistory := k.GetRelayMiningDifficultyHistoryForService(ctx, serviceId)
+		if len(existingHistory) == 0 && found {
+			// Record the current difficulty at current height first
+			if err := k.SetRelayMiningDifficultyAtHeight(ctx, currentHeight, prevDifficulty); err != nil {
+				return nil, fmt.Errorf("failed to initialize difficulty history for service %s: %w", serviceId, err)
+			}
+		}
+
+		// Create new difficulty with NEXT SESSION START HEIGHT as effective height
+		// This ensures difficulty changes only take effect at session boundaries
 		newDifficulty := types.RelayMiningDifficulty{
 			ServiceId:    serviceId,
-			BlockHeight:  sdkCtx.BlockHeight(),
+			BlockHeight:  nextSessionStartHeight,
 			NumRelaysEma: newRelaysEma,
 			TargetHash:   difficultyHash,
 		}
+
+		// Record new difficulty with its effective height (next session start)
+		if err := k.SetRelayMiningDifficultyAtHeight(ctx, nextSessionStartHeight, newDifficulty); err != nil {
+			return nil, fmt.Errorf("failed to record difficulty history for service %s: %w", serviceId, err)
+		}
+
+		// Update the "current" difficulty (for backwards compatibility and latest queries)
 		k.SetRelayMiningDifficulty(ctx, newDifficulty)
 
 		// Emit an event for the updated relay mining difficulty regardless of

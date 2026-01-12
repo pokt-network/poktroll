@@ -347,6 +347,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		GetRelayMiningDifficulty(gomock.Any(), gomock.Any()).
 		Return(relayMiningDifficulty, true).
 		AnyTimes()
+	mockServiceKeeper.EXPECT().
+		GetRelayMiningDifficultyAtHeight(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(relayMiningDifficulty, true).
+		AnyTimes()
 
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 
@@ -524,6 +528,7 @@ func NewTokenomicsModuleKeepers(
 		log.NewNopLogger(),
 		authority.String(),
 		bankKeeper,
+		sharedKeeper,
 	)
 
 	if params, ok := cfg.moduleParams[servicetypes.ModuleName]; ok {
