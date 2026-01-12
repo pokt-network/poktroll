@@ -59,10 +59,18 @@ func NewSessionHydrator(
 func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types.Session, error) {
 	logger := k.Logger().With("method", "hydrateSession")
 
+	// First hydrate metadata to get session number for cache key
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
 		return nil, err
 	}
 	logger.Debug("Finished hydrating session metadata")
+
+	// Check cache before doing expensive hydration
+	cacheKey := sessionCacheKey(sh.sessionHeader.ApplicationAddress, sh.sessionHeader.ServiceId, sh.session.SessionNumber)
+	if cachedSession, found := k.sessionCache.get(cacheKey); found {
+		logger.Debug(fmt.Sprintf("Session cache hit for key: %s", cacheKey))
+		return cachedSession, nil
+	}
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
 		return nil, err
@@ -81,6 +89,10 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 
 	sh.session.Header = sh.sessionHeader
 	sh.session.SessionId = sh.sessionHeader.SessionId
+
+	// Cache the fully hydrated session
+	k.sessionCache.set(cacheKey, sh.session)
+	logger.Debug(fmt.Sprintf("Cached session for key: %s", cacheKey))
 
 	return sh.session, nil
 }
@@ -178,8 +190,10 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	// This ensures fair distribution when:
 	// - NumCandidateSuppliers exceeds NumSuppliersPerSession
 	// - We need to randomly but fairly determine which suppliers can serve Applications
-	candidatesToRandomWeight := make(map[string]int)
-	candidateSupplierConfigs := make([]*sharedtypes.ServiceConfigUpdate, 0)
+	candidatesToRandomWeight := make(map[string]int, numSuppliersPerSession)
+	// Pre-allocate with capacity to reduce allocations.
+	// We expect at most a reasonable multiple of numSuppliersPerSession candidates.
+	candidateSupplierConfigs := make([]*sharedtypes.ServiceConfigUpdate, 0, numSuppliersPerSession*2)
 
 	// Get an iterator of service configurations updates at the query height or earlier.
 	// This avoids unnecessary filtering during iteration and is more efficient
