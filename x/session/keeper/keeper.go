@@ -32,20 +32,10 @@ type (
 		sharedKeeper      types.SharedKeeper
 
 		// Session cache to reduce repeated iterator calls
-		// Key format: "appAddr:serviceId:blockHeight"
+		// Key format: "appAddr:serviceId:sessionNumber"
 		sessionCache *sessionCache
 	}
 )
-
-// sessionCacheEntry represents a cached session with its height
-type sessionCacheEntry struct {
-	session      *types.Session
-	sessionID    string
-	blockHeight  int64
-	serviceId    string
-	appAddress   string
-	cachedAtTime int64 // unix timestamp for TTL
-}
 
 type sessionCache struct {
 	cache   map[string]*types.Session
