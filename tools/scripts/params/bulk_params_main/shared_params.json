@@ -11,7 +11,7 @@
           "claim_window_close_offset_blocks": "10",
           "proof_window_open_offset_blocks": "1",
           "proof_window_close_offset_blocks": "10",
-          "supplier_unbonding_period_sessions": "1008",
+          "supplier_unbonding_period_sessions": "504",
           "application_unbonding_period_sessions": "1",
           "compute_units_to_tokens_multiplier": "76920",
           "gateway_unbonding_period_sessions": "1",
