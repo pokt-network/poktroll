@@ -2,6 +2,7 @@ package upgrades
 
 import (
 	"context"
+	"encoding/hex"
 
 	cosmoslog "cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
@@ -10,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -31,6 +33,13 @@ const (
 //   - Ensures session boundary calculations remain correct after param changes
 //   - Fixes claim/proof validation failures when params change mid-session
 //   - See: https://github.com/pokt-network/poktroll/issues/543
+//
+// 3. Relay Mining Difficulty Repair (CRITICAL FIX)
+//   - Repairs corrupted/empty relay mining difficulties resulting from v0.0.10 migration
+//   - The v0.0.10 upgrade skipped data migration when moving RelayMiningDifficulty
+//     from tokenomics to service module, leaving 83+ services with empty difficulty objects
+//   - This upgrade detects and repairs empty difficulties by creating proper defaults
+//   - Initializes difficulty history for all services to support historical queries
 var Upgrade_0_1_31 = Upgrade{
 	PlanName: Upgrade_0_1_31_PlanName,
 	// No KVStore migrations in this upgrade.
@@ -107,31 +116,81 @@ var Upgrade_0_1_31 = Upgrade{
 
 		// Initialize relay mining difficulty history for all services.
 		// This ensures GetRelayMiningDifficultyAtHeight returns correct difficulty for any height >= upgrade height.
+		// CRITICAL FIX: This also repairs corrupted/empty difficulties that resulted from the v0.0.10 migration
+		// that skipped data migration when RelayMiningDifficulty moved from tokenomics to service module.
 		initializeDifficultyHistory := func(ctx context.Context, logger cosmoslog.Logger, upgradeHeight int64) error {
 			logger.Info("Initializing relay mining difficulty history", "upgrade_plan_name", Upgrade_0_1_31_PlanName)
 
-			// Get all existing difficulties
-			allDifficulties := keepers.ServiceKeeper.GetAllRelayMiningDifficulty(ctx)
+			// Get all services and service module params
+			allServices := keepers.ServiceKeeper.GetAllServices(ctx)
+			serviceParams := keepers.ServiceKeeper.GetParams(ctx)
+			targetNumRelays := serviceParams.TargetNumRelays
 
-			for _, difficulty := range allDifficulties {
+			logger.Info("Processing relay mining difficulties",
+				"total_services", len(allServices),
+				"target_num_relays", targetNumRelays,
+			)
+
+			repairedCount := 0
+			initializedCount := 0
+
+			for _, service := range allServices {
+				// Check if valid difficulty exists for this service
+				difficulty, found := keepers.ServiceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
+
+				// Detect corrupted/empty difficulty: missing service_id or empty target_hash
+				// This repairs the bug from v0.0.10 where migration was skipped
+				isCorrupted := !found || difficulty.ServiceId == "" || len(difficulty.TargetHash) == 0
+
+				if isCorrupted {
+					// Create proper default difficulty
+					difficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
+						ctx,
+						logger,
+						service.Id,
+						targetNumRelays,
+						targetNumRelays,
+					)
+
+					// Save the repaired difficulty to the current difficulty store
+					keepers.ServiceKeeper.SetRelayMiningDifficulty(ctx, difficulty)
+
+					repairedCount++
+					logger.Info("Repaired corrupted relay mining difficulty",
+						"service_id", service.Id,
+						"target_hash_hex", hex.EncodeToString(difficulty.TargetHash),
+						"num_relays_ema", difficulty.NumRelaysEma,
+						"block_height", difficulty.BlockHeight,
+					)
+				}
+
 				// Check if history already exists for this service
-				existingHistory := keepers.ServiceKeeper.GetRelayMiningDifficultyHistoryForService(ctx, difficulty.ServiceId)
+				existingHistory := keepers.ServiceKeeper.GetRelayMiningDifficultyHistoryForService(ctx, service.Id)
 
 				if len(existingHistory) == 0 {
-					// Initialize history with current difficulty at upgrade height
+					// Initialize history with valid difficulty at upgrade height
 					if err := keepers.ServiceKeeper.SetRelayMiningDifficultyAtHeight(ctx, upgradeHeight, difficulty); err != nil {
 						logger.Error("Failed to initialize difficulty history",
-							"service_id", difficulty.ServiceId,
+							"service_id", service.Id,
 							"error", err,
 						)
 						return err
 					}
+
+					initializedCount++
 					logger.Info("Initialized difficulty history",
-						"service_id", difficulty.ServiceId,
+						"service_id", service.Id,
 						"effective_height", upgradeHeight,
+						"target_hash_hex", hex.EncodeToString(difficulty.TargetHash),
 					)
 				}
 			}
+
+			logger.Info("Completed relay mining difficulty initialization",
+				"total_services_processed", len(allServices),
+				"corrupted_repaired", repairedCount,
+				"history_initialized", initializedCount,
+			)
 
 			return nil
 		}
