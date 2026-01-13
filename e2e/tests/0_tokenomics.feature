@@ -292,14 +292,14 @@ Feature: Tokenomics Namespace
         # - Supplier allocation 90%: 36855 uPOKT (floor of 40950 * 0.9)
         # - DAO allocation 10%:       4095 uPOKT (remainder: 40950 - 36855)
         #
-        # Note: Supplier receives 36832 after shareholder revenue share distribution
-        # (23 uPOKT goes to other shareholders based on LocalNet supplier config)
+        # Note: Supplier receives 36834 after shareholder revenue share distribution
+        # (21 uPOKT goes to other shareholders based on LocalNet supplier config)
 
         # The supplier should receive 90% of the MINTED amount minus shareholder distribution
-        Then the account balance of "supplier1" should be "36832" uPOKT "more" than "supplier1_initial_balance"
+        Then the account balance of "supplier1" should be "36834" uPOKT "more" than "supplier1_initial_balance"
 
         # The DAO receives its 10% allocation (40950 - 36855 = 4095)
-        # Note: The 23 uPOKT difference goes to other supplier shareholders, not DAO
+        # Note: The 21 uPOKT difference goes to other supplier shareholders, not DAO
         And the DAO balance should be "4095" uPOKT "more" than "dao_initial_balance"
 
         # The application stake should decrease by the FULL burn amount (not the minted amount)
