@@ -31,6 +31,7 @@ service Msg {
   rpc ClaimMorseApplication        (MsgClaimMorseApplication       ) returns (MsgClaimMorseApplicationResponse       );
   rpc ClaimMorseSupplier           (MsgClaimMorseSupplier          ) returns (MsgClaimMorseSupplierResponse          );
   rpc RecoverMorseAccount          (MsgRecoverMorseAccount         ) returns (MsgRecoverMorseAccountResponse         );
+  rpc AdminRecoverMorseAccount     (MsgAdminRecoverMorseAccount    ) returns (MsgAdminRecoverMorseAccountResponse    );
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 //
@@ -319,5 +320,41 @@ message MsgRecoverMorseAccountResponse {
   reserved 1, 2, 3, 4;
 
   // TODO_MAINNET_MIGRATION(@bryanchriswhite): Add shannon_dest_address to MsgRecoverMorseAccountResponse.
+}
+
+// MsgAdminRecoverMorseAccount allows the authority to recover Morse accounts
+// WITHOUT checking the allowlist. This enables faster recovery for legitimate
+// requests that have been validated off-chain.
+//
+// SECURITY: This message can ONLY be called by the module authority.
+// SAFETY: Still checks that the account exists and hasn't been claimed already.
+// USE CASE: When the allowlist is outdated and the upgrade cycle is too slow.
+//
+// Key differences from MsgRecoverMorseAccount:
+// - SKIPS allowlist validation (IsMorseAddressRecoverable check)
+// - KEEPS all other safety checks (exists, not claimed, authority)
+// - Emits a distinct event for audit trail
+message MsgAdminRecoverMorseAccount {
+  // Next free index: 4
+
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // The bech32-encoded address of the migration module authority account.
+  // ONLY the authority MAY call this admin recovery function.
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "authority"];
+
+  // The bech32-encoded address of the Shannon account to receive recovered tokens.
+  string shannon_dest_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // The hex-encoded address of the Morse account to recover.
+  // NOTE: This address is NOT checked against the allowlist.
+  // The authority is trusted to validate recovery requests off-chain.
+  string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
+}
+
+// MsgAdminRecoverMorseAccountResponse is returned from MsgAdminRecoverMorseAccount.
+message MsgAdminRecoverMorseAccountResponse {
+  // Next free index: 1
+  // Empty response - check events for recovery details
 }
 

@@ -42,6 +42,7 @@ func TxCommands() *cobra.Command {
 	migrateCmd.AddCommand(cmd.ImportMorseAccountsCmd())
 	migrateCmd.AddCommand(cmd.ValidateMorseAccountsCmd())
 	migrateCmd.AddCommand(cmd.RecoverMorseAccountCmd())
+	migrateCmd.AddCommand(cmd.AdminRecoverMorseAccountCmd())
 	migrateCmd.PersistentFlags().StringVar(&logger.LogLevel, cosmosflags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
 	migrateCmd.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 
