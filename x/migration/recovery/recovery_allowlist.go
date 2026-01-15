@@ -646,6 +646,9 @@ var knownRecoveryRequestedAllowlist = []string{
 
 	// https://github.com/pokt-network/poktroll/issues/1856
 	"9AA50E763273629780EAA930A613BBFF15F84708",
+
+	// https://github.com/pokt-network/poktroll/issues/1890
+	"10DAE07CFE8EE61549D62D03B2B15B0CF0D74F26",
 }
 
 var moduleAccountsAllowlist = []string{
