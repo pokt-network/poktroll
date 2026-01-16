@@ -50,6 +50,10 @@ import (
 //
 // Each index stores a reference to the primary key, which allows efficient retrieval
 // of the full configuration data when needed.
+//
+// IMPORTANT: This function first removes all existing indexes for the supplier before
+// re-indexing. This prevents orphaned index entries when service configs are removed
+// from the supplier's history (e.g., when replaced during config updates).
 func (k Keeper) indexSupplierServiceConfigUpdates(
 	ctx context.Context,
 	supplier sharedtypes.Supplier,
@@ -60,7 +64,13 @@ func (k Keeper) indexSupplierServiceConfigUpdates(
 	serviceConfigUpdateActivationHeightStore := k.getServiceConfigUpdateActivationHeightStore(ctx)
 	serviceConfigUpdateDeactivationHeightStore := k.getServiceConfigUpdateDeactivationHeightStore(ctx)
 
-	// Index each service config update in the supplier's history
+	// First, remove all existing indexes AND primary data for this supplier.
+	// This prevents orphaned entries when service configs are removed from history
+	// (e.g., replaced inactive configs in updateSupplier).
+	// We then re-add everything from the current ServiceConfigHistory.
+	k.removeSupplierServiceConfigUpdateIndexes(ctx, supplier.OperatorAddress)
+
+	// Index each service config update in the supplier's current history
 	// TODO_IMPROVE: Consider batch processing all the `.Set` for performance.
 	for _, serviceConfigUpdate := range supplier.ServiceConfigHistory {
 		// Serialize the config update
@@ -205,6 +215,12 @@ func (k Keeper) removeSupplierServiceConfigUpdateIndexes(
 		// Get the service config using its primary key
 		serviceConfigPrimaryKey := supplierServiceConfigsIndexIterator.Value()
 		serviceConfigBz := serviceConfigUpdateStore.Get(serviceConfigPrimaryKey)
+
+		// Skip orphaned entries (defensive - shouldn't happen after this fix)
+		if serviceConfigBz == nil {
+			continue
+		}
+
 		var serviceConfigUpdate sharedtypes.ServiceConfigUpdate
 		k.cdc.MustUnmarshal(serviceConfigBz, &serviceConfigUpdate)
 
@@ -216,7 +232,7 @@ func (k Keeper) removeSupplierServiceConfigUpdateIndexes(
 		serviceConfigDeactivationKey := types.ServiceConfigUpdateDeactivationHeightKey(serviceConfigUpdate)
 		serviceConfigUpdateDeactivationHeightStore.Delete(serviceConfigDeactivationKey)
 
-		// Delete from primary store
+		// Delete from primary store (when fully removing supplier)
 		serviceConfigUpdateStore.Delete(serviceConfigPrimaryKey)
 	}
 	supplierServiceConfigsIndexIterator.Close()

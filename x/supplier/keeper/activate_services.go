@@ -44,8 +44,10 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 	for ; activatedServiceConfigsIterator.Valid(); activatedServiceConfigsIterator.Next() {
 		supplierConfigUpdate, err := activatedServiceConfigsIterator.Value()
 		if err != nil {
-			logger.Error(fmt.Sprintf("could not get service config update from iterator: %v", err))
-			return 0, err
+			// Log and skip orphaned index entries instead of failing
+			// This handles cases where index entries point to deleted primary records
+			logger.Debug(fmt.Sprintf("skipping orphaned service config index entry: %v", err))
+			continue
 		}
 
 		activatedConfigsSuppliers[supplierConfigUpdate.OperatorAddress] = struct{}{}

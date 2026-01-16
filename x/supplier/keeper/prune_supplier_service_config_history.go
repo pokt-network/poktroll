@@ -43,7 +43,7 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 		if err != nil {
 			// Log and skip orphaned index entries instead of failing
 			// This handles cases where index entries point to deleted primary records
-			logger.Warn(fmt.Sprintf("skipping orphaned service config index entry: %v", err))
+			logger.Debug(fmt.Sprintf("skipping orphaned service config index entry: %v", err))
 			continue
 		}
 
