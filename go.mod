@@ -35,7 +35,7 @@ replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.2021
 
 // TODO_HACK(@olshansk): Replace CometBFT with Pocket's fork to avoid blocking RPC queries on heavy EndBlockers.
 // Ref: https://github.com/pokt-network/cometbft/issues/3
-replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811
+replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.19-0.20260116111103-1d2c8fa1e75a
 
 require (
 	cosmossdk.io/x/tx v0.14.0
@@ -74,7 +74,7 @@ require (
 	cosmossdk.io/x/feegrant v0.1.1
 	cosmossdk.io/x/upgrade v0.1.4
 	github.com/bufbuild/buf v1.62.1 // indirect
-	github.com/cometbft/cometbft v0.38.17
+	github.com/cometbft/cometbft v0.38.19
 	github.com/cosmos/cosmos-db v1.1.1
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
 	github.com/cosmos/cosmos-sdk v0.53.0
