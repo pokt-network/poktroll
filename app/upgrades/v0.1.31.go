@@ -245,6 +245,10 @@ var Upgrade_0_1_31 = Upgrade{
 				return vm, err
 			}
 
+			// Note: Orphaned service config index entries (if any exist) are now handled
+			// defensively by the pruning logic, which skips them instead of crashing.
+			// See x/supplier/keeper/prune_supplier_service_config_history.go
+
 			return vm, nil
 		}
 	},
