@@ -122,8 +122,23 @@ func (k msgServer) CreateClaim(
 	// Get the relay mining difficulty that was effective at the session start height.
 	// This ensures we use the correct difficulty that was active when relays were mined.
 	sessionStartHeight := claim.SessionHeader.GetSessionStartBlockHeight()
-	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
+	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
+	if !found {
+		return nil, status.Error(
+			codes.Internal,
+			types.ErrProofServiceNotFound.Wrapf(
+				"relay mining difficulty not found for service %s at session start height %d",
+				serviceId, sessionStartHeight,
+			).Error(),
+		)
+	}
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			types.ErrProofInvalidClaimRootHash.Wrapf("failed to calculate claimed uPOKT: %v", err).Error(),
+		)
+	}
 
 	// Emit the appropriate event based on whether the claim was created or updated.
 	var claimUpsertEvent proto.Message

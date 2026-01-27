@@ -164,7 +164,14 @@ func (k Keeper) EnsureWellFormedProof(ctx context.Context, proof *types.Proof) e
 	// Get the relay mining difficulty that was effective at the session start height.
 	// This ensures we use the correct difficulty that was active when relays were mined.
 	sessionStartHeight := sessionHeader.GetSessionStartBlockHeight()
-	serviceRelayDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, sessionHeader.GetServiceId(), sessionStartHeight)
+	serviceRelayDifficulty, found := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, sessionHeader.GetServiceId(), sessionStartHeight)
+	if !found {
+		logger.Error(fmt.Sprintf("relay mining difficulty not found for service %s at session start height %d", sessionHeader.GetServiceId(), sessionStartHeight))
+		return types.ErrProofServiceNotFound.Wrapf(
+			"relay mining difficulty not found for service %s at session start height %d",
+			sessionHeader.GetServiceId(), sessionStartHeight,
+		)
+	}
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
 	if err = validateRelayDifficulty(

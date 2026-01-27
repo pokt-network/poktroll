@@ -109,6 +109,12 @@ var Upgrade_0_1_31_Beta = Upgrade{
 		}
 
 		// Initialize relay mining difficulty history for all services.
+		// CRITICAL FIX: This upgrade handler is idempotent and ensures ALL nodes have
+		// difficulty history initialized at THIS specific upgrade height.
+		//
+		// Previous issue: v0.1.31 (height 666078) crashed after some nodes initialized
+		// history, causing divergence. This fix ensures consistent state by always
+		// initializing at the current upgrade height, regardless of existing history.
 		initializeDifficultyHistory := func(ctx context.Context, logger cosmoslog.Logger, upgradeHeight int64) error {
 			logger.Info("Initializing relay mining difficulty history", "upgrade_plan_name", Upgrade_0_1_31_Beta_PlanName)
 
@@ -116,23 +122,33 @@ var Upgrade_0_1_31_Beta = Upgrade{
 			allDifficulties := keepers.ServiceKeeper.GetAllRelayMiningDifficulty(ctx)
 
 			for _, difficulty := range allDifficulties {
-				// Check if history already exists for this service
-				existingHistory := keepers.ServiceKeeper.GetRelayMiningDifficultyHistoryForService(ctx, difficulty.ServiceId)
+				serviceId := difficulty.ServiceId
 
-				if len(existingHistory) == 0 {
-					// Initialize history with current difficulty at upgrade height
-					if err := keepers.ServiceKeeper.SetRelayMiningDifficultyAtHeight(ctx, upgradeHeight, difficulty); err != nil {
-						logger.Error("Failed to initialize difficulty history",
-							"service_id", difficulty.ServiceId,
-							"error", err,
-						)
-						return err
-					}
-					logger.Info("Initialized difficulty history",
-						"service_id", difficulty.ServiceId,
-						"effective_height", upgradeHeight,
+				// Check if history already exists for this service
+				existingHistory := keepers.ServiceKeeper.GetRelayMiningDifficultyHistoryForService(ctx, serviceId)
+
+				if len(existingHistory) > 0 {
+					logger.Info("Found existing difficulty history, will ensure entry exists at upgrade height",
+						"service_id", serviceId,
+						"num_existing_entries", len(existingHistory),
 					)
 				}
+
+				// ALWAYS set difficulty at this upgrade height to ensure consistency.
+				// If an entry already exists at this height, it will be overwritten with current values.
+				// This is idempotent: running the upgrade multiple times produces the same result.
+				if err := keepers.ServiceKeeper.SetRelayMiningDifficultyAtHeight(ctx, upgradeHeight, difficulty); err != nil {
+					logger.Error("Failed to initialize difficulty history",
+						"service_id", serviceId,
+						"error", err,
+					)
+					return err
+				}
+				logger.Info("Initialized difficulty history at upgrade height",
+					"service_id", serviceId,
+					"effective_height", upgradeHeight,
+					"target_hash", difficulty.TargetHash,
+				)
 			}
 
 			return nil
