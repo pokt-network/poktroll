@@ -90,7 +90,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 
 		// Initialize history if empty (first update for this service since upgrade)
 		existingHistory := k.GetRelayMiningDifficultyHistoryForService(ctx, serviceId)
-		if len(existingHistory) == 0 && found {
+		if len(existingHistory) == 0 {
 			// Record the current difficulty at current height first
 			if err := k.SetRelayMiningDifficultyAtHeight(ctx, currentHeight, prevDifficulty); err != nil {
 				return nil, fmt.Errorf("failed to initialize difficulty history for service %s: %w", serviceId, err)

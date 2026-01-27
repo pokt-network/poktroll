@@ -9,6 +9,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -147,9 +148,16 @@ func (k Keeper) GetRelayMiningDifficultyAtHeight(
 		}
 	}
 
-	// Fallback: If no historical difficulty found, return current difficulty.
-	// This maintains backwards compatibility for chains without history.
-	return k.GetRelayMiningDifficulty(ctx, serviceId)
+	// Fallback: If no historical difficulty found, return a deterministic base
+	// difficulty. This avoids non-determinism from node-local store state when
+	// no history exists (e.g. for services created after an upgrade handler).
+	targetNumRelays := k.GetParams(ctx).TargetNumRelays
+	return types.RelayMiningDifficulty{
+		ServiceId:    serviceId,
+		BlockHeight:  0,
+		NumRelaysEma: targetNumRelays,
+		TargetHash:   protocol.BaseRelayDifficultyHashBz,
+	}, false
 }
 
 // GetAllRelayMiningDifficultyHistory returns all historical difficulty updates.
