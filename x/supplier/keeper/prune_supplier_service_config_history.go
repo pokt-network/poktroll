@@ -25,9 +25,6 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 
 	logger := k.Logger().With("method", "PruneSupplierServiceConfigHistory")
 
-	// Get shared params to calculate proof window
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-
 	// Track unique suppliers whose configurations were pruned
 	deactivatedConfigsSuppliers := make(map[string]bool)
 
@@ -59,6 +56,7 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 		// was active is DeactivationHeight - 1, which falls within the last active session.
 		// We calculate the proof window for that session.
 		lastActiveHeight := serviceConfigUpdate.DeactivationHeight - 1
+		sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, lastActiveHeight)
 		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, lastActiveHeight)
 
 		if currentHeight <= proofWindowCloseHeight {

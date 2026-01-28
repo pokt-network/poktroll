@@ -357,7 +357,9 @@ func (k Keeper) updateSupplier(
 			// Deactivate old configs NOT being replaced:
 			// - Active configs (no deactivation height set)
 			// - Scheduled configs for different services
-			currentServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
+			if currentServiceConfigUpdate.DeactivationHeight == 0 {
+				currentServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
+			}
 			updatedServiceConfigHistory = append(updatedServiceConfigHistory, currentServiceConfigUpdate)
 		}
 	}
