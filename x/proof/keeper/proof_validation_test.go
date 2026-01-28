@@ -819,4 +819,7 @@ func setRelayMiningDifficultyHash(
 	)
 	relayMiningDifficulty.TargetHash = targetHash
 	serviceKeeper.SetRelayMiningDifficulty(ctx, relayMiningDifficulty)
+	// Also write to the history store so that GetRelayMiningDifficultyAtHeight
+	// can find this difficulty at any height.
+	_ = serviceKeeper.SetRelayMiningDifficultyAtHeight(ctx, 0, relayMiningDifficulty)
 }

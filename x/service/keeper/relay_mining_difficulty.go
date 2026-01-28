@@ -148,16 +148,22 @@ func (k Keeper) GetRelayMiningDifficultyAtHeight(
 		}
 	}
 
-	// Fallback: If no historical difficulty found, return a deterministic base
-	// difficulty. This avoids non-determinism from node-local store state when
-	// no history exists (e.g. for services created after an upgrade handler).
+	// Fallback: return a deterministic base difficulty when no historical entry
+	// exists. This is safe because:
+	// 1. It is deterministic — all nodes compute the same value from on-chain params
+	// 2. The upgrade handler ensures all pre-existing services get history initialized
+	// 3. New services that have never settled claims use base difficulty by definition
+	//
+	// NOTE: We intentionally do NOT fall back to GetRelayMiningDifficulty (the
+	// "current" store) because that could return different values on different
+	// nodes if history initialization was inconsistent, causing consensus divergence.
 	targetNumRelays := k.GetParams(ctx).TargetNumRelays
 	return types.RelayMiningDifficulty{
 		ServiceId:    serviceId,
 		BlockHeight:  0,
 		NumRelaysEma: targetNumRelays,
 		TargetHash:   protocol.BaseRelayDifficultyHashBz,
-	}, false
+	}, true
 }
 
 // GetAllRelayMiningDifficultyHistory returns all historical difficulty updates.

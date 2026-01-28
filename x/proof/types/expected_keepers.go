@@ -71,5 +71,6 @@ type ServiceKeeper interface {
 	// Only used for testing & simulation
 	SetService(ctx context.Context, service sharedtypes.Service)
 	SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficulty servicetypes.RelayMiningDifficulty)
+	SetRelayMiningDifficultyAtHeight(ctx context.Context, effectiveHeight int64, difficulty servicetypes.RelayMiningDifficulty) error
 	GetParams(ctx context.Context) servicetypes.Params
 }
