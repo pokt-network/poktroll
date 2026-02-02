@@ -246,7 +246,7 @@ sudo ufw allow 8545/tcp
 Start the RelayMiner:
 
 ```bash
-pocketd relayminer start --config=relay_miner_config.yaml --chain-id=pocket-beta --keyring-backend=test --grpc-insecure=false
+pocketd relayminer start --config=relay_miner_config.yaml --chain-id=pocket-lego-testnet --keyring-backend=test --grpc-insecure=false
 ```
 
 :::tip

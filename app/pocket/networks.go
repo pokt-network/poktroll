@@ -7,7 +7,7 @@ import (
 const (
 	LocalNetChainId     = "pocket"
 	AlphaTestNetChainId = "pocket-alpha"
-	BetaTestNetChainId  = "pocket-beta"
+	BetaTestNetChainId  = "pocket-lego-testnet"
 	MainNetChainId      = "pocket"
 )
 

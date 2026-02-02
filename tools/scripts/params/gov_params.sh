@@ -245,7 +245,7 @@ alpha)
 beta)
     AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
     FROM_KEY="pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
-    CHAIN_ID="pocket-beta"
+    CHAIN_ID="pocket-lego-testnet"
     NODE="--node=https://sauron-rpc.beta.infra.pocket.network/"
     ;;
 main)

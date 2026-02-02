@@ -261,7 +261,7 @@ Submit the parameter update transaction:
 pocketd tx authz exec tokenomics_params_beta_20241230_143022.json \
   --from=pnf_beta \
   --keyring-backend=test --home=~/.pocket \
-  --chain-id=pocket-beta --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
+  --chain-id=pocket-lego-testnet --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
   --fees=200upokt --yes
 
 ```

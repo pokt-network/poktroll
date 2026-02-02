@@ -65,7 +65,7 @@ get_beta_config() {
   case "$1" in
   from) echo "pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e" ;;
   keyring_backend) echo "test" ;;
-  chain_id) echo "pocket-beta" ;;
+  chain_id) echo "pocket-lego-testnet" ;;
   node) echo "https://sauron-rpc.beta.infra.pocket.network" ;;
   home) echo "~/.pocket_prod" ;;
   fees) echo "200upokt" ;;

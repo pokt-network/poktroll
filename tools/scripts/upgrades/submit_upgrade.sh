@@ -137,7 +137,7 @@ alpha)
 beta)
     RPC_ENDPOINT="https://sauron-rpc.beta.infra.pocket.network/"
     FROM_ACCOUNT="pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
-    CHAIN_ID="pocket-beta"
+    CHAIN_ID="pocket-lego-testnet"
     NODE_FLAG="--node=https://sauron-rpc.beta.infra.pocket.network/"
     GRAFANA_DASHBOARD="https://grafana.poktroll.com/goto/haNungjHg?orgId=1"
     ;;

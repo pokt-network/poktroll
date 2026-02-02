@@ -291,7 +291,7 @@ kubectl port-forward pods/testnet-beta-validator1-pocketd-0 26658:26657 9091:909
 pocketd tx migration import-morse-accounts "$IMPORT_MSG_PATH" \
   --from=pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e \
   --home=~/.pocket_prod --keyring-backend=test \
-  --node=http://localhost:26658 --chain-id=pocket-beta \
+  --node=http://localhost:26658 --chain-id=pocket-lego-testnet \
   $GAS_FLAGS
 
 # LocalNet (for testing)

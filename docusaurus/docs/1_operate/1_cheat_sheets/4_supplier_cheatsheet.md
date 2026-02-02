@@ -172,10 +172,10 @@ cat > ~/.pocketrc << EOF
 export SUPPLIER_ADDR=$(pocketd keys show supplier -a)
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --yes"
 export BETA_NODE_FLAGS="--network=beta"
-export BETA_NETWORK="pocket-beta"
+export BETA_NETWORK="pocket-lego-testnet"
 export BETA_RPC_URL="https://sauron-rpc.beta.infra.pocket.network/"
-export BETA_GRPC_URL="https://sauron-grpc.infra.pocket.network:443"
-export BETA_GRPC_URL_RAW="sauron-grpc.infra.pocket.network:443"
+export BETA_GRPC_URL="https://sauron-grpc.beta.infra.pocket.network:443"
+export BETA_GRPC_URL_RAW="sauron-grpc.beta.infra.pocket.network:443"
 ```
 
 And source them in your shell:

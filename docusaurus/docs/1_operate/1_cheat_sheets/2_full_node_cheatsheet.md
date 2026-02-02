@@ -115,7 +115,7 @@ You should see a response like this:
         "version": {
           "block": "11"
         },
-        "chain_id": "pocket-beta",
+        "chain_id": "pocket-lego-testnet",
         "height": "4971",
         "time": "2024-11-25T21:33:54.785576474Z",
         "last_block_id": {

@@ -14,7 +14,7 @@ show_help() {
     echo "  SERVICES_FILE  Path to tab-separated or whitespace-separated file with columns: service_id, service_description, CUTTM"
     echo "  NETWORK        Network to use: 'main' or 'beta'"
     echo "                 - main: https://sauron-rpc.infra.pocket.network/ (pocket)"
-    echo "                 - beta: https://sauron-rpc.beta.infra.pocket.network (pocket-beta)"
+    echo "                 - beta: https://sauron-rpc.beta.infra.pocket.network (pocket-lego-testnet)"
     echo "  ADDRESS        Address/key name for the --from flag (e.g., my-key)"
     echo "  HOME_DIR       Directory path for the --home flag (default: ~/.pocket)"
     echo
@@ -90,7 +90,7 @@ case $NETWORK in
         ;;
     beta)
         NODE_URL="https://sauron-rpc.beta.infra.pocket.network/"
-        CHAIN_ID="pocket-beta"
+        CHAIN_ID="pocket-lego-testnet"
         ;;
     *)
         echo "Error: Invalid network '$NETWORK'. Must be 'main' or 'beta'"
