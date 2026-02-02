@@ -13,7 +13,7 @@ Poktroll is a Cosmos SDK-based blockchain implementing Pocket Network's Shannon 
 ```bash
 make go_develop                 # Generate protos and mocks (run after proto changes)
 make go_develop_and_test       # Generate + run all tests
-make ignite_build_pocketd      # Build pocketd binary
+make ignite_pocketd_build      # Build pocketd binary to GOPATH/bin
 make proto_regen               # Regenerate protobuf artifacts
 ```
 
@@ -78,6 +78,28 @@ make acc_balance_query ACC=<addr>  # Query account balance
 3. Update keeper methods and message handlers
 4. Add/update tests for new functionality
 5. Run `make go_lint` before committing
+
+## Adding Query Endpoints
+
+To add a new gRPC/REST query endpoint to a module:
+
+1. **Proto definition** (`proto/pocket/<module>/query.proto`):
+   - Add RPC method to the `Query` service with `google.api.http` option for REST
+   - Add request/response message types
+   - For pagination, use `cosmos.base.query.v1beta1.PageRequest/PageResponse`
+
+2. **Regenerate**: `make proto_regen`
+
+3. **Query handler** (`x/<module>/keeper/query_*.go`):
+   - Implement the method on the Keeper that matches the generated interface
+   - Use `query.Paginate()` for paginated queries over store prefixes
+   - Return gRPC status errors (e.g., `status.Error(codes.NotFound, ...)`)
+
+4. **CLI registration** (`x/<module>/module/autocli.go`):
+   - Add `RpcCommandOptions` entry with `RpcMethod`, `Use`, `Short`, `Long`, `Example`
+   - Use `PositionalArgs` to map CLI args to proto fields
+
+5. **Verify**: `make go_lint && go test ./x/<module>/... && make ignite_build`
 
 ## LocalNet Development
 

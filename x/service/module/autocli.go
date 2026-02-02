@@ -88,6 +88,29 @@ pocketd q service show-service pocket --dehydrated`,
 					Example:        `pocketd q service relay-mining-difficulty <service-id>`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}},
 				},
+				{
+					RpcMethod: "RelayMiningDifficultyAtHeight",
+					Use:       "relay-mining-difficulty-at-height [service-id] [block-height]",
+					Short:     "Show relay mining difficulty for a service at a specific block height",
+					Long: `
+- Shows the relay mining difficulty that was effective for a specific service at a given block height.
+- Useful for historical analysis and verifying difficulty used during past sessions.
+`,
+					Example:        `pocketd q service relay-mining-difficulty-at-height <service-id> 1000`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}, {ProtoField: "blockHeight"}},
+				},
+				{
+					RpcMethod: "RelayMiningDifficultyHistory",
+					Use:       "relay-mining-difficulty-history [service-id]",
+					Short:     "List the history of relay mining difficulty changes for a service",
+					Long: `
+- Lists all historical relay mining difficulty changes for a specific service.
+- Each entry shows when a difficulty became effective and the difficulty parameters.
+- Supports pagination via flags if there are many entries.
+`,
+					Example:        `pocketd q service relay-mining-difficulty-history <service-id>`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},

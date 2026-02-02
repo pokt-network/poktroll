@@ -40,6 +40,16 @@ service Query {
   rpc RelayMiningDifficultyAll (QueryAllRelayMiningDifficultyRequest) returns (QueryAllRelayMiningDifficultyResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty";
   }
+
+  // Queries the relay mining difficulty that was effective at a specific block height for a service.
+  rpc RelayMiningDifficultyAtHeight (QueryGetRelayMiningDifficultyAtHeightRequest) returns (QueryGetRelayMiningDifficultyAtHeightResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}/at_height/{blockHeight}";
+  }
+
+  // Queries the history of relay mining difficulty changes for a service.
+  rpc RelayMiningDifficultyHistory (QueryRelayMiningDifficultyHistoryRequest) returns (QueryRelayMiningDifficultyHistoryResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}/history";
+  }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
@@ -94,4 +104,23 @@ message QueryAllRelayMiningDifficultyRequest {
 message QueryAllRelayMiningDifficultyResponse {
   repeated RelayMiningDifficulty                  relayMiningDifficulty = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination            = 2;
+}
+
+message QueryGetRelayMiningDifficultyAtHeightRequest {
+  string serviceId = 1;
+  int64 blockHeight = 2;
+}
+
+message QueryGetRelayMiningDifficultyAtHeightResponse {
+  RelayMiningDifficulty relayMiningDifficulty = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryRelayMiningDifficultyHistoryRequest {
+  string serviceId = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message QueryRelayMiningDifficultyHistoryResponse {
+  repeated RelayMiningDifficultyUpdate relayMiningDifficultyHistory = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
