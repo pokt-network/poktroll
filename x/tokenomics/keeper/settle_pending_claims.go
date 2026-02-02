@@ -33,12 +33,19 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	logger.Debug("settling expiring claims")
 
 	// Initialize results structs.
+	// Pre-allocate for expected claim volume to avoid dynamic reallocation.
+	// Current network: ~5,250 suppliers, ~300 services, ~200 applications.
+	const estimatedClaimCount = 6000
 	blockHeight := ctx.BlockHeight()
-	settledResults = make(tlm.ClaimSettlementResults, 0)
-	expiredResults = make(tlm.ClaimSettlementResults, 0)
+	settledResults = make(tlm.ClaimSettlementResults, 0, estimatedClaimCount)
+	expiredResults = make(tlm.ClaimSettlementResults, 0, estimatedClaimCount/10) // ~10% typically expire
 	settlementContext := NewSettlementContext(ctx, &k, logger)
 	numExpiringClaims := 0
 	numDiscardedFaultyClaims = 0
+
+	// Pre-allocate telemetry batch to collect telemetry data during iteration.
+	// This avoids N deferred stack frames which cause memory pressure.
+	telemetryBatch := make([]claimTelemetryData, 0, estimatedClaimCount)
 
 	// Retrieve an iterator of all expiring claims.
 	// DEV_NOTE: This previously retrieve a list but has been change to account for large claim counts.
@@ -95,17 +102,17 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			settlementStage = prooftypes.ClaimProofStage_EXPIRED
 		}
 
-		// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
-		// Telemetry will be emitted for all non-faulty (i.e. discarded) claims.
-		defer k.finalizeClaimTelemetry(
-			settlementStage,
-			claim.SessionHeader.ServiceId,
-			claim.SessionHeader.ApplicationAddress,
-			claim.SupplierOperatorAddress,
-			claimProcessingContext.numClaimRelays,
-			claimProcessingContext.numClaimComputeUnits,
-			settlementErr,
-		)
+		// Collect telemetry data for batch emission after the loop.
+		// This avoids N deferred stack frames which cause memory pressure with high claim counts.
+		telemetryBatch = append(telemetryBatch, claimTelemetryData{
+			stage:           settlementStage,
+			serviceId:       claim.SessionHeader.ServiceId,
+			appAddr:         claim.SessionHeader.ApplicationAddress,
+			supplierAddr:    claim.SupplierOperatorAddress,
+			numRelays:       claimProcessingContext.numClaimRelays,
+			numComputeUnits: claimProcessingContext.numClaimComputeUnits,
+			err:             settlementErr,
+		})
 
 		// The claim is being settled or expired, so it no longer needs onchain storage.
 		// Remove it from the latest (i.e. pruned) state so it will be maintained by archived nodes.
@@ -117,6 +124,20 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			"supplier", claim.SupplierOperatorAddress,
 			"settled", claimProcessingContext.isSettled,
 			"block_height", blockHeight,
+		)
+	}
+
+	// Emit all batched telemetry after the loop.
+	// This is more efficient than using N deferred calls in the loop.
+	for _, td := range telemetryBatch {
+		k.finalizeClaimTelemetry(
+			td.stage,
+			td.serviceId,
+			td.appAddr,
+			td.supplierAddr,
+			td.numRelays,
+			td.numComputeUnits,
+			td.err,
 		)
 	}
 

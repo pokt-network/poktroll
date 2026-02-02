@@ -38,6 +38,19 @@ type claimSettlementContext struct {
 	numClaimComputeUnits uint64
 }
 
+// claimTelemetryData holds telemetry data for a single claim to be emitted after settlement processing.
+// This struct is used to batch telemetry emission instead of using deferred calls in a loop,
+// which avoids excessive stack frame allocation with high claim volumes.
+type claimTelemetryData struct {
+	stage           prooftypes.ClaimProofStage
+	serviceId       string
+	appAddr         string
+	supplierAddr    string
+	numRelays       uint64
+	numComputeUnits uint64
+	err             error
+}
+
 // settlementContext maintains a cache of all entities involved in the claim settlement process.
 // This structure optimizes claim processing performance by eliminating redundant KV store operations.
 type settlementContext struct {
@@ -80,19 +93,28 @@ func NewSettlementContext(
 	tokenomicsKeeper *Keeper,
 	logger cosmoslog.Logger,
 ) *settlementContext {
+	// Pre-allocate maps and slices with reasonable capacity estimates based on current network size.
+	// This avoids rehashing and reallocation during claim processing with high claim volumes.
+	// Current network: ~5,250 suppliers, ~300 services, ~200 applications.
+	const (
+		estimatedSuppliers    = 5500
+		estimatedApplications = 250
+		estimatedServices     = 350
+	)
+
 	return &settlementContext{
 		keeper: tokenomicsKeeper,
 		logger: logger.With("module", "settlement_context"),
 
-		supplierMap:      make(map[string]int),
-		settledSuppliers: make([]*sharedtypes.Supplier, 0),
+		supplierMap:      make(map[string]int, estimatedSuppliers),
+		settledSuppliers: make([]*sharedtypes.Supplier, 0, estimatedSuppliers),
 
-		applicationMap:             make(map[string]int),
-		settledApplications:        make([]*apptypes.Application, 0),
-		applicationInitialStakeMap: make(map[string]cosmostypes.Coin),
+		applicationMap:             make(map[string]int, estimatedApplications),
+		settledApplications:        make([]*apptypes.Application, 0, estimatedApplications),
+		applicationInitialStakeMap: make(map[string]cosmostypes.Coin, estimatedApplications),
 
-		serviceMap:               make(map[string]*sharedtypes.Service),
-		relayMiningDifficultyMap: make(map[string]servicetypes.RelayMiningDifficulty),
+		serviceMap:               make(map[string]*sharedtypes.Service, estimatedServices),
+		relayMiningDifficultyMap: make(map[string]servicetypes.RelayMiningDifficulty, estimatedServices),
 
 		sharedParams:     tokenomicsKeeper.sharedKeeper.GetParams(ctx),
 		tokenomicsParams: tokenomicsKeeper.GetParams(ctx),
