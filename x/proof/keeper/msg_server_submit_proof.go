@@ -123,9 +123,11 @@ func (k msgServer) SubmitProof(
 	}
 
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
+	// Use the difficulty that was effective at the session start height for consistency.
 	serviceId := sessionHeader.GetServiceId()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
-	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+	sessionStartHeight := sessionHeader.GetSessionStartBlockHeight()
+	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
 
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
@@ -235,8 +237,12 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	proofParams := k.GetParams(ctx)
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
+	// Get the relay mining difficulty that was effective at the session start height.
+	// This ensures we use the correct difficulty that was active when relays were mined,
+	// matching the calculation used in claim creation and proof validation.
 	serviceId := claim.GetSessionHeader().GetServiceId()
-	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+	sessionStartHeight := claim.GetSessionHeader().GetSessionStartBlockHeight()
+	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
 
 	// Retrieve the number of tokens claimed to compare against the threshold.
 	// Different services have varying compute_unit -> token multipliers, so the
