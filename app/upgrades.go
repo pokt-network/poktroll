@@ -167,12 +167,12 @@ var allUpgrades = []upgrades.Upgrade{
 	// - Ensures session boundary calculations remain correct after param changes
 	upgrades.Upgrade_0_1_31,
 
-	// v0.1.31-beta - betanet-only upgrade to test v0.1.31 with critical bug fixes:
+	// v0.1.31-beta-2 - betanet-only upgrade to test v0.1.31 with critical bug fixes:
 	// - All v0.1.31 features (PIP-41, param history)
 	// - Orphaned service config index cleanup migration
 	// - Root cause fix: proper index cleanup during supplier updates
 	// - Defensive logging improvements (warn → debug)
-	upgrades.Upgrade_0_1_31_Beta,
+	upgrades.Upgrade_0_1_31_Beta_2,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

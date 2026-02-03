@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	Upgrade_0_1_31_Beta_PlanName = "v0.1.31-beta"
+	Upgrade_0_1_31_Beta_2_PlanName = "v0.1.31-beta-2"
 )
 
-// Upgrade_0_1_31_Beta handles the betanet upgrade to test v0.1.31 fixes.
+// Upgrade_0_1_31_Beta_2 handles the betanet upgrade to test v0.1.31 fixes.
 // This upgrade implements the same changes as v0.1.31 plus critical bug fixes:
 //
 // 1. PIP-41: Deflationary Mint Mechanism
@@ -38,8 +38,8 @@ const (
 //
 // Note: This upgrade is for betanet only. Mainnet will use v0.1.31 or v0.1.32
 // depending on betanet test results.
-var Upgrade_0_1_31_Beta = Upgrade{
-	PlanName: Upgrade_0_1_31_Beta_PlanName,
+var Upgrade_0_1_31_Beta_2 = Upgrade{
+	PlanName: Upgrade_0_1_31_Beta_2_PlanName,
 	// No KVStore migrations in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{},
 
@@ -51,7 +51,7 @@ var Upgrade_0_1_31_Beta = Upgrade{
 	) upgradetypes.UpgradeHandler {
 		// PIP-41: Add mint_ratio parameter with default value 1.0 (no deflation)
 		applyNewParameters := func(ctx context.Context, logger cosmoslog.Logger) (err error) {
-			logger.Info("Starting PIP-41 parameter updates", "upgrade_plan_name", Upgrade_0_1_31_Beta_PlanName)
+			logger.Info("Starting PIP-41 parameter updates", "upgrade_plan_name", Upgrade_0_1_31_Beta_2_PlanName)
 
 			// Get the current tokenomics params
 			tokenomicsParams := keepers.TokenomicsKeeper.GetParams(ctx)
@@ -81,7 +81,7 @@ var Upgrade_0_1_31_Beta = Upgrade{
 
 		// Initialize historical parameter tracking for session and shared modules.
 		initializeParamsHistory := func(ctx context.Context, logger cosmoslog.Logger, upgradeHeight int64) error {
-			logger.Info("Initializing historical params tracking", "upgrade_plan_name", Upgrade_0_1_31_Beta_PlanName)
+			logger.Info("Initializing historical params tracking", "upgrade_plan_name", Upgrade_0_1_31_Beta_2_PlanName)
 
 			// Initialize shared params history at the upgrade height.
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
@@ -116,7 +116,7 @@ var Upgrade_0_1_31_Beta = Upgrade{
 		// history, causing divergence. This fix ensures consistent state by always
 		// initializing at the current upgrade height, regardless of existing history.
 		initializeDifficultyHistory := func(ctx context.Context, logger cosmoslog.Logger, upgradeHeight int64) error {
-			logger.Info("Initializing relay mining difficulty history", "upgrade_plan_name", Upgrade_0_1_31_Beta_PlanName)
+			logger.Info("Initializing relay mining difficulty history", "upgrade_plan_name", Upgrade_0_1_31_Beta_2_PlanName)
 
 			// Get all existing difficulties
 			allDifficulties := keepers.ServiceKeeper.GetAllRelayMiningDifficulty(ctx)
@@ -203,7 +203,7 @@ var Upgrade_0_1_31_Beta = Upgrade{
 				return vm, err
 			}
 
-			logger.Info("Successfully completed v0.1.31-beta upgrade for betanet")
+			logger.Info("Successfully completed v0.1.31-beta-2 upgrade for betanet")
 			return vm, nil
 		}
 	},
