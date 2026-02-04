@@ -59,18 +59,20 @@ func NewSessionHydrator(
 func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types.Session, error) {
 	logger := k.Logger().With("method", "hydrateSession")
 
-	// First hydrate metadata to get session number for cache key
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
 		return nil, err
 	}
 	logger.Debug("Finished hydrating session metadata")
 
-	// Check cache before doing expensive hydration
-	cacheKey := sessionCacheKey(sh.sessionHeader.ApplicationAddress, sh.sessionHeader.ServiceId, sh.session.SessionNumber)
-	if cachedSession, found := k.sessionCache.get(cacheKey); found {
-		logger.Debug(fmt.Sprintf("Session cache hit for key: %s", cacheKey))
-		return cachedSession, nil
-	}
+	// CRITICAL: Session caching has been disabled to fix consensus failure.
+	// The in-memory cache caused non-determinism because different nodes had
+	// different cache states (populated by external RPC queries), leading to
+	// different gas consumption during tx execution and AppHash mismatches.
+	// See: https://github.com/pokt-network/poktroll/issues/XXX
+	//
+	// TODO_POST_MAINNET: Re-implement caching in a determinism-safe way:
+	// - Only cache during queries (ExecModeCheck/Simulate), not during FinalizeBlock
+	// - Or use a store-backed cache that's part of consensus state
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
 		return nil, err
@@ -89,10 +91,6 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 
 	sh.session.Header = sh.sessionHeader
 	sh.session.SessionId = sh.sessionHeader.SessionId
-
-	// Cache the fully hydrated session
-	k.sessionCache.set(cacheKey, sh.session)
-	logger.Debug(fmt.Sprintf("Cached session for key: %s", cacheKey))
 
 	return sh.session, nil
 }

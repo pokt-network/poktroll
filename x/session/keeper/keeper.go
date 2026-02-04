@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/log"
@@ -30,54 +29,17 @@ type (
 		applicationKeeper types.ApplicationKeeper
 		supplierKeeper    types.SupplierKeeper
 		sharedKeeper      types.SharedKeeper
-
-		// Session cache to reduce repeated iterator calls
-		// Key format: "appAddr:serviceId:sessionNumber"
-		sessionCache *sessionCache
 	}
 )
 
-type sessionCache struct {
-	cache   map[string]*types.Session
-	mu      sync.RWMutex
-	maxSize int
-}
-
-func newSessionCache(maxSize int) *sessionCache {
-	return &sessionCache{
-		cache:   make(map[string]*types.Session, maxSize),
-		maxSize: maxSize,
-	}
-}
-
-// sessionCacheKey generates a cache key from session parameters
-// Format: "appAddr:serviceId:sessionNumber"
-func sessionCacheKey(appAddr, serviceId string, sessionNumber int64) string {
-	return fmt.Sprintf("%s:%s:%d", appAddr, serviceId, sessionNumber)
-}
-
-func (sc *sessionCache) get(key string) (*types.Session, bool) {
-	sc.mu.RLock()
-	defer sc.mu.RUnlock()
-	session, ok := sc.cache[key]
-	return session, ok
-}
-
-func (sc *sessionCache) set(key string, session *types.Session) {
-	sc.mu.Lock()
-	defer sc.mu.Unlock()
-
-	// Simple FIFO eviction if cache is full
-	if len(sc.cache) >= sc.maxSize {
-		// Delete a random entry (Go map iteration is randomized)
-		for k := range sc.cache {
-			delete(sc.cache, k)
-			break
-		}
-	}
-
-	sc.cache[key] = session
-}
+// NOTE: Session caching has been removed to fix a consensus failure.
+// The in-memory cache caused non-determinism because different nodes had
+// different cache states (populated by external RPC queries), leading to
+// different gas consumption during tx execution and AppHash mismatches.
+//
+// TODO_POST_MAINNET: Re-implement caching in a determinism-safe way:
+// - Only cache during queries (ExecModeCheck/Simulate), not during FinalizeBlock
+// - Or use a store-backed cache that's part of consensus state
 
 func NewKeeper(
 	cdc codec.BinaryCodec,
@@ -95,10 +57,6 @@ func NewKeeper(
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
 	}
 
-	// Initialize session cache with reasonable default size
-	// This caches up to 10000 sessions to reduce iterator overhead
-	const defaultSessionCacheSize = 10000
-
 	return Keeper{
 		cdc:          cdc,
 		storeService: storeService,
@@ -110,7 +68,6 @@ func NewKeeper(
 		applicationKeeper: applicationKeeper,
 		supplierKeeper:    supplierKeeper,
 		sharedKeeper:      sharedKeeper,
-		sessionCache:      newSessionCache(defaultSessionCacheSize),
 	}
 }
 
