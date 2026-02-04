@@ -108,3 +108,53 @@ Use LocalNet for testing multi-node scenarios and protocol upgrades:
 - Configuration in `/localnet/kubernetes/`
 - Observability with Grafana dashboards
 - Reset network state with `make localnet_reset` when testing breaking changes
+
+## Consensus Safety (Critical)
+
+Cosmos SDK blockchains require **deterministic execution** - all validators must produce identical state from identical inputs. Non-determinism causes AppHash mismatches and chain halts.
+
+### Forbidden Patterns in Keeper Code
+
+**Never do these in message handlers, BeginBlock, or EndBlock:**
+
+1. **In-memory caches on Keeper structs** - Different nodes have different cache states based on query history, causing gas mismatches
+   ```go
+   // BAD: Cache populated by queries affects tx execution gas
+   type Keeper struct {
+       sessionCache map[string]*Session  // NEVER DO THIS
+   }
+   ```
+
+2. **Map iteration without sorting** - Go map iteration order is randomized
+   ```go
+   // BAD: Non-deterministic order
+   for k, v := range myMap { ... }
+
+   // GOOD: Sort keys first
+   keys := maps.Keys(myMap)
+   slices.Sort(keys)
+   for _, k := range keys { ... }
+   ```
+
+3. **time.Now() or rand** - Use `ctx.BlockTime()` and deterministic randomness from block hash
+
+4. **External API/RPC calls** - Network responses vary between nodes
+
+5. **Goroutines without deterministic synchronization** - Results must be identical regardless of execution order
+
+### Safe Patterns
+
+- **Ephemeral per-block caches** - Create fresh in BeginBlock/EndBlock, don't persist on Keeper
+- **Store-backed caches** - Part of consensus state, identical across nodes
+- **Query-only caches** - Only cache during `ExecModeCheck`/`ExecModeSimulate`, never during `ExecModeFinalize`
+- **Sorted iteration** - Always sort map keys before iterating when order affects state
+
+### Why LocalNet Won't Catch These Bugs
+
+In-memory cache bugs are insidious because:
+- Single-node testing always passes (one cache state)
+- Multi-node passes if all nodes receive identical query traffic
+- Only fails in production when validators have divergent cache states from different RPC query patterns
+- Manifests as "gas mismatch" or "AppHash mismatch" which can be misattributed
+
+**Always review keeper struct fields for consensus safety when adding caching or optimization.**
