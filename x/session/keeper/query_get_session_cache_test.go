@@ -109,25 +109,47 @@ func TestCachedQueryServer_GetSession_NilRequest(t *testing.T) {
 	require.Nil(t, res)
 }
 
-func TestCachedQueryServer_GetSession_ErrorNotCached(t *testing.T) {
+func TestCachedQueryServer_GetSession_ErrorCachedReturnsSameError(t *testing.T) {
 	k, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100)
 
 	cachedServer := k.NewCachedQueryServer()
 
-	// Request with an invalid/unknown app address — should error.
-	req := &types.QueryGetSessionRequest{
-		ApplicationAddress: "pokt1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-		ServiceId:          keepertest.TestServiceId1,
-		BlockHeight:        1,
+	tests := []struct {
+		desc string
+		req  *types.QueryGetSessionRequest
+	}{
+		{
+			desc: "app not found",
+			req: &types.QueryGetSessionRequest{
+				ApplicationAddress: "pokt1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				ServiceId:          keepertest.TestServiceId1,
+				BlockHeight:        1,
+			},
+		},
+		{
+			desc: "no suppliers for service",
+			req: &types.QueryGetSessionRequest{
+				ApplicationAddress: keepertest.TestApp1Address,
+				ServiceId:          keepertest.TestServiceId11,
+				BlockHeight:        1,
+			},
+		},
 	}
 
-	res1, err := cachedServer.GetSession(ctx, req)
-	require.Error(t, err)
-	require.Nil(t, res1)
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			// First call — cache miss, error goes through keeper.
+			res1, err1 := cachedServer.GetSession(ctx, tt.req)
+			require.Error(t, err1)
+			require.Nil(t, res1)
 
-	// Calling again should still result in an error (not cached).
-	res2, err := cachedServer.GetSession(ctx, req)
-	require.Error(t, err)
-	require.Nil(t, res2)
+			// Second call — cache hit, must return the identical error.
+			res2, err2 := cachedServer.GetSession(ctx, tt.req)
+			require.Error(t, err2)
+			require.Nil(t, res2)
+
+			require.Equal(t, err1.Error(), err2.Error())
+		})
+	}
 }
