@@ -32,6 +32,12 @@ type (
 	}
 )
 
+// NOTE: Session query caching is implemented via cachedQueryServer (see
+// query_get_session_cache.go), which wraps only the gRPC/REST QueryServer.
+// The proof module's SessionKeeper interface points directly to this raw Keeper,
+// bypassing the cache entirely, preserving consensus safety.
+// Do NOT add in-memory caches to the Keeper struct — it causes AppHash mismatches.
+
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
