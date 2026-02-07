@@ -30,6 +30,7 @@ var _ types.QueryServer = (*cachedQueryServer)(nil)
 type cachedQueryServer struct {
 	inner        types.QueryServer
 	sessionCache cache.KeyValueCache[*types.QueryGetSessionResponse]
+	errorCache   cache.KeyValueCache[error]
 	keeper       Keeper
 }
 
@@ -55,9 +56,18 @@ func (k Keeper) NewCachedQueryServer() types.QueryServer {
 		return k
 	}
 
+	errorCache, err := memory.NewKeyValueCache[error](
+		memory.WithMaxKeys(10_000),
+	)
+	if err != nil {
+		k.Logger().Error(fmt.Sprintf("failed to create session error cache, falling back to uncached: %v", err))
+		return k
+	}
+
 	return &cachedQueryServer{
 		inner:        k,
 		sessionCache: sessionCache,
+		errorCache:   errorCache,
 		keeper:       k,
 	}
 }
@@ -86,14 +96,21 @@ func (c *cachedQueryServer) GetSession(
 	cacheKey := fmt.Sprintf("%s:%s:%d",
 		req.ApplicationAddress, req.ServiceId, sessionStartHeight)
 
-	// Check cache.
+	// Check success cache.
 	if cached, found := c.sessionCache.Get(cacheKey); found {
 		return cached, nil
+	}
+
+	// Check error cache — return the same error without re-executing the query.
+	if cachedErr, found := c.errorCache.Get(cacheKey); found {
+		return nil, cachedErr
 	}
 
 	// Cache miss — delegate to the real keeper.
 	res, err := c.inner.GetSession(ctx, req)
 	if err != nil {
+		// Cache the error — session errors are deterministic within a session.
+		c.errorCache.Set(cacheKey, err)
 		return nil, err
 	}
 
