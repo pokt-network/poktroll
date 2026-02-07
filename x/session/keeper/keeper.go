@@ -32,14 +32,15 @@ type (
 	}
 )
 
-// NOTE: Session caching has been removed to fix a consensus failure.
+// NOTE: Keeper-level session caching was removed to fix a consensus failure.
 // The in-memory cache caused non-determinism because different nodes had
 // different cache states (populated by external RPC queries), leading to
 // different gas consumption during tx execution and AppHash mismatches.
 //
-// TODO_POST_MAINNET: Re-implement caching in a determinism-safe way:
-// - Only cache during queries (ExecModeCheck/Simulate), not during FinalizeBlock
-// - Or use a store-backed cache that's part of consensus state
+// Session query caching is now implemented via cachedQueryServer (see
+// query_get_session_cache.go), which wraps only the gRPC/REST QueryServer.
+// The proof module's SessionKeeper interface points directly to this raw Keeper,
+// bypassing the cache entirely, preserving consensus safety.
 
 func NewKeeper(
 	cdc codec.BinaryCodec,
