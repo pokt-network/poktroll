@@ -548,6 +548,72 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnbondingGateway(t *testi
 	require.Len(t, app.PendingUndelegations[uint64(sessionEndHeight)].GatewayAddresses, 1)
 }
 
+// TestMsgServer_UndelegateFromGateway_AutoUndelegateNilPendingUndelegations regression
+// tests that EndBlockerAutoUndelegateFromUnbondingGateways does not panic when
+// an application has never had any undelegations (PendingUndelegations is nil
+// after proto deserialization). This was the root cause of a chain halt where
+// recordPendingUndelegation wrote to a nil map.
+func TestMsgServer_UndelegateFromGateway_AutoUndelegateNilPendingUndelegations(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	// Stake an application.
+	appAddr := sample.AccAddressBech32()
+	stakeMsg := &apptypes.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   &apptypes.DefaultMinStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{ServiceId: "svc1"},
+		},
+	}
+	_, err := srv.StakeApplication(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Calculate the session end height for the delegation.
+	delegationHeight := int64(1)
+	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(delegationHeight))
+
+	// Register a gateway as staked with an unbonding session end height and
+	// delegate the application to it. The application has NO prior undelegations,
+	// so PendingUndelegations will be nil after proto round-trip.
+	gatewayAddr := sample.AccAddressBech32()
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, sessionEndHeight)
+
+	delegateMsg := &apptypes.MsgDelegateToGateway{
+		AppAddress:     appAddr,
+		GatewayAddress: gatewayAddr,
+	}
+	_, err = srv.DelegateToGateway(ctx, delegateMsg)
+	require.NoError(t, err)
+
+	// Verify the application has the delegation and no pending undelegations.
+	app, isAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.Contains(t, app.DelegateeGatewayAddresses, gatewayAddr)
+	require.Empty(t, app.PendingUndelegations)
+
+	// Advance past the session end height so the gateway becomes inactive.
+	endBlockerHeight := int64(sessionEndHeight) + 1
+	sdkCtx := sdk.UnwrapSDKContext(ctx).WithBlockHeight(endBlockerHeight)
+
+	// This should NOT panic. Before the fix, this caused:
+	// "assignment to entry in nil map" in recordPendingUndelegation.
+	err = k.EndBlockerAutoUndelegateFromUnbondingGateways(sdkCtx)
+	require.NoError(t, err)
+
+	// Verify the application was auto-undelegated from the gateway.
+	app, isAppFound = k.GetApplication(sdkCtx, appAddr)
+	require.True(t, isAppFound)
+	require.Empty(t, app.DelegateeGatewayAddresses)
+
+	// Verify the pending undelegation was recorded correctly.
+	// recordPendingUndelegation uses the session end height for the block at which
+	// the EndBlocker runs, not the original delegation session end height.
+	undelegationSessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(endBlockerHeight))
+	require.Len(t, app.PendingUndelegations[undelegationSessionEndHeight].GatewayAddresses, 1)
+	require.Equal(t, gatewayAddr, app.PendingUndelegations[undelegationSessionEndHeight].GatewayAddresses[0])
+}
+
 // createAppStakeDelegateAndUndelegate is a helper function that is used in the tests
 // that exercise the pruning undelegations and ring addresses reconstruction logic.
 // * It creates an account address and stakes it as an application.
