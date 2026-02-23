@@ -99,6 +99,11 @@ func (k Keeper) recordPendingUndelegation(
 	currentBlockHeight int64,
 ) {
 	sessionEndHeight := uint64(k.sharedKeeper.GetSessionEndHeight(ctx, currentBlockHeight))
+
+	if app.PendingUndelegations == nil {
+		app.PendingUndelegations = make(map[uint64]apptypes.UndelegatingGatewayList)
+	}
+
 	undelegatingGatewayListAtHeight := app.PendingUndelegations[sessionEndHeight]
 
 	// Add the gateway address to the undelegated gateways list if it's not already there.
