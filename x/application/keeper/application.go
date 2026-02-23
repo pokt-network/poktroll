@@ -210,6 +210,18 @@ func applicationFromPrimaryKeyAccessorFn(
 		var application types.Application
 		cdc.MustUnmarshal(applicationBz, &application)
 
+		// Ensure that the PendingUndelegations is an empty map and not nil when
+		// unmarshalling an app that has no pending undelegations.
+		if application.PendingUndelegations == nil {
+			application.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+		}
+
+		// Ensure that the DelegateeGatewayAddresses is an empty slice and not nil
+		// when unmarshalling an app that has no delegations.
+		if application.DelegateeGatewayAddresses == nil {
+			application.DelegateeGatewayAddresses = make([]string, 0)
+		}
+
 		return application, nil
 	}
 }
