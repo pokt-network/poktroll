@@ -128,6 +128,12 @@ func (tlmbem *tlmRelayBurnEqualsMint) processTokenomicsMint() error {
 		mintRatioRat,
 	)
 	mintAmount := math.NewIntFromBigInt(new(big.Int).Quo(mintAmountRat.Num(), mintAmountRat.Denom()))
+	if mintAmount.IsZero() {
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
+			"mint amount truncated to zero for settlement %v with mint_ratio %v",
+			settlementAmount, mintRatio,
+		)
+	}
 	mintCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, mintAmount)
 
 	// Mint the (potentially reduced) amount to the tokenomics module for distribution

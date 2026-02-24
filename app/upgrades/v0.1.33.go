@@ -53,6 +53,21 @@ const (
 //     subtraction (weightA - weightB) could overflow, violating sort's trichotomy
 //     property. Replaced with explicit comparison (<, >, ==).
 //
+// P3 audit fixes (from v0.1.31 audit):
+//   - tokenomics: Zero-mint guard in processTokenomicsMint — returns error when
+//     settlementAmount * mint_ratio truncates to 0, preventing silent claim loss.
+//   - tokenomics: ValidateMintRatio now rejects 0 (range (0, 1] strictly enforced),
+//     removed stale auto-correction in ValidateBasic.
+//   - shared/session keepers: Added HasParamsHistory() O(1) check, replacing O(n)
+//     GetAllParamsHistory() emptiness check in recordParamsHistory/RecordParamsHistory.
+//   - shared/session genesis: Export/import params_history in ExportGenesis/InitGenesis,
+//     ensuring param history survives chain export/import cycles.
+//   - application CLI: New stake-and-delegate command sends MsgStakeApplication + N ×
+//     MsgDelegateToGateway in a single transaction via extended config YAML.
+//   - application: CONSENSUS-BREAKING — Fixed IsActive() OR-chain logic that always
+//     returned true. Unbonding/transferring apps past their end height are now correctly
+//     excluded from sessions.
+//
 // Settlement event improvements (event-only, no state changes):
 //   - EventClaimSettled: Added `settled_upokt` (post-cap, pre-mint_ratio amount) and
 //     `mint_ratio` fields so indexers can decompose overservicing loss vs deflation loss.

@@ -276,10 +276,9 @@ func TestParams_ValidateMintRatio(t *testing.T) {
 			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("mint_ratio must be in range (0, 1]: got %f", float64(1.1)),
 		},
 		{
-			desc:      "zero (allowed for upgrade compatibility)",
-			mintRatio: float64(0),
-			// Zero is allowed during validation - ValidateBasic sets it to default
-			expectedErr: nil,
+			desc:        "zero (rejected)",
+			mintRatio:   float64(0),
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("mint_ratio must be in range (0, 1]: got %f", float64(0)),
 		},
 		{
 			desc:        "valid 0.975 (PIP-41 target)",
