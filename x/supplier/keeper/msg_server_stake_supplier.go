@@ -298,6 +298,12 @@ func (k Keeper) updateSupplier(
 	supplier.Stake = msg.Stake
 	supplier.OwnerAddress = msg.OwnerAddress
 
+	// If no services are provided, this is a stake-only update (e.g. --stake-only flag).
+	// Preserve the existing service config history and return early.
+	if len(msg.Services) == 0 {
+		return nil
+	}
+
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
@@ -339,29 +345,28 @@ func (k Keeper) updateSupplier(
 	// Step 2: Process existing service configurations.
 	// - Replace inactive configs if new config exists for same service
 	// - Deactivate configs without new replacements or already active ones
-	if len(msg.Services) > 0 {
-		// Loop over deterministic list (supplier.ServiceConfigHistory).
-		for _, currentServiceConfigUpdate := range supplier.ServiceConfigHistory {
-			// Replacement vs deactivation logic:
-			// 1. Config scheduled for next session + new config exists → replace (skip)
-			// 2. Otherwise → deactivate
-			shouldActivateAtNextSession := currentServiceConfigUpdate.ActivationHeight == nextSessionStartHeight
-			_, hasNewConfig := updatedServices[currentServiceConfigUpdate.Service.ServiceId]
-			shouldReplaceWithNewConfig := shouldActivateAtNextSession && hasNewConfig
+	// NB: We already returned early above if msg.Services is empty (stake-only update),
+	// so this loop always processes service config changes.
+	for _, currentServiceConfigUpdate := range supplier.ServiceConfigHistory {
+		// Replacement vs deactivation logic:
+		// 1. Config scheduled for next session + new config exists → replace (skip)
+		// 2. Otherwise → deactivate
+		shouldActivateAtNextSession := currentServiceConfigUpdate.ActivationHeight == nextSessionStartHeight
+		_, hasNewConfig := updatedServices[currentServiceConfigUpdate.Service.ServiceId]
+		shouldReplaceWithNewConfig := shouldActivateAtNextSession && hasNewConfig
 
-			// Skip configs replaced in Step 1 (never activated, no deactivation needed).
-			if shouldReplaceWithNewConfig {
-				continue
-			}
-
-			// Deactivate old configs NOT being replaced:
-			// - Active configs (no deactivation height set)
-			// - Scheduled configs for different services
-			if currentServiceConfigUpdate.DeactivationHeight == 0 {
-				currentServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
-			}
-			updatedServiceConfigHistory = append(updatedServiceConfigHistory, currentServiceConfigUpdate)
+		// Skip configs replaced in Step 1 (never activated, no deactivation needed).
+		if shouldReplaceWithNewConfig {
+			continue
 		}
+
+		// Deactivate old configs NOT being replaced:
+		// - Active configs (no deactivation height set)
+		// - Scheduled configs for different services
+		if currentServiceConfigUpdate.DeactivationHeight == 0 {
+			currentServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
+		}
+		updatedServiceConfigHistory = append(updatedServiceConfigHistory, currentServiceConfigUpdate)
 	}
 
 	// Step 3: Update supplier with final service configuration history.

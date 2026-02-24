@@ -925,6 +925,57 @@ func TestMsgServer_StakeSupplier_UpdateServiceBeforeActivation(t *testing.T) {
 	require.Equal(t, int64(0), finalServiceConfig.DeactivationHeight)                      // No deactivation height
 }
 
+// TestMsgServer_StakeSupplier_StakeOnlyUpdatePreservesServiceConfigHistory verifies that
+// a stake-only update (empty msg.Services) preserves the existing service config history
+// instead of wiping it. This is the expected behavior for the --stake-only flag.
+func TestMsgServer_StakeSupplier_StakeOnlyUpdatePreservesServiceConfigHistory(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
+
+	// Step 1: Stake supplier with two services
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId", "svcId2")
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Activate the supplier's services
+	ctx = setBlockHeightToNextSessionStart(ctx, supplierModuleKeepers.SharedKeeper)
+	_, err = supplierModuleKeepers.BeginBlockerActivateSupplierServices(ctx)
+	require.NoError(t, err)
+
+	// Verify initial state: supplier has 2 services
+	foundSupplier, isFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isFound)
+	require.Len(t, foundSupplier.Services, 2)
+	require.Equal(t, int64(1000000), foundSupplier.Stake.Amount.Int64())
+
+	// Save the service config history before the stake-only update
+	serviceConfigHistoryBefore := foundSupplier.ServiceConfigHistory
+
+	// Step 2: Re-stake with higher amount but empty services (stake-only update).
+	// The owner is the signer because no services are being updated.
+	newStake := cosmostypes.NewCoin("upokt", math.NewInt(2000000))
+	stakeOnlyMsg := &suppliertypes.MsgStakeSupplier{
+		Signer:          ownerAddr,
+		OwnerAddress:    ownerAddr,
+		OperatorAddress: operatorAddr,
+		Stake:           &newStake,
+		Services:        []*sharedtypes.SupplierServiceConfig{}, // empty = stake-only
+	}
+	_, err = srv.StakeSupplier(ctx, stakeOnlyMsg)
+	require.NoError(t, err)
+
+	// Step 3: Verify that ServiceConfigHistory is preserved and stake is updated
+	foundSupplier, isFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isFound)
+	require.Equal(t, int64(2000000), foundSupplier.Stake.Amount.Int64(), "stake should be updated")
+	require.Equal(t, serviceConfigHistoryBefore, foundSupplier.ServiceConfigHistory,
+		"service config history should be unchanged after stake-only update")
+	require.Len(t, foundSupplier.Services, 2, "active services should be unchanged")
+}
+
 // newSupplierStakeMsg prepares and returns a MsgStakeSupplier that stakes
 // the given supplier operator address, stake amount, and service IDs.
 func newSupplierStakeMsg(
