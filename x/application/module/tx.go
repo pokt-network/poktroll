@@ -25,6 +25,7 @@ func (am AppModule) GetTxCmd() *cobra.Command {
 
 	cmd.AddCommand(CmdDelegateToGateway())
 	cmd.AddCommand(CmdUndelegateFromGateway())
+	cmd.AddCommand(CmdStakeAndDelegateToGateway())
 	// this line is used by starport scaffolding # 1
 
 	return cmd

@@ -11,4 +11,5 @@ var (
 	ErrApplicationConfigInvalidServiceId = sdkerrors.Register(types.ModuleName, 2101, "invalid serviceId in application config")
 	ErrApplicationConfigEmptyContent     = sdkerrors.Register(types.ModuleName, 2102, "empty application config content")
 	ErrApplicationConfigInvalidStake     = sdkerrors.Register(types.ModuleName, 2103, "invalid stake amount in application config")
+	ErrApplicationConfigInvalidGateway   = sdkerrors.Register(types.ModuleName, 2104, "invalid gateway address in application config")
 )

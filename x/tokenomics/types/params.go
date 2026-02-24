@@ -145,12 +145,6 @@ func (params *Params) ValidateBasic() error {
 		params.MintEqualsBurnClaimDistribution = DefaultMintEqualsBurnClaimDistribution
 	}
 
-	// If MintRatio is zero-valued (e.g., from an upgrade before this field existed),
-	// set it to the default value (1.0 = no deflation)
-	if params.MintRatio == 0 {
-		params.MintRatio = DefaultMintRatio
-	}
-
 	return nil
 }
 
@@ -312,13 +306,7 @@ func ValidateMintRatio(mintRatioAny any) error {
 		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", mintRatioAny)
 	}
 
-	// Allow 0 as a special case for backward compatibility during upgrades
-	// ValidateBasic will set it to default (1.0)
-	if mintRatio == 0 {
-		return nil
-	}
-
-	if mintRatio < 0 || mintRatio > 1 {
+	if mintRatio <= 0 || mintRatio > 1 {
 		return ErrTokenomicsParamInvalid.Wrapf("mint_ratio must be in range (0, 1]: got %f", mintRatio)
 	}
 

@@ -85,6 +85,17 @@ func (k Keeper) GetParamsAtHeight(ctx context.Context, queryHeight int64) types.
 	return k.GetParams(ctx)
 }
 
+// HasParamsHistory returns true if any params history entries exist.
+// This is used to efficiently check if history needs initialization without
+// the O(n) cost of GetAllParamsHistory.
+func (k Keeper) HasParamsHistory(ctx context.Context) bool {
+	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	historyStore := prefix.NewStore(store, types.ParamsHistoryKeyPrefix)
+	iterator := historyStore.Iterator(nil, nil)
+	defer iterator.Close()
+	return iterator.Valid()
+}
+
 // GetAllParamsHistory returns all historical session params updates.
 // This is primarily used for genesis export and debugging.
 func (k Keeper) GetAllParamsHistory(ctx context.Context) []types.ParamsUpdate {

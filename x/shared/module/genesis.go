@@ -15,12 +15,22 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) 
 	if err := k.SetParams(ctx, genState.Params); err != nil {
 		panic(fmt.Errorf("unable to set params: %v: %w", genState.Params, err))
 	}
+	for _, paramsUpdate := range genState.ParamsHistory {
+		params := paramsUpdate.Params
+		if params == nil {
+			continue
+		}
+		if err := k.SetParamsAtHeight(ctx, paramsUpdate.EffectiveHeight, *params); err != nil {
+			panic(fmt.Errorf("unable to set params at height %d: %w", paramsUpdate.EffectiveHeight, err))
+		}
+	}
 }
 
 // ExportGenesis returns the module's exported genesis.
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	genesis := types.DefaultGenesis()
 	genesis.Params = k.GetParams(ctx)
+	genesis.ParamsHistory = k.GetAllParamsHistory(ctx)
 
 	// this line is used by starport scaffolding # genesis/module/export
 
