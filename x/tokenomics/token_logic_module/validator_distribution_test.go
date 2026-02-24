@@ -398,6 +398,116 @@ func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 	}
 }
 
+// TestValidatorRewardDistribution_MultiValidatorDelegator tests the scenario where a single
+// delegator has delegations to more than one validator simultaneously.
+//
+// In Cosmos SDK staking, a delegator may stake tokens to multiple validators. Each call to
+// GetValidatorDelegations returns delegations for exactly one validator. The outer loop in
+// discoverStakeholderStakes iterates over validators one at a time, calling collectDelegationStakes
+// per-validator. Without accumulation, a second delegation for the same delegator would silently
+// overwrite the first, causing the delegator to be rewarded only for their stake in the last
+// validator processed — and validators to be over-rewarded for the "missing" delegator stake.
+func TestValidatorRewardDistribution_MultiValidatorDelegator(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Delegator D stakes 200k to Val1 and 100k to Val2.
+	// Val1 self-bonds 100k; Val2 self-bonds 100k.
+	// Total bonded: 100k + 200k + 100k + 100k = 500k
+	// D's correct total stake: 200k + 100k = 300k  (60% of total)
+	// Val1 self-stake: 100k (20% of total)
+	// Val2 self-stake: 100k (20% of total)
+	//
+	// Total reward: 500k tokens → each token earns 1 reward token for easy verification.
+	// Correct distribution:
+	//   D:    500k × 300k/500k = 300k
+	//   Val1: 500k × 100k/500k = 100k
+	//   Val2: 500k × 100k/500k = 100k
+	const (
+		val1SelfStake   = int64(100_000) // Val1 self-delegation
+		val1TotalTokens = int64(300_000) // Val1 total = self + D's delegation to Val1
+		val2SelfStake   = int64(100_000) // Val2 self-delegation
+		val2TotalTokens = int64(200_000) // Val2 total = self + D's delegation to Val2
+		dToVal1         = int64(200_000) // D's delegation to Val1
+		dToVal2         = int64(100_000) // D's delegation to Val2
+		totalReward     = int64(500_000) // chosen so results are round numbers
+	)
+	totalBonded := val1TotalTokens + val2TotalTokens // 500k
+
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+
+	val1 := createValidator(sample.ValOperatorAddressBech32(), val1TotalTokens)
+	val2 := createValidator(sample.ValOperatorAddressBech32(), val2TotalTokens)
+
+	valAddr1, _ := cosmostypes.ValAddressFromBech32(val1.OperatorAddress)
+	valAddr2, _ := cosmostypes.ValAddressFromBech32(val2.OperatorAddress)
+
+	val1AccAddr := cosmostypes.AccAddress(valAddr1).String()
+	val2AccAddr := cosmostypes.AccAddress(valAddr2).String()
+
+	// Shared delegator D address
+	delegatorDAddr := sample.AccAddressBech32()
+
+	mockStakingKeeper.EXPECT().
+		GetBondedValidatorsByPower(gomock.Any()).
+		Return([]stakingtypes.Validator{val1, val2}, nil)
+
+	// Val1's delegations: self + D
+	mockStakingKeeper.EXPECT().
+		GetValidatorDelegations(gomock.Any(), valAddr1).
+		Return([]stakingtypes.Delegation{
+			createDelegation(val1AccAddr, val1.OperatorAddress, val1SelfStake),
+			createDelegation(delegatorDAddr, val1.OperatorAddress, dToVal1),
+		}, nil)
+
+	// Val2's delegations: self + D (same D, different validator)
+	mockStakingKeeper.EXPECT().
+		GetValidatorDelegations(gomock.Any(), valAddr2).
+		Return([]stakingtypes.Delegation{
+			createDelegation(val2AccAddr, val2.OperatorAddress, val2SelfStake),
+			createDelegation(delegatorDAddr, val2.OperatorAddress, dToVal2),
+		}, nil)
+
+	config := getDefaultTestConfig()
+	config.rewardAmount = math.NewInt(totalReward)
+	config.opReason = tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION
+
+	result, err := executeDistribution(mockStakingKeeper, config, true)
+	require.NoError(t, err)
+
+	transfers := result.GetModToAcctTransfers()
+
+	// 3 recipients: Val1 self, Val2 self, and delegator D (appears in both validators but must be merged)
+	require.Len(t, transfers, 3, "Expected 3 transfers: 2 validators + 1 merged delegator")
+
+	// Build a map of recipient → amount for easy lookup
+	rewardMap := make(map[string]int64, len(transfers))
+	for _, transfer := range transfers {
+		rewardMap[transfer.RecipientAddress] += transfer.Coin.Amount.Int64()
+	}
+
+	// Verify total distribution is correct
+	assertTotalDistribution(t, result, math.NewInt(totalReward))
+
+	// D's correct stake fraction = 300k/500k = 60% → reward = 300k
+	dReward, dFound := rewardMap[delegatorDAddr]
+	require.True(t, dFound, "Delegator D must appear exactly once in transfers")
+	require.Equal(t, int64(300_000), dReward,
+		"Delegator D should receive 300k (200k from Val1 + 100k from Val2 = 300k stake, 60%% of %d total bonded)",
+		totalBonded,
+	)
+
+	// Val1 self-stake fraction = 100k/500k = 20% → reward = 100k
+	val1Reward, val1Found := rewardMap[val1AccAddr]
+	require.True(t, val1Found, "Val1 self must appear in transfers")
+	require.Equal(t, int64(100_000), val1Reward, "Val1 should receive 100k (20%% of total)")
+
+	// Val2 self-stake fraction = 100k/500k = 20% → reward = 100k
+	val2Reward, val2Found := rewardMap[val2AccAddr]
+	require.True(t, val2Found, "Val2 self must appear in transfers")
+	require.Equal(t, int64(100_000), val2Reward, "Val2 should receive 100k (20%% of total)")
+}
+
 // TestValidatorRewardDistribution_WithDelegators_ErrorCases tests delegation-specific error scenarios.
 // Common error cases are covered by TestValidatorRewardDistribution_ErrorCases since both functions
 // share the same validation logic. This focuses on delegation-specific failures like
