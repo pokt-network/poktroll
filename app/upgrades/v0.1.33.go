@@ -23,6 +23,16 @@ const (
 //   when applications with pending undelegations were removed (unstaked/transferred).
 //   Bug introduced in PR #1263 (v0.1.31). The upgrade handler cleans up any
 //   orphaned entries accumulated since v0.1.31.
+//
+// Settlement event improvements (event-only, no state changes):
+// - EventClaimSettled: Added `settled_upokt` (post-cap, pre-mint_ratio amount) and
+//   `mint_ratio` fields so indexers can decompose overservicing loss vs deflation loss.
+// - EventApplicationOverserviced: BREAKING SEMANTIC CHANGE — `effective_burn` now
+//   includes the globalInflation component, matching `expected_burn`'s basis.
+//   Previously `effective_burn` excluded globalInflation, making the gap
+//   (expected_burn - effective_burn) appear larger than actual overservicing.
+//   Indexers (e.g. pocketdex) that compute overservicing amounts from this gap
+//   will see smaller, more accurate values after this upgrade.
 var Upgrade_0_1_33 = Upgrade{
 	PlanName: Upgrade_0_1_33_PlanName,
 	// No KVStore migrations in this upgrade.
