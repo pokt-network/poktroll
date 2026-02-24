@@ -169,6 +169,11 @@ func (k Keeper) getSupplierServiceConfigUpdates(
 		// Use the primary key to get the actual service config data
 		serviceConfigBz := serviceConfigUpdateStore.Get(serviceConfigPrimaryKey)
 
+		// Skip orphaned index entries (defensive — index pointing to deleted primary record).
+		if serviceConfigBz == nil {
+			continue
+		}
+
 		// Unmarshal and collect the service config
 		var serviceConfig sharedtypes.ServiceConfigUpdate
 		k.cdc.MustUnmarshal(serviceConfigBz, &serviceConfig)
