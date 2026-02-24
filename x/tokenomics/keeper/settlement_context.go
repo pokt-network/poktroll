@@ -36,6 +36,10 @@ type claimSettlementContext struct {
 
 	// numClaimComputeUnits is the total number of claimed compute units by the supplier.
 	numClaimComputeUnits uint64
+
+	// actualSettlementCoin is the settlement amount after overservicing cap,
+	// before mint_ratio is applied. Used to populate EventClaimSettled.SettledUpokt.
+	actualSettlementCoin cosmostypes.Coin
 }
 
 // claimTelemetryData holds telemetry data for a single claim to be emitted after settlement processing.

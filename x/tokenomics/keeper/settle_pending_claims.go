@@ -781,14 +781,20 @@ func (k Keeper) settleClaim(
 	// 1. The claim does not require a proof.
 	// 2. The claim requires a proof and a valid proof was found.
 	// Manage the mint & burn accounting for the claim.
-	if err = k.ProcessTokenLogicModules(
+	actualSettlementCoin, tlmErr := k.ProcessTokenLogicModules(
 		ctx,
 		settlementContext,
 		claimSettlementContext.settlementResult,
-	); err != nil {
-		logger.Error(fmt.Sprintf("error	 processing token logic modules for claim %q: %v", sessionId, err))
-		return nil, err
+	)
+	if tlmErr != nil {
+		logger.Error(fmt.Sprintf("error	 processing token logic modules for claim %q: %v", sessionId, tlmErr))
+		return nil, tlmErr
 	}
+	claimSettlementContext.actualSettlementCoin = actualSettlementCoin
+
+	// Retrieve the mint_ratio from tokenomics params for the event.
+	tokenomicsParams := settlementContext.GetTokenomicsParams()
+	mintRatio := tokenomicsParams.MintRatio
 
 	claimSettledEvent := tokenomicstypes.NewEventClaimSettled(
 		numClaimRelays,
@@ -797,6 +803,8 @@ func (k Keeper) settleClaim(
 		proofRequirement,
 		&claimeduPOKT,
 		claimSettlementContext.settlementResult,
+		&actualSettlementCoin,
+		mintRatio,
 	)
 	if err = ctx.EventManager().EmitTypedEvent(claimSettledEvent); err != nil {
 		return nil, err

@@ -159,7 +159,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *t
 	require.NoError(t, err)
 
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+	_, err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.NoError(t, err)
 
 	// Execute the pending results
@@ -343,7 +343,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaim
 	require.NoError(t, err)
 
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+	_, err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.NoError(t, err)
 
 	// Execute the pending results
@@ -533,7 +533,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	require.NoError(t, err)
 
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+	_, err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.NoError(t, err)
 
 	// Persist the actors state
@@ -677,7 +677,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 
 	// Process the token logic modules
-	err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+	_, err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
 }
@@ -707,7 +707,7 @@ func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 	_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 
 	// Execute test function
-	err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+	_, err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsServiceNotFound)
 }
@@ -783,7 +783,7 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 			_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 
 			// Execute test function
-			err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+			_, err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 
 			// Assert the error
 			if test.errExpected {
@@ -874,7 +874,8 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 				// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
 				// and we want to test the error from ProcessTokenLogicModules.
 				_ = settlementContext.ClaimCacheWarmUp(ctx, &test.claim)
-				return keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+				_, err = keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+				return err
 			}()
 
 			// Assert the error
@@ -1131,7 +1132,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	require.NoError(t, err)
 
 	// Process token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, settlementResult)
+	_, err = keepers.ProcessTokenLogicModules(ctx, settlementContext, settlementResult)
 	require.NoError(t, err)
 
 	// Execute settlement results
