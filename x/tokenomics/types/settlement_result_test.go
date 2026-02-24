@@ -266,9 +266,9 @@ func TestNewEventClaimSettled_RewardDistributionDetailed(t *testing.T) {
 	result := &ClaimSettlementResult{
 		Claim: prooftypes.Claim{
 			SessionHeader: &sessiontypes.SessionHeader{
-				SessionId:            "test-session",
-				ServiceId:            "test-svc",
-				ApplicationAddress:   "pokt1app",
+				SessionId:             "test-session",
+				ServiceId:             "test-svc",
+				ApplicationAddress:    "pokt1app",
 				SessionEndBlockHeight: 100,
 			},
 			SupplierOperatorAddress: "pokt1supplier-op",
@@ -288,7 +288,8 @@ func TestNewEventClaimSettled_RewardDistributionDetailed(t *testing.T) {
 	}
 
 	claimeduPOKT := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
-	event := NewEventClaimSettled(10, 5, 50, 0, &claimeduPOKT, result)
+	settledUpokt := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	event := NewEventClaimSettled(10, 5, 50, 0, &claimeduPOKT, result, &settledUpokt, 0.975)
 
 	// Verify the legacy field is still populated (merges by address).
 	require.Len(t, event.RewardDistribution, 2)
@@ -305,4 +306,79 @@ func TestNewEventClaimSettled_RewardDistributionDetailed(t *testing.T) {
 	require.Equal(t, "pokt1dao", event.RewardDistributionDetailed[1].RecipientAddress)
 	require.Equal(t, SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION, event.RewardDistributionDetailed[1].OpReason)
 	require.Equal(t, "300upokt", event.RewardDistributionDetailed[1].Amount)
+}
+
+// TestNewEventClaimSettled_SettledUpoktAndMintRatio verifies that NewEventClaimSettled
+// populates the SettledUpokt and MintRatio fields correctly.
+func TestNewEventClaimSettled_SettledUpoktAndMintRatio(t *testing.T) {
+	result := &ClaimSettlementResult{
+		Claim: prooftypes.Claim{
+			SessionHeader: &sessiontypes.SessionHeader{
+				SessionId:             "test-session",
+				ServiceId:             "test-svc",
+				ApplicationAddress:    "pokt1app",
+				SessionEndBlockHeight: 100,
+			},
+			SupplierOperatorAddress: "pokt1supplier-op",
+		},
+	}
+
+	tests := []struct {
+		name              string
+		claimedAmount     int64
+		settledAmount     int64
+		mintRatio         float64
+		expectedSettled   string
+		expectedMintRatio string
+	}{
+		{
+			name:              "no overservicing, no deflation",
+			claimedAmount:     1000,
+			settledAmount:     1000,
+			mintRatio:         1.0,
+			expectedSettled:   "1000upokt",
+			expectedMintRatio: "1",
+		},
+		{
+			name:              "no overservicing, with deflation (PIP-41)",
+			claimedAmount:     1000,
+			settledAmount:     1000,
+			mintRatio:         0.975,
+			expectedSettled:   "1000upokt",
+			expectedMintRatio: "0.975",
+		},
+		{
+			name:              "overserviced, with deflation",
+			claimedAmount:     1000,
+			settledAmount:     500,
+			mintRatio:         0.975,
+			expectedSettled:   "500upokt",
+			expectedMintRatio: "0.975",
+		},
+		{
+			name:              "zero settlement",
+			claimedAmount:     1000,
+			settledAmount:     0,
+			mintRatio:         0.975,
+			expectedSettled:   "0upokt",
+			expectedMintRatio: "0.975",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			claimeduPOKT := cosmostypes.NewInt64Coin("upokt", tt.claimedAmount)
+			settledUpokt := cosmostypes.NewInt64Coin("upokt", tt.settledAmount)
+			event := NewEventClaimSettled(10, 5, 50, 0, &claimeduPOKT, result, &settledUpokt, tt.mintRatio)
+
+			require.Equal(t, tt.expectedSettled, event.SettledUpokt,
+				"SettledUpokt mismatch")
+			require.Equal(t, tt.expectedMintRatio, event.MintRatio,
+				"MintRatio mismatch")
+
+			// Verify claimed_upokt is still independently correct.
+			require.Equal(t, claimeduPOKT.String(), event.ClaimedUpokt,
+				"ClaimedUpokt mismatch")
+		})
+	}
 }

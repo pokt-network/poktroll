@@ -33,7 +33,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
 	settlementContext *settlementContext,
 	pendingResult *tokenomicstypes.ClaimSettlementResult,
-) error {
+) (cosmostypes.Coin, error) {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
 
 	// Telemetry variable declaration to be emitted at the end of the function
@@ -59,17 +59,17 @@ func (k Keeper) ProcessTokenLogicModules(
 	sessionHeader := pendingResult.Claim.GetSessionHeader()
 	if sessionHeader == nil {
 		logger.Error("received a nil session header")
-		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
 	}
 	if err := sessionHeader.ValidateBasic(); err != nil {
 		logger.Error("received an invalid session header", "error", err)
-		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderInvalid
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimSessionHeaderInvalid
 	}
 
 	// Retrieve and validate the root of the claim to determine the amount of work done
 	root := (smt.MerkleSumRoot)(pendingResult.Claim.GetRootHash())
 	if !root.HasDigestSize(protocol.TrieHasherSize) {
-		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"root hash has invalid digest size (%d), expected (%d)",
 			root.DigestSize(), protocol.TrieHasherSize,
 		)
@@ -78,17 +78,17 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieve the sum (i.e. number of compute units) to determine the amount of work done
 	numClaimComputeUnits, err := pendingResult.Claim.GetNumClaimedComputeUnits()
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
 	}
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
 	// https://www.notion.so/buildwithgrove/RelayMiningDifficulty-and-low-volume-7aab3edf6f324786933af369c2fa5f01?pvs=4
 	if numClaimComputeUnits == 0 {
-		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrap("root hash has zero relays")
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrap("root hash has zero relays")
 	}
 
 	numRelays, err := pendingResult.Claim.GetNumRelays()
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numRelays: %s", err)
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numRelays: %s", err)
 	}
 
 	/*
@@ -109,33 +109,33 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	service, err := settlementContext.GetService(sessionHeader.ServiceId)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	relayMiningDifficulty, err := settlementContext.GetRelayMiningDifficulty(sessionHeader.ServiceId, sessionHeader.SessionStartBlockHeight)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	application, err := settlementContext.GetApplication(sessionHeader.ApplicationAddress)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	supplier, err := settlementContext.GetSupplier(pendingResult.Claim.GetSupplierOperatorAddress())
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	applicationInitialStake, err := settlementContext.GetApplicationInitialStake(sessionHeader.ApplicationAddress)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
 	expectedClaimComputeUnits := numRelays * service.ComputeUnitsPerRelay
 	if numClaimComputeUnits != expectedClaimComputeUnits {
-		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"mismatch: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d)",
 			numClaimComputeUnits,
 			numRelays,
@@ -148,7 +148,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// in the session.
 	claimSettlementCoin, err = pendingResult.Claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	// Helpers for logging the same metadata throughout this function calls
@@ -168,7 +168,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// and ensure claim amount limits are enforced before TLM processing.
 	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
@@ -178,7 +178,7 @@ func (k Keeper) ProcessTokenLogicModules(
 			"actual settlement coin is zero, skipping TLM processing, application %q stake %s",
 			application.Address, application.Stake,
 		))
-		return nil
+		return actualSettlementCoin, nil
 	}
 
 	tlmCtx := tlm.TLMContext{
@@ -214,7 +214,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Starting processing TLM: %q", tlmName))
 
 		if err = tokenLogicModule.Process(ctx, logger, tlmCtx); err != nil {
-			return tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf("TLM %q: %s", tlmName, err)
+			return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf("TLM %q: %s", tlmName, err)
 		}
 
 		logger.Info(fmt.Sprintf("Finished processing TLM: %q", tlmName))
@@ -239,7 +239,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		if err = sdkCtx.EventManager().EmitTypedEvent(appUnbondingBeginEvent); err != nil {
 			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", appUnbondingBeginEvent, err)
 			logger.Error(err.Error())
-			return err
+			return cosmostypes.Coin{}, err
 		}
 
 		// Update the application in the keeper to persist the unbonding state.
@@ -254,7 +254,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Update isSuccessful to true for telemetry
 	isSuccessful = true
-	return nil
+	return actualSettlementCoin, nil
 }
 
 // ensureClaimAmountLimits checks and handles overserviced applications.
@@ -338,12 +338,14 @@ func (k Keeper) ensureClaimAmountLimits(
 	// Determine the max claimable amount for the supplier based on the application's stake in this session.
 	maxClaimableCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, maxClaimSettlementAmt)
 
-	// Prepare and emit the event for the application being overserviced
+	// Prepare and emit the event for the application being overserviced.
+	// Both ExpectedBurn and EffectiveBurn include the globalInflation component
+	// so they are on the same basis (total tokens burnt from app stake).
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
 		ApplicationAddr:      application.GetAddress(),
 		SupplierOperatorAddr: supplier.GetOperatorAddress(),
 		ExpectedBurn:         totalClaimedCoin.String(),
-		EffectiveBurn:        maxClaimableCoin.String(),
+		EffectiveBurn:        cosmostypes.NewCoin(pocket.DenomuPOKT, minRequiredAppStakeAmt).String(),
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
 	if err = eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {

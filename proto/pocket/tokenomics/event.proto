@@ -77,7 +77,7 @@ message EventClaimExpired {
 // EventClaimSettled is emitted during settlement whenever a claim is successfully settled.
 // It may or may not require a proof depending on various on-chain parameters and other factors.
 message EventClaimSettled {
-    // Next index: 16
+    // Next index: 18
 
     // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
     // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
@@ -140,6 +140,14 @@ message EventClaimSettled {
     // Detailed per-reason reward breakdown. Unlike reward_distribution (field 14)
     // which merges all reasons per address, this preserves the OpReason for each entry.
     repeated RewardDistributionDetail reward_distribution_detailed = 15 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "reward_distribution_detailed"];
+
+    // The actual settlement amount after overservicing cap, before mint_ratio.
+    // Indexers can compute: overservicing_loss = claimed_upokt - settled_upokt
+    string settled_upokt = 16 [(gogoproto.jsontag) = "settled_upokt"];
+
+    // The mint_ratio applied during settlement (from tokenomics params).
+    // Indexers can compute: deflation_loss = settled_upokt * (1 - mint_ratio)
+    string mint_ratio = 17 [(gogoproto.jsontag) = "mint_ratio"];
 }
 
 // EventApplicationOverserviced is emitted when an Application's stake cannot cover the Supplier's claim.
