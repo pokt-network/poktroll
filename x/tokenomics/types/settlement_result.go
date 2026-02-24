@@ -90,6 +90,22 @@ func (r *ClaimSettlementResult) GetRewardDistribution() map[string]string {
 	return rewardDistribution
 }
 
+// GetRewardDistributionDetailed returns a slice of RewardDistributionDetail entries
+// preserving the OpReason for each module-to-account transfer. Unlike GetRewardDistribution
+// which merges all OpReasons per address, this gives indexers full visibility into
+// per-reason payouts per claim.
+func (r *ClaimSettlementResult) GetRewardDistributionDetailed() []RewardDistributionDetail {
+	details := make([]RewardDistributionDetail, 0, len(r.ModToAcctTransfers))
+	for _, transfer := range r.ModToAcctTransfers {
+		details = append(details, RewardDistributionDetail{
+			RecipientAddress: transfer.RecipientAddress,
+			OpReason:         transfer.OpReason,
+			Amount:           transfer.Coin.String(),
+		})
+	}
+	return details
+}
+
 // Validate returns an error if the MintBurnOperation has either an unspecified TLM or TLMReason.
 func (m *MintBurnOp) Validate() error {
 	return validateOpReason(m.OpReason, m)

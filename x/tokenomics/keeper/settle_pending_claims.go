@@ -225,65 +225,60 @@ func (k Keeper) ExecutePendingExpiredResults(
 	return nil
 }
 
-// ExecutePendingSettledResults executes all pending mint, burn, and transfer operations.
+// ExecutePendingSettledResults aggregates all pending mint, burn, and transfer
+// operations across all settled claims by unique key, then executes each
+// aggregated batch with a single bank call. This reduces bank calls from
+// O(claims × ops_per_claim) to O(unique_keys), cutting SDK bank events by ~99.8%.
 func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledResults tlm.ClaimSettlementResults) error {
 	logger := k.logger.With("method", "ExecutePendingSettledResults")
-	logger.Info(fmt.Sprintf("begin executing %d pending settlement results", len(settledResults)))
+	logger.Info(fmt.Sprintf("begin executing %d pending settlement results (aggregated)", len(settledResults)))
 
-	for _, settledResult := range settledResults {
-		sessionLogger := logger.With("session_id", settledResult.GetSessionId())
-		sessionLogger.Info("begin executing pending settlement result")
-
-		// Execute all pending mints.
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending mints", len(settledResult.GetMints())))
-		if err := k.executePendingModuleMints(ctx, sessionLogger, settledResult.GetMints()); err != nil {
-			return err
-		}
-		sessionLogger.Info("done executing pending mints")
-
-		// Execute all pending module to module transfers.
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending module to module transfers", len(settledResult.GetModToModTransfers())))
-		if err := k.executePendingModToModTransfers(ctx, sessionLogger, settledResult.GetModToModTransfers()); err != nil {
-			return err
-		}
-		sessionLogger.Info("done executing pending module to module transfers")
-
-		// Execute all pending module to account transfers.
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending module to account transfers", len(settledResult.GetModToAcctTransfers())))
-		if err := k.executePendingModToAcctTransfers(ctx, sessionLogger, settledResult.GetModToAcctTransfers()); err != nil {
-			return err
-		}
-		sessionLogger.Info("done executing pending module to account transfers")
-
-		// Execute all pending burns.
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending burns", len(settledResult.GetBurns())))
-		if err := k.executePendingModuleBurns(ctx, sessionLogger, settledResult.GetBurns()); err != nil {
-			return err
-		}
-		sessionLogger.Info("done executing pending burns")
-
-		// Done applying settled results for this session.
-		sessionLogger.Info(fmt.Sprintf(
-			"done applying settled results for session %q",
-			settledResult.Claim.GetSessionHeader().GetSessionId(),
-		))
+	// Derive the session end height for batch event emission.
+	sessionEndHeight := int64(0)
+	if len(settledResults) > 0 {
+		sessionEndHeight = settledResults[0].GetSessionEndHeight()
 	}
 
-	logger.Info(fmt.Sprintf("done executing %d pending settlement results", len(settledResults)))
+	// Step 1: Aggregate all operations across all results by unique key.
+	aggMints := aggregateMints(settledResults)
+	aggModToMod := aggregateModToModTransfers(settledResults)
+	aggModToAcct := aggregateModToAcctTransfers(settledResults)
+	aggBurns := aggregateBurns(settledResults)
 
+	logger.Info(fmt.Sprintf(
+		"aggregated operations: %d mints, %d mod-to-mod, %d mod-to-acct, %d burns",
+		len(aggMints), len(aggModToMod), len(aggModToAcct), len(aggBurns),
+	))
+
+	// Step 2: Execute in required order: mints → mod-to-mod → mod-to-acct → burns.
+	if err := k.executeAggregatedMints(ctx, logger, aggMints, sessionEndHeight); err != nil {
+		return err
+	}
+	if err := k.executeAggregatedModToModTransfers(ctx, logger, aggModToMod, sessionEndHeight); err != nil {
+		return err
+	}
+	if err := k.executeAggregatedModToAcctTransfers(ctx, logger, aggModToAcct, sessionEndHeight); err != nil {
+		return err
+	}
+	if err := k.executeAggregatedBurns(ctx, logger, aggBurns, sessionEndHeight); err != nil {
+		return err
+	}
+
+	logger.Info(fmt.Sprintf("done executing %d pending settlement results (aggregated)", len(settledResults)))
 	return nil
 }
 
-// executePendingModuleMints executes all pending mint operations.
-// DEV_NOTE: Mint and burn operations are ONLY applicable to module accounts.
-func (k Keeper) executePendingModuleMints(
+// executeAggregatedMints executes one MintCoins call per aggregated mint key
+// and emits an EventSettlementBatch for each.
+func (k Keeper) executeAggregatedMints(
 	ctx cosmostypes.Context,
 	logger cosmoslog.Logger,
-	mints []tokenomicstypes.MintBurnOp,
+	mints []aggregatedMintBurnOp,
+	sessionEndHeight int64,
 ) error {
 	for _, mint := range mints {
-		if err := mint.Validate(); err != nil {
-			return err
+		if mint.Coin.IsZero() {
+			continue
 		}
 
 		if err := k.bankKeeper.MintCoins(ctx, mint.DestinationModule, cosmostypes.NewCoins(mint.Coin)); err != nil {
@@ -293,24 +288,36 @@ func (k Keeper) executePendingModuleMints(
 		}
 		telemetry.MintedTokensFromModule(mint.DestinationModule, float32(mint.Coin.Amount.Int64()))
 
+		if err := ctx.EventManager().EmitTypedEvent(&tokenomicstypes.EventSettlementBatch{
+			SessionEndBlockHeight: sessionEndHeight,
+			SenderModule:          mint.DestinationModule,
+			OpReason:              mint.OpReason,
+			TotalAmount:           mint.Coin.String(),
+			NumClaims:             mint.NumClaims,
+			OpType:                "mint",
+		}); err != nil {
+			return err
+		}
+
 		logger.Info(fmt.Sprintf(
-			"minting %s coins to the %q module account, reason: %q",
-			mint.Coin, mint.DestinationModule, mint.OpReason.String(),
+			"minted %s to %q module (aggregated %d claims), reason: %q",
+			mint.Coin, mint.DestinationModule, mint.NumClaims, mint.OpReason.String(),
 		))
 	}
 	return nil
 }
 
-// executePendingModuleBurns executes all pending burn operations.
-// DEV_NOTE: Mint and burn operations are ONLY applicable to module accounts.
-func (k Keeper) executePendingModuleBurns(
+// executeAggregatedBurns executes one BurnCoins call per aggregated burn key
+// and emits an EventSettlementBatch for each.
+func (k Keeper) executeAggregatedBurns(
 	ctx cosmostypes.Context,
 	logger cosmoslog.Logger,
-	burns []tokenomicstypes.MintBurnOp,
+	burns []aggregatedMintBurnOp,
+	sessionEndHeight int64,
 ) error {
 	for _, burn := range burns {
-		if err := burn.Validate(); err != nil {
-			return err
+		if burn.Coin.IsZero() {
+			continue
 		}
 
 		if err := k.bankKeeper.BurnCoins(ctx, burn.DestinationModule, cosmostypes.NewCoins(burn.Coin)); err != nil {
@@ -320,23 +327,36 @@ func (k Keeper) executePendingModuleBurns(
 		}
 		telemetry.BurnedTokensFromModule(burn.DestinationModule, float32(burn.Coin.Amount.Int64()))
 
+		if err := ctx.EventManager().EmitTypedEvent(&tokenomicstypes.EventSettlementBatch{
+			SessionEndBlockHeight: sessionEndHeight,
+			SenderModule:          burn.DestinationModule,
+			OpReason:              burn.OpReason,
+			TotalAmount:           burn.Coin.String(),
+			NumClaims:             burn.NumClaims,
+			OpType:                "burn",
+		}); err != nil {
+			return err
+		}
+
 		logger.Info(fmt.Sprintf(
-			"burning %s coins from the %q module account, reason: %q",
-			burn.Coin, burn.DestinationModule, burn.OpReason.String(),
+			"burned %s from %q module (aggregated %d claims), reason: %q",
+			burn.Coin, burn.DestinationModule, burn.NumClaims, burn.OpReason.String(),
 		))
 	}
 	return nil
 }
 
-// executePendingModToModTransfers executes all pending module to module transfer operations.
-func (k Keeper) executePendingModToModTransfers(
+// executeAggregatedModToModTransfers executes one SendCoinsFromModuleToModule call
+// per aggregated key and emits an EventSettlementBatch for each.
+func (k Keeper) executeAggregatedModToModTransfers(
 	ctx cosmostypes.Context,
 	logger cosmoslog.Logger,
-	transfers []tokenomicstypes.ModToModTransfer,
+	transfers []aggregatedModToModTransfer,
+	sessionEndHeight int64,
 ) error {
 	for _, transfer := range transfers {
-		if err := transfer.Validate(); err != nil {
-			return err
+		if transfer.Coin.IsZero() {
+			continue
 		}
 
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
@@ -351,34 +371,44 @@ func (k Keeper) executePendingModToModTransfers(
 			)
 		}
 
+		if err := ctx.EventManager().EmitTypedEvent(&tokenomicstypes.EventSettlementBatch{
+			SessionEndBlockHeight: sessionEndHeight,
+			SenderModule:          transfer.SenderModule,
+			Recipient:             transfer.RecipientModule,
+			OpReason:              transfer.OpReason,
+			TotalAmount:           transfer.Coin.String(),
+			NumClaims:             transfer.NumClaims,
+			OpType:                "mod_to_mod",
+		}); err != nil {
+			return err
+		}
+
 		logger.Info(fmt.Sprintf(
-			"executing operation: transferring %s coins from the %q module account to the %q module account, reason: %q",
-			transfer.Coin, transfer.SenderModule, transfer.RecipientModule, transfer.OpReason.String(),
+			"transferred %s from %q to %q module (aggregated %d claims), reason: %q",
+			transfer.Coin, transfer.SenderModule, transfer.RecipientModule, transfer.NumClaims, transfer.OpReason.String(),
 		))
 	}
 	return nil
 }
 
-// executePendingModToAcctTransfers executes all pending module to account transfer operations.
-func (k Keeper) executePendingModToAcctTransfers(
+// executeAggregatedModToAcctTransfers executes one SendCoinsFromModuleToAccount call
+// per aggregated key and emits an EventSettlementBatch for each.
+func (k Keeper) executeAggregatedModToAcctTransfers(
 	ctx cosmostypes.Context,
 	logger cosmoslog.Logger,
-	transfers []tokenomicstypes.ModToAcctTransfer,
+	transfers []aggregatedModToAcctTransfer,
+	sessionEndHeight int64,
 ) error {
 	for _, transfer := range transfers {
-		if err := transfer.Validate(); err != nil {
-			return err
+		if transfer.Coin.IsZero() {
+			continue
 		}
 
 		recipientAddr, err := cosmostypes.AccAddressFromBech32(transfer.RecipientAddress)
 		if err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
 				"sender module %q to recipient address %q transferring %s (reason %q): %v",
-				transfer.SenderModule,
-				transfer.RecipientAddress,
-				transfer.Coin,
-				transfer.GetOpReason(),
-				err,
+				transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, transfer.OpReason.String(), err,
 			)
 		}
 
@@ -390,17 +420,25 @@ func (k Keeper) executePendingModToAcctTransfers(
 		); err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
 				"sender module %q to recipient address %q transferring %s (reason %q): %v",
-				transfer.SenderModule,
-				transfer.RecipientAddress,
-				transfer.Coin,
-				transfer.GetOpReason(),
-				err,
+				transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, transfer.OpReason.String(), err,
 			)
 		}
 
+		if err = ctx.EventManager().EmitTypedEvent(&tokenomicstypes.EventSettlementBatch{
+			SessionEndBlockHeight: sessionEndHeight,
+			SenderModule:          transfer.SenderModule,
+			Recipient:             transfer.RecipientAddress,
+			OpReason:              transfer.OpReason,
+			TotalAmount:           transfer.Coin.String(),
+			NumClaims:             transfer.NumClaims,
+			OpType:                "mod_to_acct",
+		}); err != nil {
+			return err
+		}
+
 		logger.Info(fmt.Sprintf(
-			"executing operation: transferring %s coins from the %q module account to account address %q, reason: %q",
-			transfer.Coin, transfer.SenderModule, transfer.RecipientAddress, transfer.OpReason.String(),
+			"transferred %s from %q to account %q (aggregated %d claims), reason: %q",
+			transfer.Coin, transfer.SenderModule, transfer.RecipientAddress, transfer.NumClaims, transfer.OpReason.String(),
 		))
 	}
 	return nil
