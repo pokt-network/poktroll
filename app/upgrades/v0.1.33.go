@@ -18,35 +18,48 @@ const (
 
 // Upgrade_0_1_33 handles the upgrade to release `v0.1.33`.
 // This upgrade fixes:
-// - removeApplicationUndelegationIndex deleting from the wrong store (delegation
-//   store instead of undelegation store), causing orphaned undelegation index entries
-//   when applications with pending undelegations were removed (unstaked/transferred).
-//   Bug introduced in PR #1263 (v0.1.31). The upgrade handler cleans up any
-//   orphaned entries accumulated since v0.1.31.
+//   - removeApplicationUndelegationIndex deleting from the wrong store (delegation
+//     store instead of undelegation store), causing orphaned undelegation index entries
+//     when applications with pending undelegations were removed (unstaked/transferred).
+//     Bug introduced in PR #1263 (v0.1.31). The upgrade handler cleans up any
+//     orphaned entries accumulated since v0.1.31.
 //
 // P0 audit fixes (from v0.1.31 audit):
-// - getSupplierServiceConfigUpdates now skips orphaned index entries (nil primary
-//   record) instead of calling MustUnmarshal(nil) which produces zero-value structs
-//   with Service == nil. Mirrors the existing nil check in
-//   removeSupplierServiceConfigUpdateIndexes.
-// - shared module's MsgUpdateParams (bulk/governance) now calls recordParamsHistory
-//   before SetParams, matching the singular MsgUpdateParam and session module's
-//   MsgUpdateParams. Without this, governance bulk param updates bypassed history
-//   recording, causing GetParamsAtHeight to return stale values.
+//   - getSupplierServiceConfigUpdates now skips orphaned index entries (nil primary
+//     record) instead of calling MustUnmarshal(nil) which produces zero-value structs
+//     with Service == nil. Mirrors the existing nil check in
+//     removeSupplierServiceConfigUpdateIndexes.
+//   - shared module's MsgUpdateParams (bulk/governance) now calls recordParamsHistory
+//     before SetParams, matching the singular MsgUpdateParam and session module's
+//     MsgUpdateParams. Without this, governance bulk param updates bypassed history
+//     recording, causing GetParamsAtHeight to return stale values.
+//
+// P1 audit fixes (from v0.1.31 audit):
+//   - SubmitProof: Added error checks after GetClaimeduPOKT and GetNumEstimatedComputeUnits
+//     calls. Previously the second := assignment silently overwrote the error from the first,
+//     causing incorrect zero-value data in events when GetClaimeduPOKT failed.
+//   - proof/claim handlers (CreateClaim, SubmitProof, ProofRequirementForClaim): Replaced
+//     sharedKeeper.GetParams(ctx) with GetParamsAtHeight(ctx, sessionStartHeight) so that
+//     claimed uPOKT and proof requirement calculations use the shared params that were
+//     effective when the session started, not the current params.
+//   - SharedKeeperQueryClient (GetEarliestSupplierClaimCommitHeight,
+//     GetEarliestSupplierProofCommitHeight): Replaced sharedKeeper.GetParams(ctx) with
+//     GetParamsAtHeight(ctx, queryHeight) so that claim/proof window calculations use
+//     historical params consistent with the session-level window validation in session.go.
 //
 // Settlement event improvements (event-only, no state changes):
-// - EventClaimSettled: Added `settled_upokt` (post-cap, pre-mint_ratio amount) and
-//   `mint_ratio` fields so indexers can decompose overservicing loss vs deflation loss.
-// - EventApplicationOverserviced: BREAKING SEMANTIC CHANGE — `effective_burn` now
-//   includes the globalInflation component, matching `expected_burn`'s basis.
-//   Previously `effective_burn` excluded globalInflation, making the gap
-//   (expected_burn - effective_burn) appear larger than actual overservicing.
-//   Indexers (e.g. pocketdex) that compute overservicing amounts from this gap
-//   will see smaller, more accurate values after this upgrade.
-// - EventApplicationOverserviced: Added `service_id` and `session_end_block_height`
-//   fields to enable unambiguous joins with EventClaimSettled. Previously indexers
-//   had to match on (app_addr, supplier_addr) within the same block, which is
-//   ambiguous when the same pair has claims from multiple sessions settling together.
+//   - EventClaimSettled: Added `settled_upokt` (post-cap, pre-mint_ratio amount) and
+//     `mint_ratio` fields so indexers can decompose overservicing loss vs deflation loss.
+//   - EventApplicationOverserviced: BREAKING SEMANTIC CHANGE — `effective_burn` now
+//     includes the globalInflation component, matching `expected_burn`'s basis.
+//     Previously `effective_burn` excluded globalInflation, making the gap
+//     (expected_burn - effective_burn) appear larger than actual overservicing.
+//     Indexers (e.g. pocketdex) that compute overservicing amounts from this gap
+//     will see smaller, more accurate values after this upgrade.
+//   - EventApplicationOverserviced: Added `service_id` and `session_end_block_height`
+//     fields to enable unambiguous joins with EventClaimSettled. Previously indexers
+//     had to match on (app_addr, supplier_addr) within the same block, which is
+//     ambiguous when the same pair has claims from multiple sessions settling together.
 var Upgrade_0_1_33 = Upgrade{
 	PlanName: Upgrade_0_1_33_PlanName,
 	// No KVStore migrations in this upgrade.
