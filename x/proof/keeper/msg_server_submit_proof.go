@@ -315,21 +315,21 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 	ctx context.Context,
 	claim *types.Claim,
 ) (blockHash []byte, err error) {
-	sharedParams, err := k.sharedQuerier.GetParams(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
 	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
 
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	// Use historical params at sessionEndHeight to ensure consistency with other
+	// on-chain proof validation (validateProofWindow, validateClosestPath).
+	// See x/proof/keeper/session.go:167 for the same pattern.
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
+
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
 	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
 
 	// TODO_TECHDEBT(@red-0ne): Update the method header of this function to accept (sharedParams, claim, BlockHash).
 	// After doing so, please review all calling sites and simplify them accordingly.
 	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		sharedParams,
+		&sharedParams,
 		sessionEndHeight,
 		proofWindowOpenBlockHash,
 		supplierOperatorAddress,
