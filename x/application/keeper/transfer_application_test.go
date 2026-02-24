@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -156,7 +157,12 @@ func (s *MergeAppDelegateesSuite) TestMergePendingUndelegations() {
 				t.Run(fmt.Sprintf("height_%d", height), func(t *testing.T) {
 					expectedAddrs := expectedUndelegatingGatewayList.GatewayAddresses
 					dstUndelegatingGatewayList := dstApp.PendingUndelegations[height]
+					// Use ElementsMatch to verify content, then verify deterministic ordering
 					require.ElementsMatch(t, expectedAddrs, dstUndelegatingGatewayList.GatewayAddresses)
+					// Verify the gateway addresses are sorted for deterministic protobuf serialization
+					require.True(t, sort.StringsAreSorted(dstUndelegatingGatewayList.GatewayAddresses),
+						"gateway addresses must be sorted for deterministic serialization, got: %v",
+						dstUndelegatingGatewayList.GatewayAddresses)
 				})
 			}
 		})

@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
@@ -139,7 +140,7 @@ func (k Keeper) transferApplication(
 			srcApp.GetAddress(), dstApp.GetAddress(),
 		))
 	} else {
-		srcStakeSumCoin := dstApp.GetStake().Add(*dstApp.GetStake())
+		srcStakeSumCoin := srcApp.GetStake().Add(*dstApp.GetStake())
 		dstApp.Stake = &srcStakeSumCoin
 
 		mergeAppDelegatees(&srcApp, &dstApp)
@@ -243,6 +244,14 @@ func mergeAppPendingUndelegations(srcApp, dstApp *apptypes.Application) {
 			dstPendingUndelegationsAtHeight.GatewayAddresses = append(dstApp.PendingUndelegations[height].GatewayAddresses, gatewayAddr)
 			dstApp.PendingUndelegations[height] = dstPendingUndelegationsAtHeight
 		}
+	}
+
+	// Sort gateway addresses within each height for deterministic protobuf serialization.
+	// Without sorting, map iteration order causes different validators to produce different
+	// serialized state, leading to AppHash mismatch and chain halt.
+	for height, list := range dstApp.PendingUndelegations {
+		sort.Strings(list.GatewayAddresses)
+		dstApp.PendingUndelegations[height] = list
 	}
 }
 
