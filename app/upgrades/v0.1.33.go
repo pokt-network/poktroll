@@ -24,6 +24,16 @@ const (
 //   Bug introduced in PR #1263 (v0.1.31). The upgrade handler cleans up any
 //   orphaned entries accumulated since v0.1.31.
 //
+// P0 audit fixes (from v0.1.31 audit):
+// - getSupplierServiceConfigUpdates now skips orphaned index entries (nil primary
+//   record) instead of calling MustUnmarshal(nil) which produces zero-value structs
+//   with Service == nil. Mirrors the existing nil check in
+//   removeSupplierServiceConfigUpdateIndexes.
+// - shared module's MsgUpdateParams (bulk/governance) now calls recordParamsHistory
+//   before SetParams, matching the singular MsgUpdateParam and session module's
+//   MsgUpdateParams. Without this, governance bulk param updates bypassed history
+//   recording, causing GetParamsAtHeight to return stale values.
+//
 // Settlement event improvements (event-only, no state changes):
 // - EventClaimSettled: Added `settled_upokt` (post-cap, pre-mint_ratio amount) and
 //   `mint_ratio` fields so indexers can decompose overservicing loss vs deflation loss.
