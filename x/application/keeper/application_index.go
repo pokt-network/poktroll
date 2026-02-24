@@ -246,6 +246,6 @@ func (k Keeper) removeApplicationUndelegationIndex(
 	ctx context.Context,
 	undelegationKey []byte,
 ) {
-	appDelegationStore := k.getDelegationStore(ctx)
-	appDelegationStore.Delete(undelegationKey)
+	appUndelegationStore := k.getUndelegationStore(ctx)
+	appUndelegationStore.Delete(undelegationKey)
 }

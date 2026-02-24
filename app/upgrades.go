@@ -173,6 +173,11 @@ var allUpgrades = []upgrades.Upgrade{
 	// - Root cause fix: proper index cleanup during supplier updates
 	// - Defensive logging improvements (warn → debug)
 	upgrades.Upgrade_0_1_31_Beta_2,
+
+	// v0.1.33 - upgrade to:
+	// - Fix removeApplicationUndelegationIndex deleting from wrong store
+	// - Cleanup orphaned undelegation index entries accumulated since v0.1.31
+	upgrades.Upgrade_0_1_33,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
