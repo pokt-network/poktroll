@@ -47,6 +47,12 @@ const (
 //     GetParamsAtHeight(ctx, queryHeight) so that claim/proof window calculations use
 //     historical params consistent with the session-level window validation in session.go.
 //
+// P2 audit fixes (from v0.1.31 audit):
+//   - session_hydrator: Fixed potential integer overflow in supplier sort comparison.
+//     generateSupplierRandomWeight produces values across the full int64 range;
+//     subtraction (weightA - weightB) could overflow, violating sort's trichotomy
+//     property. Replaced with explicit comparison (<, >, ==).
+//
 // Settlement event improvements (event-only, no state changes):
 //   - EventClaimSettled: Added `settled_upokt` (post-cap, pre-mint_ratio amount) and
 //     `mint_ratio` fields so indexers can decompose overservicing loss vs deflation loss.

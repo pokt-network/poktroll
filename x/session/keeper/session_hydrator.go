@@ -370,20 +370,22 @@ func sortCandidateSupplierConfigsBySupplierWeight(
 		weightA := candidatesToRandomWeight[serviceConfigUpdateA.OperatorAddress]
 		weightB := candidatesToRandomWeight[serviceConfigUpdateB.OperatorAddress]
 
-		// Calculate the difference between weights.
-		weightDiff := weightA - weightB
+		// Compare weights using explicit comparisons to avoid int64 overflow.
+		// generateSupplierRandomWeight converts uint64 → int, so values span the
+		// full int64 range. Subtraction (weightA - weightB) can overflow, violating
+		// sort's trichotomy property.
+		if weightA < weightB {
+			return -1
+		} else if weightA > weightB {
+			return 1
+		}
 
 		// If weights are equal, use operator addresses as a tiebreaker
 		// to ensure deterministic ordering.
-		if weightDiff == 0 {
-			return bytes.Compare(
-				[]byte(serviceConfigUpdateA.OperatorAddress),
-				[]byte(serviceConfigUpdateB.OperatorAddress),
-			)
-		}
-
-		// Sort based on weight difference
-		return weightDiff
+		return bytes.Compare(
+			[]byte(serviceConfigUpdateA.OperatorAddress),
+			[]byte(serviceConfigUpdateB.OperatorAddress),
+		)
 	}
 
 	slices.SortFunc(candidateSuppliers, weightedSupplierSortFn)
