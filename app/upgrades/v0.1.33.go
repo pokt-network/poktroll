@@ -33,6 +33,10 @@ const (
 //   (expected_burn - effective_burn) appear larger than actual overservicing.
 //   Indexers (e.g. pocketdex) that compute overservicing amounts from this gap
 //   will see smaller, more accurate values after this upgrade.
+// - EventApplicationOverserviced: Added `service_id` and `session_end_block_height`
+//   fields to enable unambiguous joins with EventClaimSettled. Previously indexers
+//   had to match on (app_addr, supplier_addr) within the same block, which is
+//   ambiguous when the same pair has claims from multiple sessions settling together.
 var Upgrade_0_1_33 = Upgrade{
 	PlanName: Upgrade_0_1_33_PlanName,
 	// No KVStore migrations in this upgrade.

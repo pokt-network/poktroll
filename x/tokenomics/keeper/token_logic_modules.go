@@ -166,7 +166,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// If not, update the settlement amount and emit relevant events.
 	// TODO_IMPROVE: Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake)
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake, sessionHeader.ServiceId, sessionHeader.SessionEndBlockHeight)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}
@@ -274,6 +274,8 @@ func (k Keeper) ensureClaimAmountLimits(
 	supplier *sharedtypes.Supplier,
 	claimSettlementCoin cosmostypes.Coin,
 	initialApplicationStake cosmostypes.Coin,
+	serviceId string,
+	sessionEndBlockHeight int64,
 ) (
 	actualSettlementCoins cosmostypes.Coin,
 	err error,
@@ -342,10 +344,12 @@ func (k Keeper) ensureClaimAmountLimits(
 	// Both ExpectedBurn and EffectiveBurn include the globalInflation component
 	// so they are on the same basis (total tokens burnt from app stake).
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
-		ApplicationAddr:      application.GetAddress(),
-		SupplierOperatorAddr: supplier.GetOperatorAddress(),
-		ExpectedBurn:         totalClaimedCoin.String(),
-		EffectiveBurn:        cosmostypes.NewCoin(pocket.DenomuPOKT, minRequiredAppStakeAmt).String(),
+		ApplicationAddr:       application.GetAddress(),
+		SupplierOperatorAddr:  supplier.GetOperatorAddress(),
+		ExpectedBurn:          totalClaimedCoin.String(),
+		EffectiveBurn:         cosmostypes.NewCoin(pocket.DenomuPOKT, minRequiredAppStakeAmt).String(),
+		ServiceId:             serviceId,
+		SessionEndBlockHeight: sessionEndBlockHeight,
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
 	if err = eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {
