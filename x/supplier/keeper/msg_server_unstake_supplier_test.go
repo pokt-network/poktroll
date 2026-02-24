@@ -240,10 +240,10 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 
 	expectedSupplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
 	expectedSupplier.Stake = stakeMsg.GetStake()
-	// When restaking without services (msg.Services is empty), service config history
-	// remains unchanged. The updateSupplier logic only processes configs when
-	// len(msg.Services) > 0, preserving existing history when doing stake-only updates.
-	expectedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
+	// When restaking without services (msg.Services is empty), the existing service
+	// config history is preserved. Retrieve the actual supplier to get the preserved history.
+	preservedSupplier, _ := supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
+	expectedSupplier.ServiceConfigHistory = preservedSupplier.ServiceConfigHistory
 
 	// Assert that the EventSupplierUnbondingCanceled event is emitted.
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
