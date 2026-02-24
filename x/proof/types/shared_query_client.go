@@ -85,7 +85,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 	queryHeight int64,
 	supplierOperatorAddr string,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
+	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight)
 
 	// Fetch the claim window open block hash so that it can be used as part of the
@@ -109,7 +109,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 	queryHeight int64,
 	supplierOperatorAddr string,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
+	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight)
 
 	// Fetch the proof window open block hash so that it can be used as part of the

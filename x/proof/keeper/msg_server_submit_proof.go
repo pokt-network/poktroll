@@ -125,12 +125,18 @@ func (k msgServer) SubmitProof(
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
 	// Use the difficulty that was effective at the session start height for consistency.
 	serviceId := sessionHeader.GetServiceId()
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionStartHeight := sessionHeader.GetSessionStartBlockHeight()
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionStartHeight)
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
 
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("failed to calculate claimed uPOKT: %v", err).Error())
+	}
 	numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("failed to get estimated compute units: %v", err).Error())
+	}
 
 	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
@@ -235,13 +241,13 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	defer k.finalizeProofRequirementTelemetry(requirementReason, claim, err)
 
 	proofParams := k.GetParams(ctx)
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// Get the relay mining difficulty that was effective at the session start height.
 	// This ensures we use the correct difficulty that was active when relays were mined,
 	// matching the calculation used in claim creation and proof validation.
 	serviceId := claim.GetSessionHeader().GetServiceId()
 	sessionStartHeight := claim.GetSessionHeader().GetSessionStartBlockHeight()
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionStartHeight)
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
 
 	// Retrieve the number of tokens claimed to compare against the threshold.

@@ -117,11 +117,11 @@ func (k msgServer) CreateClaim(
 
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
 	serviceId := session.GetHeader().GetServiceId()
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// Get the relay mining difficulty that was effective at the session start height.
 	// This ensures we use the correct difficulty that was active when relays were mined.
 	sessionStartHeight := claim.SessionHeader.GetSessionStartBlockHeight()
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionStartHeight)
 	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
 	if !found {
 		return nil, status.Error(
