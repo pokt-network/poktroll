@@ -16,18 +16,20 @@ func NewEventClaimSettled(
 ) *EventClaimSettled {
 	claim := claimSettlementResult.GetClaim()
 	rewardDistribution := claimSettlementResult.GetRewardDistribution()
+	rewardDistributionDetailed := claimSettlementResult.GetRewardDistributionDetailed()
 
 	return &EventClaimSettled{
-		NumRelays:                numClaimRelays,
-		NumClaimedComputeUnits:   numClaimComputeUnits,
-		NumEstimatedComputeUnits: numEstimatedComputeUnits,
-		ClaimedUpokt:             claimeduPOKT.String(),
-		ProofRequirementInt:      int32(proofRequirement),
-		ServiceId:                claim.SessionHeader.ServiceId,
-		ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
-		SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
-		ClaimProofStatusInt:      int32(claim.ProofValidationStatus),
-		SupplierOperatorAddress:  claim.SupplierOperatorAddress,
-		RewardDistribution:       rewardDistribution,
+		NumRelays:                  numClaimRelays,
+		NumClaimedComputeUnits:     numClaimComputeUnits,
+		NumEstimatedComputeUnits:   numEstimatedComputeUnits,
+		ClaimedUpokt:               claimeduPOKT.String(),
+		ProofRequirementInt:        int32(proofRequirement),
+		ServiceId:                  claim.SessionHeader.ServiceId,
+		ApplicationAddress:         claim.SessionHeader.ApplicationAddress,
+		SessionEndBlockHeight:      claim.SessionHeader.SessionEndBlockHeight,
+		ClaimProofStatusInt:        int32(claim.ProofValidationStatus),
+		SupplierOperatorAddress:    claim.SupplierOperatorAddress,
+		RewardDistribution:         rewardDistribution,
+		RewardDistributionDetailed: rewardDistributionDetailed,
 	}
 }

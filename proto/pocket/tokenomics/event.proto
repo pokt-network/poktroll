@@ -77,7 +77,7 @@ message EventClaimExpired {
 // EventClaimSettled is emitted during settlement whenever a claim is successfully settled.
 // It may or may not require a proof depending on various on-chain parameters and other factors.
 message EventClaimSettled {
-    // Next index: 15
+    // Next index: 16
 
     // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
     // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
@@ -134,7 +134,12 @@ message EventClaimSettled {
     string supplier_operator_address = 13 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
     // A map of addresses to token amounts corresponding to the distribution of the reward tokens.
+    // Deprecated: Use reward_distribution_detailed which preserves OpReason per entry.
     map<string, string> reward_distribution = 14 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mint_distribution"];
+
+    // Detailed per-reason reward breakdown. Unlike reward_distribution (field 14)
+    // which merges all reasons per address, this preserves the OpReason for each entry.
+    repeated RewardDistributionDetail reward_distribution_detailed = 15 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "reward_distribution_detailed"];
 }
 
 // EventApplicationOverserviced is emitted when an Application's stake cannot cover the Supplier's claim.
@@ -232,6 +237,45 @@ message EventClaimDiscarded {
 
     // The operator address of the supplier whose claim was discarded.
     string supplier_operator_address = 7 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// RewardDistributionDetail is a per-recipient, per-reason reward breakdown for a single claim.
+// Unlike the reward_distribution map (which merges all OpReasons per address),
+// this preserves the OpReason for each entry.
+message RewardDistributionDetail {
+    // The recipient address (bech32).
+    string recipient_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // The settlement operation reason from the TLM.
+    SettlementOpReason op_reason = 2;
+
+    // The reward amount as a coin string (e.g. "1000upokt").
+    string amount = 3;
+}
+
+// EventSettlementBatch is emitted once per unique aggregated bank operation during settlement.
+// It provides the link between batched bank transfers and the settlement context.
+message EventSettlementBatch {
+    // The session end block height for the batch of settlements.
+    int64 session_end_block_height = 1;
+
+    // The sender module account (or destination module for mints/burns).
+    string sender_module = 2;
+
+    // The recipient (bech32 address for mod-to-acct, module name for mod-to-mod, empty for mints/burns).
+    string recipient = 3;
+
+    // The settlement operation reason from the TLM.
+    SettlementOpReason op_reason = 4;
+
+    // The total aggregated amount as a coin string.
+    string total_amount = 5;
+
+    // Number of individual claims that contributed to this batch.
+    uint32 num_claims = 6;
+
+    // The type of bank operation: "mint", "burn", "mod_to_mod", "mod_to_acct".
+    string op_type = 7;
 }
 
 // EventApplicationReimbursementRequest is emitted when an application requests a reimbursement from the DAO.
