@@ -261,7 +261,7 @@ func createLuaScript(relayReqBz []byte) error {
 	var luaString strings.Builder
 	luaString.WriteString("\"")
 	for _, b := range relayReqBz {
-		luaString.WriteString(fmt.Sprintf("\\%d", b))
+		fmt.Fprintf(&luaString, "\\%d", b)
 	}
 	luaString.WriteString("\"")
 

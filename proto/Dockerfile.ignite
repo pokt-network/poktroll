@@ -2,7 +2,7 @@
 # To use it to update `docs/static/openapi.yml`, simply run:
 # $ make openapi_ignite_gen
 
-FROM golang:1.24.3
+FROM golang:1.25.7
 
 # Install Ignite CLI
 RUN curl https://get.ignite.com/cli\! | bash

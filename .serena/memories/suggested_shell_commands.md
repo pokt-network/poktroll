@@ -107,7 +107,7 @@ grep -r "TODO\|FIXME" --include="*.go" . | head -10
 ### Environment Setup Verification
 
 ```bash
-# Check Go version (should be 1.24.3+)
+# Check Go version (should be 1.25.7+)
 go version
 
 # Verify required tools
