@@ -1,6 +1,7 @@
 package application
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -34,6 +35,10 @@ $ pocketd tx application stake-and-delegate --config stake_config.yaml --keyring
 			configFile, err := cmd.Flags().GetString("config")
 			if err != nil {
 				return err
+			}
+
+			if configFile == "" {
+				return fmt.Errorf("--config flag is required")
 			}
 
 			configContent, err := os.ReadFile(configFile)
