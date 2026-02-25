@@ -278,6 +278,106 @@ func TestAggregateModToModTransfers_DifferentModulePairs(t *testing.T) {
 	require.Len(t, agg, 2, "different module pairs should produce separate entries")
 }
 
+func TestAggregate_ManyResultsSameKey_SumsCorrectly(t *testing.T) {
+	// 10 results, each with 1 mint of 100 uPOKT to the same (module, reason) key.
+	// Assert: 1 aggregated entry, Coin=1000, NumClaims=10.
+	results := make(tlm.ClaimSettlementResults, 10)
+	for i := range results {
+		results[i] = newTestResult(
+			[]tokenomicstypes.MintBurnOp{
+				{DestinationModule: "supplier", OpReason: tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT, Coin: coin(100)},
+			},
+			nil, nil, nil,
+		)
+	}
+
+	agg, err := aggregateMints(results)
+	require.NoError(t, err)
+	require.Len(t, agg, 1)
+	require.Equal(t, coin(1000), agg[0].Coin)
+	require.Equal(t, uint32(10), agg[0].NumClaims)
+	require.Equal(t, "supplier", agg[0].DestinationModule)
+	require.Equal(t, tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT, agg[0].OpReason)
+}
+
+func TestAggregate_MixedKeysFromMultipleResults(t *testing.T) {
+	// 3 results with overlapping and distinct keys across mints.
+	// Result 1: mint(supplier, RBEM_STAKE, 100) + mint(tokenomics, RBEM_DISTRIBUTION, 50)
+	// Result 2: mint(supplier, RBEM_STAKE, 200) + mint(supplier, GM_INFLATION, 30)
+	// Result 3: mint(tokenomics, RBEM_DISTRIBUTION, 75)
+	// Assert: 3 entries — supplier|RBEM=300 (NC=2), tokenomics|RBEM=125 (NC=2), supplier|GM=30 (NC=1)
+	results := tlm.ClaimSettlementResults{
+		newTestResult(
+			[]tokenomicstypes.MintBurnOp{
+				{DestinationModule: "supplier", OpReason: tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT, Coin: coin(100)},
+				{DestinationModule: "tokenomics", OpReason: tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_TOKENOMICS_CLAIM_DISTRIBUTION_MINT, Coin: coin(50)},
+			},
+			nil, nil, nil,
+		),
+		newTestResult(
+			[]tokenomicstypes.MintBurnOp{
+				{DestinationModule: "supplier", OpReason: tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT, Coin: coin(200)},
+				{DestinationModule: "supplier", OpReason: tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_INFLATION, Coin: coin(30)},
+			},
+			nil, nil, nil,
+		),
+		newTestResult(
+			[]tokenomicstypes.MintBurnOp{
+				{DestinationModule: "tokenomics", OpReason: tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_TOKENOMICS_CLAIM_DISTRIBUTION_MINT, Coin: coin(75)},
+			},
+			nil, nil, nil,
+		),
+	}
+
+	agg, err := aggregateMints(results)
+	require.NoError(t, err)
+	require.Len(t, agg, 3)
+
+	// Build a lookup by key for easier assertion (order is deterministic by sorted key).
+	aggMap := make(map[string]aggregatedMintBurnOp)
+	for _, m := range agg {
+		key := m.DestinationModule + "|" + m.OpReason.String()
+		aggMap[key] = m
+	}
+
+	supplierRBEM := aggMap["supplier|TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT"]
+	require.Equal(t, coin(300), supplierRBEM.Coin)
+	require.Equal(t, uint32(2), supplierRBEM.NumClaims)
+
+	tokenomicsRBEM := aggMap["tokenomics|TLM_RELAY_BURN_EQUALS_MINT_TOKENOMICS_CLAIM_DISTRIBUTION_MINT"]
+	require.Equal(t, coin(125), tokenomicsRBEM.Coin)
+	require.Equal(t, uint32(2), tokenomicsRBEM.NumClaims)
+
+	supplierGM := aggMap["supplier|TLM_GLOBAL_MINT_INFLATION"]
+	require.Equal(t, coin(30), supplierGM.Coin)
+	require.Equal(t, uint32(1), supplierGM.NumClaims)
+}
+
+func TestAggregate_ZeroCoinOps_Included(t *testing.T) {
+	// 2 results: first has zero-amount mint, second has 100 uPOKT mint, same key.
+	// Assert: 1 entry, Coin=100, NumClaims=2 (zero ops still counted).
+	results := tlm.ClaimSettlementResults{
+		newTestResult(
+			[]tokenomicstypes.MintBurnOp{
+				{DestinationModule: "supplier", OpReason: tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT, Coin: coin(0)},
+			},
+			nil, nil, nil,
+		),
+		newTestResult(
+			[]tokenomicstypes.MintBurnOp{
+				{DestinationModule: "supplier", OpReason: tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT, Coin: coin(100)},
+			},
+			nil, nil, nil,
+		),
+	}
+
+	agg, err := aggregateMints(results)
+	require.NoError(t, err)
+	require.Len(t, agg, 1)
+	require.Equal(t, coin(100), agg[0].Coin)
+	require.Equal(t, uint32(2), agg[0].NumClaims)
+}
+
 func TestAggregate_UnspecifiedOpReasonReturnsError(t *testing.T) {
 	// Verify that ops with UNSPECIFIED reason are rejected during aggregation.
 	t.Run("mints", func(t *testing.T) {
