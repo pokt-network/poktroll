@@ -57,7 +57,8 @@ func TestAggregateMints_BasicAggregation(t *testing.T) {
 		),
 	}
 
-	agg := aggregateMints(results)
+	agg, err := aggregateMints(results)
+	require.NoError(t, err)
 	require.Len(t, agg, 2)
 
 	// Find entries by module name (order is deterministic by sorted key).
@@ -90,7 +91,8 @@ func TestAggregateMints_OpReasonSeparation(t *testing.T) {
 		),
 	}
 
-	agg := aggregateMints(results)
+	agg, err := aggregateMints(results)
+	require.NoError(t, err)
 	require.Len(t, agg, 2, "different OpReasons for same module should produce separate entries")
 }
 
@@ -110,7 +112,8 @@ func TestAggregateBurns_BasicAggregation(t *testing.T) {
 		),
 	}
 
-	agg := aggregateBurns(results)
+	agg, err := aggregateBurns(results)
+	require.NoError(t, err)
 	require.Len(t, agg, 1)
 	require.Equal(t, coin(300), agg[0].Coin)
 	require.Equal(t, uint32(2), agg[0].NumClaims)
@@ -132,7 +135,8 @@ func TestAggregateModToModTransfers_BasicAggregation(t *testing.T) {
 		),
 	}
 
-	agg := aggregateModToModTransfers(results)
+	agg, err := aggregateModToModTransfers(results)
+	require.NoError(t, err)
 	require.Len(t, agg, 1)
 	require.Equal(t, coin(250), agg[0].Coin)
 	require.Equal(t, uint32(2), agg[0].NumClaims)
@@ -156,7 +160,8 @@ func TestAggregateModToAcctTransfers_BasicAggregation(t *testing.T) {
 		),
 	}
 
-	agg := aggregateModToAcctTransfers(results)
+	agg, err := aggregateModToAcctTransfers(results)
+	require.NoError(t, err)
 	require.Len(t, agg, 2)
 
 	var abcTransfer, defTransfer aggregatedModToAcctTransfer
@@ -186,17 +191,29 @@ func TestAggregateModToAcctTransfers_SameRecipientDifferentReasons(t *testing.T)
 		),
 	}
 
-	agg := aggregateModToAcctTransfers(results)
+	agg, err := aggregateModToAcctTransfers(results)
+	require.NoError(t, err)
 	require.Len(t, agg, 2, "same recipient with different OpReasons should produce separate entries")
 }
 
 func TestAggregate_EmptyInput(t *testing.T) {
 	var emptyResults tlm.ClaimSettlementResults
 
-	require.Empty(t, aggregateMints(emptyResults))
-	require.Empty(t, aggregateBurns(emptyResults))
-	require.Empty(t, aggregateModToModTransfers(emptyResults))
-	require.Empty(t, aggregateModToAcctTransfers(emptyResults))
+	aggMints, err := aggregateMints(emptyResults)
+	require.NoError(t, err)
+	require.Empty(t, aggMints)
+
+	aggBurns, err := aggregateBurns(emptyResults)
+	require.NoError(t, err)
+	require.Empty(t, aggBurns)
+
+	aggModToMod, err := aggregateModToModTransfers(emptyResults)
+	require.NoError(t, err)
+	require.Empty(t, aggModToMod)
+
+	aggModToAcct, err := aggregateModToAcctTransfers(emptyResults)
+	require.NoError(t, err)
+	require.Empty(t, aggModToAcct)
 }
 
 func TestAggregate_SingleResult(t *testing.T) {
@@ -209,7 +226,8 @@ func TestAggregate_SingleResult(t *testing.T) {
 		),
 	}
 
-	agg := aggregateMints(results)
+	agg, err := aggregateMints(results)
+	require.NoError(t, err)
 	require.Len(t, agg, 1)
 	require.Equal(t, coin(42), agg[0].Coin)
 	require.Equal(t, uint32(1), agg[0].NumClaims)
@@ -228,11 +246,13 @@ func TestAggregate_DeterministicOrdering(t *testing.T) {
 	}
 
 	// Get the first run's result as the reference.
-	reference := aggregateModToAcctTransfers(results)
+	reference, err := aggregateModToAcctTransfers(results)
+	require.NoError(t, err)
 	require.Len(t, reference, 3)
 
 	for i := 0; i < 100; i++ {
-		agg := aggregateModToAcctTransfers(results)
+		agg, err := aggregateModToAcctTransfers(results)
+		require.NoError(t, err)
 		require.Len(t, agg, len(reference))
 		for j := range reference {
 			require.Equal(t, reference[j].RecipientAddress, agg[j].RecipientAddress, "iteration %d, index %d", i, j)
@@ -253,6 +273,65 @@ func TestAggregateModToModTransfers_DifferentModulePairs(t *testing.T) {
 		),
 	}
 
-	agg := aggregateModToModTransfers(results)
+	agg, err := aggregateModToModTransfers(results)
+	require.NoError(t, err)
 	require.Len(t, agg, 2, "different module pairs should produce separate entries")
+}
+
+func TestAggregate_UnspecifiedOpReasonReturnsError(t *testing.T) {
+	// Verify that ops with UNSPECIFIED reason are rejected during aggregation.
+	t.Run("mints", func(t *testing.T) {
+		results := tlm.ClaimSettlementResults{
+			newTestResult(
+				[]tokenomicstypes.MintBurnOp{
+					{DestinationModule: "supplier", OpReason: tokenomicstypes.SettlementOpReason_UNSPECIFIED, Coin: coin(100)},
+				},
+				nil, nil, nil,
+			),
+		}
+		_, err := aggregateMints(results)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errUnspecifiedOpReason)
+	})
+
+	t.Run("burns", func(t *testing.T) {
+		results := tlm.ClaimSettlementResults{
+			newTestResult(nil,
+				[]tokenomicstypes.MintBurnOp{
+					{DestinationModule: "application", OpReason: tokenomicstypes.SettlementOpReason_UNSPECIFIED, Coin: coin(100)},
+				},
+				nil, nil,
+			),
+		}
+		_, err := aggregateBurns(results)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errUnspecifiedOpReason)
+	})
+
+	t.Run("mod_to_mod", func(t *testing.T) {
+		results := tlm.ClaimSettlementResults{
+			newTestResult(nil, nil,
+				[]tokenomicstypes.ModToModTransfer{
+					{SenderModule: "tokenomics", RecipientModule: "supplier", OpReason: tokenomicstypes.SettlementOpReason_UNSPECIFIED, Coin: coin(100)},
+				},
+				nil,
+			),
+		}
+		_, err := aggregateModToModTransfers(results)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errUnspecifiedOpReason)
+	})
+
+	t.Run("mod_to_acct", func(t *testing.T) {
+		results := tlm.ClaimSettlementResults{
+			newTestResult(nil, nil, nil,
+				[]tokenomicstypes.ModToAcctTransfer{
+					{SenderModule: "supplier", RecipientAddress: "pokt1abc", OpReason: tokenomicstypes.SettlementOpReason_UNSPECIFIED, Coin: coin(100)},
+				},
+			),
+		}
+		_, err := aggregateModToAcctTransfers(results)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errUnspecifiedOpReason)
+	})
 }

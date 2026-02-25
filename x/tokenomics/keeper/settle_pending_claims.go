@@ -240,10 +240,22 @@ func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledRes
 	}
 
 	// Step 1: Aggregate all operations across all results by unique key.
-	aggMints := aggregateMints(settledResults)
-	aggModToMod := aggregateModToModTransfers(settledResults)
-	aggModToAcct := aggregateModToAcctTransfers(settledResults)
-	aggBurns := aggregateBurns(settledResults)
+	aggMints, err := aggregateMints(settledResults)
+	if err != nil {
+		return err
+	}
+	aggModToMod, err := aggregateModToModTransfers(settledResults)
+	if err != nil {
+		return err
+	}
+	aggModToAcct, err := aggregateModToAcctTransfers(settledResults)
+	if err != nil {
+		return err
+	}
+	aggBurns, err := aggregateBurns(settledResults)
+	if err != nil {
+		return err
+	}
 
 	logger.Info(fmt.Sprintf(
 		"aggregated operations: %d mints, %d mod-to-mod, %d mod-to-acct, %d burns",
