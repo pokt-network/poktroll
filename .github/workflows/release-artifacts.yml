@@ -39,7 +39,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.24.3"
+          go-version: "1.25.7"
 
       # TODO_INVESTIGATE: CGO cross-compilers disabled - https://github.com/pokt-network/poktroll/discussions/1822
       # To re-enable: Uncomment the step below to install cross-compilers for CGO builds

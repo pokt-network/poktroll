@@ -3,7 +3,7 @@
 # workflows like E2E tests can run inside the container image.
 # TODO(@olshansky): Split the E2E/config preparation image from the runtime image once CI supports it.
 
-FROM golang:1.24.3 AS base
+FROM golang:1.25.7 AS base
 
 # TODO_INVESTIGATE: CGO builds disabled - https://github.com/pokt-network/poktroll/discussions/1822
 # Install build dependencies; CGO remains disabled downstream.

@@ -254,7 +254,7 @@ The tool supports multiple output formats for different use cases:
 
 ## Requirements
 
-- Go 1.24.3 or later
+- Go 1.25.7 or later
 - LevelDB database (read-only access)
 
 ## Troubleshooting
