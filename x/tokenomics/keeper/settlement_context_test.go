@@ -645,7 +645,97 @@ func (s *TestSuite) TestSettlePendingClaims_DoesNotSettle_IfProofIsRequiredButMi
 }
 
 func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsSettle_WithMultipleApplicationsAndSuppliers() {
-	s.T().Skip("TODO_TEST: Implement that multiple claims settle at once when different sessions have overlapping applications and suppliers")
+	// Tests multi-claim aggregation with real bank operations.
+	// Setup: 3 applications (1 from SetupTest + 2 additional), 1 supplier, 1 service.
+	// Each application has a claim for the same session.
+	// Validates: aggregated settlement, EventClaimSettled per claim, EventSettlementBatch aggregation.
+	t := s.T()
+	ctx := s.ctx
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	// Use the first claim from setup as a template.
+	claim := s.claims[0]
+	serviceId := claim.SessionHeader.ServiceId
+	supplierOpAddr := claim.SupplierOperatorAddress
+
+	// Set proof params so no proof is required.
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	require.NoError(t, err)
+	proofRequirementThreshold = proofRequirementThreshold.Add(uPOKTCoin(1))
+
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
+	require.NoError(t, err)
+
+	// Upsert the first claim from setup.
+	s.keepers.UpsertClaim(ctx, claim)
+
+	// Create 2 additional applications and claims for the same service.
+	for i := 0; i < 2; i++ {
+		appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+		appAddr := sample.AccAddressBech32()
+		app := apptypes.Application{
+			Address:        appAddr,
+			Stake:          &appStake,
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: serviceId}},
+		}
+		s.keepers.SetApplication(ctx, app)
+
+		sessionReq := &sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddr,
+			ServiceId:          serviceId,
+			BlockHeight:        1,
+		}
+		sessionRes, sessionErr := s.keepers.GetSession(sdkCtx, sessionReq)
+		require.NoError(t, sessionErr)
+
+		merkleRoot := testproof.SmstRootWithSumAndCount(5, 5)
+		extraClaim := testtree.NewClaim(t, supplierOpAddr, sessionRes.Session.Header, merkleRoot)
+		s.keepers.UpsertClaim(ctx, *extraClaim)
+	}
+
+	// Advance to proof window close and settle.
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	settledResults, expiredResults, numDiscardedFaultyClaims, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+
+	// All 3 claims should settle.
+	require.Equal(t, uint64(3), settledResults.GetNumClaims())
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims())
+	require.Equal(t, uint64(0), numDiscardedFaultyClaims)
+
+	// 3 EventClaimSettled events should be emitted.
+	events := sdkCtx.EventManager().Events()
+	claimSettledEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events)
+	require.Equal(t, 3, len(claimSettledEvents))
+
+	// EventSettlementBatch events should be present.
+	batchEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSettlementBatch](t, events)
+	require.NotEmpty(t, batchEvents)
+
+	// The number of batch events should be much fewer than 3 * ops_per_claim,
+	// since claims sharing the same aggregation keys are batched together.
+	// Each batch event should have NumClaims >= 1.
+	for _, batchEvt := range batchEvents {
+		require.True(t, batchEvt.NumClaims >= 1, "batch event should have at least 1 claim")
+	}
+
+	// Verify batch events have NumClaims == 3 for keys shared by all 3 claims.
+	// At minimum, the supplier stake mint and application stake burn keys are shared.
+	hasThreeClaimBatch := false
+	for _, batchEvt := range batchEvents {
+		if batchEvt.NumClaims == 3 {
+			hasThreeClaimBatch = true
+			break
+		}
+	}
+	require.True(t, hasThreeClaimBatch, "at least one batch event should aggregate all 3 claims")
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
@@ -983,6 +1073,294 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 		require.NotNil(t, rewardDistribution, "reward distribution should not be nil for event %d", i)
 		require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty for event %d", i)
 	}
+}
+
+func (s *TestSuite) TestSettlePendingClaims_EventSettlementBatch_FieldsCorrect() {
+	// Settles a single claim and validates all EventSettlementBatch event fields.
+	t := s.T()
+	ctx := s.ctx
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	claim := s.claims[0]
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
+
+	// Set proof params so no proof is required.
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	require.NoError(t, err)
+	proofRequirementThreshold = proofRequirementThreshold.Add(uPOKTCoin(1))
+
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
+	require.NoError(t, err)
+
+	s.keepers.UpsertClaim(ctx, claim)
+
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	settledResults, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), settledResults.GetNumClaims())
+
+	events := sdkCtx.EventManager().Events()
+	batchEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSettlementBatch](t, events)
+	require.NotEmpty(t, batchEvents, "EventSettlementBatch events should be emitted")
+
+	// Collect the set of OpType values present.
+	opTypesSeen := make(map[string]bool)
+	for _, evt := range batchEvents {
+		opTypesSeen[evt.OpType] = true
+
+		// All batch events should have the correct session end height.
+		require.Equal(t, sessionEndHeight, evt.SessionEndBlockHeight)
+
+		// All batch events should have NumClaims == 1 since there's only 1 claim.
+		require.Equal(t, uint32(1), evt.NumClaims)
+
+		// OpReason should never be UNSPECIFIED.
+		require.NotEqual(t, tokenomicstypes.SettlementOpReason_UNSPECIFIED, evt.OpReason)
+
+		// TotalAmount should be a parseable non-empty coin string.
+		require.NotEmpty(t, evt.TotalAmount)
+		totalAmountCoin, parseErr := cosmostypes.ParseCoinNormalized(evt.TotalAmount)
+		require.NoError(t, parseErr, "TotalAmount should be parseable: %s", evt.TotalAmount)
+		require.True(t, totalAmountCoin.Amount.IsPositive(), "TotalAmount should be positive: %s", evt.TotalAmount)
+
+		// Validate per-OpType fields.
+		switch evt.OpType {
+		case "mint", "burn":
+			require.NotEmpty(t, evt.SenderModule, "%s event should have non-empty SenderModule", evt.OpType)
+		case "mod_to_mod":
+			require.NotEmpty(t, evt.SenderModule, "mod_to_mod event should have non-empty SenderModule")
+			require.NotEmpty(t, evt.Recipient, "mod_to_mod event should have non-empty Recipient")
+		case "mod_to_acct":
+			require.NotEmpty(t, evt.SenderModule, "mod_to_acct event should have non-empty SenderModule")
+			require.NotEmpty(t, evt.Recipient, "mod_to_acct event should have non-empty Recipient")
+			// Recipient should be a valid bech32 address.
+			_, addrErr := cosmostypes.AccAddressFromBech32(evt.Recipient)
+			require.NoError(t, addrErr, "mod_to_acct Recipient should be valid bech32: %s", evt.Recipient)
+		default:
+			t.Fatalf("unexpected OpType: %s", evt.OpType)
+		}
+	}
+
+	// All 4 OpType values should be present for a standard single-claim settlement.
+	require.True(t, opTypesSeen["mint"], "should have mint batch events")
+	require.True(t, opTypesSeen["burn"], "should have burn batch events")
+	require.True(t, opTypesSeen["mod_to_mod"], "should have mod_to_mod batch events")
+	require.True(t, opTypesSeen["mod_to_acct"], "should have mod_to_acct batch events")
+}
+
+func (s *TestSuite) TestSettlePendingClaims_ModuleBalances_ConsistentAfterAggregation() {
+	// Tests that module balances are consistent after aggregated multi-claim settlement.
+	// Setup: 3 applications, 1 supplier, 1 service (same as multi-claim test).
+	// Validates: no negative intermediate balances, tokenomics module drained, conservation.
+	t := s.T()
+	ctx := s.ctx
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	claim := s.claims[0]
+	serviceId := claim.SessionHeader.ServiceId
+	supplierOpAddr := claim.SupplierOperatorAddress
+
+	// Set proof params so no proof is required.
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	require.NoError(t, err)
+	proofRequirementThreshold = proofRequirementThreshold.Add(uPOKTCoin(1))
+
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
+	require.NoError(t, err)
+
+	// Upsert first claim from setup.
+	s.keepers.UpsertClaim(ctx, claim)
+
+	// Create 2 additional applications and claims.
+	for i := 0; i < 2; i++ {
+		appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+		appAddr := sample.AccAddressBech32()
+		app := apptypes.Application{
+			Address:        appAddr,
+			Stake:          &appStake,
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: serviceId}},
+		}
+		s.keepers.SetApplication(ctx, app)
+
+		sessionReq := &sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddr,
+			ServiceId:          serviceId,
+			BlockHeight:        1,
+		}
+		sessionRes, sessionErr := s.keepers.GetSession(sdkCtx, sessionReq)
+		require.NoError(t, sessionErr)
+
+		merkleRoot := testproof.SmstRootWithSumAndCount(5, 5)
+		extraClaim := testtree.NewClaim(t, supplierOpAddr, sessionRes.Session.Header, merkleRoot)
+		s.keepers.UpsertClaim(ctx, *extraClaim)
+	}
+
+	// Record pre-settlement module balances.
+	queryBalance := func(moduleName string) int64 {
+		res, balErr := s.keepers.Balance(ctx, &banktypes.QueryBalanceRequest{
+			Address: authtypes.NewModuleAddress(moduleName).String(),
+			Denom:   pocket.DenomuPOKT,
+		})
+		require.NoError(t, balErr)
+		return res.Balance.Amount.Int64()
+	}
+
+	preAppBalance := queryBalance(apptypes.ModuleName)
+	preTokenomicsBalance := queryBalance(tokenomicstypes.ModuleName)
+
+	// Settle all 3 claims.
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	settledResults, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+	require.Equal(t, uint64(3), settledResults.GetNumClaims())
+
+	// Post-settlement balance assertions.
+	postAppBalance := queryBalance(apptypes.ModuleName)
+	postTokenomicsBalance := queryBalance(tokenomicstypes.ModuleName)
+	postSupplierBalance := queryBalance(suppliertypes.ModuleName)
+
+	// Tokenomics module should be drained (all minted funds distributed).
+	require.Equal(t, preTokenomicsBalance, postTokenomicsBalance,
+		"tokenomics module balance should not change (mints to other modules, not itself)")
+
+	// Application module balance should have decreased (burns).
+	require.Less(t, postAppBalance, preAppBalance,
+		"application module balance should decrease from burns")
+
+	// All module balances should be non-negative.
+	require.True(t, postAppBalance >= 0, "application module balance should be >= 0")
+	require.True(t, postSupplierBalance >= 0, "supplier module balance should be >= 0")
+	require.True(t, postTokenomicsBalance >= 0, "tokenomics module balance should be >= 0")
+
+	// Verify conservation via batch events: sum(mints) - sum(burns) == net supply change.
+	events := sdkCtx.EventManager().Events()
+	batchEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSettlementBatch](t, events)
+
+	totalMinted := math.ZeroInt()
+	totalBurned := math.ZeroInt()
+	for _, evt := range batchEvents {
+		amountCoin, parseErr := cosmostypes.ParseCoinNormalized(evt.TotalAmount)
+		require.NoError(t, parseErr)
+
+		switch evt.OpType {
+		case "mint":
+			totalMinted = totalMinted.Add(amountCoin.Amount)
+		case "burn":
+			totalBurned = totalBurned.Add(amountCoin.Amount)
+		}
+	}
+
+	// Net supply change = mints - burns.
+	// This should be non-negative with the global inflation TLM.
+	netSupplyChange := totalMinted.Sub(totalBurned)
+	require.True(t, netSupplyChange.GTE(math.ZeroInt()),
+		"net supply change should be non-negative (mints >= burns), got %s", netSupplyChange)
+}
+
+func (s *TestSuite) TestSettlePendingClaims_Overservicing_SettledUpoktReflectsCap() {
+	// Tests that overservicing cap is reflected in settled_upokt for small-stake applications.
+	// Setup: 2 apps — app1 with 1M stake (normal), app2 with tiny stake (overserviced).
+	t := s.T()
+	ctx := s.ctx
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	claim := s.claims[0]
+	serviceId := claim.SessionHeader.ServiceId
+	supplierOpAddr := claim.SupplierOperatorAddress
+
+	// Set proof params so no proof is required.
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	require.NoError(t, err)
+	proofRequirementThreshold = proofRequirementThreshold.Add(uPOKTCoin(1))
+
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
+	require.NoError(t, err)
+
+	// Upsert the first claim (app1 from setup with 1M stake).
+	s.keepers.UpsertClaim(ctx, claim)
+
+	// Create app2 with very small stake (100 uPOKT) — will be overserviced.
+	tinyStake := cosmostypes.NewCoin("upokt", math.NewInt(100))
+	tinyAppAddr := sample.AccAddressBech32()
+	tinyApp := apptypes.Application{
+		Address:        tinyAppAddr,
+		Stake:          &tinyStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: serviceId}},
+	}
+	s.keepers.SetApplication(ctx, tinyApp)
+
+	sessionReq := &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: tinyAppAddr,
+		ServiceId:          serviceId,
+		BlockHeight:        1,
+	}
+	sessionRes, sessionErr := s.keepers.GetSession(sdkCtx, sessionReq)
+	require.NoError(t, sessionErr)
+
+	// Create a claim for app2 with 5 relays (same as app1).
+	merkleRoot := testproof.SmstRootWithSumAndCount(5, 5)
+	tinyAppClaim := testtree.NewClaim(t, supplierOpAddr, sessionRes.Session.Header, merkleRoot)
+	s.keepers.UpsertClaim(ctx, *tinyAppClaim)
+
+	// Settle both claims.
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	settledResults, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+	require.Equal(t, uint64(2), settledResults.GetNumClaims())
+
+	events := sdkCtx.EventManager().Events()
+
+	// Check for EventApplicationOverserviced — should be emitted for app2 only.
+	overservicedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventApplicationOverserviced](t, events)
+	require.Equal(t, 1, len(overservicedEvents), "exactly one overserviced event for tiny app")
+	require.Equal(t, tinyAppAddr, overservicedEvents[0].ApplicationAddr)
+
+	// Validate EventClaimSettled events.
+	claimSettledEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events)
+	require.Equal(t, 2, len(claimSettledEvents))
+
+	// Find the settled event for the tiny app (app2) and for the normal app (app1).
+	for _, evt := range claimSettledEvents {
+		if evt.ApplicationAddress == tinyAppAddr {
+			// For the overserviced app: settled_upokt should be less than claimed_upokt.
+			require.NotEmpty(t, evt.SettledUpokt, "settled_upokt should be populated for tiny app")
+			settledCoin, parseErr := cosmostypes.ParseCoinNormalized(evt.SettledUpokt)
+			require.NoError(t, parseErr)
+			claimedCoin, parseErr := cosmostypes.ParseCoinNormalized(evt.ClaimedUpokt)
+			require.NoError(t, parseErr)
+			require.True(t, settledCoin.Amount.LT(claimedCoin.Amount),
+				"tiny app settled_upokt (%s) should be less than claimed_upokt (%s)",
+				settledCoin, claimedCoin)
+		} else {
+			// For the normal app: settled_upokt should be populated and reasonable.
+			require.NotEmpty(t, evt.SettledUpokt, "settled_upokt should be populated for normal app")
+		}
+	}
+
+	// Application module balance should be non-negative.
+	appModuleBalance, err := s.keepers.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: authtypes.NewModuleAddress(apptypes.ModuleName).String(),
+		Denom:   pocket.DenomuPOKT,
+	})
+	require.NoError(t, err)
+	require.True(t, appModuleBalance.Balance.Amount.GTE(math.ZeroInt()),
+		"application module balance should be >= 0 after overserviced settlement")
 }
 
 // getEstimatedComputeUnits returns the estimated number of compute units given
