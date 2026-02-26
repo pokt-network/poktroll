@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"net/url"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
@@ -147,16 +146,11 @@ func parseEndpointConfigs(endpoint YAMLServiceEndpoint) ([]*sharedtypes.ConfigOp
 
 // parseEndpointRPCType parses the endpoint RPC type into a sharedtypes.RPCType
 func parseEndpointRPCType(endpoint YAMLServiceEndpoint) (sharedtypes.RPCType, error) {
-	switch strings.ToLower(endpoint.RPCType) {
-	case "json_rpc":
-		return sharedtypes.RPCType_JSON_RPC, nil
-	case "rest":
-		return sharedtypes.RPCType_REST, nil
-	case "websocket":
-		return sharedtypes.RPCType_WEBSOCKET, nil
-	default:
+	rpcType, err := sharedtypes.GetRPCTypeFromConfig(endpoint.RPCType)
+	if err != nil {
 		return sharedtypes.RPCType_UNKNOWN_RPC, ErrSupplierConfigInvalidRPCType.Wrapf("%s", endpoint.RPCType)
 	}
+	return rpcType, nil
 }
 
 // validateEndpointURL validates the endpoint URL, making sure that the string provided is a valid URL

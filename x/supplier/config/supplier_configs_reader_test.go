@@ -575,6 +575,150 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc: "valid service config with grpc rpc type",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: grpc
+				`, ownerAddress, operatorAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     &oneMilliPOKT,
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: "svc",
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: sharedtypes.RPCType_GRPC,
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            ownerAddress,
+								RevSharePercentage: 100,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid service config with GRPC (uppercase) rpc type",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: GRPC
+				`, ownerAddress, operatorAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     &oneMilliPOKT,
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: "svc",
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: sharedtypes.RPCType_GRPC,
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            ownerAddress,
+								RevSharePercentage: 100,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid service config with comet_bft rpc type",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: comet_bft
+				`, ownerAddress, operatorAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     &oneMilliPOKT,
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: "svc",
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: sharedtypes.RPCType_COMET_BFT,
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            ownerAddress,
+								RevSharePercentage: 100,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid service config with COMET_BFT (uppercase) rpc type",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: COMET_BFT
+				`, ownerAddress, operatorAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     &oneMilliPOKT,
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: "svc",
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: sharedtypes.RPCType_COMET_BFT,
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            ownerAddress,
+								RevSharePercentage: 100,
+							},
+						},
+					},
+				},
+			},
+		},
 		// Invalid Configs
 		{
 			desc: "invalid service config without service ID",
