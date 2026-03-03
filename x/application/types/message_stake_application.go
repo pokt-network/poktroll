@@ -13,11 +13,13 @@ func NewMsgStakeApplication(
 	appAddr string,
 	stake sdk.Coin,
 	appServiceConfigs []*sharedtypes.ApplicationServiceConfig,
+	perSessionSpendLimit *sdk.Coin,
 ) *MsgStakeApplication {
 	return &MsgStakeApplication{
-		Address:  appAddr,
-		Stake:    &stake,
-		Services: appServiceConfigs,
+		Address:              appAddr,
+		Stake:                &stake,
+		Services:             appServiceConfigs,
+		PerSessionSpendLimit: perSessionSpendLimit,
 	}
 }
 
@@ -52,5 +54,30 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 		return ErrAppInvalidServiceConfigs.Wrapf("%s", err.Error())
 	}
 
+	// Validate the per-session spend limit if set
+	if err := ValidatePerSessionSpendLimit(msg.PerSessionSpendLimit); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ValidatePerSessionSpendLimit validates the per-session spend limit coin.
+// nil = valid (no limit), zero = valid (no limit, treated same as nil),
+// positive upokt = valid (active limit), negative or wrong denom = invalid.
+func ValidatePerSessionSpendLimit(limit *sdk.Coin) error {
+	if limit == nil {
+		return nil
+	}
+	if limit.IsNegative() {
+		return ErrAppInvalidPerSessionSpendLimit.Wrapf("per-session spend limit cannot be negative: %v", limit)
+	}
+	// Zero is valid (treated as no limit)
+	if limit.IsZero() {
+		return nil
+	}
+	if limit.Denom != "upokt" {
+		return ErrAppInvalidPerSessionSpendLimit.Wrapf("invalid per-session spend limit denom, expecting: upokt, got: %s", limit.Denom)
+	}
 	return nil
 }

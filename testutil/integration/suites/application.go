@@ -61,6 +61,7 @@ func (s *ApplicationModuleSuite) StakeApp(
 		appAddress,
 		cosmostypes.NewInt64Coin(pocket.DenomuPOKT, stakeAmtUpokt),
 		serviceConfigs,
+		nil, // perSessionSpendLimit
 	)
 
 	txMsgRes, err := s.GetApp().RunMsg(t, stakeAppMsg)

@@ -7,9 +7,10 @@ import (
 )
 
 var (
-	ErrApplicationConfigUnmarshalYAML    = sdkerrors.Register(types.ModuleName, 2100, "config reader cannot unmarshal yaml content")
-	ErrApplicationConfigInvalidServiceId = sdkerrors.Register(types.ModuleName, 2101, "invalid serviceId in application config")
-	ErrApplicationConfigEmptyContent     = sdkerrors.Register(types.ModuleName, 2102, "empty application config content")
-	ErrApplicationConfigInvalidStake     = sdkerrors.Register(types.ModuleName, 2103, "invalid stake amount in application config")
-	ErrApplicationConfigInvalidGateway   = sdkerrors.Register(types.ModuleName, 2104, "invalid gateway address in application config")
+	ErrApplicationConfigUnmarshalYAML     = sdkerrors.Register(types.ModuleName, 2100, "config reader cannot unmarshal yaml content")
+	ErrApplicationConfigInvalidServiceId  = sdkerrors.Register(types.ModuleName, 2101, "invalid serviceId in application config")
+	ErrApplicationConfigEmptyContent      = sdkerrors.Register(types.ModuleName, 2102, "empty application config content")
+	ErrApplicationConfigInvalidStake      = sdkerrors.Register(types.ModuleName, 2103, "invalid stake amount in application config")
+	ErrApplicationConfigInvalidGateway    = sdkerrors.Register(types.ModuleName, 2104, "invalid gateway address in application config")
+	ErrApplicationConfigInvalidSpendLimit = sdkerrors.Register(types.ModuleName, 2105, "invalid per-session spend limit in application config")
 )

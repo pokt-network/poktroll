@@ -44,6 +44,10 @@ message Application {
 
   // Information about pending application transfers
   PendingApplicationTransfer pending_transfer = 7;
+
+  // Optional per-session spend limit in uPOKT. When set, caps the maximum
+  // amount of stake consumed per session. Nil = no limit (default).
+  cosmos.base.v1beta1.Coin per_session_spend_limit = 8;
 }
 
 // UndelegatingGatewayList is used as the Value of `pending_undelegations`.

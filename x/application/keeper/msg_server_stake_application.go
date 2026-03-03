@@ -170,6 +170,7 @@ func (k Keeper) createApplication(
 		ServiceConfigs:            msg.Services,
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]types.UndelegatingGatewayList),
+		PerSessionSpendLimit:      msg.PerSessionSpendLimit,
 	}
 }
 
@@ -198,6 +199,10 @@ func (k Keeper) updateApplication(
 		return types.ErrAppInvalidServiceConfigs.Wrapf("must have at least one service")
 	}
 	app.ServiceConfigs = msg.Services
+
+	// Always overwrite the per-session spend limit.
+	// nil/omitted = clears any existing limit (must be re-set explicitly).
+	app.PerSessionSpendLimit = msg.PerSessionSpendLimit
 
 	return nil
 }

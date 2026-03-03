@@ -154,7 +154,7 @@ message EventClaimSettled {
 // This means the following will ALWAYS be strictly true:  effective_burn < expected_burn
 // - Number of tokens burnt from app stake < Number of tokens burnt from supplier stake
 message EventApplicationOverserviced {
-    // Next index: 9
+    // Next index: 10
 
     // cosmos.base.v1beta1.Coin expected_burn = 3;
     // cosmos.base.v1beta1.Coin effective_burn = 4;
@@ -182,6 +182,10 @@ message EventApplicationOverserviced {
     // Together with service_id, application_addr, and supplier_operator_addr,
     // this uniquely identifies the corresponding EventClaimSettled.
     int64 session_end_block_height = 8;
+
+    // Whether overservicing was triggered by per_session_spend_limit (true)
+    // vs the standard stake-based cap (false, default).
+    bool spend_limit_exceeded = 9;
 }
 
 // EventSupplierSlashed is emitted when a supplier is slashed.

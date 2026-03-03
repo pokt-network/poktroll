@@ -212,6 +212,79 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	require.Equal(t, initialStake, foundApp.Stake)
 }
 
+func TestMsgServer_StakeApplication_PerSessionSpendLimit(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	appAddr := sample.AccAddressBech32()
+
+	// Create an application with a per-session spend limit
+	spendLimit := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100000)
+	initialStake := &apptypes.DefaultMinStake
+	stakeMsg := &apptypes.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   initialStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{ServiceId: "svc1"},
+		},
+		PerSessionSpendLimit: &spendLimit,
+	}
+
+	_, err := srv.StakeApplication(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Verify the spend limit persists
+	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.NotNil(t, foundApp.PerSessionSpendLimit)
+	require.Equal(t, spendLimit.Amount, foundApp.PerSessionSpendLimit.Amount)
+	require.Equal(t, spendLimit.Denom, foundApp.PerSessionSpendLimit.Denom)
+
+	// Reset events
+	ctx, _ = testevents.ResetEventManager(ctx)
+
+	// Update: restake with a new spend limit
+	newSpendLimit := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 200000)
+	upStake := initialStake.AddAmount(math.NewInt(100))
+	updateMsg := &apptypes.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   &upStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{ServiceId: "svc1"},
+		},
+		PerSessionSpendLimit: &newSpendLimit,
+	}
+
+	_, err = srv.StakeApplication(ctx, updateMsg)
+	require.NoError(t, err)
+
+	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.NotNil(t, foundApp.PerSessionSpendLimit)
+	require.Equal(t, newSpendLimit.Amount, foundApp.PerSessionSpendLimit.Amount)
+
+	// Reset events
+	ctx, _ = testevents.ResetEventManager(ctx)
+
+	// Update: restake without spend limit (clears it)
+	upStake2 := upStake.AddAmount(math.NewInt(100))
+	clearLimitMsg := &apptypes.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   &upStake2,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{ServiceId: "svc1"},
+		},
+		// PerSessionSpendLimit explicitly nil — should clear
+	}
+
+	_, err = srv.StakeApplication(ctx, clearLimitMsg)
+	require.NoError(t, err)
+
+	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.Nil(t, foundApp.PerSessionSpendLimit)
+}
+
 func TestMsgServer_StakeApplication_FailBelowMinStake(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)

@@ -62,6 +62,7 @@ $ pocketd tx application stake-and-delegate --config stake_config.yaml --keyring
 				appAddr,
 				appStakeConfigs.StakeAmount,
 				appStakeConfigs.Services,
+				appStakeConfigs.PerSessionSpendLimit,
 			)
 			if err := msgStake.ValidateBasic(); err != nil {
 				return err

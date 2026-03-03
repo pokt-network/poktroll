@@ -63,6 +63,11 @@ func (gs GenesisState) Validate() error {
 		if err := sharedtypes.ValidateAppServiceConfigs(app.ServiceConfigs); err != nil {
 			return ErrAppInvalidServiceConfigs.Wrapf("%s", err.Error())
 		}
+
+		// Validate the per-session spend limit if set
+		if err := ValidatePerSessionSpendLimit(app.PerSessionSpendLimit); err != nil {
+			return err
+		}
 	}
 
 	// this line is used by starport scaffolding # genesis/types/validate

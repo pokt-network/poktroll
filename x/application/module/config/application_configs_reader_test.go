@@ -13,6 +13,10 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+func coinPtr(c sdk.Coin) *sdk.Coin {
+	return &c
+}
+
 func Test_ParseApplicationConfigs(t *testing.T) {
 	tests := []struct {
 		desc string
@@ -107,6 +111,67 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 
 			expectedErr: config.ErrApplicationConfigInvalidStake,
 		},
+		// Per-session spend limit configs
+		{
+			desc: "valid: with per-session spend limit",
+
+			inputConfig: `
+				stake_amount: 1000upokt
+				service_ids:
+				  - svc1
+				per_session_spend_limit: 500upokt
+				`,
+
+			expectedErr: nil,
+			expectedConfig: &config.ApplicationStakeConfig{
+				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: coinPtr(sdk.NewCoin("upokt", math.NewInt(500))),
+			},
+		},
+		{
+			desc: "valid: without per-session spend limit (nil)",
+
+			inputConfig: `
+				stake_amount: 1000upokt
+				service_ids:
+				  - svc1
+				`,
+
+			expectedErr: nil,
+			expectedConfig: &config.ApplicationStakeConfig{
+				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+			},
+		},
+		{
+			desc: "invalid: per-session spend limit with wrong denom",
+
+			inputConfig: `
+				stake_amount: 1000upokt
+				service_ids:
+				  - svc1
+				per_session_spend_limit: 500npokt
+				`,
+
+			expectedErr: config.ErrApplicationConfigInvalidSpendLimit,
+		},
+		{
+			desc: "invalid: per-session spend limit zero",
+
+			inputConfig: `
+				stake_amount: 1000upokt
+				service_ids:
+				  - svc1
+				per_session_spend_limit: 0upokt
+				`,
+
+			expectedErr: config.ErrApplicationConfigInvalidSpendLimit,
+		},
 	}
 
 	for _, test := range tests {
@@ -131,6 +196,15 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 			require.Equal(t, len(test.expectedConfig.Services), len(appServiceConfig.Services))
 			for i, expected := range test.expectedConfig.Services {
 				require.Equal(t, expected.ServiceId, appServiceConfig.Services[i].ServiceId)
+			}
+
+			// Verify per-session spend limit
+			if test.expectedConfig.PerSessionSpendLimit != nil {
+				require.NotNil(t, appServiceConfig.PerSessionSpendLimit)
+				require.Equal(t, test.expectedConfig.PerSessionSpendLimit.Denom, appServiceConfig.PerSessionSpendLimit.Denom)
+				require.Equal(t, test.expectedConfig.PerSessionSpendLimit.Amount, appServiceConfig.PerSessionSpendLimit.Amount)
+			} else {
+				require.Nil(t, appServiceConfig.PerSessionSpendLimit)
 			}
 		})
 	}

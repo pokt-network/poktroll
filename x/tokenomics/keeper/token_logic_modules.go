@@ -305,6 +305,26 @@ func (k Keeper) ensureClaimAmountLimits(
 	maxClaimableAmt := appStake.Amount.
 		Quo(math.NewInt(numSuppliersPerSession)).
 		Quo(math.NewInt(numPendingSessions))
+
+	// Apply per-session spend limit if set on the application.
+	// The spend limit caps the per-session budget, which is then divided among suppliers.
+	spendLimitExceeded := false
+	if application.PerSessionSpendLimit != nil &&
+		application.PerSessionSpendLimit.Amount.GT(math.ZeroInt()) {
+		// Per-session budget is min(spend_limit, appStake/numPendingSessions)
+		perSessionBudget := application.PerSessionSpendLimit.Amount
+		stakePerSession := appStake.Amount.Quo(math.NewInt(numPendingSessions))
+		if perSessionBudget.GT(stakePerSession) {
+			perSessionBudget = stakePerSession
+		}
+		// Per-supplier cap from the spend limit
+		spendLimitMaxClaimable := perSessionBudget.Quo(math.NewInt(numSuppliersPerSession))
+		if spendLimitMaxClaimable.LT(maxClaimableAmt) {
+			maxClaimableAmt = spendLimitMaxClaimable
+			spendLimitExceeded = true
+		}
+	}
+
 	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt, globalInflationPerClaim)
 
 	// Check if the claimable amount is capped by the max claimable amount.
@@ -340,6 +360,7 @@ func (k Keeper) ensureClaimAmountLimits(
 		EffectiveBurn:         cosmostypes.NewCoin(pocket.DenomuPOKT, minRequiredAppStakeAmt).String(),
 		ServiceId:             serviceId,
 		SessionEndBlockHeight: sessionEndBlockHeight,
+		SpendLimitExceeded:    spendLimitExceeded,
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
 	if err = eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {
