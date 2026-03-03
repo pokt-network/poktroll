@@ -302,9 +302,11 @@ func (k Keeper) ensureClaimAmountLimits(
 	// TODO_FUTURE: See if there's a way to let the application prefer (the best)
 	// supplier(s) in a session while maintaining a simple solution to implement this.
 	numSuppliersPerSession := int64(k.sessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	// Divide sessions first, then suppliers — matches the spend-limit path's
+	// conceptual order and avoids different integer truncation results.
 	maxClaimableAmt := appStake.Amount.
-		Quo(math.NewInt(numSuppliersPerSession)).
-		Quo(math.NewInt(numPendingSessions))
+		Quo(math.NewInt(numPendingSessions)).
+		Quo(math.NewInt(numSuppliersPerSession))
 
 	// Apply per-session spend limit if set on the application.
 	// The spend limit caps the per-session budget, which is then divided among suppliers.

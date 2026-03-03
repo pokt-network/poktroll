@@ -266,15 +266,38 @@ func TestMsgServer_StakeApplication_PerSessionSpendLimit(t *testing.T) {
 	// Reset events
 	ctx, _ = testevents.ResetEventManager(ctx)
 
-	// Update: restake without spend limit (clears it)
+	// Update: restake WITHOUT spend limit field (nil) — should PRESERVE existing limit
 	upStake2 := upStake.AddAmount(math.NewInt(100))
-	clearLimitMsg := &apptypes.MsgStakeApplication{
+	preserveLimitMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &upStake2,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{ServiceId: "svc1"},
 		},
-		// PerSessionSpendLimit explicitly nil — should clear
+		// PerSessionSpendLimit explicitly nil — should preserve existing
+	}
+
+	_, err = srv.StakeApplication(ctx, preserveLimitMsg)
+	require.NoError(t, err)
+
+	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.NotNil(t, foundApp.PerSessionSpendLimit, "nil spend limit in msg should preserve existing limit")
+	require.Equal(t, newSpendLimit.Amount, foundApp.PerSessionSpendLimit.Amount)
+
+	// Reset events
+	ctx, _ = testevents.ResetEventManager(ctx)
+
+	// Update: restake WITH zero spend limit — should CLEAR the limit
+	upStake3 := upStake2.AddAmount(math.NewInt(100))
+	zeroCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
+	clearLimitMsg := &apptypes.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   &upStake3,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{ServiceId: "svc1"},
+		},
+		PerSessionSpendLimit: &zeroCoin, // zero = explicitly clear
 	}
 
 	_, err = srv.StakeApplication(ctx, clearLimitMsg)
@@ -282,7 +305,33 @@ func TestMsgServer_StakeApplication_PerSessionSpendLimit(t *testing.T) {
 
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
-	require.Nil(t, foundApp.PerSessionSpendLimit)
+	require.Nil(t, foundApp.PerSessionSpendLimit, "zero spend limit in msg should clear existing limit")
+}
+
+func TestMsgServer_StakeApplication_PerSessionSpendLimit_ZeroOnCreate(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	appAddr := sample.AccAddressBech32()
+
+	// Create an application with a zero per-session spend limit — should normalize to nil
+	zeroCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
+	initialStake := &apptypes.DefaultMinStake
+	stakeMsg := &apptypes.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   initialStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{ServiceId: "svc1"},
+		},
+		PerSessionSpendLimit: &zeroCoin,
+	}
+
+	_, err := srv.StakeApplication(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.Nil(t, foundApp.PerSessionSpendLimit, "zero spend limit on create should be normalized to nil")
 }
 
 func TestMsgServer_StakeApplication_FailBelowMinStake(t *testing.T) {

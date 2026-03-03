@@ -205,6 +205,17 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrAppInvalidPerSessionSpendLimit,
 		},
+		{
+			desc: "valid: zero per-session spend limit with wrong denom (zero = clear, denom irrelevant)",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddressBech32(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: &sdk.Coin{Denom: "garbage", Amount: math.NewInt(0)},
+			},
+		},
 	}
 
 	for _, test := range tests {

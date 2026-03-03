@@ -170,8 +170,17 @@ func (k Keeper) createApplication(
 		ServiceConfigs:            msg.Services,
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]types.UndelegatingGatewayList),
-		PerSessionSpendLimit:      msg.PerSessionSpendLimit,
+		PerSessionSpendLimit:      normalizeSpendLimit(msg.PerSessionSpendLimit),
 	}
+}
+
+// normalizeSpendLimit returns nil for nil or zero input (no limit),
+// and the coin as-is for positive values.
+func normalizeSpendLimit(limit *sdk.Coin) *sdk.Coin {
+	if limit == nil || limit.IsZero() {
+		return nil
+	}
+	return limit
 }
 
 func (k Keeper) updateApplication(
@@ -200,9 +209,15 @@ func (k Keeper) updateApplication(
 	}
 	app.ServiceConfigs = msg.Services
 
-	// Always overwrite the per-session spend limit.
-	// nil/omitted = clears any existing limit (must be re-set explicitly).
-	app.PerSessionSpendLimit = msg.PerSessionSpendLimit
+	// Three-way per-session spend limit semantics:
+	// nil = preserve existing limit, zero = clear limit, positive = set new limit.
+	if msg.PerSessionSpendLimit != nil {
+		if msg.PerSessionSpendLimit.IsZero() {
+			app.PerSessionSpendLimit = nil // explicitly clear
+		} else {
+			app.PerSessionSpendLimit = msg.PerSessionSpendLimit
+		}
+	}
 
 	return nil
 }
