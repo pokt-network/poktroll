@@ -7,7 +7,7 @@
         "params": {
           "add_service_fee": {
             "denom": "upokt",
-            "amount": "100000000000"
+            "amount": "3500000000"
           },
           "target_num_relays": "100000"
         }
