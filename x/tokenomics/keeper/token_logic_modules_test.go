@@ -162,9 +162,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *t
 	_, err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.NoError(t, err)
 
-	// Execute the pending results
+	// Flush batched validator rewards (#1758)
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	require.NoError(t, flushErr)
+	if batchedResult != nil {
+		pendingResults.Append(batchedResult)
+	}
+
+	// Execute the pending results
 	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
 
@@ -346,9 +353,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaim
 	_, err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.NoError(t, err)
 
-	// Execute the pending results
+	// Flush batched validator rewards (#1758)
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	require.NoError(t, flushErr)
+	if batchedResult != nil {
+		pendingResults.Append(batchedResult)
+	}
+
+	// Execute the pending results
 	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
 
@@ -539,9 +553,16 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Persist the actors state
 	settlementContext.FlushAllActorsToStore(ctx)
 
-	// Execute the pending results
+	// Flush batched validator rewards (#1758) and append to pending results.
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	require.NoError(t, flushErr)
+	if batchedResult != nil {
+		pendingResults.Append(batchedResult)
+	}
+
+	// Execute the pending results
 	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
 
@@ -1135,9 +1156,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	_, err = keepers.ProcessTokenLogicModules(ctx, settlementContext, settlementResult)
 	require.NoError(t, err)
 
-	// Execute settlement results
+	// Flush batched validator rewards (#1758)
 	pendingSettlementResults := make(tlm.ClaimSettlementResults, 0)
 	pendingSettlementResults.Append(settlementResult)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	require.NoError(t, flushErr)
+	if batchedResult != nil {
+		pendingSettlementResults.Append(batchedResult)
+	}
+
+	// Execute settlement results
 	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingSettlementResults)
 	require.NoError(t, err)
 

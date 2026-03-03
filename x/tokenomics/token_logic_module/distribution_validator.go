@@ -17,7 +17,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// distributeValidatorRewards distributes session settlement rewards to
+// DistributeValidatorRewards distributes session settlement rewards to
 // all bonded validators and their delegators.
 //
 // Specifically:
@@ -29,7 +29,7 @@ import (
 // For a stakeholder (self-bonded validator or delegator), the distribution formula is:
 //
 //	stakeholderReward = totalValidatorRewardAmount × (stakeholderStake / totalBondedStake)
-func distributeValidatorRewards(
+func DistributeValidatorRewards(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	result *tokenomicstypes.ClaimSettlementResult,
@@ -38,7 +38,7 @@ func distributeValidatorRewards(
 	settlementOpReason tokenomicstypes.SettlementOpReason,
 ) error {
 	logger = logger.With(
-		"method", "distributeValidatorRewards",
+		"method", "DistributeValidatorRewards",
 		"session_id", result.GetSessionId(),
 		"total_reward_amount", totalValidatorRewardCoin.Amount,
 	)

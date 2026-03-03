@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	cosmoslog "cosmossdk.io/log"
+	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -87,6 +88,12 @@ type settlementContext struct {
 	// Cache of parameters used during the settlement process to prevent repeated KV store lookups.
 	sharedParams     sharedtypes.Params
 	tokenomicsParams tokenomicstypes.Params
+
+	// validatorRewardAccumulator collects per-TLM proposer amounts across all claims
+	// during a settlement batch. Keyed by SettlementOpReason. After all claims are
+	// processed, these are flushed via a single distributeValidatorRewards call per key,
+	// eliminating per-claim precision loss (#1758).
+	validatorRewardAccumulator map[tokenomicstypes.SettlementOpReason]math.Int
 }
 
 // NewSettlementContext creates a new settlement context with all necessary caches initialized.
@@ -122,6 +129,10 @@ func NewSettlementContext(
 
 		sharedParams:     tokenomicsKeeper.sharedKeeper.GetParams(ctx),
 		tokenomicsParams: tokenomicsKeeper.GetParams(ctx),
+
+		// Initialize the validator reward accumulator with capacity for the 2 known TLM op reasons
+		// (TLM_RELAY_BURN_EQUALS_MINT and TLM_GLOBAL_MINT).
+		validatorRewardAccumulator: make(map[tokenomicstypes.SettlementOpReason]math.Int, 2),
 	}
 }
 
@@ -225,6 +236,12 @@ func (sctx *settlementContext) GetSharedParams() sharedtypes.Params {
 // GetTokenomicsParams returns the cached tokenomics parameters used during the settlement process.
 func (sctx *settlementContext) GetTokenomicsParams() tokenomicstypes.Params {
 	return sctx.tokenomicsParams
+}
+
+// GetValidatorRewardAccumulator returns the shared accumulator map used by TLMs
+// to batch validator reward amounts across claims (#1758).
+func (sctx *settlementContext) GetValidatorRewardAccumulator() map[tokenomicstypes.SettlementOpReason]math.Int {
+	return sctx.validatorRewardAccumulator
 }
 
 // GetApplication retrieves a cached application by its address.

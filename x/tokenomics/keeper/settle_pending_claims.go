@@ -1,7 +1,9 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
+	"sort"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -164,6 +166,17 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	settlementContext.FlushAllActorsToStore(ctx)
 
 	logger.Info("Updated onchain data with claim settlement results")
+
+	// Flush batched validator rewards once per settlement batch (#1758).
+	// TLMs accumulated proposer amounts in the shared accumulator during claim processing.
+	// Distributing once with the batched total eliminates per-claim precision loss.
+	batchedResult, flushErr := k.FlushBatchedValidatorRewards(ctx, settlementContext)
+	if flushErr != nil {
+		return settledResults, expiredResults, numDiscardedFaultyClaims, flushErr
+	}
+	if batchedResult != nil {
+		settledResults = append(settledResults, batchedResult)
+	}
 
 	// Execute all the pending mint, burn, and transfer operations.
 	if err = k.ExecutePendingSettledResults(ctx, settledResults); err != nil {
@@ -617,6 +630,71 @@ func (k Keeper) slashSupplierStake(
 	}
 
 	return nil
+}
+
+// FlushBatchedValidatorRewards distributes accumulated validator rewards in a single
+// call per SettlementOpReason (#1758). TLMs accumulate proposer amounts during
+// per-claim processing; this function flushes the accumulated totals once per
+// settlement batch, eliminating per-claim precision loss from floor division.
+//
+// Returns a synthetic ClaimSettlementResult containing the validator/delegator
+// ModToAcctTransfer entries (no Claim, no mints, no burns). Returns nil if the
+// accumulator is empty (e.g., all claims had zero proposer amounts).
+func (k Keeper) FlushBatchedValidatorRewards(
+	ctx context.Context,
+	sctx *settlementContext,
+) (*tokenomicstypes.ClaimSettlementResult, error) {
+	logger := k.Logger().With("method", "flushBatchedValidatorRewards")
+
+	accumulator := sctx.GetValidatorRewardAccumulator()
+	if len(accumulator) == 0 {
+		logger.Debug("no batched validator rewards to flush")
+		return nil, nil
+	}
+
+	// Sort OpReason keys for deterministic iteration.
+	opReasons := make([]tokenomicstypes.SettlementOpReason, 0, len(accumulator))
+	for opReason := range accumulator {
+		opReasons = append(opReasons, opReason)
+	}
+	sort.Slice(opReasons, func(i, j int) bool {
+		return opReasons[i] < opReasons[j]
+	})
+
+	// Create a synthetic result to hold the batched validator reward transfers.
+	// This result has no Claim (it represents the aggregate of all claims),
+	// no mints, and no burns — only ModToAcctTransfer entries for validator/delegator rewards.
+	batchedResult := &tokenomicstypes.ClaimSettlementResult{}
+
+	for _, opReason := range opReasons {
+		totalAmount := accumulator[opReason]
+		if totalAmount.IsZero() {
+			continue
+		}
+
+		rewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, totalAmount)
+		logger.Info(fmt.Sprintf(
+			"flushing batched validator rewards: %s for op_reason %q",
+			rewardCoin, opReason.String(),
+		))
+
+		if err := tlm.DistributeValidatorRewards(
+			ctx, logger, batchedResult,
+			k.stakingKeeper, rewardCoin, opReason,
+		); err != nil {
+			return nil, tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+				"failed to flush batched validator rewards for op_reason %q: %v",
+				opReason.String(), err,
+			)
+		}
+	}
+
+	// If no transfers were actually queued (e.g., all validators had zero stake), return nil.
+	if len(batchedResult.GetModToAcctTransfers()) == 0 {
+		return nil, nil
+	}
+
+	return batchedResult, nil
 }
 
 // finalizeClaimTelemetry logs telemetry metrics for a claim based on its stage (e.g., EXPIRED, SETTLED).

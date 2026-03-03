@@ -612,7 +612,7 @@ func executeDistribution(mockStakingKeeper *mocks.MockStakingKeeper, config rewa
 	// Both cases (with and without delegators) use the same function
 	// The function automatically handles delegators when delegations are present
 	rewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, config.rewardAmount)
-	return result, distributeValidatorRewards(
+	return result, DistributeValidatorRewards(
 		config.ctx,
 		config.logger,
 		result,

@@ -32,8 +32,6 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 		expectedValidatorRewards []int64
 		expectedTotalRewards     int64
 		validationFunc           func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64)
-		// TODO_TECHDEBT(#1758): Remove once skipped tests are passing.
-		skipReason string // if non-empty, test will be skipped
 	}{
 		{
 			name: "No validator delegators: Stakes that divide cleanly",
@@ -140,7 +138,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 		},
 		{
-			name: "SKIP: Precision loss with many small distributions (no delegators)",
+			name: "No validator delegators: Fractional stakes with batched distribution",
 			validatorConfigs: []testkeeper.ValidatorDelegationConfig{
 				{SelfBondedStake: 333_333, ExternalDelegators: []int64{}},
 				{SelfBondedStake: 333_333, ExternalDelegators: []int64{}},
@@ -148,24 +146,35 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 			numClaims:            1000,
 			expectedTotalRewards: 110_000, // 1000 claims × 1100 × 10% = 110,000
-			skipReason:           "Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))",
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
 				// Validator stakes: [333_333, 333_333, 333_334] = 1M total
 				// These create fractional shares that can't divide evenly:
-				// - Val 1: 333,333/1M = 33.3333% → 36,666.63 uPOKT
-				// - Val 2: 333,333/1M = 33.3333% → 36,666.63 uPOKT
-				// - Val 3: 333,334/1M = 33.3334% → 36,666.74 uPOKT
+				// - Val 1: 333,333/1M = 33.3333% → ideal 36,666.63 uPOKT
+				// - Val 2: 333,333/1M = 33.3333% → ideal 36,666.63 uPOKT
+				// - Val 3: 333,334/1M = 33.3334% → ideal 36,666.74 uPOKT
 				//
-				// Per-claim distribution (2000 calls) causes cumulative precision loss
-				// This test will FAIL until reward batching is implemented
+				// With batched validator reward distribution (#1758), rewards are
+				// accumulated per OpReason and distributed in 2 calls (RBEM + GlobalMint),
+				// each with 55,000 uPOKT. Each LRM call has ≤1 uPOKT rounding per
+				// stakeholder, so max per-stakeholder error is ≤2 uPOKT.
 
-				expectedRewards := []int64{36_667, 36_666, 36_667}
-				require.ElementsMatch(t, expectedRewards, validatorRewards,
-					"Validators should receive exact proportional rewards without precision loss")
+				require.Len(t, validatorRewards, 3, "Should have 3 validators")
+				require.Empty(t, delegatorRewards, "Should have no delegator rewards")
+
+				// Total conservation must be exact.
+				total := s.sumRewards(validatorRewards)
+				require.Equal(t, expectedTotal, total, "total rewards should be conserved exactly")
+
+				// Each reward within 2 uPOKT of ideal (1 per OpReason LRM call).
+				idealPerValidator := float64(expectedTotal) / 3.0 // ~36,666.67
+				for i, reward := range validatorRewards {
+					require.InDelta(t, idealPerValidator, float64(reward), 2.0,
+						"validator %d: reward %d should be within 2 uPOKT of ideal %.2f", i, reward, idealPerValidator)
+				}
 			},
 		},
 		{
-			name: "SKIP: Precision loss with delegations and fractional stakes",
+			name: "With validator delegators: Fractional stakes with batched distribution",
 			validatorConfigs: []testkeeper.ValidatorDelegationConfig{
 				{SelfBondedStake: 333_333, ExternalDelegators: []int64{166_667}}, // Equal self-bonded stakes (fractional)
 				{SelfBondedStake: 333_333, ExternalDelegators: []int64{333_333}}, // Unequal delegations creating more fractional complexity
@@ -173,64 +182,63 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 			numClaims:            1000,
 			expectedTotalRewards: 110_000, // 1000 claims × 1100 × 10% = 110,000
-			skipReason:           "Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))",
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
-				// This test demonstrates precision loss in delegation scenarios
+				// This test validates that batched distribution (#1758) achieves
+				// near-perfect precision in delegation scenarios.
 				//
 				// Total stakes:
-				// - Validator 1: 333,333 self + 166,667 delegated = 500,000 total (37.5% of 1,333,333 total)
-				// - Validator 2: 333,333 self + 333,333 delegated = 666,666 total (50.0% of 1,333,333 total)
-				// - Validator 3: 333,334 self + 500,000 delegated = 833,334 total (62.5% of 1,333,333 total)
+				// - Validator 1: 333,333 self + 166,667 delegated = 500,000 total
+				// - Validator 2: 333,333 self + 333,333 delegated = 666,666 total
+				// - Validator 3: 333,334 self + 500,000 delegated = 833,334 total
 				// Total: 2,000,000 tokens
 				//
-				// Expected perfect distribution (110,000 total):
-				// - Validator 1 total: 110,000 × (500,000/2,000,000) = 27,500 uPOKT
-				//   - Val 1 self (333,333/500,000): 18,333 uPOKT
-				//   - Val 1 delegators (166,667/500,000): 9,167 uPOKT
-				//
-				// - Validator 2 total: 110,000 × (666,666/2,000,000) = 36,667 uPOKT
-				//   - Val 2 self (333,333/666,666): 18,333 uPOKT
-				//   - Val 2 delegators (333,333/666,666): 18,334 uPOKT
-				//
-				// - Validator 3 total: 110,000 × (833,334/2,000,000) = 45,833 uPOKT
-				//   - Val 3 self (333,334/833,334): 18,333 uPOKT
-				//   - Val 3 delegators (500,000/833,334): 27,500 uPOKT
-				//
-				// However, per-claim distribution creates cascading precision loss:
-				// 1. Each claim triggers 2 TLM distributions (2000 total calls)
-				// 2. Each call distributes 55 uPOKT across fractional stake ratios
-				// 3. Fractional remainders compound across validator AND delegator distributions
-				// 4. The result is significant cumulative loss across all stakeholders
+				// With 2 batched calls (RBEM + GlobalMint), each stakeholder has at
+				// most ≤2 uPOKT LRM rounding error (1 per OpReason call).
 
-				expectedValidatorRewards := []int64{18_333, 18_333, 18_333} // Equal self-bonded should get equal rewards
-				expectedDelegatorRewards := []int64{9_167, 18_334, 27_500}  // Proportional to delegation amounts
+				require.Len(t, validatorRewards, 3, "Should have 3 validators")
+				require.Len(t, delegatorRewards, 3, "Should have 3 delegators")
 
-				// These assertions will FAIL due to cascading precision loss
-				require.ElementsMatch(t, expectedValidatorRewards, validatorRewards,
-					"Validators should receive equal rewards for equal self-bonded stakes without precision loss")
-				require.ElementsMatch(t, expectedDelegatorRewards, delegatorRewards,
-					"Delegators should receive proportional rewards without precision loss")
-
-				// Verify total conservation (this will also fail due to precision loss)
-				totalActual := int64(0)
-				for _, reward := range validatorRewards {
-					totalActual += reward
-				}
-				for _, reward := range delegatorRewards {
-					totalActual += reward
-				}
+				// Total conservation must be exact.
+				totalActual := s.sumRewards(validatorRewards) + s.sumRewards(delegatorRewards)
 				require.Equal(t, expectedTotal, totalActual,
-					"Total distributed should equal expected total without precision loss")
+					"Total distributed should equal expected total")
+
+				// Ideal validator self-bonded rewards: all have ~equal self-bonded stake
+				// (~333,333), so each should get approximately the same amount.
+				// Ideal ≈ 110,000 × (333,333/2,000,000) ≈ 18,333.3 per validator.
+				for i, reward := range validatorRewards {
+					require.InDelta(t, 18_333.3, float64(reward), 2.0,
+						"validator %d: self-bonded reward %d should be within 2 uPOKT of ideal", i, reward)
+				}
+
+				// Ideal delegator rewards are proportional to delegation amounts:
+				// - Del 1: 110,000 × (166,667/2,000,000) ≈ 9,166.7
+				// - Del 2: 110,000 × (333,333/2,000,000) ≈ 18,333.3
+				// - Del 3: 110,000 × (500,000/2,000,000) = 27,500.0
+				idealDelegatorRewards := []float64{9_166.7, 18_333.3, 27_500.0}
+				for i, idealReward := range idealDelegatorRewards {
+					// Find closest actual reward (order may differ)
+					found := false
+					for _, actual := range delegatorRewards {
+						diff := float64(actual) - idealReward
+						if diff < 0 {
+							diff = -diff
+						}
+						if diff <= 2.0 {
+							found = true
+							break
+						}
+					}
+					require.True(t, found,
+						"delegator %d: no actual reward within 2 uPOKT of ideal %.1f, actuals: %v",
+						i, idealReward, delegatorRewards)
+				}
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
-			if tc.skipReason != "" {
-				t.Skip(tc.skipReason)
-			}
-
 			// Setup keepers with appropriate validator/delegation configuration
 			s.setupValidatorTest(t, tc.validatorConfigs)
 
