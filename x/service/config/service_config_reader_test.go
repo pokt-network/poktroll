@@ -154,7 +154,7 @@ func Test_ParseEditServiceConfig(t *testing.T) {
 
 			if tt.expectedError != nil {
 				require.ErrorIs(t, err, tt.expectedError)
-				stat, ok := status.FromError(tt.expectedError)
+				stat, ok := status.FromError(err)
 				require.True(t, ok)
 				require.Contains(t, stat.Message(), tt.expectedError.Error())
 				require.Nil(t, editConfig)
