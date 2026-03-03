@@ -63,7 +63,7 @@ pocketd q block-results --help
 The following is an example of how to view the balance of `pokt1lla0yhjf2fhzrlgu6le3ymw9aqayepxlx3lf4q` grow from height `205950` to `210000` in 30 height increments.
 
 ```bash
-for ((h=205950; h<=210000; h+=30)); do echo -n "Height $h: "; curl -s -H "x-cosmos-block-height: $h" https://shannon-grove-api.mainnet.poktroll.com/cosmos/bank/v1beta1/balances/pokt1lla0yhjf2fhzrlgu6le3ymw9aqayepxlx3lf4q | jq -r '.balances[0].amount // "0"'; done
+for ((h=205950; h<=210000; h+=30)); do echo -n "Height $h: "; curl -s -H "x-cosmos-block-height: $h" https://sauron-api.infra.pocket.network/cosmos/bank/v1beta1/balances/pokt1lla0yhjf2fhzrlgu6le3ymw9aqayepxlx3lf4q | jq -r '.balances[0].amount // "0"'; done
 ```
 
 ## Inspecting Claim settlement in a specific block

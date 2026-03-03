@@ -89,7 +89,7 @@ pocketd query bank balances $ADDR
 
 :::tip
 
-Know someone at [Grove](https://grove.city) on Beta TestNet? Ask them to run:
+Know someone who maintains Beta TestNet? Ask them to run:
 
 ```bash
 pocketd tx --network=beta tx bank send faucet_beta $ADDR 6900000000042upokt

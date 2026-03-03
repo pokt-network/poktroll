@@ -30,7 +30,7 @@ The raw file can be found at [pocket/blob/main/docs/static/openapi.yml](https://
 
 ## Swagger UI
 
-The Swagger UI for the Shannon Beta TestNet OpenAPI Spec may be viewed at [shannon-testnet-grove-api.beta.poktroll.com](https://shannon-testnet-grove-api.beta.poktroll.com).
+The Swagger UI for the Shannon Beta TestNet OpenAPI Spec may be viewed at [sauron-api.beta.infra.pocket.network](https://sauron-api.beta.infra.pocket.network).
 
 ## Re-generating the OpenAPI Spec
 
@@ -59,19 +59,19 @@ The `Cosmos SDK` REST API Specification can be found [here](https://docs.cosmos.
 ### `Cosmos` - Example command to check accounts
 
 ```bash
-curl -X 'GET' 'https://shannon-testnet-grove-api.beta.poktroll.com/cosmos/auth/v1beta1/accounts' -H 'accept: application/json' | jq
+curl -X 'GET' 'https://sauron-api.beta.infra.pocket.network/cosmos/auth/v1beta1/accounts' -H 'accept: application/json' | jq
 ```
 
 ### `Cosmos` - Example command to check node status
 
 ```bash
-curl -X 'GET' 'https://shannon-testnet-grove-api.beta.poktroll.com/cosmos/base/node/v1beta1/status' -H 'accept: application/json' | jq
+curl -X 'GET' 'https://sauron-api.beta.infra.pocket.network/cosmos/base/node/v1beta1/status' -H 'accept: application/json' | jq
 ```
 
 ### `CometBFT` - Example command to check node status
 
 ```bash
-curl -X 'GET' 'https://shannon-testnet-grove-rpc.beta.poktroll.com/status' -H 'accept: application/json' | jq
+curl -X 'GET' 'https://sauron-rpc.beta.infra.pocket.network/status' -H 'accept: application/json' | jq
 ```
 
 ## Cosmos SDK & CometBFT API Comparison
@@ -137,7 +137,7 @@ To get queries that work out of the box:
 1. Go to [Claude Projects](https://www.anthropic.com/news/projects)
 2. Create a new project
 3. Set the project instructions to the prompt below.
-4. Set the project knowledge base to a portion of the [Full OpenAPI Spec](https://shannon-testnet-grove-api.beta.poktroll.com/static/openapi.yml) (see below).
+4. Set the project knowledge base to a portion of the [Full OpenAPI Spec](https://sauron-api.beta.infra.pocket.network/static/openapi.yml) (see below).
 5. Ask a question about the OpenAPI spec.
 
 <details>
@@ -151,8 +151,8 @@ You are a professional Cosmos SDK engineer with expertise in formatting CometBFT
 **Your role:** Transform general blockchain query requests into properly formatted `pocketd` commands with appropriate filtering and JSON processing.
 
 **Available endpoints:**
-* **Mainnet:** https://shannon-grove-rpc.mainnet.poktroll.com
-* **Testnet:** https://shannon-testnet-grove-rpc.beta.poktroll.com
+* **Mainnet:** https://sauron-rpc.infra.pocket.network
+* **Testnet:** https://sauron-rpc.beta.infra.pocket.network
 
 **Query format guidelines:**
 - Always include `--node` parameter with appropriate endpoint
@@ -166,7 +166,7 @@ Request: "Show me all create claim messages after height 20000"
 Response:
 ```bash
 pocketd query txs \
-    --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
+    --node=https://sauron-rpc.beta.infra.pocket.network \
     --query="tx.height>20000 AND message.action='/pocket.proof.MsgCreateClaim'" \
     --limit "10" --page 1 -o json |
     jq '[.txs[].tx.body.messages[]

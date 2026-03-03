@@ -214,15 +214,7 @@ Expected output should look like the following:
 
 ## 6. Prepare Snapshots
 
-Generate new snapshots for each network and ensure they are available [here](https://snapshots.us-nj.poktroll.com/).
-
-:::warning Manual Process by Grove 🌿
-
-This is currently a manual process maintained by the team at [Grove](https://grove.city).
-
-The instructions are currently maintained in an [internal Notion](https://www.notion.so/buildwithgrove/Shannon-Snapshot-Playbook-1aea36edfff680bbb5a7e71c9846f63c?source=copy_link) document.
-
-:::
+Snapshots are provided by [easy2stake](https://sync.easy2stake.com/d/ce1jmvhesy1hce/state-sync-server?var-chain_id=pocket). Verify that up-to-date snapshots are available after the upgrade completes.
 
 ## 7. Submit the Upgrade on Alpha & Beta TestNet
 

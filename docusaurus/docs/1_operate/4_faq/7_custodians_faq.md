@@ -83,7 +83,7 @@ This document was last updated on 05/19/2025.
 
 - Integrate with new client:
   - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet)
-  - or get a free Foundation-sponsored RPC endpoint from [Grove](https://portal.grove.city)
+  - or use a public RPC endpoint from the [Shannon Mainnet](../../2_explore/1_tools/1_shannon_mainnet.md) page
 
 ---
 
@@ -92,7 +92,7 @@ This document was last updated on 05/19/2025.
 | Action                | How-To / Links                                                                                                                                                                                  |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Create New Wallet** | - [pocketd CLI tool](https://dev.poktroll.com/explore/account_management/create_new_account_cli) <br/> - [Keplr Wallet](https://www.keplr.app/) <br/> - [Soothe Vault](https://trustsoothe.io/) |
-| **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) <br/> - or get a free Foundation-sponsored RPC endpoint from [Grove](https://portal.grove.city)    |
+| **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) <br/> - or use a public RPC endpoint from the [Shannon Mainnet](../../2_explore/1_tools/1_shannon_mainnet.md) page |
 | **Claim Tokens**      | - CLI: [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account) <br/> - UI: Website with offline signing support (Coming Soon)                                     |
 
 :::warning TODO(Grove): Coming Soon

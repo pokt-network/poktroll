@@ -73,7 +73,7 @@ Pocket network is built on top of [Cosmos SDK](https://docs.cosmos.network), [Co
 
 ## What is PATH?
 
-[PATH](https://path.grove.city/) (Path API & Toolkit Harness) is an open source Gateway framework that streamlines access to the permissionless API operators on Pocket Network without sacrificing enterprise-grade SLAs.
+[PATH](https://github.com/pokt-network/path) (Path API & Toolkit Harness) is an open source Gateway framework that streamlines access to the permissionless API operators on Pocket Network without sacrificing enterprise-grade SLAs.
 
 You can think of Pocket Network as the directory of API providers, and PATH is the toolkit for building Gateways that ensure high quality of service on top of Pocket using Smart QoS.
 

@@ -76,7 +76,7 @@ TODO_POST_MAINNET(@okdas): Provide benchmarks for relayminers handling different
 
 ### PATH Gateway
 
-See the [PATH Gateway](https://path.grove.city) documentation for more
+See the [PATH Gateway](https://github.com/pokt-network/path) documentation for more
 information on what a `PATH Gateway` is.
 
 | Component   | Minimum | Recommended |

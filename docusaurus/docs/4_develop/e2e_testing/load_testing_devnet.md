@@ -108,6 +108,4 @@ make test_load_relays_stress_example
 
 5. Observe the results:
 
-You can see the performance of the requests on [Grafana dashboards](https://grafana.poktroll.com/d/nginx/nginx-ingress-controller).
-The DevNets have LoadBalancers which allow for more metrics about network load and latency. When looking
-at the `NGINX Ingress controller` Dashboard, make sure to change the namespace to match the DevNet name.
+The DevNets have LoadBalancers which allow for more metrics about network load and latency. If you have access to a Grafana instance, look at the `NGINX Ingress controller` Dashboard and change the namespace to match the DevNet name.
