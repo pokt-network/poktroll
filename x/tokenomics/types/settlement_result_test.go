@@ -289,7 +289,7 @@ func TestNewEventClaimSettled_RewardDistributionDetailed(t *testing.T) {
 
 	claimeduPOKT := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
 	settledUpokt := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
-	event := NewEventClaimSettled(10, 5, 50, 0, &claimeduPOKT, result, &settledUpokt, 0.975)
+	event := NewEventClaimSettled(10, 5, 50, 100, 0, &claimeduPOKT, result, &settledUpokt, 0.975, "pokt1supplier-owner")
 
 	// Verify the legacy field is still populated (merges by address).
 	require.Len(t, event.RewardDistribution, 2)
@@ -324,44 +324,59 @@ func TestNewEventClaimSettled_SettledUpoktAndMintRatio(t *testing.T) {
 	}
 
 	tests := []struct {
-		name              string
-		claimedAmount     int64
-		settledAmount     int64
-		mintRatio         float64
-		expectedSettled   string
-		expectedMintRatio string
+		name                        string
+		claimedAmount               int64
+		settledAmount               int64
+		mintRatio                   float64
+		expectedSettled             string
+		expectedMintRatio           string
+		expectedMinted              string
+		expectedOverservicingLoss   string
+		expectedDeflationLoss       string
 	}{
 		{
-			name:              "no overservicing, no deflation",
-			claimedAmount:     1000,
-			settledAmount:     1000,
-			mintRatio:         1.0,
-			expectedSettled:   "1000upokt",
-			expectedMintRatio: "1",
+			name:                        "no overservicing, no deflation",
+			claimedAmount:               1000,
+			settledAmount:               1000,
+			mintRatio:                   1.0,
+			expectedSettled:             "1000upokt",
+			expectedMintRatio:           "1",
+			expectedMinted:              "1000upokt",
+			expectedOverservicingLoss:   "0upokt",
+			expectedDeflationLoss:       "0upokt",
 		},
 		{
-			name:              "no overservicing, with deflation (PIP-41)",
-			claimedAmount:     1000,
-			settledAmount:     1000,
-			mintRatio:         0.975,
-			expectedSettled:   "1000upokt",
-			expectedMintRatio: "0.975",
+			name:                        "no overservicing, with deflation (PIP-41)",
+			claimedAmount:               1000,
+			settledAmount:               1000,
+			mintRatio:                   0.975,
+			expectedSettled:             "1000upokt",
+			expectedMintRatio:           "0.975",
+			expectedMinted:              "975upokt",
+			expectedOverservicingLoss:   "0upokt",
+			expectedDeflationLoss:       "25upokt",
 		},
 		{
-			name:              "overserviced, with deflation",
-			claimedAmount:     1000,
-			settledAmount:     500,
-			mintRatio:         0.975,
-			expectedSettled:   "500upokt",
-			expectedMintRatio: "0.975",
+			name:                        "overserviced, with deflation",
+			claimedAmount:               1000,
+			settledAmount:               500,
+			mintRatio:                   0.975,
+			expectedSettled:             "500upokt",
+			expectedMintRatio:           "0.975",
+			expectedMinted:              "487upokt",
+			expectedOverservicingLoss:   "500upokt",
+			expectedDeflationLoss:       "13upokt",
 		},
 		{
-			name:              "zero settlement",
-			claimedAmount:     1000,
-			settledAmount:     0,
-			mintRatio:         0.975,
-			expectedSettled:   "0upokt",
-			expectedMintRatio: "0.975",
+			name:                        "zero settlement",
+			claimedAmount:               1000,
+			settledAmount:               0,
+			mintRatio:                   0.975,
+			expectedSettled:             "0upokt",
+			expectedMintRatio:           "0.975",
+			expectedMinted:              "0upokt",
+			expectedOverservicingLoss:   "1000upokt",
+			expectedDeflationLoss:       "0upokt",
 		},
 	}
 
@@ -369,7 +384,7 @@ func TestNewEventClaimSettled_SettledUpoktAndMintRatio(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			claimeduPOKT := cosmostypes.NewInt64Coin("upokt", tt.claimedAmount)
 			settledUpokt := cosmostypes.NewInt64Coin("upokt", tt.settledAmount)
-			event := NewEventClaimSettled(10, 5, 50, 0, &claimeduPOKT, result, &settledUpokt, tt.mintRatio)
+			event := NewEventClaimSettled(10, 5, 50, 100, 0, &claimeduPOKT, result, &settledUpokt, tt.mintRatio, "pokt1supplier-owner")
 
 			require.Equal(t, tt.expectedSettled, event.SettledUpokt,
 				"SettledUpokt mismatch")
@@ -379,6 +394,14 @@ func TestNewEventClaimSettled_SettledUpoktAndMintRatio(t *testing.T) {
 			// Verify claimed_upokt is still independently correct.
 			require.Equal(t, claimeduPOKT.String(), event.ClaimedUpokt,
 				"ClaimedUpokt mismatch")
+
+			// Verify the derived breakdown fields.
+			require.Equal(t, tt.expectedMinted, event.MintedUpokt,
+				"MintedUpokt mismatch")
+			require.Equal(t, tt.expectedOverservicingLoss, event.OverservicingLossUpokt,
+				"OverservicingLossUpokt mismatch")
+			require.Equal(t, tt.expectedDeflationLoss, event.DeflationLossUpokt,
+				"DeflationLossUpokt mismatch")
 		})
 	}
 }

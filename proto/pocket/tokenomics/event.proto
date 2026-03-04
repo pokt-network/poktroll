@@ -77,7 +77,7 @@ message EventClaimExpired {
 // EventClaimSettled is emitted during settlement whenever a claim is successfully settled.
 // It may or may not require a proof depending on various on-chain parameters and other factors.
 message EventClaimSettled {
-    // Next index: 18
+    // Next index: 24
 
     // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
     // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
@@ -148,6 +148,36 @@ message EventClaimSettled {
     // The mint_ratio applied during settlement (from tokenomics params).
     // Indexers can compute: deflation_loss = settled_upokt * (1 - mint_ratio)
     string mint_ratio = 17 [(gogoproto.jsontag) = "mint_ratio"];
+
+    // The unique session ID hash for this claim's session.
+    // Enables direct joins without needing composite keys (app + service + session_end).
+    string session_id = 18 [(gogoproto.jsontag) = "session_id"];
+
+    // The owner address of the supplier who submitted the claim.
+    // Useful when owner != operator (delegated staking) for attributing rewards.
+    string supplier_owner_address = 19 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "supplier_owner_address"];
+
+    // The probabilistic estimation of the total number of relays served in this session.
+    // Derived from the relay mining difficulty: num_estimated_relays = num_relays * difficulty_multiplier.
+    // Unlike num_relays (which is only the count of leaves in the session tree that matched
+    // the relay mining difficulty), this reflects the actual estimated workload.
+    uint64 num_estimated_relays = 20 [(gogoproto.jsontag) = "num_estimated_relays"];
+
+    // The actual amount of uPOKT minted for this claim via the Relay Burn Equals Mint TLM.
+    // minted_upokt = settled_upokt * mint_ratio (truncated to integer).
+    // This is the real economic value created by this claim after both overservicing and deflation.
+    // Relationship: claimed_upokt >= settled_upokt >= minted_upokt
+    string minted_upokt = 21 [(gogoproto.jsontag) = "minted_upokt"];
+
+    // The amount of uPOKT lost to overservicing for this claim.
+    // overservicing_loss_upokt = claimed_upokt - settled_upokt.
+    // Zero when the supplier's claim fits within the application's per-supplier budget.
+    string overservicing_loss_upokt = 22 [(gogoproto.jsontag) = "overservicing_loss_upokt"];
+
+    // The amount of uPOKT permanently removed from circulation (deflation) for this claim.
+    // deflation_loss_upokt = settled_upokt - minted_upokt = settled_upokt * (1 - mint_ratio).
+    // Zero when mint_ratio = 1 (no deflation).
+    string deflation_loss_upokt = 23 [(gogoproto.jsontag) = "deflation_loss_upokt"];
 }
 
 // EventApplicationOverserviced is emitted when an Application's stake cannot cover the Supplier's claim.

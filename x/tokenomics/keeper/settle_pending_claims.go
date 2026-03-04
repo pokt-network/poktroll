@@ -783,6 +783,18 @@ func (k Keeper) settleClaim(
 		return nil, err
 	}
 
+	// numEstimatedRelays is the probabilistic estimation of the total number of
+	// relays served by the relay miner in this session.
+	// Since numClaimComputeUnits = numClaimRelays * CUPR (validated earlier),
+	// numEstimatedRelays = numEstimatedComputeUnits / CUPR.
+	var numEstimatedRelays uint64
+	if numClaimRelays > 0 {
+		computeUnitsPerRelay := numClaimComputeUnits / numClaimRelays
+		if computeUnitsPerRelay > 0 {
+			numEstimatedRelays = numEstimatedComputeUnits / computeUnitsPerRelay
+		}
+	}
+
 	// claimeduPOKT is the amount the supplier will receive if the claim is settled.
 	// It is derived from:
 	// - The claim's number of relays
@@ -886,15 +898,23 @@ func (k Keeper) settleClaim(
 	tokenomicsParams := settlementContext.GetTokenomicsParams()
 	mintRatio := tokenomicsParams.MintRatio
 
+	// Retrieve the supplier owner address for the event.
+	supplier, err := settlementContext.GetSupplier(claim.SupplierOperatorAddress)
+	if err != nil {
+		return nil, err
+	}
+
 	claimSettledEvent := tokenomicstypes.NewEventClaimSettled(
 		numClaimRelays,
 		numClaimComputeUnits,
 		numEstimatedComputeUnits,
+		numEstimatedRelays,
 		proofRequirement,
 		&claimeduPOKT,
 		claimSettlementContext.settlementResult,
 		&actualSettlementCoin,
 		mintRatio,
+		supplier.OwnerAddress,
 	)
 	if err = ctx.EventManager().EmitTypedEvent(claimSettledEvent); err != nil {
 		return nil, err
