@@ -338,8 +338,10 @@ func applyLargestRemainderMethod(
 		totalDistributedRewardAmount = totalDistributedRewardAmount.Add(amount)
 	}
 
-	// Calculate remainder tokens to distribute
-	remainder := totalRewardAmount.Sub(totalDistributedRewardAmount).Int64()
+	// Calculate remainder tokens to distribute.
+	// Use BigInt conversion to avoid potential Int64() panic on overflow.
+	remainderInt := totalRewardAmount.Sub(totalDistributedRewardAmount)
+	remainder := remainderInt.BigInt().Int64()
 
 	logger.Debug(fmt.Sprintf(
 		"Applying the largest remainder method to reward distribution. Total amount distributed: %s. Total reward amount: %s. Remainder: %d tokens",

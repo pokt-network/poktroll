@@ -44,7 +44,7 @@ const computeUnitsPerRelay = 1
 
 var (
 	// Test settlements with claims from multiple services
-	testServiceIds   = []string{"svc1"}
+	testServiceIds   = []string{"svc1", "svc2"}
 	supplierStakeAmt = 2 * suppliertypes.DefaultMinStake.Amount.Int64()
 )
 
@@ -1412,6 +1412,41 @@ func uPOKTCoin(amount int64) cosmostypes.Coin {
 // - Creates applications for each service ID defined in testServiceIds
 // - Each application is staked to its respective service.
 // - The function returns the application addresses and the supplier's owner address.
+
+// TestSettlePendingClaims_NoClaims_NoPanic verifies that the two-pass settlement
+// handles zero claims gracefully: no error, no panic, no events emitted.
+func (s *TestSuite) TestSettlePendingClaims_NoClaims_NoPanic() {
+	t := s.T()
+	ctx := s.ctx
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	// Do NOT insert any claims into the store.
+
+	// Use one of the pre-created claims only to derive a valid settlement height
+	// (proof window close height), then settle at that height with an empty store.
+	sessionEndHeight := s.claims[0].SessionHeader.SessionEndBlockHeight
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+
+	// Settlement must not panic and must return no error.
+	settledResults, expiredResults, numDiscardedFaultyClaims, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+
+	// No claims should have been settled, expired, or discarded.
+	require.Equal(t, uint64(0), settledResults.GetNumClaims())
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims())
+	require.Equal(t, uint64(0), numDiscardedFaultyClaims)
+
+	// No claims should remain in the store.
+	claims := s.keepers.GetAllClaims(ctx)
+	require.Equal(t, 0, len(claims))
+
+	// No settlement events should have been emitted.
+	events := sdkCtx.EventManager().Events()
+	settlementEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events)
+	require.Equal(t, 0, len(settlementEvents))
+}
+
 func (s *TestSuite) createTestActors(
 	t *testing.T,
 	ctx cosmostypes.Context,

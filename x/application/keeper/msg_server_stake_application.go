@@ -193,6 +193,9 @@ func normalizeSpendLimit(limit *sdk.Coin) *sdk.Coin {
 	if limit == nil || limit.IsZero() {
 		return nil
 	}
+	if limit.Denom != "upokt" {
+		return nil
+	}
 	return limit
 }
 
