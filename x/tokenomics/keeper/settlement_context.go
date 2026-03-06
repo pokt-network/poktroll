@@ -56,6 +56,13 @@ type claimTelemetryData struct {
 	err             error
 }
 
+// appSessionKey is a composite key for counting suppliers per (application, session) pair.
+// Uses a struct key instead of fmt.Sprintf to avoid heap allocations.
+type appSessionKey struct {
+	appAddress string
+	sessionId  string
+}
+
 // settlementContext maintains a cache of all entities involved in the claim settlement process.
 // This structure optimizes claim processing performance by eliminating redundant KV store operations.
 type settlementContext struct {
@@ -94,6 +101,12 @@ type settlementContext struct {
 	// processed, these are flushed via a single distributeValidatorRewards call per key,
 	// eliminating per-claim precision loss (#1758).
 	validatorRewardAccumulator map[tokenomicstypes.SettlementOpReason]math.Int
+
+	// supplierCountPerAppSession tracks how many suppliers submitted claims for each
+	// (application, session) pair. Populated during the claim collection phase and
+	// consumed during settlement to replace the NumSuppliersPerSession governance param
+	// with the actual number of claimants, ensuring fair budget distribution.
+	supplierCountPerAppSession map[appSessionKey]int64
 }
 
 // NewSettlementContext creates a new settlement context with all necessary caches initialized.
@@ -133,6 +146,10 @@ func NewSettlementContext(
 		// Initialize the validator reward accumulator with capacity for the 2 known TLM op reasons
 		// (TLM_RELAY_BURN_EQUALS_MINT and TLM_GLOBAL_MINT).
 		validatorRewardAccumulator: make(map[tokenomicstypes.SettlementOpReason]math.Int, 2),
+
+		// Initialize the supplier count map. Estimated capacity: each app typically has
+		// 1 session being settled per block, but may have more with multiple services.
+		supplierCountPerAppSession: make(map[appSessionKey]int64, estimatedApplications),
 	}
 }
 
@@ -384,6 +401,29 @@ func (sctx *settlementContext) cacheApplication(ctx context.Context, appAddress 
 	sctx.applicationInitialStakeMap[appAddress] = *application.Stake
 
 	return nil
+}
+
+// IncrementSupplierCount increments the supplier count for the given (app, session) pair.
+// Called during the claim collection phase to track actual claimants.
+func (sctx *settlementContext) IncrementSupplierCount(appAddress, sessionId string) {
+	key := appSessionKey{appAddress: appAddress, sessionId: sessionId}
+	sctx.supplierCountPerAppSession[key]++
+}
+
+// GetActualSupplierCount returns the number of suppliers that submitted claims
+// for the given (app, session) pair. Falls back to 1 if no count is found
+// (should never happen since counts are populated during collection phase).
+func (sctx *settlementContext) GetActualSupplierCount(appAddress, sessionId string) int64 {
+	key := appSessionKey{appAddress: appAddress, sessionId: sessionId}
+	count, ok := sctx.supplierCountPerAppSession[key]
+	if !ok || count == 0 {
+		sctx.logger.Warn(fmt.Sprintf(
+			"no supplier count found for app %q session %q, defaulting to 1",
+			appAddress, sessionId,
+		))
+		return 1
+	}
+	return count
 }
 
 // cacheServiceAndDifficulty ensures the service and its relay mining difficulty are cached in the settlement context.

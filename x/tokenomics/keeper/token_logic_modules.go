@@ -162,11 +162,19 @@ func (k Keeper) ProcessTokenLogicModules(
 		"application", application.Address,
 	)
 
+	// Get the actual number of suppliers that submitted claims for this (app, session) pair.
+	// This replaces the NumSuppliersPerSession governance param to ensure fair budget
+	// distribution based on actual participation rather than the theoretical maximum.
+	actualNumSuppliers := settlementContext.GetActualSupplierCount(
+		sessionHeader.ApplicationAddress,
+		sessionHeader.SessionId,
+	)
+
 	// Ensure the claim amount is within the limits set by RelayMining.
 	// If not, update the settlement amount and emit relevant events.
 	// TODO_IMPROVE: Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake, sessionHeader.ServiceId, sessionHeader.SessionEndBlockHeight)
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake, actualNumSuppliers, sessionHeader.ServiceId, sessionHeader.SessionEndBlockHeight)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}
@@ -250,7 +258,10 @@ func (k Keeper) ProcessTokenLogicModules(
 // ensureClaimAmountLimits checks and handles overserviced applications.
 //
 // Per Algorithm #1 in the Relay Mining paper, the maximum amount that a single
-// supplier can claim in a session is AppStake/NumSuppliersPerSession.
+// supplier can claim in a session is AppStake/ActualNumSuppliers, where
+// ActualNumSuppliers is the number of suppliers that submitted claims for
+// this (app, session) pair. This replaces the previous NumSuppliersPerSession
+// governance param to ensure fair budget distribution based on actual participation.
 // Ref: https://arxiv.org/pdf/2305.10672
 //
 // If this is not the case, then the supplier essentially did "free work" and the
@@ -264,6 +275,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	supplier *sharedtypes.Supplier,
 	claimSettlementCoin cosmostypes.Coin,
 	initialApplicationStake cosmostypes.Coin,
+	actualNumSuppliers int64,
 	serviceId string,
 	sessionEndBlockHeight int64,
 ) (
@@ -296,17 +308,15 @@ func (k Keeper) ensureClaimAmountLimits(
 	numPendingSessions := sharedtypes.GetNumPendingSessions(sharedParams)
 
 	// The maximum any single supplier can claim is a fraction of the app's total stake
-	// divided by the number of suppliers per session.
-	// Re decentralization - This ensures the app biases towards using all suppliers in a session.
-	// Re costs - This is an easy way to split the stake evenly.
-	// TODO_FUTURE: See if there's a way to let the application prefer (the best)
-	// supplier(s) in a session while maintaining a simple solution to implement this.
-	numSuppliersPerSession := int64(k.sessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	// divided by the actual number of suppliers that submitted claims for this session.
+	// Using actual count instead of the NumSuppliersPerSession governance param ensures
+	// fair budget distribution: if only 20 of 50 assigned suppliers claim, each gets
+	// appStake/20 instead of appStake/50, eliminating wasted budget from no-shows.
 	// Divide sessions first, then suppliers — matches the spend-limit path's
 	// conceptual order and avoids different integer truncation results.
 	maxClaimableAmt := appStake.Amount.
 		Quo(math.NewInt(numPendingSessions)).
-		Quo(math.NewInt(numSuppliersPerSession))
+		Quo(math.NewInt(actualNumSuppliers))
 
 	// Apply per-session spend limit if set on the application.
 	// The spend limit caps the per-session budget, which is then divided among suppliers.
@@ -320,7 +330,7 @@ func (k Keeper) ensureClaimAmountLimits(
 			perSessionBudget = stakePerSession
 		}
 		// Per-supplier cap from the spend limit
-		spendLimitMaxClaimable := perSessionBudget.Quo(math.NewInt(numSuppliersPerSession))
+		spendLimitMaxClaimable := perSessionBudget.Quo(math.NewInt(actualNumSuppliers))
 		if spendLimitMaxClaimable.LT(maxClaimableAmt) {
 			maxClaimableAmt = spendLimitMaxClaimable
 			spendLimitExceeded = true

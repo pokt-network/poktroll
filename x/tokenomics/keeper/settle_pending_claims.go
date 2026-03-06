@@ -49,18 +49,14 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	// This avoids N deferred stack frames which cause memory pressure.
 	telemetryBatch := make([]claimTelemetryData, 0, estimatedClaimCount)
 
-	// Retrieve an iterator of all expiring claims.
-	// DEV_NOTE: This previously retrieve a list but has been change to account for large claim counts.
+	// Two-phase settlement: collect all claims first to count actual suppliers per
+	// (app, session) pair, then settle using actual counts for fair budget distribution.
+	//
+	// Phase 1: Collect claims into memory and build supplier count map.
+	// This avoids iterating the KV store twice while providing actual supplier counts
+	// needed for the per-supplier cap calculation in ensureClaimAmountLimits.
 	expiringClaimsIterator := k.GetExpiringClaimsIterator(ctx, settlementContext, blockHeight)
-	defer expiringClaimsIterator.Close()
-
-	// Iterating over all potentially expiring claims.
-	// This loop does the following:
-	// 1. Retrieve the claim
-	// 2. Settle the claim
-	// 3. Remove the claim from the state
-	// 4. Emit an event
-	// 5. Update the relevant actors in the state
+	collectedClaims := make([]prooftypes.Claim, 0, estimatedClaimCount)
 	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
 		claim, iterErr := expiringClaimsIterator.Value()
 		if iterErr != nil {
@@ -72,7 +68,18 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			logger.Error(claimErr.Error())
 			continue
 		}
+		collectedClaims = append(collectedClaims, claim)
+		settlementContext.IncrementSupplierCount(
+			claim.SessionHeader.ApplicationAddress,
+			claim.SessionHeader.SessionId,
+		)
+	}
+	expiringClaimsIterator.Close()
 
+	logger.Info(fmt.Sprintf("Phase 1 complete: collected %d claims for settlement", len(collectedClaims)))
+
+	// Phase 2: Settle each collected claim using actual supplier counts.
+	for _, claim := range collectedClaims {
 		// Settle the claim.
 		claimProcessingContext, settlementErr := k.settleClaim(ctx, settlementContext, claim, logger)
 		if settlementErr != nil {
