@@ -123,7 +123,8 @@ type MsgStakeApplication struct {
 	Address  string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	Stake    *types.Coin                        `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
 	Services []*types1.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=services,proto3" json:"services,omitempty"`
-	// Optional per-session spend limit in uPOKT. Nil/omitted = clear any existing limit.
+	// Optional per-session spend limit in uPOKT.
+	// Three-way semantics: nil/omitted = preserve existing limit, zero = clear limit, positive = set new limit.
 	PerSessionSpendLimit *types.Coin `protobuf:"bytes,4,opt,name=per_session_spend_limit,json=perSessionSpendLimit,proto3" json:"per_session_spend_limit,omitempty"`
 }
 

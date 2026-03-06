@@ -105,9 +105,6 @@ func ParseApplicationConfigs(configContent []byte) (*ApplicationStakeConfig, err
 		if spendLimit.IsNegative() {
 			return nil, ErrApplicationConfigInvalidSpendLimit.Wrap("per-session spend limit cannot be negative")
 		}
-		if spendLimit.IsZero() {
-			return nil, ErrApplicationConfigInvalidSpendLimit.Wrap("per-session spend limit cannot be zero")
-		}
 		if spendLimit.Denom != "upokt" {
 			return nil, ErrApplicationConfigInvalidSpendLimit.Wrapf(
 				"invalid spend limit denom, expecting: upokt, got: %s",

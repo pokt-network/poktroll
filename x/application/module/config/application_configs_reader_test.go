@@ -161,7 +161,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 			expectedErr: config.ErrApplicationConfigInvalidSpendLimit,
 		},
 		{
-			desc: "invalid: per-session spend limit zero",
+			desc: "valid: per-session spend limit zero (clear existing limit)",
 
 			inputConfig: `
 				stake_amount: 1000upokt
@@ -170,7 +170,14 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				per_session_spend_limit: 0upokt
 				`,
 
-			expectedErr: config.ErrApplicationConfigInvalidSpendLimit,
+			expectedErr: nil,
+			expectedConfig: &config.ApplicationStakeConfig{
+				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: coinPtr(sdk.NewCoin("upokt", math.NewInt(0))),
+			},
 		},
 	}
 

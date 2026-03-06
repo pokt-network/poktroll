@@ -149,7 +149,18 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 
 		// per-session spend limit related tests
 		{
-			desc: "valid: with per-session spend limit",
+			desc: "valid: with per-session spend limit (at minimum)",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddressBech32(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: &sdk.Coin{Denom: "upokt", Amount: MinPerSessionSpendLimit.Amount},
+			},
+		},
+		{
+			desc: "invalid: per-session spend limit below minimum",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
@@ -158,6 +169,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				},
 				PerSessionSpendLimit: &sdk.Coin{Denom: "upokt", Amount: math.NewInt(50)},
 			},
+			expectedErr: ErrAppInvalidPerSessionSpendLimit,
 		},
 		{
 			desc: "valid: nil per-session spend limit (no limit)",

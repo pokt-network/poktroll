@@ -154,10 +154,23 @@ func parseEndpointRPCType(endpoint YAMLServiceEndpoint) (sharedtypes.RPCType, er
 }
 
 // validateEndpointURL validates the endpoint URL, making sure that the string provided is a valid URL
+// with a scheme and host.
 func validateEndpointURL(endpoint YAMLServiceEndpoint) (string, error) {
-	// Validate the endpoint URL
-	if _, err := url.Parse(endpoint.PubliclyExposedUrl); err != nil {
+	if endpoint.PubliclyExposedUrl == "" {
+		return "", ErrSupplierConfigInvalidURL.Wrap("endpoint URL cannot be empty")
+	}
+
+	parsedURL, err := url.Parse(endpoint.PubliclyExposedUrl)
+	if err != nil {
 		return "", ErrSupplierConfigInvalidURL.Wrapf("%s", err)
+	}
+
+	if parsedURL.Scheme == "" {
+		return "", ErrSupplierConfigInvalidURL.Wrapf("missing scheme in URL %q (expected http, https, or grpc)", endpoint.PubliclyExposedUrl)
+	}
+
+	if parsedURL.Host == "" {
+		return "", ErrSupplierConfigInvalidURL.Wrapf("missing host in URL %q", endpoint.PubliclyExposedUrl)
 	}
 
 	return endpoint.PubliclyExposedUrl, nil

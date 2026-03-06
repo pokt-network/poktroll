@@ -36,6 +36,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -1582,4 +1583,30 @@ func (s *TestSuite) createTestClaimsAndProofs(
 	}
 
 	return claims, proofs
+}
+
+// TestSettlePendingClaims_GetActualSupplierCount_Fallback verifies that
+// GetActualSupplierCount returns 1 (safe fallback) when IncrementSupplierCount
+// was never called for a given (app, session) pair.
+func (s *TestSuite) TestSettlePendingClaims_GetActualSupplierCount_Fallback() {
+	t := s.T()
+	ctx := s.ctx
+
+	sctx := tokenomicskeeper.NewSettlementContext(ctx, s.keepers.Keeper, s.keepers.Logger())
+
+	// Query a supplier count for a pair that was never incremented.
+	count := sctx.GetActualSupplierCount("nonexistent-app", "nonexistent-session")
+	require.Equal(t, int64(1), count, "fallback should return 1 for unknown (app, session) pair")
+
+	// Verify normal increment works and returns correct count.
+	sctx.IncrementSupplierCount("app1", "session1")
+	sctx.IncrementSupplierCount("app1", "session1")
+	sctx.IncrementSupplierCount("app1", "session1")
+	count = sctx.GetActualSupplierCount("app1", "session1")
+	require.Equal(t, int64(3), count, "should return 3 after 3 increments")
+
+	// Verify different (app, session) pairs are independent.
+	sctx.IncrementSupplierCount("app2", "session1")
+	count = sctx.GetActualSupplierCount("app2", "session1")
+	require.Equal(t, int64(1), count, "different app should have independent count")
 }

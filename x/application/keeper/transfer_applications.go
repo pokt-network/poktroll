@@ -146,6 +146,7 @@ func (k Keeper) transferApplication(
 		mergeAppDelegatees(&srcApp, &dstApp)
 		mergeAppPendingUndelegations(&srcApp, &dstApp)
 		mergeAppServiceConfigs(&srcApp, &dstApp)
+		mergeAppPerSessionSpendLimit(&srcApp, &dstApp)
 
 		logger.Info(fmt.Sprintf(
 			"transferring application from %q to existing application %q",
@@ -269,6 +270,30 @@ func mergeAppServiceConfigs(srcApp, dstApp *apptypes.Application) {
 	for _, srcServiceConfig := range srcApp.ServiceConfigs {
 		if _, ok := serviceIDSet[srcServiceConfig.GetServiceId()]; !ok {
 			dstApp.ServiceConfigs = append(dstApp.ServiceConfigs, srcServiceConfig)
+		}
+	}
+}
+
+// mergeAppPerSessionSpendLimit merges the per-session spend limits of the source
+// and destination applications during a transfer. If both apps have a limit, the
+// more restrictive (lower) limit is used. If only one has a limit, that limit is
+// preserved. If neither has a limit, the result has no limit.
+func mergeAppPerSessionSpendLimit(srcApp, dstApp *apptypes.Application) {
+	srcLimit := srcApp.PerSessionSpendLimit
+	dstLimit := dstApp.PerSessionSpendLimit
+
+	switch {
+	case srcLimit == nil && dstLimit == nil:
+		// Neither has a limit — nothing to do.
+	case srcLimit != nil && dstLimit == nil:
+		// Only source has a limit — adopt it.
+		dstApp.PerSessionSpendLimit = srcLimit
+	case srcLimit == nil && dstLimit != nil:
+		// Only destination has a limit — keep it (already set).
+	default:
+		// Both have limits — take the more restrictive (lower) one.
+		if srcLimit.Amount.LT(dstLimit.Amount) {
+			dstApp.PerSessionSpendLimit = srcLimit
 		}
 	}
 }

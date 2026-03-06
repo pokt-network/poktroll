@@ -48,33 +48,27 @@ func (sqc *SharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
+	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
 	return sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
 }
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
-//
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We don't really want to use the current value of the params.
-// Instead, we should be using the value that the params had for the session given by blockHeight.
 func (sqc *SharedKeeperQueryClient) GetClaimWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
+	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
 	return sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight), nil
 }
 
 // GetProofWindowOpenHeight returns the block height at which the proof window of
 // the session that includes queryHeight opens.
-//
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We don't really want to use the current value of the params.
-// Instead, we should be using the value that the params had for the session given by blockHeight.
 func (sqc *SharedKeeperQueryClient) GetProofWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
+	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
 	return sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
 }
 

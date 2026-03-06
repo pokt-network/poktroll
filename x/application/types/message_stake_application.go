@@ -79,5 +79,11 @@ func ValidatePerSessionSpendLimit(limit *sdk.Coin) error {
 	if limit.Denom != "upokt" {
 		return ErrAppInvalidPerSessionSpendLimit.Wrapf("invalid per-session spend limit denom, expecting: upokt, got: %s", limit.Denom)
 	}
+	if limit.Amount.LT(MinPerSessionSpendLimit.Amount) {
+		return ErrAppInvalidPerSessionSpendLimit.Wrapf(
+			"per_session_spend_limit %s must be at least %s",
+			limit, MinPerSessionSpendLimit,
+		)
+	}
 	return nil
 }

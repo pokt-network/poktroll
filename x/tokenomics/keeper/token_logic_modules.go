@@ -403,9 +403,16 @@ func (k Keeper) ensureClaimAmountLimits(
 // stake = maxSettlementAmt * (1 + GlobalInflationPerClaim)
 // maxSettlementAmt = stake / (1 + GlobalInflationPerClaim)
 func supplierAppStakeToMaxSettlementAmount(stakeAmount math.Int, globalInflationPerClaim float64) math.Int {
-	stakeAmountFloat := big.NewFloat(0).SetInt(stakeAmount.BigInt())
-	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeAmountFloat, big.NewFloat(1+globalInflationPerClaim))
-
-	settlementAmount, _ := maxSettlementAmountFloat.Int(nil)
-	return math.NewIntFromBigInt(settlementAmount)
+	inflationRat, err := encoding.Float64ToRat(globalInflationPerClaim)
+	if err != nil {
+		// If conversion fails, fall back to treating inflation as 0 (conservative: full stake claimable).
+		return stakeAmount
+	}
+	// divisor = 1 + globalInflationPerClaim
+	divisor := new(big.Rat).Add(new(big.Rat).SetInt64(1), inflationRat)
+	stakeRat := new(big.Rat).SetInt(stakeAmount.BigInt())
+	resultRat := new(big.Rat).Quo(stakeRat, divisor)
+	// Truncate (floor) to get the integer settlement amount.
+	resultInt := new(big.Int).Quo(resultRat.Num(), resultRat.Denom())
+	return math.NewIntFromBigInt(resultInt)
 }

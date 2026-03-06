@@ -1493,3 +1493,130 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	require.Equal(t, totalSettlementAmount, totalDistributedAmount,
 		"Total distributed amount mismatch: expected %s, got %s", totalSettlementAmount, totalDistributedAmount)
 }
+
+// TestProcessTokenLogicModules_PerSessionSpendLimit_MultipleSuppliers verifies that
+// the per-session spend limit is correctly divided among multiple suppliers claiming
+// in the same session.
+func TestProcessTokenLogicModules_PerSessionSpendLimit_MultipleSuppliers(t *testing.T) {
+	// Test Parameters
+	globalComputeUnitCostGranularity := uint64(1000000)
+	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
+	serviceComputeUnitsPerRelay := uint64(1)
+	service := prepareTestService(serviceComputeUnitsPerRelay)
+	numRelays := uint64(1000)
+	supplierInitialStake := cosmosmath.NewInt(1000000)
+
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
+		cosmoslog.NewNopLogger(),
+		testkeeper.WithService(*service),
+		testkeeper.WithDefaultModuleBalances(),
+		testkeeper.WithTokenLogicModules([]tlm.TokenLogicModule{
+			tlm.NewRelayBurnEqualsMintTLM(),
+		}),
+	)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
+	keepers.SetService(ctx, *service)
+
+	numTokensClaimed := getNumTokensClaimed(
+		numRelays,
+		serviceComputeUnitsPerRelay,
+		globalComputeUnitsToTokensMultiplier,
+		globalComputeUnitCostGranularity,
+	)
+
+	// Large app stake so standard cap doesn't bind.
+	appInitialStake := cosmosmath.NewInt(numTokensClaimed * 10)
+
+	// Set a spend limit that will be binding.
+	// With 3 suppliers, each should get spendLimit / 3.
+	spendLimitAmount := cosmosmath.NewInt(numTokensClaimed) // Less than appStake/numPendingSessions
+	spendLimit := cosmostypes.NewCoin(pocket.DenomuPOKT, spendLimitAmount)
+
+	numSuppliers := int64(3)
+	expectedPerSupplierCap := spendLimitAmount.Quo(cosmosmath.NewInt(numSuppliers))
+
+	// Set params.
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	require.NoError(t, err)
+
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.GlobalInflationPerClaim = 0
+	tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
+		Dao:         0,
+		Proposer:    0,
+		Supplier:    1,
+		SourceOwner: 0,
+		Application: 0,
+	}
+	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	require.NoError(t, err)
+
+	// Add application with spend limit.
+	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
+	app := apptypes.Application{
+		Address:              sample.AccAddressBech32(),
+		Stake:                &appStake,
+		ServiceConfigs:       []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+		PerSessionSpendLimit: &spendLimit,
+	}
+	keepers.SetApplication(ctx, app)
+
+	// Create 3 suppliers and simulate their claims.
+	settlementCtx := tokenomicskeeper.NewSettlementContext(ctx, keepers.Keeper, keepers.Logger())
+
+	type supplierTestData struct {
+		supplier sharedtypes.Supplier
+		claim    prooftypes.Claim
+	}
+	var testSuppliers []supplierTestData
+
+	for i := int64(0); i < numSuppliers; i++ {
+		supplierAddr := sample.AccAddressBech32()
+		supplierRevShares := []*sharedtypes.ServiceRevenueShare{{
+			Address:            supplierAddr,
+			RevSharePercentage: 100,
+		}}
+		services := []*sharedtypes.SupplierServiceConfig{{
+			ServiceId: service.Id,
+			RevShare:  supplierRevShares,
+		}}
+		supplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierInitialStake)
+		serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			supplierAddr, services, 1, 0,
+		)
+		supplier := sharedtypes.Supplier{
+			OwnerAddress:         supplierAddr,
+			OperatorAddress:      supplierAddr,
+			Stake:                &supplierStake,
+			Services:             services,
+			ServiceConfigHistory: serviceConfigHistory,
+		}
+		keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
+
+		claim := prepareTestClaim(numRelays, service, &app, &supplier)
+		err = settlementCtx.ClaimCacheWarmUp(ctx, &claim)
+		require.NoError(t, err)
+		settlementCtx.IncrementSupplierCount(
+			claim.SessionHeader.ApplicationAddress,
+			claim.SessionHeader.SessionId,
+		)
+
+		testSuppliers = append(testSuppliers, supplierTestData{supplier: supplier, claim: claim})
+	}
+
+	// Process each supplier's claim and verify settlement is capped at spendLimit / numSuppliers.
+	for _, sd := range testSuppliers {
+		pendingResult := tlm.NewClaimSettlementResult(sd.claim)
+		actualSettlement, processErr := keepers.ProcessTokenLogicModules(ctx, settlementCtx, pendingResult)
+		require.NoError(t, processErr)
+
+		// Each supplier should get at most spendLimit / numSuppliers.
+		require.True(t, actualSettlement.Amount.LTE(expectedPerSupplierCap),
+			"supplier settlement %s should be <= per-supplier cap %s (spendLimit / %d suppliers)",
+			actualSettlement.Amount, expectedPerSupplierCap, numSuppliers)
+		require.True(t, actualSettlement.Amount.GT(cosmosmath.ZeroInt()),
+			"supplier settlement should be positive")
+	}
+}

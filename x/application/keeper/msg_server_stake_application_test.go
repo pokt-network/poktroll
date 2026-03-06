@@ -388,3 +388,58 @@ func TestMsgServer_StakeApplication_FailBelowMinStake(t *testing.T) {
 	_, isGatewayFound := k.GetApplication(ctx, addr)
 	require.False(t, isGatewayFound)
 }
+
+func TestMsgServer_StakeApplication_PerSessionSpendLimit_BoundaryValues(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	tests := []struct {
+		name        string
+		limitAmount int64
+		expectErr   bool
+	}{
+		{
+			name:        "exactly MinPerSessionSpendLimit (1 POKT) — should succeed",
+			limitAmount: apptypes.MinPerSessionSpendLimit.Amount.Int64(),
+			expectErr:   false,
+		},
+		{
+			name:        "MinPerSessionSpendLimit - 1 (999999 upokt) — should fail",
+			limitAmount: apptypes.MinPerSessionSpendLimit.Amount.Int64() - 1,
+			expectErr:   true,
+		},
+		{
+			name:        "above MinPerSessionSpendLimit (2 POKT) — should succeed",
+			limitAmount: 2000000,
+			expectErr:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			appAddr := sample.AccAddressBech32()
+			spendLimit := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, tt.limitAmount)
+			initialStake := &apptypes.DefaultMinStake
+			stakeMsg := &apptypes.MsgStakeApplication{
+				Address: appAddr,
+				Stake:   initialStake,
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: &spendLimit,
+			}
+
+			_, err := srv.StakeApplication(ctx, stakeMsg)
+			if tt.expectErr {
+				require.Error(t, err)
+				require.ErrorContains(t, err, "per_session_spend_limit")
+			} else {
+				require.NoError(t, err)
+				foundApp, isFound := k.GetApplication(ctx, appAddr)
+				require.True(t, isFound)
+				require.NotNil(t, foundApp.PerSessionSpendLimit)
+				require.Equal(t, tt.limitAmount, foundApp.PerSessionSpendLimit.Amount.Int64())
+			}
+		})
+	}
+}
