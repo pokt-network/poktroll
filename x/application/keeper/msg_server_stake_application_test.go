@@ -218,8 +218,8 @@ func TestMsgServer_StakeApplication_PerSessionSpendLimit(t *testing.T) {
 
 	appAddr := sample.AccAddressBech32()
 
-	// Create an application with a per-session spend limit
-	spendLimit := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100000)
+	// Create an application with a per-session spend limit (must be >= min_stake = 1000000)
+	spendLimit := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000)
 	initialStake := &apptypes.DefaultMinStake
 	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
@@ -244,7 +244,7 @@ func TestMsgServer_StakeApplication_PerSessionSpendLimit(t *testing.T) {
 	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Update: restake with a new spend limit
-	newSpendLimit := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 200000)
+	newSpendLimit := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 2000000)
 	upStake := initialStake.AddAmount(math.NewInt(100))
 	updateMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
@@ -332,6 +332,30 @@ func TestMsgServer_StakeApplication_PerSessionSpendLimit_ZeroOnCreate(t *testing
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Nil(t, foundApp.PerSessionSpendLimit, "zero spend limit on create should be normalized to nil")
+}
+
+func TestMsgServer_StakeApplication_PerSessionSpendLimit_BelowMinimum(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	appAddr := sample.AccAddressBech32()
+
+	// Attempt to create an application with a spend limit below 1 POKT — should fail
+	tooLowLimit := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100) // well below 1 POKT
+	initialStake := &apptypes.DefaultMinStake
+	stakeMsg := &apptypes.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   initialStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{ServiceId: "svc1"},
+		},
+		PerSessionSpendLimit: &tooLowLimit,
+	}
+
+	_, err := srv.StakeApplication(ctx, stakeMsg)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "per_session_spend_limit")
+	require.ErrorContains(t, err, "1000000upokt")
 }
 
 func TestMsgServer_StakeApplication_FailBelowMinStake(t *testing.T) {

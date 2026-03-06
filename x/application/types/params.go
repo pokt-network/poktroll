@@ -18,6 +18,11 @@ var (
 	ParamMinStake                      = "min_stake"
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value
 	DefaultMinStake = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000) // 1 POKT
+
+	// MinPerSessionSpendLimit is the minimum allowed per_session_spend_limit (1 POKT).
+	// Below this, per-supplier settlement amounts become negligible after integer
+	// division by the number of suppliers.
+	MinPerSessionSpendLimit = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000) // 1 POKT
 )
 
 // ParamKeyTable the param key table for launch module

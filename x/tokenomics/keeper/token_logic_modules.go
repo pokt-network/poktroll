@@ -323,10 +323,21 @@ func (k Keeper) ensureClaimAmountLimits(
 	spendLimitExceeded := false
 	if application.PerSessionSpendLimit != nil &&
 		application.PerSessionSpendLimit.Amount.GT(math.ZeroInt()) {
+		// Validate the spend limit denom matches the native token.
+		if application.PerSessionSpendLimit.Denom != pocket.DenomuPOKT {
+			return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf(
+				"application %s has per_session_spend_limit with invalid denom %q (expected %q)",
+				application.GetAddress(), application.PerSessionSpendLimit.Denom, pocket.DenomuPOKT,
+			)
+		}
 		// Per-session budget is min(spend_limit, appStake/numPendingSessions)
 		perSessionBudget := application.PerSessionSpendLimit.Amount
 		stakePerSession := appStake.Amount.Quo(math.NewInt(numPendingSessions))
 		if perSessionBudget.GT(stakePerSession) {
+			logger.Warn(fmt.Sprintf(
+				"application %s per_session_spend_limit %s exceeds stake-based budget %s per session; clamping to stake-based budget",
+				application.GetAddress(), perSessionBudget, stakePerSession,
+			))
 			perSessionBudget = stakePerSession
 		}
 		// Per-supplier cap from the spend limit

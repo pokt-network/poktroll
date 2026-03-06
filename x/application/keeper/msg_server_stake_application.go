@@ -57,6 +57,19 @@ func (k Keeper) StakeApplication(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	// Validate per-session spend limit if a positive value is being set.
+	if msg.PerSessionSpendLimit != nil && msg.PerSessionSpendLimit.IsPositive() {
+		if msg.PerSessionSpendLimit.Amount.LT(types.MinPerSessionSpendLimit.Amount) {
+			return nil, status.Error(
+				codes.InvalidArgument,
+				types.ErrAppInvalidStake.Wrapf(
+					"per_session_spend_limit %s must be at least %s",
+					msg.PerSessionSpendLimit, types.MinPerSessionSpendLimit,
+				).Error(),
+			)
+		}
+	}
+
 	// Check if the application already exists or not
 	var (
 		coinsToEscrow   sdk.Coin
