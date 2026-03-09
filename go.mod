@@ -19,7 +19,7 @@ module github.com/pokt-network/poktroll
 //module github.com/pokt-network/pocket
 //replace github.com/pokt-network/poktroll => .
 
-go 1.25.7
+go 1.25.8
 
 // DEVELOPER_TIP: Uncomment to use local copies of various libraries
 // replace github.com/pokt-network/shannon-sdk => ../shannon-sdk
