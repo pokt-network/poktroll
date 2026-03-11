@@ -59,6 +59,7 @@ func (k msgServer) AddService(
 		logger.Info(fmt.Sprintf("Updating service: ComputeUnitsPerRelay=%v, HasMetadata=%v",
 			msg.Service.ComputeUnitsPerRelay, msg.Service.Metadata != nil))
 
+		foundService.Name = msg.Service.Name
 		foundService.ComputeUnitsPerRelay = msg.Service.ComputeUnitsPerRelay
 		foundService.Metadata = msg.Service.Metadata
 

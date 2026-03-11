@@ -1645,3 +1645,19 @@ func (s *TestSuite) TestSettlePendingClaims_GetActualSupplierCount_Fallback() {
 	count = sctx.GetActualSupplierCount("app2", "session1")
 	require.Equal(t, int64(1), count, "different app should have independent count")
 }
+
+// TestSettlePendingClaims_FlushBatchedValidatorRewards_EmptyAccumulator verifies that
+// FlushBatchedValidatorRewards returns (nil, nil) when the validator reward accumulator
+// is empty — i.e., no rewards were added to the settlement context.
+func (s *TestSuite) TestSettlePendingClaims_FlushBatchedValidatorRewards_EmptyAccumulator() {
+	t := s.T()
+	ctx := s.ctx
+
+	// Create a fresh settlement context without adding any validator rewards.
+	sctx := tokenomicskeeper.NewSettlementContext(ctx, s.keepers.Keeper, s.keepers.Logger())
+
+	// Flush with an empty accumulator should return (nil, nil).
+	result, err := s.keepers.Keeper.FlushBatchedValidatorRewards(ctx, sctx)
+	require.NoError(t, err, "flushing an empty accumulator should not return an error")
+	require.Nil(t, result, "flushing an empty accumulator should return a nil result")
+}
