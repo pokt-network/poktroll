@@ -22,7 +22,8 @@ service Msg {
   // parameters. The authority defaults to the x/gov module account.
   rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
   rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse );
-  rpc AddService   (MsgAddService  ) returns (MsgAddServiceResponse  );
+  rpc AddService       (MsgAddService      ) returns (MsgAddServiceResponse      );
+  rpc TransferService  (MsgTransferService ) returns (MsgTransferServiceResponse );
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -78,3 +79,15 @@ message MsgAddServiceResponse {
   // pocket.shared.Service service = 1;
   reserved 1;
 }
+
+// MsgTransferService transfers ownership of a service to a new address.
+// Only the current owner can initiate the transfer.
+message MsgTransferService {
+  option (cosmos.msg.v1.signer) = "owner_address";
+  string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the current service owner (signer).
+  string service_id = 2; // The unique identifier of the service to transfer.
+  string new_owner_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the new service owner.
+}
+
+// MsgTransferServiceResponse is the response to a MsgTransferService message.
+message MsgTransferServiceResponse {}
