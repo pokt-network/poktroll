@@ -1657,7 +1657,7 @@ func (s *TestSuite) TestSettlePendingClaims_FlushBatchedValidatorRewards_EmptyAc
 	sctx := tokenomicskeeper.NewSettlementContext(ctx, s.keepers.Keeper, s.keepers.Logger())
 
 	// Flush with an empty accumulator should return (nil, nil).
-	result, err := s.keepers.Keeper.FlushBatchedValidatorRewards(ctx, sctx)
+	result, err := s.keepers.FlushBatchedValidatorRewards(ctx, sctx)
 	require.NoError(t, err, "flushing an empty accumulator should not return an error")
 	require.Nil(t, result, "flushing an empty accumulator should return a nil result")
 }

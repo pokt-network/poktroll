@@ -207,8 +207,8 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			desc:  "valid - update service name (human readable description)",
-			setup: func(t *testing.T) {},
+			desc:    "valid - update service name (human readable description)",
+			setup:   func(t *testing.T) {},
 			address: oldServiceOwnerAddr,
 			service: sharedtypes.Service{
 				Id:                   oldService.Id,

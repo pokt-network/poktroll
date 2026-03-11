@@ -324,59 +324,59 @@ func TestNewEventClaimSettled_SettledUpoktAndMintRatio(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                        string
-		claimedAmount               int64
-		settledAmount               int64
-		mintRatio                   float64
-		expectedSettled             string
-		expectedMintRatio           string
-		expectedMinted              string
-		expectedOverservicingLoss   string
-		expectedDeflationLoss       string
+		name                      string
+		claimedAmount             int64
+		settledAmount             int64
+		mintRatio                 float64
+		expectedSettled           string
+		expectedMintRatio         string
+		expectedMinted            string
+		expectedOverservicingLoss string
+		expectedDeflationLoss     string
 	}{
 		{
-			name:                        "no overservicing, no deflation",
-			claimedAmount:               1000,
-			settledAmount:               1000,
-			mintRatio:                   1.0,
-			expectedSettled:             "1000upokt",
-			expectedMintRatio:           "1",
-			expectedMinted:              "1000upokt",
-			expectedOverservicingLoss:   "0upokt",
-			expectedDeflationLoss:       "0upokt",
+			name:                      "no overservicing, no deflation",
+			claimedAmount:             1000,
+			settledAmount:             1000,
+			mintRatio:                 1.0,
+			expectedSettled:           "1000upokt",
+			expectedMintRatio:         "1",
+			expectedMinted:            "1000upokt",
+			expectedOverservicingLoss: "0upokt",
+			expectedDeflationLoss:     "0upokt",
 		},
 		{
-			name:                        "no overservicing, with deflation (PIP-41)",
-			claimedAmount:               1000,
-			settledAmount:               1000,
-			mintRatio:                   0.975,
-			expectedSettled:             "1000upokt",
-			expectedMintRatio:           "0.975",
-			expectedMinted:              "975upokt",
-			expectedOverservicingLoss:   "0upokt",
-			expectedDeflationLoss:       "25upokt",
+			name:                      "no overservicing, with deflation (PIP-41)",
+			claimedAmount:             1000,
+			settledAmount:             1000,
+			mintRatio:                 0.975,
+			expectedSettled:           "1000upokt",
+			expectedMintRatio:         "0.975",
+			expectedMinted:            "975upokt",
+			expectedOverservicingLoss: "0upokt",
+			expectedDeflationLoss:     "25upokt",
 		},
 		{
-			name:                        "overserviced, with deflation",
-			claimedAmount:               1000,
-			settledAmount:               500,
-			mintRatio:                   0.975,
-			expectedSettled:             "500upokt",
-			expectedMintRatio:           "0.975",
-			expectedMinted:              "487upokt",
-			expectedOverservicingLoss:   "500upokt",
-			expectedDeflationLoss:       "13upokt",
+			name:                      "overserviced, with deflation",
+			claimedAmount:             1000,
+			settledAmount:             500,
+			mintRatio:                 0.975,
+			expectedSettled:           "500upokt",
+			expectedMintRatio:         "0.975",
+			expectedMinted:            "487upokt",
+			expectedOverservicingLoss: "500upokt",
+			expectedDeflationLoss:     "13upokt",
 		},
 		{
-			name:                        "zero settlement",
-			claimedAmount:               1000,
-			settledAmount:               0,
-			mintRatio:                   0.975,
-			expectedSettled:             "0upokt",
-			expectedMintRatio:           "0.975",
-			expectedMinted:              "0upokt",
-			expectedOverservicingLoss:   "1000upokt",
-			expectedDeflationLoss:       "0upokt",
+			name:                      "zero settlement",
+			claimedAmount:             1000,
+			settledAmount:             0,
+			mintRatio:                 0.975,
+			expectedSettled:           "0upokt",
+			expectedMintRatio:         "0.975",
+			expectedMinted:            "0upokt",
+			expectedOverservicingLoss: "1000upokt",
+			expectedDeflationLoss:     "0upokt",
 		},
 	}
 

@@ -1064,7 +1064,7 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 			// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
 			// and we want to test the error from ProcessTokenLogicModules.
 			_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
-	settlementContext.IncrementSupplierCount(claim.SessionHeader.ApplicationAddress, claim.SessionHeader.SessionId)
+			settlementContext.IncrementSupplierCount(claim.SessionHeader.ApplicationAddress, claim.SessionHeader.SessionId)
 
 			// Execute test function
 			_, err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
@@ -1158,9 +1158,9 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 				// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
 				// and we want to test the error from ProcessTokenLogicModules.
 				_ = settlementContext.ClaimCacheWarmUp(ctx, &test.claim)
-			if test.claim.SessionHeader != nil {
-				settlementContext.IncrementSupplierCount(test.claim.SessionHeader.ApplicationAddress, test.claim.SessionHeader.SessionId)
-			}
+				if test.claim.SessionHeader != nil {
+					settlementContext.IncrementSupplierCount(test.claim.SessionHeader.ApplicationAddress, test.claim.SessionHeader.SessionId)
+				}
 				_, err = keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 				return err
 			}()
@@ -1892,7 +1892,7 @@ func TestProcessTokenLogicModules_ManySuppliers_SmallStake(t *testing.T) {
 		expectedPerSupplierCap, appInitialStake, numPendingSessions, numSuppliers)
 
 	// Process each supplier's claim and verify settlement completes without panic.
-	var totalSettled cosmosmath.Int = cosmosmath.ZeroInt()
+	totalSettled := cosmosmath.ZeroInt()
 	for _, sd := range testSuppliers {
 		pendingResult := tlm.NewClaimSettlementResult(sd.claim)
 		actualSettlement, processErr := keepers.ProcessTokenLogicModules(ctx, settlementCtx, pendingResult)

@@ -52,7 +52,7 @@ func NewEventClaimSettled(
 		MintRatio:                  strconv.FormatFloat(mintRatio, 'f', -1, 64),
 		SessionId:                  claim.SessionHeader.SessionId,
 		SupplierOwnerAddress:       supplierOwnerAddress,
-		MintedUpokt:               mintedUpokt,
+		MintedUpokt:                mintedUpokt,
 		OverservicingLossUpokt:     overservicingLossUpokt,
 		DeflationLossUpokt:         deflationLossUpokt,
 	}
