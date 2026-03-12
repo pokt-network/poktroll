@@ -80,7 +80,7 @@ endif
 # TODO_TECHDEBT(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `golangci-lint` and other go tools
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 && golangci-lint --version
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.3 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
@@ -250,7 +250,7 @@ docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all t
 
 .PHONY: go_lint
 go_lint: ## Run all go linters
-	golangci-lint run --timeout 5m --build-tags test
+	golangci-lint run --timeout 20m --build-tags test
 
 go_imports: check_go_version ## Run goimports on all go files
 	go run ./tools/scripts/goimports

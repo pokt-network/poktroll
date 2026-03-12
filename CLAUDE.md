@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Poktroll is a Cosmos SDK-based blockchain implementing Pocket Network's Shannon upgrade - a decentralized API layer for Web3. Built with Go 1.24.3, Cosmos SDK v0.53.0, and CometBFT consensus.
+Poktroll is a Cosmos SDK-based blockchain implementing Pocket Network's Shannon upgrade - a decentralized API layer for Web3. Built with Go 1.25.8, Cosmos SDK v0.53.0, and CometBFT consensus.
 
 ## Development Commands
 
@@ -47,6 +47,7 @@ make acc_balance_query ACC=<addr>  # Query account balance
 - **proof** - Cryptographic verification of API usage for settlements
 - **tokenomics** - Economic incentives, penalties, and token distribution
 - **shared** - Cross-module utilities and constants
+- **migration** - State migration logic for chain upgrades
 
 ### Key Components
 
@@ -64,12 +65,24 @@ make acc_balance_query ACC=<addr>  # Query account balance
 - **Observable patterns** - Use `pkg/observable` for reactive data flows
 - **Ring signatures** - Privacy-preserving authentication in `pkg/crypto/rings`
 
+### Consensus Safety (Critical)
+
+These rules prevent AppHash mismatches and chain halts. Violating them will cause non-determinism across validators:
+
+- **No in-memory caches on Keeper structs** - Keepers are shared across nodes; caches diverge and cause AppHash mismatch. Use block-scoped local variables instead.
+- **Sort map keys before iteration** - Go map iteration order is non-deterministic. Always sort keys when iterating maps in state-changing code (BeginBlocker, EndBlocker, message handlers).
+- **Use `ctx.BlockTime()`, never `time.Now()`** - `time.Now()` differs across validators and will cause consensus failure.
+- **Use `encoding.Float64ToRat` for float64 params** - Float64 arithmetic is non-deterministic across platforms. Convert to `big.Rat` for deterministic computation.
+- **`MustUnmarshal(nil)` does not panic with gogoproto** - It silently returns a zero-value struct with nil message fields. Add nil checks when reading from secondary indexes that may contain orphaned entries.
+
 ### Testing Architecture
 
 - **Unit tests** - In `*_test.go` files alongside source
-- **Integration tests** - Cross-module testing in `/tests/integration/`
-- **E2E tests** - Gherkin scenarios in `/e2e/tests/` using LocalNet
+- **Integration tests** - Cross-module testing in `/tests/integration/`, using in-memory blockchain from `testutil/integration/app.go`
+- **E2E tests** - Gherkin scenarios in `/e2e/tests/` using LocalNet and `gocuke` (Gherkin BDD)
 - **Test utilities** - Mocks and fixtures in `/testutil/`
+- **Keeper test factories** - Options pattern in `testutil/keeper/` for isolated keeper testing
+- **Build tags** - Tests use build tags: `test`, `integration`, `e2e`, `load`. Ensure the correct tag is set or tests won't be included.
 
 ## Protocol Buffer Workflow
 

@@ -125,12 +125,18 @@ func (k msgServer) SubmitProof(
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
 	// Use the difficulty that was effective at the session start height for consistency.
 	serviceId := sessionHeader.GetServiceId()
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionStartHeight := sessionHeader.GetSessionStartBlockHeight()
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionStartHeight)
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
 
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("failed to calculate claimed uPOKT: %v", err).Error())
+	}
 	numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("failed to get estimated compute units: %v", err).Error())
+	}
 
 	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
@@ -235,13 +241,13 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	defer k.finalizeProofRequirementTelemetry(requirementReason, claim, err)
 
 	proofParams := k.GetParams(ctx)
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// Get the relay mining difficulty that was effective at the session start height.
 	// This ensures we use the correct difficulty that was active when relays were mined,
 	// matching the calculation used in claim creation and proof validation.
 	serviceId := claim.GetSessionHeader().GetServiceId()
 	sessionStartHeight := claim.GetSessionHeader().GetSessionStartBlockHeight()
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionStartHeight)
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
 
 	// Retrieve the number of tokens claimed to compare against the threshold.
@@ -309,21 +315,21 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 	ctx context.Context,
 	claim *types.Claim,
 ) (blockHash []byte, err error) {
-	sharedParams, err := k.sharedQuerier.GetParams(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
 	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
 
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	// Use historical params at sessionEndHeight to ensure consistency with other
+	// on-chain proof validation (validateProofWindow, validateClosestPath).
+	// See x/proof/keeper/session.go:167 for the same pattern.
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
+
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
 	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
 
 	// TODO_TECHDEBT(@red-0ne): Update the method header of this function to accept (sharedParams, claim, BlockHash).
 	// After doing so, please review all calling sites and simplify them accordingly.
 	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		sharedParams,
+		&sharedParams,
 		sessionEndHeight,
 		proofWindowOpenBlockHash,
 		supplierOperatorAddress,

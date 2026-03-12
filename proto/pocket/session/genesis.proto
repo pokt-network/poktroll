@@ -13,4 +13,6 @@ import "pocket/session/params.proto";
 message GenesisState {
   // params defines all the parameters of the module.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  // params_history contains historical params snapshots for height-based lookups.
+  repeated ParamsUpdate params_history = 2 [(gogoproto.nullable) = false];
 }

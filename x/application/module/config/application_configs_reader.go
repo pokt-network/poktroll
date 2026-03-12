@@ -10,8 +10,10 @@ import (
 // YAMLApplicationConfig is the structure describing a single service stake entry in the stake config file
 // TODO_DOCUMENT(@red-0ne): Add additional documentation on app config files.
 type YAMLApplicationConfig struct {
-	StakeAmount string   `yaml:"stake_amount"`
-	ServiceIds  []string `yaml:"service_ids"`
+	StakeAmount          string   `yaml:"stake_amount"`
+	ServiceIds           []string `yaml:"service_ids"`
+	GatewayAddresses     []string `yaml:"gateway_addresses"`
+	PerSessionSpendLimit string   `yaml:"per_session_spend_limit"`
 }
 
 type ApplicationStakeConfig struct {
@@ -19,6 +21,10 @@ type ApplicationStakeConfig struct {
 	StakeAmount sdk.Coin
 	// Services is the list of services that the application is willing to stake for
 	Services []*sharedtypes.ApplicationServiceConfig
+	// GatewayAddresses is an optional list of gateway addresses to delegate to
+	GatewayAddresses []string
+	// PerSessionSpendLimit is an optional per-session spend limit in upokt
+	PerSessionSpendLimit *sdk.Coin
 }
 
 // ParseApplicationConfig parses the stake config file and returns a slice of ApplicationServiceConfig
@@ -82,8 +88,36 @@ func ParseApplicationConfigs(configContent []byte) (*ApplicationStakeConfig, err
 		applicationServiceConfig = append(applicationServiceConfig, appServiceConfig)
 	}
 
+	// Validate gateway addresses if provided
+	for _, gwAddr := range parsedAppConfig.GatewayAddresses {
+		if _, err := sdk.AccAddressFromBech32(gwAddr); err != nil {
+			return nil, ErrApplicationConfigInvalidGateway.Wrapf("invalid gateway address %q: %s", gwAddr, err)
+		}
+	}
+
+	// Parse and validate the optional per-session spend limit
+	var perSessionSpendLimit *sdk.Coin
+	if parsedAppConfig.PerSessionSpendLimit != "" {
+		spendLimit, err := sdk.ParseCoinNormalized(parsedAppConfig.PerSessionSpendLimit)
+		if err != nil {
+			return nil, ErrApplicationConfigInvalidSpendLimit.Wrap(err.Error())
+		}
+		if spendLimit.IsNegative() {
+			return nil, ErrApplicationConfigInvalidSpendLimit.Wrap("per-session spend limit cannot be negative")
+		}
+		if spendLimit.Denom != "upokt" {
+			return nil, ErrApplicationConfigInvalidSpendLimit.Wrapf(
+				"invalid spend limit denom, expecting: upokt, got: %s",
+				spendLimit.Denom,
+			)
+		}
+		perSessionSpendLimit = &spendLimit
+	}
+
 	return &ApplicationStakeConfig{
-		StakeAmount: stakeAmount,
-		Services:    applicationServiceConfig,
+		StakeAmount:          stakeAmount,
+		Services:             applicationServiceConfig,
+		GatewayAddresses:     parsedAppConfig.GatewayAddresses,
+		PerSessionSpendLimit: perSessionSpendLimit,
 	}, nil
 }

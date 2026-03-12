@@ -305,6 +305,6 @@ Note that it will fail if the specified supplier is not in the session at the ti
 
 ## `PATH` Gateway Setup
 
-The documentation for everything related to `PATH` can be found at [path.grove.city](https://path.grove.city/).
+The documentation for everything related to `PATH` can be found at the [PATH repository](https://github.com/pokt-network/path).
 
-In particular, now that you have an `Application` and `Gateway` staked, you can follow the [Configure PATH for Shannon](https://path.grove.city/develop/path/cheatsheet_shannon#2-configure-path-for-shannon) sections of the `PATH` documentation.
+In particular, now that you have an `Application` and `Gateway` staked, you can follow the PATH configuration instructions in the repository's documentation.

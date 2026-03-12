@@ -33,7 +33,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
 	settlementContext *settlementContext,
 	pendingResult *tokenomicstypes.ClaimSettlementResult,
-) error {
+) (cosmostypes.Coin, error) {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
 
 	// Telemetry variable declaration to be emitted at the end of the function
@@ -59,17 +59,17 @@ func (k Keeper) ProcessTokenLogicModules(
 	sessionHeader := pendingResult.Claim.GetSessionHeader()
 	if sessionHeader == nil {
 		logger.Error("received a nil session header")
-		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
 	}
 	if err := sessionHeader.ValidateBasic(); err != nil {
 		logger.Error("received an invalid session header", "error", err)
-		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderInvalid
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimSessionHeaderInvalid
 	}
 
 	// Retrieve and validate the root of the claim to determine the amount of work done
 	root := (smt.MerkleSumRoot)(pendingResult.Claim.GetRootHash())
 	if !root.HasDigestSize(protocol.TrieHasherSize) {
-		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"root hash has invalid digest size (%d), expected (%d)",
 			root.DigestSize(), protocol.TrieHasherSize,
 		)
@@ -78,17 +78,17 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieve the sum (i.e. number of compute units) to determine the amount of work done
 	numClaimComputeUnits, err := pendingResult.Claim.GetNumClaimedComputeUnits()
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
 	}
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
 	// https://www.notion.so/buildwithgrove/RelayMiningDifficulty-and-low-volume-7aab3edf6f324786933af369c2fa5f01?pvs=4
 	if numClaimComputeUnits == 0 {
-		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrap("root hash has zero relays")
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrap("root hash has zero relays")
 	}
 
 	numRelays, err := pendingResult.Claim.GetNumRelays()
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numRelays: %s", err)
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numRelays: %s", err)
 	}
 
 	/*
@@ -109,33 +109,33 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	service, err := settlementContext.GetService(sessionHeader.ServiceId)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	relayMiningDifficulty, err := settlementContext.GetRelayMiningDifficulty(sessionHeader.ServiceId, sessionHeader.SessionStartBlockHeight)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	application, err := settlementContext.GetApplication(sessionHeader.ApplicationAddress)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	supplier, err := settlementContext.GetSupplier(pendingResult.Claim.GetSupplierOperatorAddress())
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	applicationInitialStake, err := settlementContext.GetApplicationInitialStake(sessionHeader.ApplicationAddress)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
 	expectedClaimComputeUnits := numRelays * service.ComputeUnitsPerRelay
 	if numClaimComputeUnits != expectedClaimComputeUnits {
-		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"mismatch: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d)",
 			numClaimComputeUnits,
 			numRelays,
@@ -148,7 +148,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// in the session.
 	claimSettlementCoin, err = pendingResult.Claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 
 	// Helpers for logging the same metadata throughout this function calls
@@ -162,13 +162,21 @@ func (k Keeper) ProcessTokenLogicModules(
 		"application", application.Address,
 	)
 
+	// Get the actual number of suppliers that submitted claims for this (app, session) pair.
+	// This replaces the NumSuppliersPerSession governance param to ensure fair budget
+	// distribution based on actual participation rather than the theoretical maximum.
+	actualNumSuppliers := settlementContext.GetActualSupplierCount(
+		sessionHeader.ApplicationAddress,
+		sessionHeader.SessionId,
+	)
+
 	// Ensure the claim amount is within the limits set by RelayMining.
 	// If not, update the settlement amount and emit relevant events.
 	// TODO_IMPROVE: Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake)
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake, actualNumSuppliers, sessionHeader.ServiceId, sessionHeader.SessionEndBlockHeight)
 	if err != nil {
-		return err
+		return cosmostypes.Coin{}, err
 	}
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
@@ -178,43 +186,33 @@ func (k Keeper) ProcessTokenLogicModules(
 			"actual settlement coin is zero, skipping TLM processing, application %q stake %s",
 			application.Address, application.Stake,
 		))
-		return nil
+		return actualSettlementCoin, nil
 	}
 
 	tlmCtx := tlm.TLMContext{
-		TokenomicsParams:      tokenomicsParams,
-		SettlementCoin:        actualSettlementCoin,
-		SessionHeader:         pendingResult.Claim.GetSessionHeader(),
-		Result:                pendingResult,
-		Service:               service,
-		Application:           application,
-		Supplier:              supplier,
-		RelayMiningDifficulty: &relayMiningDifficulty,
-		StakingKeeper:         k.stakingKeeper,
+		TokenomicsParams:           tokenomicsParams,
+		SettlementCoin:             actualSettlementCoin,
+		SessionHeader:              pendingResult.Claim.GetSessionHeader(),
+		Result:                     pendingResult,
+		Service:                    service,
+		Application:                application,
+		Supplier:                   supplier,
+		RelayMiningDifficulty:      &relayMiningDifficulty,
+		StakingKeeper:              k.stakingKeeper,
+		ValidatorRewardAccumulator: settlementContext.GetValidatorRewardAccumulator(),
 	}
 
-	// Execute all the token logic modules processors
-	// TODO_CRITICAL(#1758): Per-claim validator reward distribution causes significant precision loss.
-	// Currently, each TLM processor calls distributeValidatorRewards() for every individual claim,
-	// resulting in multiple function calls per settlement batch (e.g. 1000 claims × 2 TLMs).
-	// This causes accumulated truncation errors that can exceed 1000+ uPOKT per validator.
-	//
-	// NOTE: We implemented the Largest Remainder Method in distributeValidatorRewards() which
-	// provides mathematically fair remainder distribution within individual calls, achieving
-	// perfect precision for single distributions. However, this doesn't solve the core issue:
-	// thousands of small individual distributions still accumulate fractional losses over
-	// large settlement batches, despite each individual call being internally precise.
-	//
-	// SOLUTION: Implement reward batching where TLMs accumulate validator rewards across all
-	// claims and call distributeValidatorRewards() once per TLM processor per settlement batch.
-	// This would reduce calls from 1000s to 2 per batch, and combined with the Largest Remainder
-	// Method, would achieve perfect mathematical precision across the entire settlement process.
+	// Execute all the token logic modules processors.
+	// TLMs accumulate validator rewards in tlmCtx.ValidatorRewardAccumulator (#1758)
+	// instead of calling distributeValidatorRewards per-claim. The accumulated totals
+	// are flushed once per settlement batch in SettlePendingClaims, achieving perfect
+	// precision via the Largest Remainder Method on the batched sum.
 	for _, tokenLogicModule := range k.tokenLogicModules {
 		tlmName := tokenLogicModule.GetId().String()
 		logger.Info(fmt.Sprintf("Starting processing TLM: %q", tlmName))
 
 		if err = tokenLogicModule.Process(ctx, logger, tlmCtx); err != nil {
-			return tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf("TLM %q: %s", tlmName, err)
+			return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf("TLM %q: %s", tlmName, err)
 		}
 
 		logger.Info(fmt.Sprintf("Finished processing TLM: %q", tlmName))
@@ -239,7 +237,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		if err = sdkCtx.EventManager().EmitTypedEvent(appUnbondingBeginEvent); err != nil {
 			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", appUnbondingBeginEvent, err)
 			logger.Error(err.Error())
-			return err
+			return cosmostypes.Coin{}, err
 		}
 
 		// Update the application in the keeper to persist the unbonding state.
@@ -254,13 +252,16 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Update isSuccessful to true for telemetry
 	isSuccessful = true
-	return nil
+	return actualSettlementCoin, nil
 }
 
 // ensureClaimAmountLimits checks and handles overserviced applications.
 //
 // Per Algorithm #1 in the Relay Mining paper, the maximum amount that a single
-// supplier can claim in a session is AppStake/NumSuppliersPerSession.
+// supplier can claim in a session is AppStake/ActualNumSuppliers, where
+// ActualNumSuppliers is the number of suppliers that submitted claims for
+// this (app, session) pair. This replaces the previous NumSuppliersPerSession
+// governance param to ensure fair budget distribution based on actual participation.
 // Ref: https://arxiv.org/pdf/2305.10672
 //
 // If this is not the case, then the supplier essentially did "free work" and the
@@ -274,6 +275,9 @@ func (k Keeper) ensureClaimAmountLimits(
 	supplier *sharedtypes.Supplier,
 	claimSettlementCoin cosmostypes.Coin,
 	initialApplicationStake cosmostypes.Coin,
+	actualNumSuppliers int64,
+	serviceId string,
+	sessionEndBlockHeight int64,
 ) (
 	actualSettlementCoins cosmostypes.Coin,
 	err error,
@@ -304,15 +308,46 @@ func (k Keeper) ensureClaimAmountLimits(
 	numPendingSessions := sharedtypes.GetNumPendingSessions(sharedParams)
 
 	// The maximum any single supplier can claim is a fraction of the app's total stake
-	// divided by the number of suppliers per session.
-	// Re decentralization - This ensures the app biases towards using all suppliers in a session.
-	// Re costs - This is an easy way to split the stake evenly.
-	// TODO_FUTURE: See if there's a way to let the application prefer (the best)
-	// supplier(s) in a session while maintaining a simple solution to implement this.
-	numSuppliersPerSession := int64(k.sessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	// divided by the actual number of suppliers that submitted claims for this session.
+	// Using actual count instead of the NumSuppliersPerSession governance param ensures
+	// fair budget distribution: if only 20 of 50 assigned suppliers claim, each gets
+	// appStake/20 instead of appStake/50, eliminating wasted budget from no-shows.
+	// Divide sessions first, then suppliers — matches the spend-limit path's
+	// conceptual order and avoids different integer truncation results.
 	maxClaimableAmt := appStake.Amount.
-		Quo(math.NewInt(numSuppliersPerSession)).
-		Quo(math.NewInt(numPendingSessions))
+		Quo(math.NewInt(numPendingSessions)).
+		Quo(math.NewInt(actualNumSuppliers))
+
+	// Apply per-session spend limit if set on the application.
+	// The spend limit caps the per-session budget, which is then divided among suppliers.
+	spendLimitExceeded := false
+	if application.PerSessionSpendLimit != nil &&
+		application.PerSessionSpendLimit.Amount.GT(math.ZeroInt()) {
+		// Validate the spend limit denom matches the native token.
+		if application.PerSessionSpendLimit.Denom != pocket.DenomuPOKT {
+			return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf(
+				"application %s has per_session_spend_limit with invalid denom %q (expected %q)",
+				application.GetAddress(), application.PerSessionSpendLimit.Denom, pocket.DenomuPOKT,
+			)
+		}
+		// Per-session budget is min(spend_limit, appStake/numPendingSessions)
+		perSessionBudget := application.PerSessionSpendLimit.Amount
+		stakePerSession := appStake.Amount.Quo(math.NewInt(numPendingSessions))
+		if perSessionBudget.GT(stakePerSession) {
+			logger.Warn(fmt.Sprintf(
+				"application %s per_session_spend_limit %s exceeds stake-based budget %s per session; clamping to stake-based budget",
+				application.GetAddress(), perSessionBudget, stakePerSession,
+			))
+			perSessionBudget = stakePerSession
+		}
+		// Per-supplier cap from the spend limit
+		spendLimitMaxClaimable := perSessionBudget.Quo(math.NewInt(actualNumSuppliers))
+		if spendLimitMaxClaimable.LT(maxClaimableAmt) {
+			maxClaimableAmt = spendLimitMaxClaimable
+			spendLimitExceeded = true
+		}
+	}
+
 	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt, globalInflationPerClaim)
 
 	// Check if the claimable amount is capped by the max claimable amount.
@@ -338,12 +373,17 @@ func (k Keeper) ensureClaimAmountLimits(
 	// Determine the max claimable amount for the supplier based on the application's stake in this session.
 	maxClaimableCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, maxClaimSettlementAmt)
 
-	// Prepare and emit the event for the application being overserviced
+	// Prepare and emit the event for the application being overserviced.
+	// Both ExpectedBurn and EffectiveBurn include the globalInflation component
+	// so they are on the same basis (total tokens burnt from app stake).
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
-		ApplicationAddr:      application.GetAddress(),
-		SupplierOperatorAddr: supplier.GetOperatorAddress(),
-		ExpectedBurn:         totalClaimedCoin.String(),
-		EffectiveBurn:        maxClaimableCoin.String(),
+		ApplicationAddr:       application.GetAddress(),
+		SupplierOperatorAddr:  supplier.GetOperatorAddress(),
+		ExpectedBurn:          totalClaimedCoin.String(),
+		EffectiveBurn:         cosmostypes.NewCoin(pocket.DenomuPOKT, minRequiredAppStakeAmt).String(),
+		ServiceId:             serviceId,
+		SessionEndBlockHeight: sessionEndBlockHeight,
+		SpendLimitExceeded:    spendLimitExceeded,
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
 	if err = eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {
@@ -363,9 +403,16 @@ func (k Keeper) ensureClaimAmountLimits(
 // stake = maxSettlementAmt * (1 + GlobalInflationPerClaim)
 // maxSettlementAmt = stake / (1 + GlobalInflationPerClaim)
 func supplierAppStakeToMaxSettlementAmount(stakeAmount math.Int, globalInflationPerClaim float64) math.Int {
-	stakeAmountFloat := big.NewFloat(0).SetInt(stakeAmount.BigInt())
-	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeAmountFloat, big.NewFloat(1+globalInflationPerClaim))
-
-	settlementAmount, _ := maxSettlementAmountFloat.Int(nil)
-	return math.NewIntFromBigInt(settlementAmount)
+	inflationRat, err := encoding.Float64ToRat(globalInflationPerClaim)
+	if err != nil {
+		// If conversion fails, fall back to treating inflation as 0 (conservative: full stake claimable).
+		return stakeAmount
+	}
+	// divisor = 1 + globalInflationPerClaim
+	divisor := new(big.Rat).Add(new(big.Rat).SetInt64(1), inflationRat)
+	stakeRat := new(big.Rat).SetInt(stakeAmount.BigInt())
+	resultRat := new(big.Rat).Quo(stakeRat, divisor)
+	// Truncate (floor) to get the integer settlement amount.
+	resultInt := new(big.Int).Quo(resultRat.Num(), resultRat.Denom())
+	return math.NewIntFromBigInt(resultInt)
 }

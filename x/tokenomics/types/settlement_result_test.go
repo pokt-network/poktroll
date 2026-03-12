@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/pocket"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // TestClaimSettlementResult_GetRewardDistribution tests the GetRewardDistribution method
@@ -144,4 +146,262 @@ func TestClaimSettlementResult_GetRewardDistribution_ZeroAmounts(t *testing.T) {
 	require.Equal(t, map[string]string{
 		"pokt1zero": "0upokt",
 	}, distribution, "should handle zero amounts correctly")
+}
+
+// TestClaimSettlementResult_GetRewardDistributionDetailed tests the detailed reward distribution.
+func TestClaimSettlementResult_GetRewardDistributionDetailed(t *testing.T) {
+	tests := []struct {
+		name               string
+		modToAcctTransfers []ModToAcctTransfer
+		expectedDetails    []RewardDistributionDetail
+	}{
+		{
+			name:               "empty transfers",
+			modToAcctTransfers: nil,
+			expectedDetails:    []RewardDistributionDetail{},
+		},
+		{
+			name: "single transfer preserves OpReason",
+			modToAcctTransfers: []ModToAcctTransfer{
+				{
+					RecipientAddress: "pokt1abc",
+					OpReason:         SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+					Coin:             cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000),
+				},
+			},
+			expectedDetails: []RewardDistributionDetail{
+				{
+					RecipientAddress: "pokt1abc",
+					OpReason:         SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+					Amount:           "1000upokt",
+				},
+			},
+		},
+		{
+			name: "same recipient different reasons stay separate",
+			modToAcctTransfers: []ModToAcctTransfer{
+				{
+					RecipientAddress: "pokt1abc",
+					OpReason:         SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+					Coin:             cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000),
+				},
+				{
+					RecipientAddress: "pokt1abc",
+					OpReason:         SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION,
+					Coin:             cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 500),
+				},
+			},
+			expectedDetails: []RewardDistributionDetail{
+				{
+					RecipientAddress: "pokt1abc",
+					OpReason:         SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+					Amount:           "1000upokt",
+				},
+				{
+					RecipientAddress: "pokt1abc",
+					OpReason:         SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION,
+					Amount:           "500upokt",
+				},
+			},
+		},
+		{
+			name: "multiple recipients multiple reasons",
+			modToAcctTransfers: []ModToAcctTransfer{
+				{
+					RecipientAddress: "pokt1alice",
+					OpReason:         SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+					Coin:             cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 800),
+				},
+				{
+					RecipientAddress: "pokt1bob",
+					OpReason:         SettlementOpReason_TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION,
+					Coin:             cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 200),
+				},
+				{
+					RecipientAddress: "pokt1alice",
+					OpReason:         SettlementOpReason_TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+					Coin:             cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100),
+				},
+			},
+			expectedDetails: []RewardDistributionDetail{
+				{
+					RecipientAddress: "pokt1alice",
+					OpReason:         SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+					Amount:           "800upokt",
+				},
+				{
+					RecipientAddress: "pokt1bob",
+					OpReason:         SettlementOpReason_TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION,
+					Amount:           "200upokt",
+				},
+				{
+					RecipientAddress: "pokt1alice",
+					OpReason:         SettlementOpReason_TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+					Amount:           "100upokt",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := &ClaimSettlementResult{
+				ModToAcctTransfers: tt.modToAcctTransfers,
+			}
+
+			details := result.GetRewardDistributionDetailed()
+			require.Equal(t, len(tt.expectedDetails), len(details))
+			for i, expected := range tt.expectedDetails {
+				require.Equal(t, expected.RecipientAddress, details[i].RecipientAddress, "index %d", i)
+				require.Equal(t, expected.OpReason, details[i].OpReason, "index %d", i)
+				require.Equal(t, expected.Amount, details[i].Amount, "index %d", i)
+			}
+		})
+	}
+}
+
+// TestNewEventClaimSettled_RewardDistributionDetailed verifies that NewEventClaimSettled
+// populates the RewardDistributionDetailed field from the settlement result's transfers.
+func TestNewEventClaimSettled_RewardDistributionDetailed(t *testing.T) {
+	result := &ClaimSettlementResult{
+		Claim: prooftypes.Claim{
+			SessionHeader: &sessiontypes.SessionHeader{
+				SessionId:             "test-session",
+				ServiceId:             "test-svc",
+				ApplicationAddress:    "pokt1app",
+				SessionEndBlockHeight: 100,
+			},
+			SupplierOperatorAddress: "pokt1supplier-op",
+		},
+		ModToAcctTransfers: []ModToAcctTransfer{
+			{
+				RecipientAddress: "pokt1supplier",
+				OpReason:         SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+				Coin:             cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 700),
+			},
+			{
+				RecipientAddress: "pokt1dao",
+				OpReason:         SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION,
+				Coin:             cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 300),
+			},
+		},
+	}
+
+	claimeduPOKT := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	settledUpokt := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	event := NewEventClaimSettled(10, 5, 50, 100, 0, &claimeduPOKT, result, &settledUpokt, 0.975, "pokt1supplier-owner")
+
+	// Verify the legacy field is still populated (merges by address).
+	require.Len(t, event.RewardDistribution, 2)
+	require.Equal(t, "700upokt", event.RewardDistribution["pokt1supplier"])
+	require.Equal(t, "300upokt", event.RewardDistribution["pokt1dao"])
+
+	// Verify the new detailed field preserves OpReason per entry.
+	require.Len(t, event.RewardDistributionDetailed, 2)
+
+	require.Equal(t, "pokt1supplier", event.RewardDistributionDetailed[0].RecipientAddress)
+	require.Equal(t, SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION, event.RewardDistributionDetailed[0].OpReason)
+	require.Equal(t, "700upokt", event.RewardDistributionDetailed[0].Amount)
+
+	require.Equal(t, "pokt1dao", event.RewardDistributionDetailed[1].RecipientAddress)
+	require.Equal(t, SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION, event.RewardDistributionDetailed[1].OpReason)
+	require.Equal(t, "300upokt", event.RewardDistributionDetailed[1].Amount)
+}
+
+// TestNewEventClaimSettled_SettledUpoktAndMintRatio verifies that NewEventClaimSettled
+// populates the SettledUpokt and MintRatio fields correctly.
+func TestNewEventClaimSettled_SettledUpoktAndMintRatio(t *testing.T) {
+	result := &ClaimSettlementResult{
+		Claim: prooftypes.Claim{
+			SessionHeader: &sessiontypes.SessionHeader{
+				SessionId:             "test-session",
+				ServiceId:             "test-svc",
+				ApplicationAddress:    "pokt1app",
+				SessionEndBlockHeight: 100,
+			},
+			SupplierOperatorAddress: "pokt1supplier-op",
+		},
+	}
+
+	tests := []struct {
+		name                      string
+		claimedAmount             int64
+		settledAmount             int64
+		mintRatio                 float64
+		expectedSettled           string
+		expectedMintRatio         string
+		expectedMinted            string
+		expectedOverservicingLoss string
+		expectedDeflationLoss     string
+	}{
+		{
+			name:                      "no overservicing, no deflation",
+			claimedAmount:             1000,
+			settledAmount:             1000,
+			mintRatio:                 1.0,
+			expectedSettled:           "1000upokt",
+			expectedMintRatio:         "1",
+			expectedMinted:            "1000upokt",
+			expectedOverservicingLoss: "0upokt",
+			expectedDeflationLoss:     "0upokt",
+		},
+		{
+			name:                      "no overservicing, with deflation (PIP-41)",
+			claimedAmount:             1000,
+			settledAmount:             1000,
+			mintRatio:                 0.975,
+			expectedSettled:           "1000upokt",
+			expectedMintRatio:         "0.975",
+			expectedMinted:            "975upokt",
+			expectedOverservicingLoss: "0upokt",
+			expectedDeflationLoss:     "25upokt",
+		},
+		{
+			name:                      "overserviced, with deflation",
+			claimedAmount:             1000,
+			settledAmount:             500,
+			mintRatio:                 0.975,
+			expectedSettled:           "500upokt",
+			expectedMintRatio:         "0.975",
+			expectedMinted:            "487upokt",
+			expectedOverservicingLoss: "500upokt",
+			expectedDeflationLoss:     "13upokt",
+		},
+		{
+			name:                      "zero settlement",
+			claimedAmount:             1000,
+			settledAmount:             0,
+			mintRatio:                 0.975,
+			expectedSettled:           "0upokt",
+			expectedMintRatio:         "0.975",
+			expectedMinted:            "0upokt",
+			expectedOverservicingLoss: "1000upokt",
+			expectedDeflationLoss:     "0upokt",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			claimeduPOKT := cosmostypes.NewInt64Coin("upokt", tt.claimedAmount)
+			settledUpokt := cosmostypes.NewInt64Coin("upokt", tt.settledAmount)
+			event := NewEventClaimSettled(10, 5, 50, 100, 0, &claimeduPOKT, result, &settledUpokt, tt.mintRatio, "pokt1supplier-owner")
+
+			require.Equal(t, tt.expectedSettled, event.SettledUpokt,
+				"SettledUpokt mismatch")
+			require.Equal(t, tt.expectedMintRatio, event.MintRatio,
+				"MintRatio mismatch")
+
+			// Verify claimed_upokt is still independently correct.
+			require.Equal(t, claimeduPOKT.String(), event.ClaimedUpokt,
+				"ClaimedUpokt mismatch")
+
+			// Verify the derived breakdown fields.
+			require.Equal(t, tt.expectedMinted, event.MintedUpokt,
+				"MintedUpokt mismatch")
+			require.Equal(t, tt.expectedOverservicingLoss, event.OverservicingLossUpokt,
+				"OverservicingLossUpokt mismatch")
+			require.Equal(t, tt.expectedDeflationLoss, event.DeflationLossUpokt,
+				"DeflationLossUpokt mismatch")
+		})
+	}
 }

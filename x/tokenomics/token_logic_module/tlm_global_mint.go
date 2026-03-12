@@ -217,22 +217,16 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
 	}
 
-	// Distribute to all validators based on stake weight
+	// Accumulate proposer amount for batched validator reward distribution (#1758).
+	// Instead of calling distributeValidatorRewards per-claim, we add the proposerAmount
+	// to the shared accumulator. The accumulated total is flushed once after all claims
+	// are processed, giving the Largest Remainder Method a larger input and eliminating
+	// per-claim precision loss from floor division on small amounts.
 	if !proposerAmount.IsZero() {
-		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-		// Distribute to all validators and their delegators proportionally based on stake weight
-		if err := distributeValidatorRewards(
-			tlmgm.ctx,
-			tlmgm.logger,
-			tlmgm.tlmCtx.Result,
-			tlmgm.tlmCtx.StakingKeeper,
-			proposerCoin,
-			tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
-		); err != nil {
-			tlmgm.logger.Error(fmt.Sprintf("error distributing validator rewards: %v", err))
-			return err
-		}
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute %s to all validators by stake weight", proposerCoin))
+		opReason := tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION
+		accumulateValidatorReward(tlmgm.tlmCtx, opReason, proposerAmount)
+		tlmgm.logger.Info(fmt.Sprintf("accumulated %s proposer reward for batched validator distribution (running total: %s)",
+			proposerAmount, tlmgm.tlmCtx.ValidatorRewardAccumulator[opReason]))
 	}
 
 	// Distribute to DAO

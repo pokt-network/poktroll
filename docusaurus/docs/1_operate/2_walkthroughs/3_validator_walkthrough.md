@@ -121,7 +121,7 @@ pocketd query bank balances $ADDR $QUERY_FLAGS
 
 :::tip
 
-If you know someone at [Grove](https://grove.city) who maintains Beta TestNet, you
+If you know someone who maintains Beta TestNet, you
 can ask them to run this command:
 
 ```bash

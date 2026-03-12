@@ -108,8 +108,7 @@ func (k msgServer) recordParamsHistory(ctx context.Context, newParams types.Para
 	oldParams := k.GetParams(ctx)
 
 	// Check if history is empty (first param update since genesis or upgrade)
-	history := k.GetAllParamsHistory(ctx)
-	if len(history) == 0 {
+	if !k.HasParamsHistory(ctx) {
 		// Initialize history with the current (old) params at the current height.
 		// We use current height rather than height 1 because we can only vouch for
 		// the params we know now - not what they may have been at genesis.

@@ -380,10 +380,10 @@ curl http://localhost:8547 \
 { "jsonrpc": "2.0", "id": 1, "result": "0x61" }
 ```
 
-:::tip Grove's Prod Endpoints
+:::tip Production Endpoints
 
 If you'd prefer to use a real blockchain node with production data for testing,
-you can provision one at [grove.city](https://www.grove.city) and use it below.
+see the [Shannon Mainnet](../../2_explore/1_tools/1_shannon_mainnet.md) page for available RPC endpoints.
 
 :::
 
@@ -538,7 +538,7 @@ You can also you re-run, `make app_list` you should see that `SHANNON_APPLICATIO
 
 ### 4.4 Prepare the PATH Gateway Configuration
 
-You can learn more about our [PATH Gateway configs here](https://path.grove.city/operate).
+You can learn more about [PATH Gateway configs here](https://github.com/pokt-network/path).
 
 ## 5. Send A Relay
 

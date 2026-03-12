@@ -183,6 +183,7 @@ func TestMsgUpdateParams(t *testing.T) {
 					DaoRewardAddress:                sample.AccAddressBech32(),
 					GlobalInflationPerClaim:         0,
 					MintEqualsBurnClaimDistribution: tokenomicstypes.DefaultMintEqualsBurnClaimDistribution,
+					MintRatio:                       tokenomicstypes.DefaultMintRatio,
 				},
 			},
 

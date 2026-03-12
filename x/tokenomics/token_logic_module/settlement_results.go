@@ -31,11 +31,17 @@ func NewClaimSettlementResult(
 }
 
 // GetNumComputeUnits returns the total number of claimed compute units in the results.
+// Results without a claim (e.g., batched validator reward results from #1758)
+// are excluded from the count.
 func (rs ClaimSettlementResults) GetNumComputeUnits() (numComputeUnits uint64, errs error) {
 	for _, result := range rs {
+		// Skip results without an actual claim (e.g., batched validator rewards).
+		if result.Claim.GetSessionHeader() == nil {
+			continue
+		}
 		claimNumComputeUnits, err := result.GetNumComputeUnits()
 		if err != nil {
-			errs = errors.Join(err, err)
+			errs = errors.Join(errs, err)
 			continue
 		}
 		numComputeUnits += claimNumComputeUnits
@@ -45,8 +51,14 @@ func (rs ClaimSettlementResults) GetNumComputeUnits() (numComputeUnits uint64, e
 }
 
 // GetNumRelays returns the total number of relays in the combined results.
+// Results without a claim (e.g., batched validator reward results from #1758)
+// are excluded from the count.
 func (rs ClaimSettlementResults) GetNumRelays() (numRelays uint64, errs error) {
 	for _, result := range rs {
+		// Skip results without an actual claim (e.g., batched validator rewards).
+		if result.Claim.GetSessionHeader() == nil {
+			continue
+		}
 		claimNumRelays, err := result.Claim.GetNumRelays()
 		if err != nil {
 			errs = errors.Join(errs, err)
@@ -58,33 +70,55 @@ func (rs ClaimSettlementResults) GetNumRelays() (numRelays uint64, errs error) {
 	return numRelays, nil
 }
 
-// GetNumClaims returns the number of claims in the combined results.
+// GetNumClaims returns the number of results backed by actual claims.
+// Results without a claim (e.g., batched validator reward results from #1758)
+// are excluded from the count.
 func (rs ClaimSettlementResults) GetNumClaims() uint64 {
-	// Each result holds a single claim.
-	return uint64(len(rs))
+	count := uint64(0)
+	for _, result := range rs {
+		if result.Claim.GetSessionHeader() != nil {
+			count++
+		}
+	}
+	return count
 }
 
 // GetApplicationAddrs returns a slice of application addresses from the combined results' claims.
+// Results without a claim (e.g., batched validator reward results from #1758)
+// are excluded.
 func (rs ClaimSettlementResults) GetApplicationAddrs() (appAddrs []string) {
 	for _, result := range rs {
+		if result.Claim.GetSessionHeader() == nil {
+			continue
+		}
 		appAddrs = append(appAddrs, result.GetApplicationAddr())
 	}
 	return appAddrs
 }
 
 // GetSupplierOperatorAddrs returns a slice of supplier addresses from the combined results' claims.
+// Results without a claim (e.g., batched validator reward results from #1758)
+// are excluded.
 func (rs ClaimSettlementResults) GetSupplierOperatorAddrs() (supplierOperatorAddrs []string) {
 	for _, result := range rs {
+		if result.Claim.GetSessionHeader() == nil {
+			continue
+		}
 		supplierOperatorAddrs = append(supplierOperatorAddrs, result.GetSupplierOperatorAddr())
 	}
 	return supplierOperatorAddrs
 }
 
 // GetServiceIds returns a slice of service IDs from the combined results' claims.
+// Results without a claim (e.g., batched validator reward results from #1758)
+// are excluded.
 // It is intended to be used for deterministic iterating over the map returned
 // from GetRelaysPerServiceMap via the serviceId key.
 func (rs ClaimSettlementResults) GetServiceIds() (serviceIds []string) {
 	for _, result := range rs {
+		if result.Claim.GetSessionHeader() == nil {
+			continue
+		}
 		serviceIds = append(serviceIds, result.GetServiceId())
 	}
 
@@ -95,6 +129,8 @@ func (rs ClaimSettlementResults) GetServiceIds() (serviceIds []string) {
 }
 
 // GetRelaysPerServiceMap returns a map of {service_id -> total_num_relays_claimed_for_service} across all results.
+// Results without a claim (e.g., batched validator reward results from #1758)
+// are excluded.
 // IMPORTANT: **DO NOT** directly iterate over returned map in onchain code.
 // Iterating over the returned map can cause non-determinism.
 // Instead, iterate over a sorted slice of the service ID keys.
@@ -104,6 +140,10 @@ func (rs ClaimSettlementResults) GetRelaysPerServiceMap() (map[string]uint64, er
 	relaysPerServiceMap := make(map[string]uint64)
 
 	for _, result := range rs {
+		// Skip results without an actual claim (e.g., batched validator rewards).
+		if result.Claim.GetSessionHeader() == nil {
+			continue
+		}
 		serviceId := result.Claim.GetSessionHeader().GetServiceId()
 		numRelays, err := result.GetNumRelays()
 		if err != nil {

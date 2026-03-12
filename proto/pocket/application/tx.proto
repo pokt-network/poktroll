@@ -55,6 +55,10 @@ message MsgStakeApplication {
   cosmos.base.v1beta1.Coin                 stake = 2; // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
   repeated pocket.shared.ApplicationServiceConfig services = 3; // The list of services this application is staked to request service for
 
+  // Optional per-session spend limit in uPOKT.
+  // Three-way semantics: nil/omitted = preserve existing limit, zero = clear limit, positive = set new limit.
+  cosmos.base.v1beta1.Coin per_session_spend_limit = 4;
+
   // TODO_POST_MAINNET: Consider allowing applications to delegate
   // to gateways at time of staking for a better developer experience.
   // repeated string gateway_address

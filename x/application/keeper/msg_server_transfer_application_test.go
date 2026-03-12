@@ -3,9 +3,11 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	pocket "github.com/pokt-network/poktroll/app/pocket"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -149,4 +151,123 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	// Verify that the source app was unstaked.
 	srcApp, isSrcFound = k.GetApplication(ctx, srcBech32)
 	require.False(t, isSrcFound)
+}
+
+func TestMsgServer_TransferApplication_MergePerSessionSpendLimit(t *testing.T) {
+	fivePOKT := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(5000000))
+	threePOKT := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(3000000))
+
+	tests := []struct {
+		desc          string
+		srcSpendLimit *cosmostypes.Coin
+		dstSpendLimit *cosmostypes.Coin
+		expectedLimit *cosmostypes.Coin
+	}{
+		{
+			desc:          "both apps have nil spend limit",
+			srcSpendLimit: nil,
+			dstSpendLimit: nil,
+			expectedLimit: nil,
+		},
+		{
+			desc:          "only source has spend limit",
+			srcSpendLimit: &fivePOKT,
+			dstSpendLimit: nil,
+			expectedLimit: &fivePOKT,
+		},
+		{
+			desc:          "only destination has spend limit",
+			srcSpendLimit: nil,
+			dstSpendLimit: &fivePOKT,
+			expectedLimit: &fivePOKT,
+		},
+		{
+			desc:          "both have spend limits - source is lower",
+			srcSpendLimit: &threePOKT,
+			dstSpendLimit: &fivePOKT,
+			expectedLimit: &threePOKT,
+		},
+		{
+			desc:          "both have spend limits - destination is lower",
+			srcSpendLimit: &fivePOKT,
+			dstSpendLimit: &threePOKT,
+			expectedLimit: &threePOKT,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			k, ctx := keepertest.ApplicationKeeper(t)
+			srv := appkeeper.NewMsgServerImpl(k)
+			sharedParams := sharedtypes.DefaultParams()
+
+			srcBech32 := sample.AccAddressBech32()
+			dstBech32 := sample.AccAddressBech32()
+
+			defaultStake := &apptypes.DefaultMinStake
+			svcConfigs := []*sharedtypes.ApplicationServiceConfig{
+				{ServiceId: "svc1"},
+			}
+
+			// Stake the source application with its spend limit.
+			srcStakeMsg := &apptypes.MsgStakeApplication{
+				Address:              srcBech32,
+				Stake:                defaultStake,
+				Services:             svcConfigs,
+				PerSessionSpendLimit: test.srcSpendLimit,
+			}
+			_, err := srv.StakeApplication(ctx, srcStakeMsg)
+			require.NoError(t, err)
+
+			// Initiate the transfer from source to destination.
+			// The destination must NOT exist yet for TransferApplication to succeed.
+			transferMsg := apptypes.NewMsgTransferApplication(srcBech32, dstBech32)
+			_, err = srv.TransferApplication(ctx, transferMsg)
+			require.NoError(t, err)
+
+			// Stake the destination application AFTER the transfer is initiated
+			// but BEFORE the transfer completes. This causes the EndBlocker to
+			// merge the source into the existing destination (the code path that
+			// exercises mergeAppPerSessionSpendLimit).
+			dstStakeMsg := &apptypes.MsgStakeApplication{
+				Address:              dstBech32,
+				Stake:                defaultStake,
+				Services:             svcConfigs,
+				PerSessionSpendLimit: test.dstSpendLimit,
+			}
+			_, err = srv.StakeApplication(ctx, dstStakeMsg)
+			require.NoError(t, err)
+
+			// Fast-forward to the transfer completion height (next session end
+			// at or after the transfer end height).
+			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+			srcApp, isSrcFound := k.GetApplication(ctx, srcBech32)
+			require.True(t, isSrcFound)
+			transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+			transferCompletionHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight)
+			ctx = sdkCtx.WithBlockHeight(transferCompletionHeight)
+
+			// Run the end blocker to complete the transfer and trigger the merge.
+			err = k.EndBlockerTransferApplication(ctx)
+			require.NoError(t, err)
+
+			// Verify the destination application exists and has the expected spend limit.
+			dstApp, isDstFound := k.GetApplication(ctx, dstBech32)
+			require.True(t, isDstFound)
+
+			if test.expectedLimit == nil {
+				require.Nil(t, dstApp.PerSessionSpendLimit,
+					"expected nil PerSessionSpendLimit, got %v", dstApp.PerSessionSpendLimit)
+			} else {
+				require.NotNil(t, dstApp.PerSessionSpendLimit,
+					"expected PerSessionSpendLimit %v, got nil", test.expectedLimit)
+				require.True(t, dstApp.PerSessionSpendLimit.Equal(*test.expectedLimit),
+					"expected PerSessionSpendLimit %v, got %v", test.expectedLimit, dstApp.PerSessionSpendLimit)
+			}
+
+			// Verify the source application was removed.
+			_, isSrcFound = k.GetApplication(ctx, srcBech32)
+			require.False(t, isSrcFound)
+		})
+	}
 }

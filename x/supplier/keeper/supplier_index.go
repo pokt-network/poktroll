@@ -169,6 +169,11 @@ func (k Keeper) getSupplierServiceConfigUpdates(
 		// Use the primary key to get the actual service config data
 		serviceConfigBz := serviceConfigUpdateStore.Get(serviceConfigPrimaryKey)
 
+		// Skip orphaned index entries (defensive — index pointing to deleted primary record).
+		if serviceConfigBz == nil {
+			continue
+		}
+
 		// Unmarshal and collect the service config
 		var serviceConfig sharedtypes.ServiceConfigUpdate
 		k.cdc.MustUnmarshal(serviceConfigBz, &serviceConfig)
@@ -287,6 +292,12 @@ func (k Keeper) MigrateSupplierServiceConfigIndexes(ctx context.Context) {
 		// Use the primary key to get the actual service config data which will be
 		// used to create the new index
 		serviceConfigBz := serviceConfigUpdateStore.Get(serviceConfigPrimaryKey)
+
+		// Skip orphaned index entries where the primary data no longer exists
+		// (e.g., on pruned nodes). Same defensive pattern as getSupplierServiceConfigUpdates.
+		if serviceConfigBz == nil {
+			continue
+		}
 
 		// Unmarshal the service config
 		var serviceConfig sharedtypes.ServiceConfigUpdate

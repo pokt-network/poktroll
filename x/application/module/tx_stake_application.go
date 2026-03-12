@@ -49,6 +49,7 @@ $ pocketd tx application stake-application --config stake_config.yaml --keyring-
 				clientCtx.GetFromAddress().String(),
 				appStakeConfigs.StakeAmount,
 				appStakeConfigs.Services,
+				appStakeConfigs.PerSessionSpendLimit,
 			)
 
 			if err := msg.ValidateBasic(); err != nil {

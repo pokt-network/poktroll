@@ -30,9 +30,13 @@ func (s *Application) HasPendingTransfer() bool {
 // An application that has a pending transfer is active until the end of the session
 // containing the height at which the transfer was initiated.
 func (s *Application) IsActive(queryHeight int64) bool {
-	return !s.IsUnbonding() || !s.HasPendingTransfer() ||
-		uint64(queryHeight) <= s.GetUnstakeSessionEndHeight() ||
-		uint64(queryHeight) <= s.GetPendingTransfer().GetSessionEndHeight()
+	if s.IsUnbonding() {
+		return uint64(queryHeight) <= s.GetUnstakeSessionEndHeight()
+	}
+	if s.HasPendingTransfer() {
+		return uint64(queryHeight) <= s.GetPendingTransfer().GetSessionEndHeight()
+	}
+	return true
 }
 
 // GetApplicationUnbondingHeight returns the session end height at which the given

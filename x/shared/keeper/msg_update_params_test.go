@@ -6,6 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/x/shared/keeper"
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -62,4 +64,88 @@ func TestMsgUpdateParams(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestMsgUpdateParams_RecordsParamsHistory verifies that the bulk UpdateParams
+// (governance/MsgUpdateParams) records params history, matching the behavior of
+// the singular UpdateParam and the session module's UpdateParams.
+func TestMsgUpdateParams_RecordsParamsHistory(t *testing.T) {
+	// Use a fresh keeper to avoid interference from other tests' state.
+	k, ctx := keepertest.SharedKeeper(t)
+	ms := keeper.NewMsgServerImpl(k)
+
+	defaultParams := types.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Set block height so session boundary calculations work.
+	// Default NumBlocksPerSession=10, so at height 5 the current session
+	// ends at height 10 and the next session starts at height 11.
+	sdkCtx := sdk.UnwrapSDKContext(ctx).WithBlockHeight(5)
+
+	// History should be empty before any UpdateParams call.
+	history := k.GetAllParamsHistory(sdkCtx)
+	require.Empty(t, history, "params history should be empty before UpdateParams")
+
+	// Call UpdateParams (bulk) with modified params.
+	updatedParams := defaultParams
+	updatedParams.ClaimWindowOpenOffsetBlocks = defaultParams.ClaimWindowOpenOffsetBlocks + 1
+	_, err := ms.UpdateParams(sdkCtx, &types.MsgUpdateParams{
+		Authority: k.GetAuthority(),
+		Params:    updatedParams,
+	})
+	require.NoError(t, err)
+
+	// Verify history was recorded (initial entry at current height + new entry
+	// at next session start).
+	history = k.GetAllParamsHistory(sdkCtx)
+	require.GreaterOrEqual(t, len(history), 2,
+		"UpdateParams should record both initial and new params in history")
+
+	// The new params should be effective at the start of the next session (height 11).
+	expectedEffectiveHeight := int64(11)
+	lastEntry := history[len(history)-1]
+	require.Equal(t, expectedEffectiveHeight, lastEntry.EffectiveHeight,
+		"new params should be effective at the start of the next session")
+	require.Equal(t, updatedParams.ClaimWindowOpenOffsetBlocks,
+		lastEntry.Params.ClaimWindowOpenOffsetBlocks,
+		"recorded params should match the updated values")
+
+	// Verify GetParamsAtHeight returns the new params at the effective height.
+	paramsAtEffective := k.GetParamsAtHeight(sdkCtx, expectedEffectiveHeight)
+	require.Equal(t, updatedParams.ClaimWindowOpenOffsetBlocks,
+		paramsAtEffective.ClaimWindowOpenOffsetBlocks,
+		"GetParamsAtHeight should return updated params at the effective height")
+
+	// Verify GetParamsAtHeight returns the old params before the effective height.
+	paramsBeforeEffective := k.GetParamsAtHeight(sdkCtx, expectedEffectiveHeight-1)
+	require.Equal(t, defaultParams.ClaimWindowOpenOffsetBlocks,
+		paramsBeforeEffective.ClaimWindowOpenOffsetBlocks,
+		"GetParamsAtHeight should return old params before the effective height")
+}
+
+// TestGetParamsAtHeight_EmptyHistory verifies that GetParamsAtHeight falls back to
+// the current params when no params history exists. This is critical for the upgrade
+// path where existing chains have no recorded history.
+func TestGetParamsAtHeight_EmptyHistory(t *testing.T) {
+	k, ctx := keepertest.SharedKeeper(t)
+
+	// Set default params (but do NOT call SetParamsAtHeight — no history).
+	defaultParams := types.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx).WithBlockHeight(100)
+
+	// HasParamsHistory should return false.
+	require.False(t, k.HasParamsHistory(sdkCtx), "should have no params history initially")
+
+	// GetParamsAtHeight should fall back to current params.
+	params := k.GetParamsAtHeight(sdkCtx, 50)
+	require.Equal(t, defaultParams.NumBlocksPerSession, params.NumBlocksPerSession,
+		"GetParamsAtHeight with empty history should return current params")
+	require.Equal(t, defaultParams.ClaimWindowOpenOffsetBlocks, params.ClaimWindowOpenOffsetBlocks,
+		"GetParamsAtHeight with empty history should return current params")
+
+	// After recording history, HasParamsHistory should return true.
+	require.NoError(t, k.SetParamsAtHeight(sdkCtx, 1, defaultParams))
+	require.True(t, k.HasParamsHistory(sdkCtx), "should have params history after SetParamsAtHeight")
 }

@@ -308,99 +308,11 @@ echo "Sync from genesis will use the following version of pocketd as a starting 
 
 #### 6.2 [Fast & Recommended] Sync from Snapshot
 
-:::info Snapshot Explorer
+:::info Snapshot & State Sync
 
-You can visit [snapshots.us-nj.poktroll.com](https://snapshots.us-nj.poktroll.com) directly in your browser to explore available snapshots.
+Snapshots and state sync are provided by [easy2stake](https://sync.easy2stake.com/d/ce1jmvhesy1hce/state-sync-server?var-chain_id=pocket). Visit their dashboard to find the latest available snapshots and state sync configuration for Pocket Network.
 
 :::
-
-If you prefer to use a snapshot (recommended for faster setup), you need to check the snapshot version first:
-
-<Tabs groupId="network">
-  <TabItem value="testnet-beta" label="Testnet Beta" default>
-
-    ```bash
-    echo "############################################"
-
-    # Base URL for snapshots
-    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
-
-    # Get latest snapshot information for testnet-beta
-    LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/testnet-beta-latest-archival.txt")
-    echo "Latest snapshot height: $LATEST_SNAPSHOT_HEIGHT"
-
-    # Get snapshot version (important for compatibility)
-    SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/testnet-beta-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
-    echo "Snapshot version: $SNAPSHOT_VERSION"
-
-    # Store the torrent URL for later use
-    TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-beta-latest-archival.torrent"
-
-    # Set the version to use for installation
-    POCKETD_VERSION=$SNAPSHOT_VERSION
-    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POCKETD_VERSION"
-
-    echo "############################################"
-    ```
-
-  </TabItem>
-
-  <TabItem value="testnet-alpha" label="Testnet Alpha">
-
-    ```bash
-    echo "############################################"
-
-    # Base URL for snapshots
-    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
-
-    # Get latest snapshot information for testnet-alpha
-    LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/testnet-alpha-latest-archival.txt")
-    echo "Latest snapshot height: $LATEST_SNAPSHOT_HEIGHT"
-
-    # Get snapshot version (important for compatibility)
-    SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/testnet-alpha-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
-    echo "Snapshot version: $SNAPSHOT_VERSION"
-
-    # Store the torrent URL for later use
-    TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-alpha-latest-archival.torrent"
-
-    # Set the version to use for installation
-    POCKETD_VERSION=$SNAPSHOT_VERSION
-    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POCKETD_VERSION"
-
-    echo "############################################"
-    ```
-
-  </TabItem>
-
-  <TabItem value="mainnet" label="Mainnet">
-
-    ```bash
-    echo "############################################"
-
-    # Base URL for snapshots
-    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
-
-    # Get latest snapshot information for mainnet
-    LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/mainnet-latest-archival.txt")
-    echo "Latest snapshot height: $LATEST_SNAPSHOT_HEIGHT"
-
-    # Get snapshot version (important for compatibility)
-    SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/mainnet-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
-    echo "Snapshot version: $SNAPSHOT_VERSION"
-
-    # Store the torrent URL for later use
-    TORRENT_URL="${SNAPSHOT_BASE_URL}/mainnet-latest-archival.torrent"
-
-    # Set the version to use for installation
-    POCKETD_VERSION=$SNAPSHOT_VERSION
-    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POCKETD_VERSION"
-
-    echo "############################################"
-    ```
-
-  </TabItem>
-</Tabs>
 
 Then download the snapshot via torrent and apply it to your node:
 

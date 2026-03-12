@@ -146,6 +146,88 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrAppInvalidServiceConfigs,
 		},
+
+		// per-session spend limit related tests
+		{
+			desc: "valid: with per-session spend limit (at minimum)",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddressBech32(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: &sdk.Coin{Denom: "upokt", Amount: MinPerSessionSpendLimit.Amount},
+			},
+		},
+		{
+			desc: "invalid: per-session spend limit below minimum",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddressBech32(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: &sdk.Coin{Denom: "upokt", Amount: math.NewInt(50)},
+			},
+			expectedErr: ErrAppInvalidPerSessionSpendLimit,
+		},
+		{
+			desc: "valid: nil per-session spend limit (no limit)",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddressBech32(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				// PerSessionSpendLimit explicitly nil
+			},
+		},
+		{
+			desc: "valid: zero per-session spend limit (no limit)",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddressBech32(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
+			},
+		},
+		{
+			desc: "invalid: negative per-session spend limit",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddressBech32(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-50)},
+			},
+			expectedErr: ErrAppInvalidPerSessionSpendLimit,
+		},
+		{
+			desc: "invalid: wrong denom for per-session spend limit",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddressBech32(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: &sdk.Coin{Denom: "invalid", Amount: math.NewInt(50)},
+			},
+			expectedErr: ErrAppInvalidPerSessionSpendLimit,
+		},
+		{
+			desc: "valid: zero per-session spend limit with wrong denom (zero = clear, denom irrelevant)",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddressBech32(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: "svc1"},
+				},
+				PerSessionSpendLimit: &sdk.Coin{Denom: "garbage", Amount: math.NewInt(0)},
+			},
+		},
 	}
 
 	for _, test := range tests {

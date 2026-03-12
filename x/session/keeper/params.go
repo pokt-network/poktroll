@@ -88,6 +88,17 @@ func (k Keeper) GetParamsAtHeight(ctx context.Context, queryHeight int64) types.
 	return k.GetParams(ctx)
 }
 
+// HasParamsHistory returns true if any params history entries exist.
+// This is used to efficiently check if history needs initialization without
+// the O(n) cost of GetAllParamsHistory.
+func (k Keeper) HasParamsHistory(ctx context.Context) bool {
+	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	historyStore := prefix.NewStore(store, types.ParamsHistoryKeyPrefix)
+	iterator := historyStore.Iterator(nil, nil)
+	defer iterator.Close()
+	return iterator.Valid()
+}
+
 // GetAllParamsHistory returns all historical session params updates.
 // This is primarily used for genesis export and debugging.
 func (k Keeper) GetAllParamsHistory(ctx context.Context) []types.ParamsUpdate {
@@ -118,8 +129,7 @@ func (k Keeper) RecordParamsHistory(ctx context.Context, newParams types.Params)
 	oldParams := k.GetParams(ctx)
 
 	// Check if history is empty (first param update since genesis or upgrade)
-	history := k.GetAllParamsHistory(ctx)
-	if len(history) == 0 {
+	if !k.HasParamsHistory(ctx) {
 		// Initialize history with the current (old) params at the current height.
 		// We use current height rather than height 1 because we can only vouch for
 		// the params we know now - not what they may have been at genesis.

@@ -37,9 +37,9 @@ jobs:
           fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
-          go-version: "1.24.3"
+          go-version: "1.25.8"
 
       # TODO_INVESTIGATE: CGO cross-compilers disabled - https://github.com/pokt-network/poktroll/discussions/1822
       # To re-enable: Uncomment the step below to install cross-compilers for CGO builds

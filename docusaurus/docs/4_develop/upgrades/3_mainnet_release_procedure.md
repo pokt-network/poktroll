@@ -49,8 +49,8 @@ We'll use `v0.1.29` as an example for this section.
 
 ### 3.1 Choose a height
 
-1. Visit the [MainNet Grafana Dashboard](https://grafana.poktroll.com/goto/8MB3RPRDg?orgId=1) to get the current height of the blockchain
-2. Review the latest block times of the network by checking network stats, [grove's infra](https://github.com/buildwithgrove/infrastructure/blob/dfbc02c57bbc5e61ae860393ec35d45b6a6fc3d5/environments/protocol/vultr-sgp/kubernetes-manifests/mainnet/config-files.yaml#L505) or [config.toml](https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/mainnet/config.toml); _usually 30s per block_.
+1. Query the current height of the blockchain using `pocketd query block --network=main` or the [explorer](https://explorer.pocket.network).
+2. Review the latest block times of the network by checking [config.toml](https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/mainnet/config.toml); _usually 30s per block_.
 3. Account for the fact that session tokenomics can take `1-10s` as of writing depending on how much traffic the network is managing.
 4. Determine a future height that gives the ecosystem a few days to prepare. See the `tip` below.
 5. For your particular upgrade (e.g. `v0.1.29`), update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.29_main.json`:
@@ -130,7 +130,7 @@ make telegram_broadcast_msg MSG_FILE=release_prep_announcement.txt
 
 See the instruction in [Protocol Upgrade Preparation](2_upgrade_preparation.md) on how to prepare a snapshot.
 
-You can find existing snapshots at [snapshots.us-nj.poktroll.com](https://snapshots.us-nj.poktroll.com).
+You can find existing snapshots at the [easy2stake dashboard](https://sync.easy2stake.com/d/ce1jmvhesy1hce/state-sync-server?var-chain_id=pocket).
 
 ### 4.2 Monitor the Upgrade
 
@@ -183,9 +183,9 @@ The network successfully upgraded to `v0.1.29` at height `382,250` around 12pm P
 Please make sure update your binaries and full nodes to the latest:
 https://github.com/pokt-network/poktroll/releases/tag/v0.1.29
 
-Snapshots are available here: https://snapshots.us-nj.poktroll.com/ 💾
+Snapshots are available at the [easy2stake dashboard](https://sync.easy2stake.com/d/ce1jmvhesy1hce/state-sync-server?var-chain_id=pocket) 💾
 
-If you need an RPC endpoint, let us know and [Grove](https://www.grove.city/) will happily help out 🌿
+If you need an RPC endpoint, see the [Shannon Mainnet](../../2_explore/1_tools/1_shannon_mainnet.md) page for available endpoints.
 
 ❓ What's new ❓
 - Improved RelayMiner performance

@@ -17,7 +17,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// distributeValidatorRewards distributes session settlement rewards to
+// DistributeValidatorRewards distributes session settlement rewards to
 // all bonded validators and their delegators.
 //
 // Specifically:
@@ -29,7 +29,7 @@ import (
 // For a stakeholder (self-bonded validator or delegator), the distribution formula is:
 //
 //	stakeholderReward = totalValidatorRewardAmount × (stakeholderStake / totalBondedStake)
-func distributeValidatorRewards(
+func DistributeValidatorRewards(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	result *tokenomicstypes.ClaimSettlementResult,
@@ -38,7 +38,7 @@ func distributeValidatorRewards(
 	settlementOpReason tokenomicstypes.SettlementOpReason,
 ) error {
 	logger = logger.With(
-		"method", "distributeValidatorRewards",
+		"method", "DistributeValidatorRewards",
 		"session_id", result.GetSessionId(),
 		"total_reward_amount", totalValidatorRewardCoin.Amount,
 	)
@@ -236,7 +236,9 @@ func discoverStakeholderStakes(
 }
 
 // collectDelegationStakes extracts and records stake amounts from a validator's delegations.
-// Converts each delegation's shares to tokens and records them individually in stakeAmounts.
+// Converts each delegation's shares to tokens and accumulates them in stakeAmounts.
+// Accumulation (not assignment) is critical because a delegator may delegate to multiple
+// validators: each validator's loop iteration adds to the same delegator key.
 // DEV_NOTE: This transforms the stakeAmounts map in place.
 func collectDelegationStakes(
 	logger cosmoslog.Logger,
@@ -244,8 +246,9 @@ func collectDelegationStakes(
 	delegations []stakingtypes.Delegation,
 	stakeAmounts map[string]math.Int,
 ) {
-	// Extract and record stake amounts for each delegator (including validator self-delegation)
-	// Each delegation represents a distinct stakeholder with their portion of the total stake
+	// Extract and accumulate stake amounts for each delegator (including validator self-delegation).
+	// A delegator may appear in multiple validators' delegation lists; we accumulate across all
+	// validators so the final stakeAmounts[delegator] reflects their total bonded tokens network-wide.
 	for _, delegation := range delegations {
 		delegatorAddr, err := cosmostypes.AccAddressFromBech32(delegation.GetDelegatorAddr())
 		if err != nil {
@@ -262,7 +265,12 @@ func collectDelegationStakes(
 				logger.Warn(fmt.Sprintf("SHOULD NEVER HAPPEN: delegator %s has zero delegated tokens but the delegated share exists. Skipping to the next one...", delegatorAddrStr))
 				continue
 			}
-			stakeAmounts[delegatorAddrStr] = delegatedTokens
+			// Accumulate: add to existing stake if the delegator already appears from a previous validator.
+			if existing, ok := stakeAmounts[delegatorAddrStr]; ok {
+				stakeAmounts[delegatorAddrStr] = existing.Add(delegatedTokens)
+			} else {
+				stakeAmounts[delegatorAddrStr] = delegatedTokens
+			}
 		}
 	}
 }
@@ -330,8 +338,10 @@ func applyLargestRemainderMethod(
 		totalDistributedRewardAmount = totalDistributedRewardAmount.Add(amount)
 	}
 
-	// Calculate remainder tokens to distribute
-	remainder := totalRewardAmount.Sub(totalDistributedRewardAmount).Int64()
+	// Calculate remainder tokens to distribute.
+	// Use BigInt conversion to avoid potential Int64() panic on overflow.
+	remainderInt := totalRewardAmount.Sub(totalDistributedRewardAmount)
+	remainder := remainderInt.BigInt().Int64()
 
 	logger.Debug(fmt.Sprintf(
 		"Applying the largest remainder method to reward distribution. Total amount distributed: %s. Total reward amount: %s. Remainder: %d tokens",

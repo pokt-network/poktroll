@@ -26,7 +26,7 @@ slug: /
   <a href="https://github.com/pokt-network/poktroll/issues"><img src="https://img.shields.io/github/issues-closed/pokt-network/pocket.svg"/></a>
   <a href="https://godoc.org/github.com/pokt-network/pocket"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"/></a>
   <a href="https://goreportcard.com/report/github.com/pokt-network/pocket"><img src="https://goreportcard.com/badge/github.com/pokt-network/pocket"/></a>
-  <a href="https://golang.org"><img  src="https://img.shields.io/badge/golang-v1.24-green.svg"/></a>
+  <a href="https://golang.org"><img  src="https://img.shields.io/badge/golang-v1.25-green.svg"/></a>
   <a href="https://github.com/tools/godep" ><img src="https://img.shields.io/badge/godep-dependency-71a3d9.svg"/></a>
 </div>
 
@@ -73,7 +73,7 @@ Pocket network is built on top of [Cosmos SDK](https://docs.cosmos.network), [Co
 
 ## What is PATH?
 
-[PATH](https://path.grove.city/) (Path API & Toolkit Harness) is an open source Gateway framework that streamlines access to the permissionless API operators on Pocket Network without sacrificing enterprise-grade SLAs.
+[PATH](https://github.com/pokt-network/path) (Path API & Toolkit Harness) is an open source Gateway framework that streamlines access to the permissionless API operators on Pocket Network without sacrificing enterprise-grade SLAs.
 
 You can think of Pocket Network as the directory of API providers, and PATH is the toolkit for building Gateways that ensure high quality of service on top of Pocket using Smart QoS.
 

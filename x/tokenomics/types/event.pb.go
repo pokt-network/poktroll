@@ -237,7 +237,41 @@ type EventClaimSettled struct {
 	// The operator address of the supplier who submitted the claim.
 	SupplierOperatorAddress string `protobuf:"bytes,13,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 	// A map of addresses to token amounts corresponding to the distribution of the reward tokens.
+	// Deprecated: Use reward_distribution_detailed which preserves OpReason per entry.
 	RewardDistribution map[string]string `protobuf:"bytes,14,rep,name=reward_distribution,json=rewardDistribution,proto3" json:"mint_distribution" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// Detailed per-reason reward breakdown. Unlike reward_distribution (field 14)
+	// which merges all reasons per address, this preserves the OpReason for each entry.
+	RewardDistributionDetailed []RewardDistributionDetail `protobuf:"bytes,15,rep,name=reward_distribution_detailed,json=rewardDistributionDetailed,proto3" json:"reward_distribution_detailed"`
+	// The actual settlement amount after overservicing cap, before mint_ratio.
+	// Indexers can compute: overservicing_loss = claimed_upokt - settled_upokt
+	SettledUpokt string `protobuf:"bytes,16,opt,name=settled_upokt,json=settledUpokt,proto3" json:"settled_upokt"`
+	// The mint_ratio applied during settlement (from tokenomics params).
+	// Indexers can compute: deflation_loss = settled_upokt * (1 - mint_ratio)
+	MintRatio string `protobuf:"bytes,17,opt,name=mint_ratio,json=mintRatio,proto3" json:"mint_ratio"`
+	// The unique session ID hash for this claim's session.
+	// Enables direct joins without needing composite keys (app + service + session_end).
+	SessionId string `protobuf:"bytes,18,opt,name=session_id,json=sessionId,proto3" json:"session_id"`
+	// The owner address of the supplier who submitted the claim.
+	// Useful when owner != operator (delegated staking) for attributing rewards.
+	SupplierOwnerAddress string `protobuf:"bytes,19,opt,name=supplier_owner_address,json=supplierOwnerAddress,proto3" json:"supplier_owner_address"`
+	// The probabilistic estimation of the total number of relays served in this session.
+	// Derived from the relay mining difficulty: num_estimated_relays = num_relays * difficulty_multiplier.
+	// Unlike num_relays (which is only the count of leaves in the session tree that matched
+	// the relay mining difficulty), this reflects the actual estimated workload.
+	NumEstimatedRelays uint64 `protobuf:"varint,20,opt,name=num_estimated_relays,json=numEstimatedRelays,proto3" json:"num_estimated_relays"`
+	// The actual amount of uPOKT minted for this claim via the Relay Burn Equals Mint TLM.
+	// minted_upokt = settled_upokt * mint_ratio (truncated to integer).
+	// This is the real economic value created by this claim after both overservicing and deflation.
+	// Relationship: claimed_upokt >= settled_upokt >= minted_upokt
+	MintedUpokt string `protobuf:"bytes,21,opt,name=minted_upokt,json=mintedUpokt,proto3" json:"minted_upokt"`
+	// The amount of uPOKT lost to overservicing for this claim.
+	// overservicing_loss_upokt = claimed_upokt - settled_upokt.
+	// Zero when the supplier's claim fits within the application's per-supplier budget.
+	OverservicingLossUpokt string `protobuf:"bytes,22,opt,name=overservicing_loss_upokt,json=overservicingLossUpokt,proto3" json:"overservicing_loss_upokt"`
+	// The amount of uPOKT permanently removed from circulation (deflation) for this claim.
+	// deflation_loss_upokt = settled_upokt - minted_upokt = settled_upokt * (1 - mint_ratio).
+	// Zero when mint_ratio = 1 (no deflation).
+	DeflationLossUpokt string `protobuf:"bytes,23,opt,name=deflation_loss_upokt,json=deflationLossUpokt,proto3" json:"deflation_loss_upokt"`
 }
 
 func (m *EventClaimSettled) Reset()         { *m = EventClaimSettled{} }
@@ -346,6 +380,69 @@ func (m *EventClaimSettled) GetRewardDistribution() map[string]string {
 	return nil
 }
 
+func (m *EventClaimSettled) GetRewardDistributionDetailed() []RewardDistributionDetail {
+	if m != nil {
+		return m.RewardDistributionDetailed
+	}
+	return nil
+}
+
+func (m *EventClaimSettled) GetSettledUpokt() string {
+	if m != nil {
+		return m.SettledUpokt
+	}
+	return ""
+}
+
+func (m *EventClaimSettled) GetMintRatio() string {
+	if m != nil {
+		return m.MintRatio
+	}
+	return ""
+}
+
+func (m *EventClaimSettled) GetSessionId() string {
+	if m != nil {
+		return m.SessionId
+	}
+	return ""
+}
+
+func (m *EventClaimSettled) GetSupplierOwnerAddress() string {
+	if m != nil {
+		return m.SupplierOwnerAddress
+	}
+	return ""
+}
+
+func (m *EventClaimSettled) GetNumEstimatedRelays() uint64 {
+	if m != nil {
+		return m.NumEstimatedRelays
+	}
+	return 0
+}
+
+func (m *EventClaimSettled) GetMintedUpokt() string {
+	if m != nil {
+		return m.MintedUpokt
+	}
+	return ""
+}
+
+func (m *EventClaimSettled) GetOverservicingLossUpokt() string {
+	if m != nil {
+		return m.OverservicingLossUpokt
+	}
+	return ""
+}
+
+func (m *EventClaimSettled) GetDeflationLossUpokt() string {
+	if m != nil {
+		return m.DeflationLossUpokt
+	}
+	return ""
+}
+
 // EventApplicationOverserviced is emitted when an Application's stake cannot cover the Supplier's claim.
 // This means the following will ALWAYS be strictly true:  effective_burn < expected_burn
 // - Number of tokens burnt from app stake < Number of tokens burnt from supplier stake
@@ -360,6 +457,16 @@ type EventApplicationOverserviced struct {
 	// Actual number of tokens burnt from the application's stake.
 	// A function of the amount that could be covered (less than) relative to the amount of work claimed to be done.
 	EffectiveBurn string `protobuf:"bytes,6,opt,name=effective_burn,json=effectiveBurn,proto3" json:"effective_burn,omitempty"`
+	// The Service ID for the session where overservicing occurred.
+	// Enables unambiguous joins with EventClaimSettled.
+	ServiceId string `protobuf:"bytes,7,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The session end block height where overservicing occurred.
+	// Together with service_id, application_addr, and supplier_operator_addr,
+	// this uniquely identifies the corresponding EventClaimSettled.
+	SessionEndBlockHeight int64 `protobuf:"varint,8,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// Whether overservicing was triggered by per_session_spend_limit (true)
+	// vs the standard stake-based cap (false, default).
+	SpendLimitExceeded bool `protobuf:"varint,9,opt,name=spend_limit_exceeded,json=spendLimitExceeded,proto3" json:"spend_limit_exceeded,omitempty"`
 }
 
 func (m *EventApplicationOverserviced) Reset()         { *m = EventApplicationOverserviced{} }
@@ -417,6 +524,27 @@ func (m *EventApplicationOverserviced) GetEffectiveBurn() string {
 		return m.EffectiveBurn
 	}
 	return ""
+}
+
+func (m *EventApplicationOverserviced) GetServiceId() string {
+	if m != nil {
+		return m.ServiceId
+	}
+	return ""
+}
+
+func (m *EventApplicationOverserviced) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventApplicationOverserviced) GetSpendLimitExceeded() bool {
+	if m != nil {
+		return m.SpendLimitExceeded
+	}
+	return false
 }
 
 // EventSupplierSlashed is emitted when a supplier is slashed.
@@ -614,6 +742,165 @@ func (m *EventClaimDiscarded) GetSupplierOperatorAddress() string {
 	return ""
 }
 
+// RewardDistributionDetail is a per-recipient, per-reason reward breakdown for a single claim.
+// Unlike the reward_distribution map (which merges all OpReasons per address),
+// this preserves the OpReason for each entry.
+type RewardDistributionDetail struct {
+	// The recipient address (bech32).
+	RecipientAddress string `protobuf:"bytes,1,opt,name=recipient_address,json=recipientAddress,proto3" json:"recipient_address,omitempty"`
+	// The settlement operation reason from the TLM.
+	OpReason SettlementOpReason `protobuf:"varint,2,opt,name=op_reason,json=opReason,proto3,enum=pocket.tokenomics.SettlementOpReason" json:"op_reason,omitempty"`
+	// The reward amount as a coin string (e.g. "1000upokt").
+	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
+}
+
+func (m *RewardDistributionDetail) Reset()         { *m = RewardDistributionDetail{} }
+func (m *RewardDistributionDetail) String() string { return proto.CompactTextString(m) }
+func (*RewardDistributionDetail) ProtoMessage()    {}
+func (*RewardDistributionDetail) Descriptor() ([]byte, []int) {
+	return fileDescriptor_146818b9f891ddf6, []int{5}
+}
+func (m *RewardDistributionDetail) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RewardDistributionDetail) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *RewardDistributionDetail) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RewardDistributionDetail.Merge(m, src)
+}
+func (m *RewardDistributionDetail) XXX_Size() int {
+	return m.Size()
+}
+func (m *RewardDistributionDetail) XXX_DiscardUnknown() {
+	xxx_messageInfo_RewardDistributionDetail.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RewardDistributionDetail proto.InternalMessageInfo
+
+func (m *RewardDistributionDetail) GetRecipientAddress() string {
+	if m != nil {
+		return m.RecipientAddress
+	}
+	return ""
+}
+
+func (m *RewardDistributionDetail) GetOpReason() SettlementOpReason {
+	if m != nil {
+		return m.OpReason
+	}
+	return SettlementOpReason_UNSPECIFIED
+}
+
+func (m *RewardDistributionDetail) GetAmount() string {
+	if m != nil {
+		return m.Amount
+	}
+	return ""
+}
+
+// EventSettlementBatch is emitted once per unique aggregated bank operation during settlement.
+// It provides the link between batched bank transfers and the settlement context.
+type EventSettlementBatch struct {
+	// The session end block height for the batch of settlements.
+	SessionEndBlockHeight int64 `protobuf:"varint,1,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// The sender module account (or destination module for mints/burns).
+	SenderModule string `protobuf:"bytes,2,opt,name=sender_module,json=senderModule,proto3" json:"sender_module,omitempty"`
+	// The recipient (bech32 address for mod-to-acct, module name for mod-to-mod, empty for mints/burns).
+	Recipient string `protobuf:"bytes,3,opt,name=recipient,proto3" json:"recipient,omitempty"`
+	// The settlement operation reason from the TLM.
+	OpReason SettlementOpReason `protobuf:"varint,4,opt,name=op_reason,json=opReason,proto3,enum=pocket.tokenomics.SettlementOpReason" json:"op_reason,omitempty"`
+	// The total aggregated amount as a coin string.
+	TotalAmount string `protobuf:"bytes,5,opt,name=total_amount,json=totalAmount,proto3" json:"total_amount,omitempty"`
+	// Number of individual claims that contributed to this batch.
+	NumClaims uint32 `protobuf:"varint,6,opt,name=num_claims,json=numClaims,proto3" json:"num_claims,omitempty"`
+	// The type of bank operation: "mint", "burn", "mod_to_mod", "mod_to_acct".
+	OpType string `protobuf:"bytes,7,opt,name=op_type,json=opType,proto3" json:"op_type,omitempty"`
+}
+
+func (m *EventSettlementBatch) Reset()         { *m = EventSettlementBatch{} }
+func (m *EventSettlementBatch) String() string { return proto.CompactTextString(m) }
+func (*EventSettlementBatch) ProtoMessage()    {}
+func (*EventSettlementBatch) Descriptor() ([]byte, []int) {
+	return fileDescriptor_146818b9f891ddf6, []int{6}
+}
+func (m *EventSettlementBatch) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventSettlementBatch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventSettlementBatch) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventSettlementBatch.Merge(m, src)
+}
+func (m *EventSettlementBatch) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventSettlementBatch) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventSettlementBatch.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventSettlementBatch proto.InternalMessageInfo
+
+func (m *EventSettlementBatch) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventSettlementBatch) GetSenderModule() string {
+	if m != nil {
+		return m.SenderModule
+	}
+	return ""
+}
+
+func (m *EventSettlementBatch) GetRecipient() string {
+	if m != nil {
+		return m.Recipient
+	}
+	return ""
+}
+
+func (m *EventSettlementBatch) GetOpReason() SettlementOpReason {
+	if m != nil {
+		return m.OpReason
+	}
+	return SettlementOpReason_UNSPECIFIED
+}
+
+func (m *EventSettlementBatch) GetTotalAmount() string {
+	if m != nil {
+		return m.TotalAmount
+	}
+	return ""
+}
+
+func (m *EventSettlementBatch) GetNumClaims() uint32 {
+	if m != nil {
+		return m.NumClaims
+	}
+	return 0
+}
+
+func (m *EventSettlementBatch) GetOpType() string {
+	if m != nil {
+		return m.OpType
+	}
+	return ""
+}
+
 // EventApplicationReimbursementRequest is emitted when an application requests a reimbursement from the DAO.
 // It is intended to prevent self dealing attacks when global inflation is enabled.
 // TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.
@@ -636,7 +923,7 @@ func (m *EventApplicationReimbursementRequest) Reset()         { *m = EventAppli
 func (m *EventApplicationReimbursementRequest) String() string { return proto.CompactTextString(m) }
 func (*EventApplicationReimbursementRequest) ProtoMessage()    {}
 func (*EventApplicationReimbursementRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_146818b9f891ddf6, []int{5}
+	return fileDescriptor_146818b9f891ddf6, []int{7}
 }
 func (m *EventApplicationReimbursementRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -711,80 +998,108 @@ func init() {
 	proto.RegisterType((*EventApplicationOverserviced)(nil), "pocket.tokenomics.EventApplicationOverserviced")
 	proto.RegisterType((*EventSupplierSlashed)(nil), "pocket.tokenomics.EventSupplierSlashed")
 	proto.RegisterType((*EventClaimDiscarded)(nil), "pocket.tokenomics.EventClaimDiscarded")
+	proto.RegisterType((*RewardDistributionDetail)(nil), "pocket.tokenomics.RewardDistributionDetail")
+	proto.RegisterType((*EventSettlementBatch)(nil), "pocket.tokenomics.EventSettlementBatch")
 	proto.RegisterType((*EventApplicationReimbursementRequest)(nil), "pocket.tokenomics.EventApplicationReimbursementRequest")
 }
 
 func init() { proto.RegisterFile("pocket/tokenomics/event.proto", fileDescriptor_146818b9f891ddf6) }
 
 var fileDescriptor_146818b9f891ddf6 = []byte{
-	// 1065 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x56, 0x4d, 0x6f, 0x23, 0x45,
-	0x13, 0xce, 0xf8, 0x2b, 0x76, 0xe7, 0xe3, 0x1d, 0x77, 0x3e, 0x76, 0x92, 0x97, 0xd8, 0xc6, 0x80,
-	0x64, 0x90, 0x62, 0x4b, 0x09, 0x02, 0x84, 0xb8, 0xc4, 0x89, 0x17, 0x26, 0x62, 0xe3, 0x30, 0xde,
-	0xa0, 0x15, 0x07, 0x86, 0xf1, 0x4c, 0xc7, 0x69, 0xd9, 0xd3, 0x3d, 0x74, 0xf7, 0xe4, 0xe3, 0xce,
-	0x81, 0x23, 0x12, 0x7f, 0x85, 0x1f, 0xb1, 0xc7, 0x15, 0x17, 0xf6, 0x80, 0x0c, 0x4a, 0x6e, 0xf9,
-	0x09, 0x9c, 0x50, 0xf7, 0x8c, 0x63, 0xc7, 0xce, 0xb2, 0x91, 0x37, 0x9c, 0xb8, 0x4d, 0xd5, 0x53,
-	0x4f, 0x75, 0x4d, 0xf5, 0x53, 0x35, 0x03, 0x36, 0x02, 0xea, 0x76, 0x91, 0xa8, 0x09, 0xda, 0x45,
-	0x84, 0xfa, 0xd8, 0xe5, 0x35, 0x74, 0x8a, 0x88, 0xa8, 0x06, 0x8c, 0x0a, 0x0a, 0xf3, 0x11, 0x5c,
-	0x1d, 0xc2, 0xeb, 0x6b, 0x2e, 0xe5, 0x3e, 0xe5, 0xb6, 0x0a, 0xa8, 0x45, 0x46, 0x14, 0xbd, 0xbe,
-	0xdc, 0xa1, 0x1d, 0x1a, 0xf9, 0xe5, 0x53, 0xec, 0x35, 0xe2, 0x23, 0x02, 0x46, 0xe9, 0x71, 0x4d,
-	0x5c, 0x04, 0x68, 0x10, 0x7f, 0xc7, 0xe1, 0x23, 0x70, 0xf9, 0xf7, 0x34, 0xc8, 0x37, 0x64, 0x31,
-	0xbb, 0x3d, 0x07, 0xfb, 0x8d, 0xf3, 0x00, 0x33, 0xe4, 0xc1, 0x1e, 0xc8, 0x23, 0xf9, 0xe8, 0x08,
-	0x4c, 0x89, 0xcd, 0x90, 0xc3, 0x29, 0x31, 0x12, 0x25, 0xad, 0xb2, 0xb8, 0x55, 0xa9, 0x4e, 0x94,
-	0x5b, 0x1d, 0x72, 0x15, 0xc1, 0x52, 0xf1, 0xf5, 0x95, 0xeb, 0x7e, 0x71, 0x32, 0x8d, 0xa5, 0xa3,
-	0xb1, 0x40, 0xb8, 0x09, 0x00, 0x09, 0x7d, 0x9b, 0xa1, 0x9e, 0x73, 0xc1, 0x8d, 0x64, 0x49, 0xab,
-	0xa4, 0xea, 0x8b, 0xd7, 0xfd, 0xe2, 0x88, 0xd7, 0xca, 0x91, 0xd0, 0xb7, 0xd4, 0x23, 0x7c, 0x06,
-	0xd6, 0x24, 0xe0, 0xca, 0x43, 0x91, 0x67, 0xbb, 0xd4, 0x0f, 0x42, 0x81, 0xec, 0x90, 0x60, 0xc1,
-	0x8d, 0x94, 0x62, 0x6f, 0x5c, 0xf7, 0x8b, 0xaf, 0x0e, 0xb2, 0x56, 0x49, 0xe8, 0xef, 0x46, 0xc8,
-	0x6e, 0x04, 0x1c, 0x49, 0x3f, 0xfc, 0x16, 0xfc, 0x5f, 0x92, 0x10, 0x17, 0xd8, 0x77, 0xc4, 0x44,
-	0xee, 0xb4, 0xca, 0x5d, 0xbc, 0xee, 0x17, 0xff, 0x29, 0xcc, 0x32, 0x48, 0xe8, 0x37, 0x06, 0xd8,
-	0xad, 0xfc, 0x1f, 0x81, 0x85, 0x41, 0x41, 0x61, 0x40, 0xbb, 0xc2, 0x98, 0x2d, 0x69, 0x95, 0x5c,
-	0x3d, 0x7f, 0xdd, 0x2f, 0xde, 0x06, 0xac, 0xf9, 0xd8, 0x3c, 0x92, 0x16, 0xdc, 0x00, 0x80, 0x23,
-	0x76, 0x8a, 0x5d, 0x64, 0x63, 0xcf, 0xc8, 0x4a, 0x92, 0x95, 0x8b, 0x3d, 0xa6, 0x07, 0x4d, 0xb0,
-	0xe4, 0x04, 0x41, 0x0f, 0xbb, 0x51, 0x9f, 0x1d, 0xcf, 0x63, 0x88, 0x73, 0x23, 0xa7, 0x92, 0x1b,
-	0xbf, 0xfe, 0xb2, 0xb9, 0x1c, 0x2b, 0x68, 0x27, 0x42, 0x5a, 0x82, 0x61, 0xd2, 0xb1, 0xe0, 0x08,
-	0x29, 0x46, 0xe0, 0xc7, 0xc0, 0xe0, 0x88, 0x73, 0x99, 0x06, 0x11, 0xcf, 0x6e, 0xf7, 0xa8, 0xdb,
-	0xb5, 0x4f, 0x10, 0xee, 0x9c, 0x08, 0x03, 0x94, 0xb4, 0x4a, 0xd2, 0x5a, 0x89, 0xf1, 0x06, 0xf1,
-	0xea, 0x12, 0xfd, 0x42, 0x81, 0x70, 0x1b, 0xac, 0xaa, 0x92, 0x6d, 0xa5, 0x40, 0x9b, 0x0b, 0x47,
-	0x84, 0xdc, 0xc6, 0x44, 0x18, 0x73, 0x25, 0xad, 0x92, 0xb6, 0x96, 0x14, 0x7a, 0x28, 0xc1, 0x96,
-	0xc2, 0x4c, 0x22, 0xe0, 0x53, 0xb0, 0xc6, 0x43, 0x59, 0x04, 0x62, 0x36, 0x0d, 0x10, 0x73, 0x04,
-	0x65, 0x37, 0xe5, 0xcf, 0xbf, 0xa6, 0xfc, 0x47, 0x03, 0x6a, 0x33, 0x66, 0xc6, 0xf0, 0x7e, 0x2a,
-	0xab, 0xe9, 0x89, 0xfd, 0x54, 0x36, 0xa3, 0xcf, 0x96, 0xff, 0xca, 0x8c, 0xca, 0xbb, 0x85, 0x84,
-	0xe8, 0x21, 0x0f, 0x6e, 0x81, 0x95, 0xa8, 0x4c, 0x86, 0xbe, 0x0f, 0x31, 0x43, 0x3e, 0x22, 0x42,
-	0xd5, 0x9a, 0x88, 0x6a, 0x55, 0xa0, 0x35, 0xc4, 0x64, 0xad, 0xff, 0x5d, 0x91, 0x66, 0xa7, 0x11,
-	0x69, 0xee, 0x9e, 0x22, 0x05, 0x0f, 0x2c, 0xd2, 0xb9, 0xe9, 0x44, 0x3a, 0x3f, 0xa5, 0x48, 0x17,
-	0xa6, 0x14, 0x29, 0xfc, 0x51, 0x03, 0x4b, 0x0c, 0x9d, 0x39, 0xcc, 0xb3, 0x3d, 0xcc, 0x05, 0xc3,
-	0xed, 0x50, 0xbe, 0xa2, 0xb1, 0x58, 0x4a, 0x56, 0xe6, 0xb6, 0x3e, 0xbb, 0x63, 0xc9, 0x4e, 0xc8,
-	0xb8, 0x6a, 0x29, 0xfe, 0xde, 0x08, 0xbd, 0x41, 0x04, 0xbb, 0xa8, 0xaf, 0x3d, 0xef, 0x17, 0x67,
-	0xe4, 0xf2, 0xf5, 0x31, 0x11, 0xb7, 0xd2, 0x5b, 0x90, 0x4d, 0x70, 0xd6, 0x1b, 0xe0, 0xd1, 0x2b,
-	0x32, 0x41, 0x1d, 0x24, 0xbb, 0xe8, 0xc2, 0xd0, 0xd4, 0x65, 0xca, 0x47, 0xb8, 0x0c, 0xd2, 0xa7,
-	0x4e, 0x2f, 0x44, 0x6a, 0x54, 0x72, 0x56, 0x64, 0x7c, 0x9a, 0xf8, 0x44, 0x1b, 0x1d, 0xbb, 0xfd,
-	0x54, 0x76, 0x56, 0xcf, 0x96, 0x7f, 0xd3, 0xc0, 0x5b, 0xaa, 0xea, 0x9d, 0xe1, 0x1d, 0x36, 0x4f,
-	0x11, 0x8b, 0x45, 0xe1, 0xc1, 0xf7, 0x81, 0x3e, 0xae, 0x89, 0xf8, 0xac, 0xff, 0x8d, 0x5d, 0x3b,
-	0xfc, 0x10, 0xac, 0xde, 0x7d, 0x0b, 0x71, 0x21, 0xcb, 0x77, 0x35, 0x1a, 0xbe, 0x03, 0x16, 0xd0,
-	0x79, 0x80, 0x5c, 0xa9, 0xff, 0x76, 0xc8, 0x88, 0x9a, 0x8e, 0x9c, 0x35, 0x3f, 0x70, 0xd6, 0x43,
-	0x46, 0xe0, 0x7b, 0x60, 0x11, 0x1d, 0x1f, 0x23, 0x57, 0xe0, 0x53, 0x14, 0x45, 0x65, 0x54, 0xd4,
-	0xc2, 0x8d, 0x57, 0x86, 0xed, 0xa7, 0xb2, 0x49, 0x3d, 0xb5, 0x9f, 0xca, 0xa6, 0xf4, 0x74, 0xf9,
-	0x87, 0x24, 0x58, 0x56, 0x6f, 0xd6, 0x8a, 0x4f, 0x6d, 0xf5, 0x1c, 0x7e, 0x32, 0xba, 0x59, 0x7c,
-	0xcc, 0x39, 0x26, 0x1d, 0x3b, 0x40, 0xc4, 0xe9, 0x89, 0x0b, 0xb5, 0x30, 0x72, 0xf1, 0x66, 0x79,
-	0x12, 0x61, 0x87, 0x11, 0x34, 0x36, 0x38, 0xa9, 0x7b, 0x0e, 0x4e, 0xfa, 0x81, 0x07, 0x27, 0x33,
-	0xdd, 0xe0, 0xcc, 0x4e, 0x39, 0x38, 0xd9, 0x37, 0xdd, 0xee, 0x09, 0x3d, 0x59, 0xfe, 0x23, 0x01,
-	0x96, 0x86, 0x63, 0xb1, 0x87, 0xb9, 0xeb, 0x30, 0x0f, 0x79, 0x52, 0xa4, 0x88, 0x31, 0x3a, 0xd0,
-	0x46, 0x64, 0x8c, 0xf5, 0x39, 0x79, 0xcf, 0x3e, 0xa7, 0x1e, 0xb8, 0xcf, 0xe9, 0xe9, 0xfa, 0x9c,
-	0x99, 0xb2, 0xcf, 0xb3, 0x6f, 0xd4, 0xe7, 0xf2, 0xcf, 0x09, 0xf0, 0xee, 0xf8, 0x08, 0x5b, 0x08,
-	0xfb, 0xed, 0x90, 0x71, 0xf5, 0x69, 0x94, 0x5f, 0x49, 0xc4, 0xc5, 0xbf, 0x3f, 0xca, 0x55, 0xb0,
-	0x34, 0x64, 0x9d, 0x11, 0x14, 0x53, 0xa2, 0x6b, 0xcc, 0xdf, 0x50, 0x24, 0xa2, 0xe2, 0x5f, 0x33,
-	0x55, 0x0a, 0x8e, 0xae, 0x08, 0x7b, 0xf1, 0x5a, 0xc8, 0xc5, 0x1e, 0xd3, 0x83, 0xab, 0x20, 0xe3,
-	0xf8, 0x34, 0x8c, 0x05, 0x9e, 0xb3, 0x62, 0x2b, 0x5a, 0x6f, 0x1f, 0x7c, 0x07, 0x56, 0xee, 0xfc,
-	0xe5, 0x85, 0x6f, 0x83, 0x8d, 0xc6, 0xb3, 0x43, 0xd3, 0xda, 0x79, 0x6a, 0x36, 0x0f, 0x6c, 0xab,
-	0xb1, 0xd3, 0x6a, 0x1e, 0xd8, 0x47, 0x07, 0xad, 0xc3, 0xc6, 0xae, 0xf9, 0xd8, 0x6c, 0xec, 0xe9,
-	0x33, 0x30, 0x0f, 0x16, 0x0e, 0xad, 0x66, 0xf3, 0xb1, 0xfd, 0xc4, 0x6c, 0xb5, 0xcc, 0x83, 0xcf,
-	0x75, 0x6d, 0xe8, 0x32, 0x0f, 0xbe, 0xde, 0xf9, 0xd2, 0xdc, 0xd3, 0x13, 0xf5, 0xaf, 0x9e, 0x5f,
-	0x16, 0xb4, 0x17, 0x97, 0x05, 0xed, 0xe5, 0x65, 0x41, 0xfb, 0xf3, 0xb2, 0xa0, 0xfd, 0x74, 0x55,
-	0x98, 0x79, 0x71, 0x55, 0x98, 0x79, 0x79, 0x55, 0x98, 0xf9, 0x66, 0xbb, 0x83, 0xc5, 0x49, 0xd8,
-	0xae, 0xba, 0xd4, 0xaf, 0xc9, 0x6f, 0xef, 0x26, 0x41, 0xe2, 0x8c, 0xb2, 0xae, 0x32, 0x18, 0xed,
-	0xf5, 0x6a, 0xe7, 0x13, 0xff, 0xfb, 0xed, 0x8c, 0xfa, 0xe1, 0xdf, 0xfe, 0x3b, 0x00, 0x00, 0xff,
-	0xff, 0x26, 0xb3, 0x41, 0x0f, 0x8e, 0x0c, 0x00, 0x00,
+	// 1476 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x58, 0x4f, 0x53, 0x1b, 0x47,
+	0x16, 0x67, 0xf4, 0x07, 0x49, 0x8d, 0xc0, 0xa3, 0x46, 0xc0, 0xc0, 0x02, 0xc2, 0xb2, 0x5d, 0xc5,
+	0xee, 0x16, 0xb0, 0x05, 0x5b, 0xbb, 0x5b, 0x5b, 0xb9, 0x20, 0x90, 0x13, 0x51, 0x36, 0x90, 0x96,
+	0xed, 0x72, 0xe5, 0x90, 0xc9, 0x30, 0xd3, 0xc0, 0x14, 0x33, 0xd3, 0x93, 0xee, 0x1e, 0x0c, 0xf7,
+	0x1c, 0x72, 0x4c, 0x95, 0x3f, 0x49, 0xaa, 0x92, 0x63, 0xee, 0x3e, 0xba, 0x72, 0xf2, 0x21, 0xa5,
+	0x24, 0xf8, 0xa6, 0x4f, 0x91, 0xea, 0xee, 0x19, 0xfd, 0x41, 0x02, 0xbb, 0x64, 0xe7, 0x94, 0x5b,
+	0xf7, 0xfb, 0xbd, 0xf7, 0xe6, 0xbd, 0x37, 0xbf, 0x7e, 0xaf, 0x67, 0xc0, 0x52, 0x48, 0xec, 0x33,
+	0xcc, 0x37, 0x38, 0x39, 0xc3, 0x01, 0xf1, 0x5d, 0x9b, 0x6d, 0xe0, 0x73, 0x1c, 0xf0, 0xf5, 0x90,
+	0x12, 0x4e, 0x60, 0x49, 0xc1, 0xeb, 0x5d, 0x78, 0x61, 0xde, 0x26, 0xcc, 0x27, 0xcc, 0x94, 0x0a,
+	0x1b, 0x6a, 0xa3, 0xb4, 0x17, 0xca, 0x27, 0xe4, 0x84, 0x28, 0xb9, 0x58, 0xc5, 0x52, 0x23, 0x7e,
+	0x44, 0x48, 0x09, 0x39, 0xde, 0xe0, 0x97, 0x21, 0x4e, 0xf4, 0x87, 0x3c, 0xbc, 0x07, 0xae, 0xfe,
+	0x92, 0x05, 0xa5, 0xba, 0x08, 0x66, 0xc7, 0xb3, 0x5c, 0xbf, 0x7e, 0x11, 0xba, 0x14, 0x3b, 0xd0,
+	0x03, 0x25, 0x2c, 0x96, 0x16, 0x77, 0x49, 0x60, 0x52, 0x6c, 0x31, 0x12, 0x18, 0xa9, 0x15, 0x6d,
+	0x75, 0x6a, 0x73, 0x75, 0x7d, 0x20, 0xdc, 0xf5, 0xae, 0xad, 0x34, 0x40, 0x52, 0xbf, 0x36, 0xd3,
+	0x6e, 0x55, 0x06, 0xdd, 0x20, 0x1d, 0x5f, 0x53, 0x84, 0x6b, 0x00, 0x04, 0x91, 0x6f, 0x52, 0xec,
+	0x59, 0x97, 0xcc, 0x48, 0xaf, 0x68, 0xab, 0x99, 0xda, 0x54, 0xbb, 0x55, 0xe9, 0x91, 0xa2, 0x42,
+	0x10, 0xf9, 0x48, 0x2e, 0xe1, 0x73, 0x30, 0x2f, 0x00, 0x5b, 0x3c, 0x14, 0x3b, 0xa6, 0x4d, 0xfc,
+	0x30, 0xe2, 0xd8, 0x8c, 0x02, 0x97, 0x33, 0x23, 0x23, 0xad, 0x97, 0xda, 0xad, 0xca, 0xcd, 0x4a,
+	0x68, 0x36, 0x88, 0xfc, 0x1d, 0x85, 0xec, 0x28, 0xe0, 0xa9, 0x90, 0xc3, 0x2f, 0xc1, 0xdf, 0x84,
+	0x11, 0x66, 0xdc, 0xf5, 0x2d, 0x3e, 0xe0, 0x3b, 0x2b, 0x7d, 0x57, 0xda, 0xad, 0xca, 0x6d, 0x6a,
+	0xc8, 0x08, 0x22, 0xbf, 0x9e, 0x60, 0x7d, 0xfe, 0xff, 0x03, 0x26, 0x93, 0x80, 0xa2, 0x90, 0x9c,
+	0x71, 0x23, 0xb7, 0xa2, 0xad, 0x16, 0x6a, 0xa5, 0x76, 0xab, 0xd2, 0x0f, 0xa0, 0x62, 0xbc, 0x7d,
+	0x2a, 0x76, 0x70, 0x09, 0x00, 0x86, 0xe9, 0xb9, 0x6b, 0x63, 0xd3, 0x75, 0x8c, 0xbc, 0x30, 0x42,
+	0x85, 0x58, 0xd2, 0x70, 0x60, 0x03, 0x4c, 0x5b, 0x61, 0xe8, 0xb9, 0xb6, 0xaa, 0xb3, 0xe5, 0x38,
+	0x14, 0x33, 0x66, 0x14, 0xa4, 0x73, 0xe3, 0xe7, 0x1f, 0xd6, 0xca, 0x31, 0x83, 0xb6, 0x15, 0xd2,
+	0xe4, 0xd4, 0x0d, 0x4e, 0x10, 0xec, 0x31, 0x8a, 0x11, 0xf8, 0x5f, 0x60, 0x30, 0xcc, 0x98, 0x70,
+	0x83, 0x03, 0xc7, 0x3c, 0xf2, 0x88, 0x7d, 0x66, 0x9e, 0x62, 0xf7, 0xe4, 0x94, 0x1b, 0x60, 0x45,
+	0x5b, 0x4d, 0xa3, 0x99, 0x18, 0xaf, 0x07, 0x4e, 0x4d, 0xa0, 0x9f, 0x49, 0x10, 0x6e, 0x81, 0x59,
+	0x19, 0xb2, 0x29, 0x19, 0x68, 0x32, 0x6e, 0xf1, 0x88, 0x99, 0x6e, 0xc0, 0x8d, 0x89, 0x15, 0x6d,
+	0x35, 0x8b, 0xa6, 0x25, 0x7a, 0x28, 0xc0, 0xa6, 0xc4, 0x1a, 0x01, 0x87, 0x4f, 0xc0, 0x3c, 0x8b,
+	0x44, 0x10, 0x98, 0x9a, 0x24, 0xc4, 0xd4, 0xe2, 0x84, 0x76, 0xc2, 0x2f, 0xbe, 0x23, 0xfc, 0xb9,
+	0xc4, 0xf4, 0x20, 0xb6, 0x8c, 0xe1, 0xbd, 0x4c, 0x5e, 0xd3, 0x53, 0x7b, 0x99, 0xfc, 0xb8, 0x9e,
+	0xab, 0xfe, 0x58, 0xec, 0xa5, 0x77, 0x13, 0x73, 0xee, 0x61, 0x07, 0x6e, 0x82, 0x19, 0x15, 0x26,
+	0xc5, 0x5f, 0x47, 0x2e, 0xc5, 0x3e, 0x0e, 0xb8, 0x8c, 0x35, 0xa5, 0x62, 0x95, 0x20, 0xea, 0x62,
+	0x22, 0xd6, 0xbf, 0x2e, 0x49, 0xf3, 0xa3, 0x90, 0xb4, 0xf0, 0x9e, 0x24, 0x05, 0x1f, 0x99, 0xa4,
+	0x13, 0xa3, 0x91, 0xb4, 0x38, 0x22, 0x49, 0x27, 0x47, 0x24, 0x29, 0xfc, 0x56, 0x03, 0xd3, 0x14,
+	0xbf, 0xb0, 0xa8, 0x63, 0x3a, 0x2e, 0xe3, 0xd4, 0x3d, 0x8a, 0x44, 0x8a, 0xc6, 0xd4, 0x4a, 0x7a,
+	0x75, 0x62, 0xf3, 0x93, 0x21, 0x4d, 0x76, 0x80, 0xc6, 0xeb, 0x48, 0xda, 0xef, 0xf6, 0x98, 0xd7,
+	0x03, 0x4e, 0x2f, 0x6b, 0xf3, 0xaf, 0x5a, 0x95, 0x31, 0xd1, 0x7c, 0x7d, 0x37, 0xe0, 0x7d, 0xee,
+	0x11, 0xa4, 0x03, 0x36, 0xf0, 0xa5, 0x06, 0x16, 0x87, 0x84, 0x62, 0x3a, 0x98, 0x5b, 0xae, 0x87,
+	0x1d, 0xe3, 0x8e, 0x8c, 0xe9, 0x9f, 0x43, 0x62, 0x1a, 0x8c, 0x60, 0x57, 0x1a, 0xd5, 0xee, 0xc7,
+	0x21, 0xdc, 0xea, 0x18, 0x2d, 0xd0, 0x1b, 0xec, 0xb1, 0x23, 0x68, 0xc8, 0x54, 0x9e, 0x31, 0x0d,
+	0xf5, 0x2e, 0x0d, 0xfb, 0x00, 0x54, 0x8c, 0xb7, 0x8a, 0x86, 0x6b, 0x00, 0xc8, 0xb4, 0xe5, 0x84,
+	0x31, 0x4a, 0xd2, 0x48, 0x9e, 0xd3, 0xae, 0x14, 0x15, 0xc4, 0x1a, 0x89, 0xa5, 0x50, 0x4f, 0xb8,
+	0xe4, 0x3a, 0x06, 0xec, 0xaa, 0x77, 0xa5, 0x82, 0xc5, 0x72, 0xdd, 0x70, 0xe0, 0x29, 0x98, 0xed,
+	0x92, 0xe1, 0x45, 0x80, 0xbb, 0x4c, 0x98, 0x96, 0xa6, 0x9b, 0xed, 0x56, 0xe5, 0x06, 0x8d, 0x1b,
+	0x39, 0x52, 0xee, 0x70, 0x44, 0xa8, 0x27, 0x04, 0xd9, 0x03, 0xe5, 0xfe, 0xf3, 0x1b, 0x77, 0x9e,
+	0xb2, 0x3c, 0xdf, 0x46, 0xbb, 0x55, 0x19, 0x8a, 0x23, 0xd8, 0x7b, 0xb0, 0xe3, 0x66, 0xb4, 0x05,
+	0x8a, 0x22, 0xe3, 0x4e, 0x29, 0x67, 0x64, 0xac, 0x7a, 0xbb, 0x55, 0xe9, 0x93, 0xa3, 0x09, 0xb5,
+	0x53, 0x85, 0x7c, 0x06, 0x0c, 0x72, 0x8e, 0xa9, 0x3a, 0xc1, 0x6e, 0x70, 0x62, 0x7a, 0x84, 0xb1,
+	0xd8, 0xc1, 0xac, 0x74, 0xb0, 0xd8, 0x6e, 0x55, 0x6e, 0xd4, 0x41, 0xb3, 0x7d, 0xc8, 0x23, 0xc2,
+	0x98, 0xf2, 0xbb, 0x07, 0xca, 0x0e, 0x3e, 0xf6, 0x54, 0x1b, 0xe8, 0xf1, 0x39, 0xa7, 0x8e, 0x92,
+	0x48, 0x6c, 0x18, 0x8e, 0x60, 0x47, 0xda, 0xf1, 0xb5, 0x50, 0x07, 0x73, 0x37, 0x1c, 0x02, 0xa8,
+	0x83, 0xf4, 0x19, 0xbe, 0x34, 0x34, 0xd9, 0x87, 0xc4, 0x12, 0x96, 0x41, 0xf6, 0xdc, 0xf2, 0x22,
+	0x2c, 0xbb, 0x7c, 0x01, 0xa9, 0xcd, 0xff, 0x53, 0xff, 0xd3, 0x7a, 0x27, 0xc6, 0x5e, 0x26, 0x9f,
+	0xd3, 0xf3, 0xd5, 0xdf, 0x53, 0x60, 0x51, 0x1e, 0xb8, 0xed, 0x6e, 0xfb, 0x39, 0xe8, 0xe4, 0x83,
+	0x1d, 0xf8, 0x77, 0xa0, 0x5f, 0x6f, 0x67, 0xf1, 0xb3, 0xee, 0x5c, 0xeb, 0x58, 0xf0, 0xdf, 0xbd,
+	0x9c, 0xe9, 0x6d, 0x20, 0x71, 0x20, 0xe5, 0x61, 0x3d, 0x02, 0xde, 0x03, 0x93, 0xf8, 0x22, 0xc4,
+	0xb6, 0x78, 0x3b, 0x47, 0x11, 0x0d, 0x64, 0x63, 0x2f, 0xa0, 0x62, 0x22, 0xac, 0x45, 0x34, 0x80,
+	0x0f, 0xc0, 0x14, 0x3e, 0x3e, 0xc6, 0x36, 0x77, 0xcf, 0xb1, 0xd2, 0x1a, 0x97, 0x5a, 0x93, 0x1d,
+	0xa9, 0x54, 0xeb, 0x6f, 0xcd, 0xb9, 0xeb, 0xad, 0xf9, 0xb6, 0x7e, 0x9a, 0xbf, 0xad, 0x9f, 0xfe,
+	0x0b, 0x94, 0x59, 0x28, 0x4c, 0x3c, 0xd7, 0x77, 0xb9, 0x89, 0x2f, 0x6c, 0x8c, 0x1d, 0xac, 0x9a,
+	0x7f, 0x1e, 0x41, 0x89, 0x3d, 0x12, 0x50, 0x3d, 0x46, 0xf6, 0x32, 0xf9, 0xb4, 0x9e, 0xd9, 0xcb,
+	0xe4, 0x33, 0x7a, 0xb6, 0xfa, 0x4d, 0x1a, 0x94, 0x65, 0x8d, 0x9b, 0x71, 0xfe, 0x4d, 0xcf, 0x62,
+	0xa7, 0xbd, 0xe3, 0xd9, 0x77, 0x19, 0x13, 0xac, 0x0a, 0x71, 0x60, 0x79, 0xfc, 0x52, 0x4e, 0xdd,
+	0x42, 0x3c, 0x9e, 0x1f, 0x2b, 0xec, 0x50, 0x41, 0xd7, 0x52, 0xcc, 0xbc, 0xe7, 0xf4, 0xc9, 0x7e,
+	0xe4, 0xe9, 0x33, 0x3e, 0xda, 0xf4, 0xc9, 0x8d, 0x38, 0x7d, 0xf2, 0x1f, 0x7a, 0x45, 0x4a, 0xe9,
+	0xe9, 0xea, 0xaf, 0x29, 0x30, 0xdd, 0x9d, 0x2d, 0xbb, 0x2e, 0xb3, 0x2d, 0xea, 0x60, 0x47, 0x1c,
+	0x17, 0x4c, 0x29, 0x49, 0x58, 0xaa, 0x36, 0xd7, 0xea, 0x9c, 0x7e, 0xcf, 0x3a, 0x67, 0x3e, 0x72,
+	0x9d, 0xb3, 0xa3, 0xd5, 0x79, 0x7c, 0xc4, 0x3a, 0xe7, 0x3e, 0xa8, 0xce, 0xd5, 0x9f, 0x34, 0x60,
+	0xdc, 0x34, 0x29, 0x61, 0x1d, 0x94, 0x28, 0xb6, 0xdd, 0xd0, 0x15, 0x77, 0xd0, 0xe4, 0x81, 0xda,
+	0x3b, 0x1e, 0xa8, 0x77, 0x4c, 0x92, 0x6a, 0xd5, 0x40, 0x81, 0x84, 0xfd, 0x5f, 0x6a, 0x0f, 0x86,
+	0x0c, 0x6c, 0x75, 0x75, 0x10, 0x77, 0xda, 0x83, 0x50, 0x7d, 0x7d, 0xa1, 0x3c, 0x89, 0x57, 0x70,
+	0x16, 0x8c, 0x5b, 0x3e, 0x89, 0x02, 0x1e, 0xbf, 0xd7, 0x78, 0x57, 0xfd, 0x3e, 0x95, 0x1c, 0xd4,
+	0x8e, 0x75, 0xcd, 0xe2, 0xf6, 0xe9, 0xad, 0xaf, 0x48, 0xbb, 0xed, 0x15, 0xdd, 0x13, 0xc3, 0x3d,
+	0x70, 0x30, 0x35, 0x7d, 0xe2, 0x44, 0x5e, 0xd2, 0x92, 0x8b, 0x4a, 0xf8, 0x58, 0xca, 0xe0, 0x22,
+	0x28, 0x74, 0xd2, 0x4c, 0x98, 0xd6, 0x11, 0xf4, 0x27, 0x9c, 0x19, 0x2d, 0xe1, 0xbb, 0xa0, 0xc8,
+	0x09, 0xb7, 0x3c, 0x33, 0x4e, 0x5b, 0xb5, 0xd8, 0x09, 0x29, 0xdb, 0x96, 0x22, 0xc1, 0xf7, 0xce,
+	0x15, 0x9d, 0x49, 0x02, 0x4d, 0xca, 0x6b, 0xbe, 0x3c, 0x2c, 0x0c, 0xce, 0x81, 0x1c, 0x09, 0x4d,
+	0xf1, 0x41, 0x1d, 0xb7, 0xd5, 0x71, 0x12, 0x3e, 0xb9, 0x0c, 0x71, 0xf5, 0x65, 0x0a, 0xdc, 0xbf,
+	0x3e, 0x40, 0x10, 0x76, 0xfd, 0xa3, 0x88, 0x32, 0x19, 0x8e, 0xf8, 0xbc, 0xc0, 0x8c, 0xff, 0xf9,
+	0x83, 0x64, 0x1d, 0x4c, 0x0f, 0xb9, 0x90, 0xc4, 0x05, 0x2d, 0x0d, 0xdc, 0x3d, 0xde, 0xd5, 0x49,
+	0x97, 0xfa, 0x2e, 0x4c, 0xd9, 0x04, 0x4e, 0x2e, 0x48, 0x5d, 0x0e, 0xe5, 0x7a, 0x39, 0xa4, 0x86,
+	0xeb, 0x3f, 0xbe, 0x02, 0x33, 0x43, 0xff, 0x15, 0xc0, 0xbb, 0x60, 0xa9, 0xfe, 0xfc, 0xb0, 0x81,
+	0xb6, 0x9f, 0x34, 0x0e, 0xf6, 0x4d, 0x54, 0xdf, 0x6e, 0x1e, 0xec, 0x9b, 0x4f, 0xf7, 0x9b, 0x87,
+	0xf5, 0x9d, 0xc6, 0xc3, 0x46, 0x7d, 0x57, 0x1f, 0x83, 0x25, 0x30, 0x79, 0x88, 0x0e, 0x0e, 0x1e,
+	0x9a, 0x8f, 0x1b, 0xcd, 0x66, 0x63, 0xff, 0x53, 0x5d, 0xeb, 0x8a, 0x1a, 0xfb, 0xcf, 0xb6, 0x1f,
+	0x35, 0x76, 0xf5, 0x54, 0xed, 0xf3, 0x57, 0x57, 0xcb, 0xda, 0xeb, 0xab, 0x65, 0xed, 0xcd, 0xd5,
+	0xb2, 0xf6, 0xdb, 0xd5, 0xb2, 0xf6, 0xdd, 0xdb, 0xe5, 0xb1, 0xd7, 0x6f, 0x97, 0xc7, 0xde, 0xbc,
+	0x5d, 0x1e, 0xfb, 0x62, 0xeb, 0xc4, 0xe5, 0xa7, 0xd1, 0xd1, 0xba, 0x4d, 0xfc, 0x0d, 0x71, 0x81,
+	0x58, 0x0b, 0x30, 0x7f, 0x41, 0xe8, 0x99, 0xdc, 0x50, 0xe2, 0x79, 0x1b, 0x17, 0x03, 0x3f, 0x4a,
+	0x8e, 0xc6, 0xe5, 0x9f, 0x92, 0xad, 0x3f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x5e, 0x7a, 0x0b, 0x6e,
+	0xc7, 0x11, 0x00, 0x00,
 }
 
 func (m *EventClaimExpired) Marshal() (dAtA []byte, err error) {
@@ -888,6 +1203,90 @@ func (m *EventClaimSettled) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.DeflationLossUpokt) > 0 {
+		i -= len(m.DeflationLossUpokt)
+		copy(dAtA[i:], m.DeflationLossUpokt)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.DeflationLossUpokt)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xba
+	}
+	if len(m.OverservicingLossUpokt) > 0 {
+		i -= len(m.OverservicingLossUpokt)
+		copy(dAtA[i:], m.OverservicingLossUpokt)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.OverservicingLossUpokt)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xb2
+	}
+	if len(m.MintedUpokt) > 0 {
+		i -= len(m.MintedUpokt)
+		copy(dAtA[i:], m.MintedUpokt)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.MintedUpokt)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xaa
+	}
+	if m.NumEstimatedRelays != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumEstimatedRelays))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa0
+	}
+	if len(m.SupplierOwnerAddress) > 0 {
+		i -= len(m.SupplierOwnerAddress)
+		copy(dAtA[i:], m.SupplierOwnerAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SupplierOwnerAddress)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x9a
+	}
+	if len(m.SessionId) > 0 {
+		i -= len(m.SessionId)
+		copy(dAtA[i:], m.SessionId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SessionId)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x92
+	}
+	if len(m.MintRatio) > 0 {
+		i -= len(m.MintRatio)
+		copy(dAtA[i:], m.MintRatio)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.MintRatio)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x8a
+	}
+	if len(m.SettledUpokt) > 0 {
+		i -= len(m.SettledUpokt)
+		copy(dAtA[i:], m.SettledUpokt)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SettledUpokt)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x82
+	}
+	if len(m.RewardDistributionDetailed) > 0 {
+		for iNdEx := len(m.RewardDistributionDetailed) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.RewardDistributionDetailed[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintEvent(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x7a
+		}
+	}
 	if len(m.RewardDistribution) > 0 {
 		keysForRewardDistribution := make([]string, 0, len(m.RewardDistribution))
 		for k := range m.RewardDistribution {
@@ -993,6 +1392,28 @@ func (m *EventApplicationOverserviced) MarshalToSizedBuffer(dAtA []byte) (int, e
 	_ = i
 	var l int
 	_ = l
+	if m.SpendLimitExceeded {
+		i--
+		if m.SpendLimitExceeded {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
+		i--
+		dAtA[i] = 0x40
+	}
+	if len(m.ServiceId) > 0 {
+		i -= len(m.ServiceId)
+		copy(dAtA[i:], m.ServiceId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
+		i--
+		dAtA[i] = 0x3a
+	}
 	if len(m.EffectiveBurn) > 0 {
 		i -= len(m.EffectiveBurn)
 		copy(dAtA[i:], m.EffectiveBurn)
@@ -1142,6 +1563,114 @@ func (m *EventClaimDiscarded) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintEvent(dAtA, i, uint64(len(m.Error)))
 		i--
 		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RewardDistributionDetail) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RewardDistributionDetail) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RewardDistributionDetail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Amount) > 0 {
+		i -= len(m.Amount)
+		copy(dAtA[i:], m.Amount)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Amount)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.OpReason != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.OpReason))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.RecipientAddress) > 0 {
+		i -= len(m.RecipientAddress)
+		copy(dAtA[i:], m.RecipientAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.RecipientAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventSettlementBatch) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventSettlementBatch) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventSettlementBatch) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.OpType) > 0 {
+		i -= len(m.OpType)
+		copy(dAtA[i:], m.OpType)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.OpType)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.NumClaims != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumClaims))
+		i--
+		dAtA[i] = 0x30
+	}
+	if len(m.TotalAmount) > 0 {
+		i -= len(m.TotalAmount)
+		copy(dAtA[i:], m.TotalAmount)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.TotalAmount)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.OpReason != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.OpReason))
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.Recipient) > 0 {
+		i -= len(m.Recipient)
+		copy(dAtA[i:], m.Recipient)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Recipient)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.SenderModule) > 0 {
+		i -= len(m.SenderModule)
+		copy(dAtA[i:], m.SenderModule)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SenderModule)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -1313,6 +1842,43 @@ func (m *EventClaimSettled) Size() (n int) {
 			n += mapEntrySize + 1 + sovEvent(uint64(mapEntrySize))
 		}
 	}
+	if len(m.RewardDistributionDetailed) > 0 {
+		for _, e := range m.RewardDistributionDetailed {
+			l = e.Size()
+			n += 1 + l + sovEvent(uint64(l))
+		}
+	}
+	l = len(m.SettledUpokt)
+	if l > 0 {
+		n += 2 + l + sovEvent(uint64(l))
+	}
+	l = len(m.MintRatio)
+	if l > 0 {
+		n += 2 + l + sovEvent(uint64(l))
+	}
+	l = len(m.SessionId)
+	if l > 0 {
+		n += 2 + l + sovEvent(uint64(l))
+	}
+	l = len(m.SupplierOwnerAddress)
+	if l > 0 {
+		n += 2 + l + sovEvent(uint64(l))
+	}
+	if m.NumEstimatedRelays != 0 {
+		n += 2 + sovEvent(uint64(m.NumEstimatedRelays))
+	}
+	l = len(m.MintedUpokt)
+	if l > 0 {
+		n += 2 + l + sovEvent(uint64(l))
+	}
+	l = len(m.OverservicingLossUpokt)
+	if l > 0 {
+		n += 2 + l + sovEvent(uint64(l))
+	}
+	l = len(m.DeflationLossUpokt)
+	if l > 0 {
+		n += 2 + l + sovEvent(uint64(l))
+	}
 	return n
 }
 
@@ -1337,6 +1903,16 @@ func (m *EventApplicationOverserviced) Size() (n int) {
 	l = len(m.EffectiveBurn)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ServiceId)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	if m.SpendLimitExceeded {
+		n += 2
 	}
 	return n
 }
@@ -1397,6 +1973,60 @@ func (m *EventClaimDiscarded) Size() (n int) {
 		n += 1 + sovEvent(uint64(m.ClaimProofStatusInt))
 	}
 	l = len(m.SupplierOperatorAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	return n
+}
+
+func (m *RewardDistributionDetail) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.RecipientAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.OpReason != 0 {
+		n += 1 + sovEvent(uint64(m.OpReason))
+	}
+	l = len(m.Amount)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	return n
+}
+
+func (m *EventSettlementBatch) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	l = len(m.SenderModule)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.Recipient)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.OpReason != 0 {
+		n += 1 + sovEvent(uint64(m.OpReason))
+	}
+	l = len(m.TotalAmount)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.NumClaims != 0 {
+		n += 1 + sovEvent(uint64(m.NumClaims))
+	}
+	l = len(m.OpType)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
@@ -2132,6 +2762,283 @@ func (m *EventClaimSettled) Unmarshal(dAtA []byte) error {
 			}
 			m.RewardDistribution[mapkey] = mapvalue
 			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RewardDistributionDetailed", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RewardDistributionDetailed = append(m.RewardDistributionDetailed, RewardDistributionDetail{})
+			if err := m.RewardDistributionDetailed[len(m.RewardDistributionDetailed)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SettledUpokt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SettledUpokt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MintRatio", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MintRatio = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 18:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SessionId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SupplierOwnerAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SupplierOwnerAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 20:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedRelays", wireType)
+			}
+			m.NumEstimatedRelays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NumEstimatedRelays |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 21:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MintedUpokt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MintedUpokt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OverservicingLossUpokt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OverservicingLossUpokt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 23:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeflationLossUpokt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DeflationLossUpokt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -2310,6 +3217,77 @@ func (m *EventApplicationOverserviced) Unmarshal(dAtA []byte) error {
 			}
 			m.EffectiveBurn = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ServiceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SpendLimitExceeded", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SpendLimitExceeded = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -2741,6 +3719,374 @@ func (m *EventClaimDiscarded) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.SupplierOperatorAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RewardDistributionDetail) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RewardDistributionDetail: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RewardDistributionDetail: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RecipientAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RecipientAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OpReason", wireType)
+			}
+			m.OpReason = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.OpReason |= SettlementOpReason(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Amount = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventSettlementBatch) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventSettlementBatch: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventSettlementBatch: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderModule", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderModule = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Recipient", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Recipient = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OpReason", wireType)
+			}
+			m.OpReason = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.OpReason |= SettlementOpReason(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TotalAmount = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumClaims", wireType)
+			}
+			m.NumClaims = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NumClaims |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OpType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OpType = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

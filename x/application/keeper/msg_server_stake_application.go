@@ -57,6 +57,19 @@ func (k Keeper) StakeApplication(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	// Validate per-session spend limit if a positive value is being set.
+	if msg.PerSessionSpendLimit != nil && msg.PerSessionSpendLimit.IsPositive() {
+		if msg.PerSessionSpendLimit.Amount.LT(types.MinPerSessionSpendLimit.Amount) {
+			return nil, status.Error(
+				codes.InvalidArgument,
+				types.ErrAppInvalidStake.Wrapf(
+					"per_session_spend_limit %s must be at least %s",
+					msg.PerSessionSpendLimit, types.MinPerSessionSpendLimit,
+				).Error(),
+			)
+		}
+	}
+
 	// Check if the application already exists or not
 	var (
 		coinsToEscrow   sdk.Coin
@@ -170,7 +183,20 @@ func (k Keeper) createApplication(
 		ServiceConfigs:            msg.Services,
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]types.UndelegatingGatewayList),
+		PerSessionSpendLimit:      normalizeSpendLimit(msg.PerSessionSpendLimit),
 	}
+}
+
+// normalizeSpendLimit returns nil for nil or zero input (no limit),
+// and the coin as-is for positive values.
+func normalizeSpendLimit(limit *sdk.Coin) *sdk.Coin {
+	if limit == nil || limit.IsZero() {
+		return nil
+	}
+	if limit.Denom != "upokt" {
+		return nil
+	}
+	return limit
 }
 
 func (k Keeper) updateApplication(
@@ -198,6 +224,16 @@ func (k Keeper) updateApplication(
 		return types.ErrAppInvalidServiceConfigs.Wrapf("must have at least one service")
 	}
 	app.ServiceConfigs = msg.Services
+
+	// Three-way per-session spend limit semantics:
+	// nil = preserve existing limit, zero = clear limit, positive = set new limit.
+	if msg.PerSessionSpendLimit != nil {
+		if msg.PerSessionSpendLimit.IsZero() {
+			app.PerSessionSpendLimit = nil // explicitly clear
+		} else {
+			app.PerSessionSpendLimit = msg.PerSessionSpendLimit
+		}
+	}
 
 	return nil
 }

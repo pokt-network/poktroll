@@ -32,6 +32,14 @@ func (k msgServer) UpdateParams(
 
 	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params))
 
+	// Record the new params in history with their effective height.
+	// New params become effective at the start of the next session.
+	if err := k.recordParamsHistory(ctx, msg.Params); err != nil {
+		err = fmt.Errorf("unable to record params history: %w", err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	if err := k.SetParams(ctx, msg.Params); err != nil {
 		err = fmt.Errorf("unable to set params: %w", err)
 		logger.Error(err.Error())

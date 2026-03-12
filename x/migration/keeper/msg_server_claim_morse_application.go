@@ -164,6 +164,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		shannonAccAddr.String(),
 		preClaimAppStake.Add(morseClaimableAccount.GetApplicationStake()),
 		[]*sharedtypes.ApplicationServiceConfig{msg.ServiceConfig},
+		nil, // perSessionSpendLimit
 	)
 	app, err := k.appKeeper.StakeApplication(ctx, logger, msgStakeApp)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	cosmoslog "cosmossdk.io/log"
+	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -90,6 +91,30 @@ type TLMContext struct {
 	Supplier              *sharedtypes.Supplier
 	RelayMiningDifficulty *servicetypes.RelayMiningDifficulty
 	StakingKeeper         tokenomicstypes.StakingKeeper
+
+	// ValidatorRewardAccumulator collects proposer amounts across all claims.
+	// Keyed by SettlementOpReason. After all claims are processed, these are
+	// distributed once per key via distributeValidatorRewards (#1758).
+	// This batching eliminates per-claim precision loss from floor division
+	// and reduces redundant KV reads to GetBondedValidatorsByPower.
+	ValidatorRewardAccumulator map[tokenomicstypes.SettlementOpReason]math.Int
+}
+
+// accumulateValidatorReward safely adds amount to the validator reward accumulator
+// for the given OpReason. It handles nil map and zero-value math.Int gracefully.
+func accumulateValidatorReward(
+	tlmCtx *TLMContext,
+	opReason tokenomicstypes.SettlementOpReason,
+	amount math.Int,
+) {
+	if tlmCtx.ValidatorRewardAccumulator == nil {
+		tlmCtx.ValidatorRewardAccumulator = make(map[tokenomicstypes.SettlementOpReason]math.Int)
+	}
+	existing, ok := tlmCtx.ValidatorRewardAccumulator[opReason]
+	if !ok {
+		existing = math.ZeroInt()
+	}
+	tlmCtx.ValidatorRewardAccumulator[opReason] = existing.Add(amount)
 }
 
 // NewDefaultTokenLogicModules

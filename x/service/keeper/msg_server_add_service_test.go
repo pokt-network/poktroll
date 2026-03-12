@@ -206,6 +206,18 @@ func TestMsgServer_AddService(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+		{
+			desc:    "valid - update service name (human readable description)",
+			setup:   func(t *testing.T) {},
+			address: oldServiceOwnerAddr,
+			service: sharedtypes.Service{
+				Id:                   oldService.Id,
+				Name:                 "updated service name",
+				ComputeUnitsPerRelay: 20,
+				OwnerAddress:         oldServiceOwnerAddr,
+			},
+			expectedErr: nil,
+		},
 	}
 
 	for _, test := range tests {

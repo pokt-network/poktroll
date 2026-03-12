@@ -688,6 +688,7 @@ func (s *relaysSuite) addPendingStakeApplicationMsg(application *accountInfo) {
 		application.address,
 		application.amountToStake,
 		[]*sharedtypes.ApplicationServiceConfig{{ServiceId: testedServiceId}},
+		nil, // perSessionSpendLimit
 	))
 }
 

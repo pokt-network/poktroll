@@ -13,5 +13,5 @@ title: Repositories (Outdated)
 - [pokt-network/pocket-network-genesis](https://github.com/pokt-network/pocket-network-genesis): repository containing genesis files for all networks.
 - 🧑‍💻 [Shannon SDK](https://github.com/pokt-network/shannon-sdk)
 - 🖥️ [Shannon source code](https://github.com/pokt-network/poktroll)
-- **PATH Roadmap:** [Github project](https://github.com/orgs/buildwithgrove/projects/1) (developed by [Grove](https://grove.city/))
+- **PATH:** [Github repository](https://github.com/pokt-network/path)
 - **Shannon Roadmap:** [Github project](https://github.com/orgs/pokt-network/projects/144)

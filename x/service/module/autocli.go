@@ -142,6 +142,16 @@ pocketd q service show-service pocket --dehydrated`,
 						// {ProtoField: "computeUnitsPerRelay"},
 					},
 				},
+				{
+					RpcMethod: "TransferService",
+					Use:       "transfer-service <service-id> <new-owner-address>",
+					Short:     "Transfer ownership of a service to a new address",
+					Long: `Transfer ownership of an on-chain service to a new address.
+Only the current owner (--from) can initiate the transfer.
+The new owner immediately gains full control of the service.`,
+					Example:        `pocketd tx service transfer-service svc-foo pokt1newowner... --from currentowner`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "service_id"}, {ProtoField: "new_owner_address"}},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
