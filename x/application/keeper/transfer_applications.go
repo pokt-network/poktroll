@@ -247,9 +247,11 @@ func mergeAppPendingUndelegations(srcApp, dstApp *apptypes.Application) {
 		}
 	}
 
-	// Sort gateway addresses within each height for deterministic protobuf serialization.
-	// Without sorting, map iteration order causes different validators to produce different
-	// serialized state, leading to AppHash mismatch and chain halt.
+	// CONSENSUS-CRITICAL: Sort gateway addresses within each height for deterministic
+	// protobuf serialization. The loop above iterates undelegationsUnionAddrToHeightMap
+	// (a Go map with non-deterministic iteration order), so the GatewayAddresses slices
+	// are in arbitrary order. Without this sort, different validators produce different
+	// serialized state, causing AppHash mismatch and chain halt.
 	for height, list := range dstApp.PendingUndelegations {
 		sort.Strings(list.GatewayAddresses)
 		dstApp.PendingUndelegations[height] = list

@@ -79,11 +79,19 @@ func computeSettlementBreakdown(
 	mintedCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewIntFromBigInt(mintedAmount))
 
 	// overservicing_loss = claimed - settled
+	// Defensive: clamp to zero in case upstream invariants change, since
+	// cosmostypes.NewCoin panics on negative amounts which would halt the chain.
 	overservicingLoss := claimeduPOKT.Amount.Sub(settledUpokt.Amount)
+	if overservicingLoss.IsNegative() {
+		overservicingLoss = math.ZeroInt()
+	}
 	overservicingLossCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, overservicingLoss)
 
 	// deflation_loss = settled - minted
 	deflationLoss := settledUpokt.Amount.Sub(math.NewIntFromBigInt(mintedAmount))
+	if deflationLoss.IsNegative() {
+		deflationLoss = math.ZeroInt()
+	}
 	deflationLossCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, deflationLoss)
 
 	return mintedCoin.String(), overservicingLossCoin.String(), deflationLossCoin.String()
