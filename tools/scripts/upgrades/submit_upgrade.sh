@@ -10,6 +10,7 @@
 #     --keyring-backend <backend>: Keyring backend to use. Default: test
 #     --home <path>: Home directory for pocketd. Default: ~/.pocket
 #     --fees <amount>: Transaction fees. Default: 300upokt
+#     --from <address>: Override the from account address (e.g., use Grove address)
 #
 # This script will:
 # 1. Set up environment variables based on the network
@@ -68,6 +69,7 @@ if [ -z "$1" ] || [ -z "$2" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]];
     echo "  --keyring-backend <backend>: Keyring backend to use. Default: test"
     echo "  --home <path>: Home directory for pocketd. Default: ~/.pocket"
     echo "  --fees <amount>: Transaction fees. Default: 300upokt"
+    echo "  --from <address>: Override the from account address"
     echo "  --instruction-only: Show instructions without modifying the JSON file"
     echo ""
     echo "Examples:"
@@ -86,6 +88,7 @@ HEIGHT_OFFSET=5
 KEYRING_BACKEND="test"
 HOME_DIR="~/.pocket"
 FEES="300upokt"
+FROM_OVERRIDE=""
 INSTRUCTION_ONLY=false
 
 # Parse optional arguments
@@ -105,6 +108,10 @@ while [[ "$#" -gt 0 ]]; do
         ;;
     --fees)
         FEES="$2"
+        shift 2
+        ;;
+    --from)
+        FROM_OVERRIDE="$2"
         shift 2
         ;;
     --instruction-only)
@@ -143,7 +150,7 @@ beta)
     ;;
 main)
     RPC_ENDPOINT="https://sauron-rpc.infra.pocket.network"
-    FROM_ACCOUNT="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
+    FROM_ACCOUNT="pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegmv"
     CHAIN_ID="pocket"
     NODE_FLAG="--node=https://sauron-rpc.infra.pocket.network"
     GRAFANA_DASHBOARD="https://grafana.poktroll.com/goto/K3BXngjHR?orgId=1"
@@ -153,6 +160,11 @@ main)
     exit 1
     ;;
 esac
+
+# Override FROM_ACCOUNT if --from was provided
+if [ -n "$FROM_OVERRIDE" ]; then
+    FROM_ACCOUNT="$FROM_OVERRIDE"
+fi
 
 # Set upgrade transaction JSON path
 UPGRADE_TX_JSON="tools/scripts/upgrades/upgrade_tx_${VERSION}_${ENVIRONMENT}.json"

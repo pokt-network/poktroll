@@ -250,7 +250,7 @@ beta)
     ;;
 main)
     AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
-    FROM_KEY="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
+    FROM_KEY="pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegmv"
     CHAIN_ID="pocket"
     NODE="--node=https://sauron-rpc.infra.pocket.network"
     ;;

@@ -74,7 +74,7 @@ get_beta_config() {
 
 get_main_config() {
   case "$1" in
-  from) echo "pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh" ;;
+  from) echo "pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegmv" ;;
   keyring_backend) echo "test" ;;
   chain_id) echo "pocket" ;;
   node) echo "https://sauron-rpc.infra.pocket.network" ;;
@@ -103,6 +103,7 @@ OPTIONS:
   --gov-only              Only run governance parameters (from gov_params.sh)
   --state-only            Only run state shift parameters (default behavior)
   --param-dir=DIR         Specify parameter directory (required for state/gov param updates)
+  --from=ADDR             Override the from address for transaction signing
 
 EXAMPLES:
   $0 main --param-dir=tools/scripts/params/bulk_params_main   # Update main network with main-specific params
@@ -209,6 +210,12 @@ validate_files() {
 get_config_value() {
   local env="$1"
   local key="$2"
+
+  # If --from override is set and the key is "from", use the override
+  if [[ "$key" == "from" && -n "${FROM_OVERRIDE:-}" ]]; then
+    echo "$FROM_OVERRIDE"
+    return
+  fi
 
   case "$env" in
   local)
@@ -386,6 +393,18 @@ main() {
         shift 2
       else
         error "--param-dir requires a directory path"
+      fi
+      ;;
+    --from=*)
+      FROM_OVERRIDE="${1#*=}"
+      shift
+      ;;
+    --from)
+      if [[ -n "$2" && "$2" != -* ]]; then
+        FROM_OVERRIDE="$2"
+        shift 2
+      else
+        error "--from requires an address"
       fi
       ;;
     local | alpha | beta | main)
