@@ -99,11 +99,10 @@ func NewDefaultHTTPClientWithDebugMetrics() *HTTPClientWithDebugMetrics {
 		MaxIdleConns:        concurrencyLimiterMax / 5,  // Scale total pool: 20% of max concurrency
 		MaxIdleConnsPerHost: concurrencyLimiterMax / 20, // Scale per-host pool: 5% of max concurrency
 		MaxConnsPerHost:     concurrencyLimiterMax / 10, // Scale max connections: 10% of max concurrency
-		IdleConnTimeout:     90 * time.Second,           // Reduced from 300s - shorter idle to free resources
+		IdleConnTimeout:     600 * time.Second,          // Increased from 80s - longuer time for slower backends
 
 		// Timeout settings optimized for quick failure detection
-		TLSHandshakeTimeout:   5 * time.Second, // Fast TLS timeout since handshakes typically complete in ~100ms
-		ResponseHeaderTimeout: 5 * time.Second, // Header timeout to allow for server processing time
+		TLSHandshakeTimeout: 5 * time.Second, // Fast TLS timeout since handshakes typically complete in ~100ms
 
 		// Performance optimizations
 		DisableKeepAlives:  false, // Enable connection reuse to reduce connection overhead
@@ -119,7 +118,7 @@ func NewDefaultHTTPClientWithDebugMetrics() *HTTPClientWithDebugMetrics {
 	// Individual requests will use context deadlines for actual timeout control
 	httpClient := &http.Client{
 		Transport: transport,
-		Timeout:   80 * time.Second, // Large fallback timeout (80 seconds)
+		Timeout:   600 * time.Second, // Large fallback timeout (600 seconds)
 	}
 
 	return &HTTPClientWithDebugMetrics{
