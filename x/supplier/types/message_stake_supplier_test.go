@@ -463,6 +463,38 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
+			desc: "invalid service configs - duplicate revenue share address",
+			msg: MsgStakeSupplier{
+				Signer:          operatorAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: "svcId",
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url:     "http://localhost:8080",
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            ownerAddress,
+								RevSharePercentage: 10,
+							},
+							{
+								Address:            ownerAddress,
+								RevSharePercentage: 90,
+							},
+						},
+					},
+				},
+			},
+			expectedErr: ErrSupplierInvalidServiceConfig,
+		},
+		{
 			desc: "invalid service configs - empty revenue share config",
 			msg: MsgStakeSupplier{
 				Signer:          operatorAddress,

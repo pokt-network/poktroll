@@ -178,6 +178,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// - Fix removeApplicationUndelegationIndex deleting from wrong store
 	// - Cleanup orphaned undelegation index entries accumulated since v0.1.31
 	upgrades.Upgrade_0_1_33,
+
+	// v0.1.34 - upgrade to:
+	// - Deduplicate supplier rev share addresses
+	upgrades.Upgrade_0_1_34,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

@@ -80,11 +80,12 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 				ctx, suppliertypes.ModuleName, ownerAddress, []cosmostypes.Coin{*supplier.Stake},
 			); err != nil {
+				// Log the error but continue processing to avoid halting the chain.
+				// The stuck coins remain in the supplier module pool.
 				logger.Error(fmt.Sprintf(
-					"could not send %s coins from module %s to account %s due to %s",
+					"could not send %s coins from module %s to account %s due to %s; supplier will be removed and coins will remain in module pool",
 					supplier.Stake.String(), suppliertypes.ModuleName, ownerAddress, err,
 				))
-				return numUnbondedSuppliers, err
 			}
 		}
 

@@ -6,6 +6,7 @@ package token_logic_module
 import (
 	"fmt"
 	"math/big"
+	"sort"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -83,15 +84,31 @@ func distributeSupplierRewardsToShareholders(
 		)
 	}
 
-	// NOTE: Use the serviceRevShares slice to iterate through the serviceRevSharesMap deterministically.
+	// Iterate over the deduplicated map keys (sorted for deterministic consensus ordering)
+	// rather than the raw serviceRevShares slice to ensure each unique address is paid
+	// exactly once.
 	shareAmountMap := GetSupplierShareholderAmountMap(serviceRevShares, amountToDistribute)
-	for _, revShare := range serviceRevShares {
-		shareAmount := shareAmountMap[revShare.GetAddress()]
+
+	if len(shareAmountMap) != len(serviceRevShares) {
+		logger.Warn(fmt.Sprintf(
+			"duplicate rev share addresses detected for supplier %s service %s: %d entries in list, %d unique addresses",
+			supplier.GetOperatorAddress(), serviceId, len(serviceRevShares), len(shareAmountMap),
+		))
+	}
+
+	sortedAddresses := make([]string, 0, len(shareAmountMap))
+	for addr := range shareAmountMap {
+		sortedAddresses = append(sortedAddresses, addr)
+	}
+	sort.Strings(sortedAddresses)
+
+	for _, address := range sortedAddresses {
+		shareAmount := shareAmountMap[address]
 
 		// Don't queue zero amount transfer operations.
 		if shareAmount.IsZero() {
 			// DEV_NOTE: This should never happen, but it mitigates a chain halt if it does.
-			logger.Warn(fmt.Sprintf("zero shareAmount for service rev share address %q", revShare.GetAddress()))
+			logger.Warn(fmt.Sprintf("zero shareAmount for service rev share address %q", address))
 			continue
 		}
 
@@ -101,7 +118,7 @@ func distributeSupplierRewardsToShareholders(
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         settlementOpReason,
 			SenderModule:     suppliertypes.ModuleName,
-			RecipientAddress: revShare.GetAddress(),
+			RecipientAddress: address,
 			Coin:             shareAmountCoin,
 		})
 
