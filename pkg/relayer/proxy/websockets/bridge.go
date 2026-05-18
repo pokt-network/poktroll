@@ -320,14 +320,22 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 	logger.Debug().Msg("relay request forwarded to service backend")
 
 	// Do not emit a relay to the miner if there is no response to form a request/response pair.
-	if b.getLatestRelayResponse() == nil {
+	latestRelayResponse := b.getLatestRelayResponse()
+	if latestRelayResponse == nil {
 		logger.Info().Msg("waiting for service backend response")
 		return
 	}
 
+	// Shallow-copy the response before sending it to the miner. The miner's
+	// mapMineDehydratedRelay sets relay.Res.Payload = nil to dehydrate the
+	// proof entry; if we hand the miner b.latestRelayResponse directly, that
+	// mutation propagates back into the bridge's stored pointer (and races
+	// the next miner goroutine that processes the same pointer). A per-emit
+	// copy gives the miner its own RelayResponse to mutate.
+	relayResForMiner := *latestRelayResponse
 	relay := &types.Relay{
 		Req: &relayRequest,
-		Res: b.getLatestRelayResponse(),
+		Res: &relayResForMiner,
 	}
 
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
@@ -434,9 +442,15 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 
 	logger.Debug().Msg("relay response forwarded to gateway")
 
+	// Shallow-copy the response before sending it to the miner. See the
+	// matching comment in handleGatewayIncomingMessage: the miner mutates
+	// relay.Res.Payload to nil, and that mutation must not leak back into
+	// b.latestRelayResponse (set just above), which is reused for later
+	// emits paired with new requests.
+	relayResForMiner := *relayResponse
 	relay := &types.Relay{
 		Req: latestRelayRequest,
-		Res: relayResponse,
+		Res: &relayResForMiner,
 	}
 
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)

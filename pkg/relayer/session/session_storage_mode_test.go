@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -54,6 +55,7 @@ type StorageModeTestSuite struct {
 	claimToReturn           *prooftypes.Claim
 	createClaimCallCount    int
 	submitProofCallCount    int
+	latestBlockMu           sync.Mutex
 	latestBlock             client.Block
 
 	blockClient    client.BlockClient
@@ -91,7 +93,7 @@ func (s *StorageModeTestSuite) SetupTest() {
 	s.createClaimCallCount = 0
 	s.submitProofCallCount = 0
 	s.claimToReturn = nil
-	s.latestBlock = nil
+	s.setLatestBlock(nil)
 
 	// Set up storage directory path based on test mode
 	if s.storageDir == "" {
@@ -251,7 +253,7 @@ func (s *StorageModeTestSuite) setupNewRelayerSessionsManager() relayer.RelayerS
 		context.Background(),
 		s.blocksObs,
 		func(ctx context.Context, block client.Block) {
-			s.latestBlock = block
+			s.setLatestBlock(block)
 		},
 	)
 
@@ -406,7 +408,7 @@ func (s *StorageModeTestSuite) setupMockBlockClient(ctrl *gomock.Controller) *mo
 	// Mock the LastBlock method to return the current latest block
 	blockClientMock.EXPECT().LastBlock(gomock.Any()).
 		DoAndReturn(func(_ any) client.Block {
-			return s.latestBlock
+			return s.getLatestBlock()
 		}).AnyTimes()
 
 	// Mock the CommittedBlocksSequence method to return the blocks observable
@@ -426,6 +428,21 @@ func (s *StorageModeTestSuite) setupMockBlockClient(ctrl *gomock.Controller) *mo
 		AnyTimes()
 
 	return blockClientMock
+}
+
+// setLatestBlock and getLatestBlock guard concurrent access to s.latestBlock,
+// which is written by the channel.ForEach goroutine in
+// setupNewRelayerSessionsManager and read by the mock LastBlock callback.
+func (s *StorageModeTestSuite) setLatestBlock(block client.Block) {
+	s.latestBlockMu.Lock()
+	s.latestBlock = block
+	s.latestBlockMu.Unlock()
+}
+
+func (s *StorageModeTestSuite) getLatestBlock() client.Block {
+	s.latestBlockMu.Lock()
+	defer s.latestBlockMu.Unlock()
+	return s.latestBlock
 }
 
 // advanceToBlock advances the test chain to the specified height by publishing new blocks

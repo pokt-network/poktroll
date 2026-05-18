@@ -62,50 +62,43 @@ func TestSafeReadBody_BufferPoolCorruption(t *testing.T) {
 	require.Equal(t, testData2, result2, "Second result should be correct")
 }
 
-// TestSafeReadBody_DataCorruptionWithoutCleanup demonstrates what happens when
-// the cleanup function is NOT called - this should cause data corruption due to
-// buffer pool reuse. This test validates that the cleanup mechanism is essential.
-func TestSafeReadBody_DataCorruptionWithoutCleanup(t *testing.T) {
+// TestSafeReadBody_ResultsAreCallerOwned verifies that SafeReadBody returns a
+// caller-owned byte slice that is independent of the pooled buffer. Even if the
+// caller invokes cleanup early and a subsequent call reuses the pool, the
+// earlier result must remain intact.
+//
+// Prior behaviour returned buf.Bytes() (a slice aliased to the pooled buffer's
+// backing array) which caused data corruption when the buffer was reused. The
+// fix copies the bytes out into a fresh allocation before returning the
+// buffer to the pool.
+func TestSafeReadBody_ResultsAreCallerOwned(t *testing.T) {
 	logger := polyzero.NewLogger()
 
-	// Test data that will be used to demonstrate corruption
-	testData1 := []byte("FIRST_DATA_SHOULD_BE_CORRUPTED")
+	testData1 := []byte("FIRST_DATA_MUST_SURVIVE_BUFFER_REUSE")
 	reader1 := newReadCloser(testData1)
 
-	// Call SafeReadBody but intentionally DON'T call cleanup
 	result1, cleanup1, err := SafeReadBody(logger, reader1, maxBodySize)
 	require.NoError(t, err)
 	require.Equal(t, testData1, result1, "First result should initially match input data")
-	// INTENTIONALLY NOT CALLING: defer cleanup1()
 
-	// Store a copy of the original result for comparison
 	result1Copy := make([]byte, len(result1))
 	copy(result1Copy, result1)
 
-	// Force cleanup to return the buffer to the pool
+	// Returning the buffer to the pool must not affect previously returned bytes.
 	cleanup1()
 
-	// Second test data - this will reuse the same buffer and cause corruption
-	testData2 := []byte("SECOND_DATA_OVERWRITES_FIRST_CAUSING_CORRUPTION_BUFFER_REUSE")
+	testData2 := []byte("SECOND_DATA_OVERWRITES_BUFFER_BUT_NOT_FIRST_RESULT_SLICE_AAA")
 	reader2 := newReadCloser(testData2)
 
-	// Make second call - this should reuse the buffer and corrupt result1
-	// because result1 points to buf.Bytes() which shares the underlying array
 	result2, cleanup2, err := SafeReadBody(logger, reader2, maxBodySize)
 	require.NoError(t, err)
 	require.Equal(t, testData2, result2, "Second result should match its input data")
-	defer cleanup2() // Clean up properly for this one
+	defer cleanup2()
 
-	// Now check if result1 got corrupted due to buffer reuse
-	// This demonstrates why the cleanup mechanism is critical
-	require.False(t, bytes.Equal(result1, result1Copy), "Data corruption was expected but not detected")
-
-	// Add a verification that shows the problem more clearly
-	// by demonstrating that both results now point to the same underlying data
-	require.True(t, bytes.Contains(result2, result1), "Results should share the same underlying data after reuse")
-
-	// Verify that the second result is still correct regardless
-	require.Equal(t, testData2, result2, "Second result should always be correct")
+	require.True(t, bytes.Equal(result1, result1Copy),
+		"result1 must remain unchanged after the pooled buffer was reused")
+	require.NotEqual(t, &result1[0], &result2[0],
+		"result1 and result2 must not share an underlying byte array")
 }
 
 // TestSafeReadBody_MemoryLeakPrevention verifies that buffers are properly

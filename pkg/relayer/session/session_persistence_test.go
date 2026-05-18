@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -55,7 +56,8 @@ type SessionPersistenceTestSuite struct {
 	claimToReturn           *prooftypes.Claim
 	createClaimCallCount    int
 	submitProofCallCount    int
-	latestBlock             client.Block
+	latestBlockMu sync.Mutex
+	latestBlock   client.Block
 
 	blockClient    client.BlockClient
 	blockPublishCh chan<- client.Block
@@ -94,7 +96,7 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	s.createClaimCallCount = 0
 	s.submitProofCallCount = 0
 	s.claimToReturn = nil
-	s.latestBlock = nil
+	s.setLatestBlock(nil)
 
 	// Set up temporary directory for session storage
 	tmpDirPattern := fmt.Sprintf("%s_smt_kvstore", strings.ReplaceAll(s.T().Name(), "/", "_"))
@@ -491,7 +493,7 @@ func (s *SessionPersistenceTestSuite) setupNewRelayerSessionsManager() relayer.R
 		context.Background(),
 		s.blocksObs,
 		func(ctx context.Context, block client.Block) {
-			s.latestBlock = block
+			s.setLatestBlock(block)
 		},
 	)
 
@@ -651,7 +653,7 @@ func (s *SessionPersistenceTestSuite) setupMockBlockClient(ctrl *gomock.Controll
 	// Mock the LastBlock method to return the current latest block
 	blockClientMock.EXPECT().LastBlock(gomock.Any()).
 		DoAndReturn(func(_ any) client.Block {
-			return s.latestBlock
+			return s.getLatestBlock()
 		}).AnyTimes()
 
 	// Mock the CommittedBlocksSequence method to return the blocks observable
@@ -674,6 +676,21 @@ func (s *SessionPersistenceTestSuite) setupMockBlockClient(ctrl *gomock.Controll
 }
 
 // advanceToBlock advances the test chain to the specified height by
+// setLatestBlock and getLatestBlock guard concurrent access to s.latestBlock,
+// which is written by the channel.ForEach goroutine in
+// setupNewRelayerSessionsManager and read by the mock LastBlock callback.
+func (s *SessionPersistenceTestSuite) setLatestBlock(block client.Block) {
+	s.latestBlockMu.Lock()
+	s.latestBlock = block
+	s.latestBlockMu.Unlock()
+}
+
+func (s *SessionPersistenceTestSuite) getLatestBlock() client.Block {
+	s.latestBlockMu.Lock()
+	defer s.latestBlockMu.Unlock()
+	return s.latestBlock
+}
+
 // publishing new blocks until the target height is reached.
 func (s *SessionPersistenceTestSuite) advanceToBlock(height int64) {
 	// Get the current height

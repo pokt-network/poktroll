@@ -70,31 +70,29 @@ func SafeReadBody(
 	// The +1 allows us to detect when the body exceeds the limit
 	limitedReader := io.LimitReader(body, maxSize+1)
 
-	// Get a reusable *bytes.Buffer from the pool
+	// Get a reusable *bytes.Buffer from the pool to absorb the body. The
+	// pool gives us growth headroom (8MB capacity) without per-call
+	// allocation during ReadFrom's grow path.
 	buf := bodyBufPool.Get().(*bytes.Buffer)
 
-	// Create a cleanup function that resets and returns the buffer to the pool.
-	// This closure pattern is necessary because:
-	// - The buffer contents (buf.Bytes()) are returned to the caller
-	// - The buffer itself must be returned to the pool only after the caller has finished using the data
-	// - The caller is responsible for calling this cleanup function when the buffer data is no longer needed
-	// - This MUST be deferred to ensure any (un)marshalling is complete before releasing the buffer
-	// - The cleanup function MUST be called only once to avoid double cleanup
-	bufferCleanedUp := false
-	resetReadBodyPoolBytes := func() {
-		// Avoid double cleanup
-		if bufferCleanedUp {
-			return
-		}
-		buf.Reset() // Always reset before use
+	// Returning the buffer to the pool is done as soon as we have a
+	// caller-owned copy of the bytes. Previously SafeReadBody returned
+	// buf.Bytes() (a slice aliased to the pooled buffer's backing array)
+	// plus a cleanup closure: once the caller invoked cleanup the buffer
+	// went back to the pool and could be grabbed by another goroutine
+	// that ReadFrom'd over the same memory while the original caller was
+	// still reading the slice. The fix is to copy out the bytes into a
+	// fresh, caller-owned slice and put the buffer back immediately. The
+	// returned cleanup is a no-op preserved only because callers
+	// `defer cleanup()` unconditionally.
+	putBack := func() {
+		buf.Reset()
 		bodyBufPool.Put(buf)
-		// Mark as cleaned up to prevent double cleanup
-		bufferCleanedUp = true
 	}
 
 	bytesRead, err := buf.ReadFrom(limitedReader)
 	if err != nil {
-		resetReadBodyPoolBytes()
+		putBack()
 		return nil, nil, ErrRelayerProxyInternalError.Wrapf(
 			"failed to read request body: %s", err.Error(),
 		)
@@ -102,7 +100,7 @@ func SafeReadBody(
 
 	// Check if the body exceeded our size limit
 	if bytesRead > maxSize {
-		resetReadBodyPoolBytes()
+		putBack()
 		return nil, nil, ErrRelayerProxyMaxBodyExceeded.Wrapf(
 			"body size exceeds maximum allowed body: %d bytes read > %d bytes limit",
 			bytesRead,
@@ -110,7 +108,11 @@ func SafeReadBody(
 		)
 	}
 
-	return buf.Bytes(), resetReadBodyPoolBytes, nil
+	result := make([]byte, bytesRead)
+	copy(result, buf.Bytes())
+	putBack()
+
+	return result, func() {}, nil
 }
 
 // SafeRequestReadBody reads the HTTP request body up to a specified size limit, enforcing safety and logging errors.

@@ -327,17 +327,33 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 }
 
 // GetProofBz returns the marshaled proof for the session.
+//
+// Locking: ProveClosest writes compactProofBz under sessionMu; reading it
+// concurrently without the lock is a data race.
 func (st *sessionTree) GetProofBz() []byte {
+	st.sessionMu.Lock()
+	defer st.sessionMu.Unlock()
 	return st.compactProofBz
 }
 
 // GetTrieSpec returns the trie spec of the SMST.
+//
+// Locking: Spec is read off the SMST while another goroutine may be
+// mutating it via Update. sessionSMT.Spec() should be stable but the
+// underlying field is unguarded and the race detector flags it.
 func (st *sessionTree) GetTrieSpec() smt.TrieSpec {
+	st.sessionMu.Lock()
+	defer st.sessionMu.Unlock()
 	return *st.sessionSMT.Spec()
 }
 
 // GetProof returns the proof for the SMST if it has been generated or nil otherwise.
+//
+// Locking: ProveClosest writes compactProof under sessionMu; concurrent
+// reads must take the same lock.
 func (st *sessionTree) GetProof() *smt.SparseCompactMerkleClosestProof {
+	st.sessionMu.Lock()
+	defer st.sessionMu.Unlock()
 	return st.compactProof
 }
 
@@ -359,7 +375,12 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 // This function is used to get the root hash of the SMST at any time.
 // In particular, it is used to get the root hash of the SMST before it is flushed to disk
 // for use-cases like restarting the relayer and resuming ongoing sessions.
+//
+// Locking: sessionSMT.Root walks (and may cache into) the underlying SMT;
+// Update mutates the same trie. Both must serialize through sessionMu.
 func (st *sessionTree) GetSMSTRoot() (smtRoot smt.MerkleSumRoot) {
+	st.sessionMu.Lock()
+	defer st.sessionMu.Unlock()
 	if st.sessionSMT == nil {
 		return nil
 	}
@@ -368,7 +389,11 @@ func (st *sessionTree) GetSMSTRoot() (smtRoot smt.MerkleSumRoot) {
 
 // GetClaimRoot returns the root hash of the SMST needed for creating the claim.
 // It returns the root hash of the SMST only if the SMST has been flushed to disk.
+//
+// Locking: Flush writes claimedRoot under sessionMu; reads need the lock too.
 func (st *sessionTree) GetClaimRoot() []byte {
+	st.sessionMu.Lock()
+	defer st.sessionMu.Unlock()
 	return st.claimedRoot
 }
 
