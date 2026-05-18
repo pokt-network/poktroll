@@ -69,6 +69,15 @@ type ProxyRelayMeter struct {
 	blockQuerier       client.BlockClient
 
 	logger polylog.Logger
+
+	// Pre-derived per-method loggers. ProxyRelayMeter is a process-wide
+	// singleton accessed concurrently by every served relay; calling
+	// rmtr.logger.With(...) per request on the shared parent has the same
+	// concurrency risk as the websocket connection logger fix, and is also
+	// pure overhead. Derive once at construction and add per-call dynamic
+	// fields inline via Event methods (e.g. Str, Int) on the chain.
+	isOverServicingLogger          polylog.Logger
+	setNonApplicableRewardLogger   polylog.Logger
 }
 
 func NewRelayMeter(deps depinject.Config, enableOverServicing bool) (relayer.RelayMeter, error) {
@@ -88,6 +97,9 @@ func NewRelayMeter(deps depinject.Config, enableOverServicing bool) (relayer.Rel
 	); err != nil {
 		return nil, err
 	}
+
+	rm.isOverServicingLogger = rm.logger.With("method", "IsOverServicing")
+	rm.setNonApplicableRewardLogger = rm.logger.With("method", "SetNonApplicableRelayReward")
 
 	return rm, nil
 }
@@ -110,40 +122,31 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 	ctx context.Context,
 	reqMeta servicetypes.RelayRequestMetadata,
 ) bool {
-	// Create a context-specific logger to avoid concurrent access issues
-	logger := rmtr.logger.With(
-		"method", "IsOverServicing",
-		"session_id", reqMeta.GetSessionHeader().GetSessionId(),
-	)
+	logger := rmtr.isOverServicingLogger
+	sessionId := reqMeta.GetSessionHeader().GetSessionId()
 
 	// Ensure that the served application has a relay meter and update the consumed
 	// stake amount.
 	appRelayMeter, err := rmtr.ensureRequestSessionRelayMeter(ctx, reqMeta)
 	if err != nil {
-		logger.Warn().Msgf(
-			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
-			reqMeta.GetSessionHeader().GetSessionId(),
-			err,
+		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
+			"[Non critical] Unable to set up relay meter. Relay will continue without rate limiting",
 		)
 		return false
 	}
 
 	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
 	if err != nil {
-		logger.Warn().Msgf(
-			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
-			reqMeta.GetSessionHeader().GetSessionId(),
-			err,
+		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
+			"[Non critical] Unable to set up relay meter. Relay will continue without rate limiting",
 		)
 		return false
 	}
 
 	service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
 	if err != nil {
-		logger.Warn().Msgf(
-			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
-			reqMeta.GetSessionHeader().GetSessionId(),
-			err,
+		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
+			"[Non critical] Unable to set up relay meter. Relay will continue without rate limiting",
 		)
 		return false
 	}
@@ -151,10 +154,8 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 	// Get the cost of the relay based on the service and shared parameters.
 	relayCostCoin, err := getSingleRelayCostCoin(sharedParams, &service)
 	if err != nil {
-		logger.Warn().Msgf(
-			"[Non critical] Unable to calculate relay cost in session %s. Relay will continue without rate limiting: %v",
-			reqMeta.GetSessionHeader().GetSessionId(),
-			err,
+		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
+			"[Non critical] Unable to calculate relay cost. Relay will continue without rate limiting",
 		)
 		return false
 	}
@@ -179,11 +180,11 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 	// Exponential backoff: only log over-servicing when numOverServicedRelays is a power of 2
 	// This prevents log spam while still tracking the issue at exponentially growing intervals
 	if shouldLogOverServicing(overServicedCount) {
-		logger.Warn().Msgf(
-			"overservicing enabled, application %q over-serviced %d times",
-			appAddress,
-			overServicedCount,
-		)
+		logger.Warn().
+			Str("session_id", sessionId).
+			Str("application", appAddress).
+			Uint64("over_serviced_count", overServicedCount).
+			Msg("overservicing enabled, application over-serviced")
 	}
 
 	return true
@@ -194,42 +195,24 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 // This is used when the relay is not volume / reward applicable but was optimistically
 // accounted for in the relay meter.
 func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) {
-	rmtr.relayMeterMu.Lock()
-	defer rmtr.relayMeterMu.Unlock()
+	logger := rmtr.setNonApplicableRewardLogger
+	sessionId := reqMeta.GetSessionHeader().GetSessionId()
 
-	// Create a context-specific logger to avoid concurrent access issues
-	logger := rmtr.logger.With(
-		"method", "SetNonApplicableRelayReward",
-		"session_id", reqMeta.GetSessionHeader().GetSessionId(),
-	)
-
-	sessionRelayMeter, ok := rmtr.sessionToRelayMeterMap[reqMeta.GetSessionHeader().GetSessionId()]
-	if !ok {
-		logger.Warn().Msgf(
-			"[Non critical] Unable to find session relay meter for session %s. Application may be rate limited more than intended: %v",
-			reqMeta.GetSessionHeader().GetSessionId(),
-			ErrRelayerProxyUnknownSession.Wrap("session relay meter not found"),
-		)
-
-		return
-	}
-
+	// External I/O (param + service queries) must NOT run under relayMeterMu;
+	// holding the write lock during querier calls would serialize every
+	// concurrent relay across the process.
 	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
 	if err != nil {
-		logger.Warn().Msgf(
-			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
-			reqMeta.GetSessionHeader().GetSessionId(),
-			err,
+		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
+			"[Non critical] Unable to set up relay meter. Relay will continue without rate limiting",
 		)
 		return
 	}
 
 	service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
 	if err != nil {
-		logger.Warn().Msgf(
-			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
-			reqMeta.GetSessionHeader().GetSessionId(),
-			err,
+		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
+			"[Non critical] Unable to set up relay meter. Relay will continue without rate limiting",
 		)
 		return
 	}
@@ -237,30 +220,41 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 	// Get the cost of the relay based on the service and shared parameters.
 	relayCost, err := getSingleRelayCostCoin(sharedParams, &service)
 	if err != nil {
-		logger.Warn().Msgf(
-			"[Non critical] Unable to calculate relay cost in session %s. Application may be rate limited more than intended: %v",
-			reqMeta.GetSessionHeader().GetSessionId(),
-			err,
+		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
+			"[Non critical] Unable to calculate relay cost. Application may be rate limited more than intended",
 		)
+		return
+	}
+
+	rmtr.relayMeterMu.Lock()
+	sessionRelayMeter, ok := rmtr.sessionToRelayMeterMap[sessionId]
+	if !ok {
+		rmtr.relayMeterMu.Unlock()
+		logger.Warn().Str("session_id", sessionId).Err(
+			ErrRelayerProxyUnknownSession.Wrap("session relay meter not found"),
+		).Msg("[Non critical] Unable to find session relay meter. Application may be rate limited more than intended")
+		return
 	}
 
 	// TODO_FOLLOWUP(@red-0ne): Consider fixing the relay meter logic to never have
 	// a less than relay cost consumed amount.
 	if sessionRelayMeter.consumedCoin.IsLT(relayCost) {
-		logger.Warn().Msgf(
-			"(SHOULD NEVER HAPPEN) Your session earned less than the cost of a single relay. Not submitting a claim for application (%s), service id: (%s), session id: (%s), with consumed amount: (%s), relay cost: (%s)",
-			sessionRelayMeter.app.GetAddress(),
-			sessionRelayMeter.sessionHeader.GetServiceId(),
-			sessionRelayMeter.sessionHeader.GetSessionId(),
-			sessionRelayMeter.consumedCoin.String(),
-			relayCost.String(),
-		)
+		appAddress := sessionRelayMeter.app.GetAddress()
+		serviceID := sessionRelayMeter.sessionHeader.GetServiceId()
+		consumed := sessionRelayMeter.consumedCoin.String()
+		rmtr.relayMeterMu.Unlock()
+		logger.Warn().
+			Str("application", appAddress).
+			Str("service_id", serviceID).
+			Str("session_id", sessionId).
+			Str("consumed", consumed).
+			Str("relay_cost", relayCost.String()).
+			Msg("(SHOULD NEVER HAPPEN) Session earned less than the cost of a single relay. Not submitting a claim.")
 		return
 	}
 	// Decrease the consumed stake amount by relay cost.
-	newConsumedAmount := sessionRelayMeter.consumedCoin.Sub(relayCost)
-
-	sessionRelayMeter.consumedCoin = newConsumedAmount
+	sessionRelayMeter.consumedCoin = sessionRelayMeter.consumedCoin.Sub(relayCost)
+	rmtr.relayMeterMu.Unlock()
 }
 
 // AllowOverServicing returns true if the relay meter is configured to allow over-servicing.

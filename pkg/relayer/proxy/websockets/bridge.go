@@ -53,6 +53,15 @@ type bridge struct {
 	cancelCtx context.CancelFunc
 	logger    polylog.Logger
 
+	// Pre-derived per-handler loggers. NewBridge runs concurrently across
+	// websocket upgrades, so any per-message .With(...) on a shared parent
+	// logger that is also being .With'd elsewhere can race on the underlying
+	// zerolog context byte slice. Pre-deriving once at construction and
+	// using only inline event fields afterwards keeps the hot path lock-free
+	// and free of that race.
+	gatewayMsgLogger polylog.Logger
+	backendMsgLogger polylog.Logger
+
 	// serviceBackendConn is the websocket connection to the service backend.
 	serviceBackendConn *connection
 
@@ -186,6 +195,8 @@ func NewBridge(
 		ctx:                ctx,
 		cancelCtx:          cancelCtx,
 		logger:             bridgeLogger,
+		gatewayMsgLogger:   bridgeLogger.With("message_source", string(messageSourceGateway)),
+		backendMsgLogger:   bridgeLogger.With("message_source", string(messageSourceServiceBackend)),
 		serviceBackendConn: serviceBackendConn,
 		gatewayConn:        gatewayConn,
 		msgChan:            msgChan,
@@ -248,12 +259,9 @@ func (b *bridge) messageLoop() {
 // It receives relay requests from the gateway, verifies them, forwards their payloads
 // to the service backend.
 func (b *bridge) handleGatewayIncomingMessage(msg message) {
-	logger := b.logger.With(
-		"message_source", messageSourceGateway,
-		"message_type", msg.messageType,
-	)
+	logger := b.gatewayMsgLogger
 
-	logger.Debug().Msg("received message from gateway")
+	logger.Debug().Int("message_type", msg.messageType).Msg("received message from gateway")
 
 	// Unmarshal msg.data into a RelayRequest.
 	var relayRequest types.RelayRequest
@@ -348,12 +356,9 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 // It receives relay responses from the service backend, signs them, and forwards them
 // to the gateway.
 func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
-	logger := b.logger.With(
-		"message_source", messageSourceServiceBackend,
-		"message_type", msg.messageType,
-	)
+	logger := b.backendMsgLogger
 
-	logger.Debug().Msg("received message from service backend")
+	logger.Debug().Int("message_type", msg.messageType).Msg("received message from service backend")
 
 	// Use the latest relay request's session header to create the RelayResponse.
 	// If the service backend produced a message before any gateway request arrived
