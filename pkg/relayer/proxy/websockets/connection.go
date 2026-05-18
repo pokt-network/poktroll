@@ -62,6 +62,14 @@ type connection struct {
 	ctx    context.Context
 	logger polylog.Logger
 
+	// Pre-derived per-goroutine loggers. They are created once in newConnection
+	// to avoid concurrent calls to (polylog.Logger).With on the shared parent
+	// logger, which races on the underlying zerolog context byte slice and can
+	// panic in AppendKey ("index out of range [-1]").
+	cleanupLogger     polylog.Logger
+	pingLogger        polylog.Logger
+	handleErrorLogger polylog.Logger
+
 	// source is the source of the connection, it may be either `service_backend` or `gateway`.
 	source messageSource
 
@@ -121,14 +129,17 @@ func newConnection(
 	)
 
 	c := &connection{
-		ctx:            ctx,
-		Conn:           conn,
-		logger:         connectionLogger,
-		source:         source,
-		serviceID:      serviceID,
-		msgChan:        msgChan,
-		stopChan:       stopChan,
-		stopObservable: stopObservable,
+		ctx:               ctx,
+		Conn:              conn,
+		logger:            connectionLogger,
+		cleanupLogger:     connectionLogger.With("connection_context", "cleanup"),
+		pingLogger:        connectionLogger.With("connection_context", "pingLoop"),
+		handleErrorLogger: connectionLogger.With("connection_context", "handleError"),
+		source:            source,
+		serviceID:         serviceID,
+		msgChan:           msgChan,
+		stopChan:          stopChan,
+		stopObservable:    stopObservable,
 	}
 
 	c.isClosed.Store(false)
@@ -173,7 +184,7 @@ func (c *connection) connLoop() {
 // If the peer does not respond with a pong message within the allowed time,
 // the connection is closed.
 func (c *connection) pingLoop() {
-	logger := c.logger.With("connection_context", "pingLoop")
+	logger := c.pingLogger
 
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
@@ -214,7 +225,7 @@ func (c *connection) pingLoop() {
 
 // handleError logs the error and sends it to the stop channel.
 func (c *connection) handleError(err error) {
-	logger := c.logger.With("connection_context", "handleError")
+	logger := c.handleErrorLogger
 
 	switch {
 	case websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway):
@@ -231,7 +242,7 @@ func (c *connection) handleError(err error) {
 
 // cleanup closes the websocket connection and sends a close message to the peer.
 func (c *connection) cleanup() {
-	logger := c.logger.With("connection_context", "cleanup")
+	logger := c.cleanupLogger
 
 	// Wait for the stop observable to emit a value before cleaning up the connection.
 	err := <-c.stopObservable.Subscribe(c.ctx).Ch()

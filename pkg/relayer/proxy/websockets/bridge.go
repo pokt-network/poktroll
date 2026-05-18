@@ -356,7 +356,15 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 	logger.Debug().Msg("received message from service backend")
 
 	// Use the latest relay request's session header to create the RelayResponse.
-	meta := b.latestRelayRequest.Meta
+	// If the service backend produced a message before any gateway request arrived
+	// (e.g. a backend that pushes data on connect), there is no request to pair
+	// with: drop the message rather than nil-deref.
+	latestRelayRequest := b.getLatestRelayRequest()
+	if latestRelayRequest == nil {
+		logger.Info().Msg("dropping service backend message: no relay request received yet from gateway")
+		return
+	}
+	meta := latestRelayRequest.Meta
 	serviceId := meta.SessionHeader.ServiceId
 
 	// Create a RelayResponse from the service backend message.
@@ -421,14 +429,8 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 
 	logger.Debug().Msg("relay response forwarded to gateway")
 
-	// Do not emit a relay to the miner if there is no response to form a request/response pair.
-	if b.getLatestRelayRequest() == nil {
-		logger.Info().Msg("waiting for service backend request")
-		return
-	}
-
 	relay := &types.Relay{
-		Req: b.getLatestRelayRequest(),
+		Req: latestRelayRequest,
 		Res: relayResponse,
 	}
 
@@ -443,7 +445,7 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 
 	// Check if the relay should be rate-limited.
 	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
-	isOverServicing := b.relayMeter.IsOverServicing(b.ctx, b.latestRelayRequest.Meta)
+	isOverServicing := b.relayMeter.IsOverServicing(b.ctx, meta)
 	shouldRateLimit := isOverServicing && !b.relayMeter.AllowOverServicing()
 	if shouldRateLimit {
 		b.serviceBackendConn.handleError(

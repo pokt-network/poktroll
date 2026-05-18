@@ -159,23 +159,30 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 		return false
 	}
 
-	// Increase the consumed stake amount by relay cost.
+	// The read-modify-write of consumedCoin and numOverServicedRelays must run
+	// under the write lock. Two concurrent relays for the same session race on
+	// rate-limit accounting without it: both reads see the same value, both
+	// writes succeed, and the meter undercounts.
+	rmtr.relayMeterMu.Lock()
 	newConsumedCoin := appRelayMeter.consumedCoin.Add(relayCostCoin)
-
 	if appRelayMeter.maxCoin.IsGTE(newConsumedCoin) {
 		appRelayMeter.consumedCoin = newConsumedCoin
+		rmtr.relayMeterMu.Unlock()
 		return false
 	}
 
 	appRelayMeter.numOverServicedRelays++
+	overServicedCount := appRelayMeter.numOverServicedRelays
+	appAddress := appRelayMeter.app.GetAddress()
+	rmtr.relayMeterMu.Unlock()
 
 	// Exponential backoff: only log over-servicing when numOverServicedRelays is a power of 2
 	// This prevents log spam while still tracking the issue at exponentially growing intervals
-	if shouldLogOverServicing(appRelayMeter.numOverServicedRelays) {
+	if shouldLogOverServicing(overServicedCount) {
 		logger.Warn().Msgf(
 			"overservicing enabled, application %q over-serviced %d times",
-			appRelayMeter.app.GetAddress(),
-			appRelayMeter.numOverServicedRelays,
+			appAddress,
+			overServicedCount,
 		)
 	}
 
