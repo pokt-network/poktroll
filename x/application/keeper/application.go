@@ -78,6 +78,15 @@ func (k Keeper) GetApplication(
 		app.DelegateeGatewayAddresses = make([]string, 0)
 	}
 
+	// Ensure that ServiceConfigHistory is an empty slice and not nil when
+	// unmarshalling an app that has never changed its service config. len()==0
+	// is what GetActiveServiceConfigs checks, so nil and empty behave identically
+	// for the fallback; normalizing keeps the in-memory representation stable
+	// across store reads and event round-trips.
+	if app.ServiceConfigHistory == nil {
+		app.ServiceConfigHistory = make([]*types.ApplicationServiceConfigUpdate, 0)
+	}
+
 	return app, true
 }
 
@@ -325,5 +334,14 @@ func initializeNilApplicationFields(keeperLogger log.Logger, app *types.Applicat
 	// ensure that they are initialized as empty.
 	if app.PendingUndelegations == nil {
 		app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+	}
+
+	// Normalize service config history to a non-nil empty slice for consistency
+	// (an empty history is the normal "never changed" state). This keeps the
+	// in-memory representation stable across store reads and event round-trips.
+	// len()==0 is what GetActiveServiceConfigs checks, so nil and empty behave
+	// identically for the fallback.
+	if app.ServiceConfigHistory == nil {
+		app.ServiceConfigHistory = make([]*types.ApplicationServiceConfigUpdate, 0)
 	}
 }

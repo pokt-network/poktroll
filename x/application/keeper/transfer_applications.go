@@ -154,6 +154,15 @@ func (k Keeper) transferApplication(
 		))
 	}
 
+	// Synchronize the destination's service_config_history with its final
+	// (possibly merged) ServiceConfigs. recordApplicationServiceConfigChange is a
+	// no-op when the service set is unchanged (e.g. transfer to a new address with
+	// the same single service — history stays empty and GetActiveServiceConfigs
+	// falls back to the flat snapshot), and records a session-boundary change when
+	// the merge altered the service set, so session hydration (which reads history
+	// once non-empty) can resolve all of the destination's services.
+	k.recordApplicationServiceConfigChange(ctx, &dstApp, dstApp.ServiceConfigs)
+
 	// Remove srcApp from the store
 	k.RemoveApplication(ctx, srcApp)
 

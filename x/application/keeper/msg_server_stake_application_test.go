@@ -111,6 +111,73 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.EqualValues(t, expectedEvent, events[0])
 }
 
+// TestMsgServer_StakeApplication_ServiceConfigHistory verifies the lazy
+// service_config_history semantics:
+//   - a newly-staked app has empty history ("never changed"),
+//   - a same-service restake (stake bump) does not record history,
+//   - a service swap records history with session-boundary activation, closing
+//     the prior config and opening the new one.
+func TestMsgServer_StakeApplication_ServiceConfigHistory(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	appAddr := sample.AccAddressBech32()
+	initialStake := &apptypes.DefaultMinStake
+
+	// New stake → empty history, flat = svc1, active at any height via fallback.
+	_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address:  appAddr,
+		Stake:    initialStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+	})
+	require.NoError(t, err)
+
+	app, found := k.GetApplication(ctx, appAddr)
+	require.True(t, found)
+	require.Empty(t, app.ServiceConfigHistory, "new app should have empty service config history")
+	activeNow := app.GetActiveServiceConfigs(1)
+	require.Len(t, activeNow, 1)
+	require.Equal(t, "svc1", activeNow[0].ServiceId)
+
+	// Same-service restake (higher stake) → no history recorded.
+	upStake1 := initialStake.AddAmount(math.NewInt(100))
+	_, err = srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address:  appAddr,
+		Stake:    &upStake1,
+		Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+	})
+	require.NoError(t, err)
+
+	app, _ = k.GetApplication(ctx, appAddr)
+	require.Empty(t, app.ServiceConfigHistory, "same-service restake must not record history")
+
+	// Service swap svc1 → svc2 → records history.
+	upStake2 := upStake1.AddAmount(math.NewInt(100))
+	_, err = srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address:  appAddr,
+		Stake:    &upStake2,
+		Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc2"}},
+	})
+	require.NoError(t, err)
+
+	app, _ = k.GetApplication(ctx, appAddr)
+	require.Len(t, app.ServiceConfigHistory, 2, "service swap should record prior + new config")
+
+	sharedParams := sharedtypes.DefaultParams()
+	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	nextSessionStart := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+
+	// Before the boundary: svc1 still active.
+	activeBefore := app.GetActiveServiceConfigs(nextSessionStart - 1)
+	require.Len(t, activeBefore, 1)
+	require.Equal(t, "svc1", activeBefore[0].ServiceId)
+
+	// At/after the boundary: svc2 active.
+	activeAfter := app.GetActiveServiceConfigs(nextSessionStart)
+	require.Len(t, activeAfter, 1)
+	require.Equal(t, "svc2", activeAfter[0].ServiceId)
+}
+
 func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)

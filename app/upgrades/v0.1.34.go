@@ -19,6 +19,12 @@ const (
 // Upgrade_0_1_34 handles the upgrade to release `v0.1.34`.
 // This upgrade adds:
 //   - Deduplicate supplier rev share addresses in service config history.
+//
+// NOTE: Application service config history (added in this release for
+// deterministic historical session queries) requires NO migration: an empty
+// history means the application never changed its service config, and
+// GetActiveServiceConfigs falls back to the flat ServiceConfigs snapshot for
+// such apps. History is written lazily, only when an app actually swaps service.
 var Upgrade_0_1_34 = Upgrade{
 	PlanName: Upgrade_0_1_34_PlanName,
 	// No KVStore migrations in this upgrade.
