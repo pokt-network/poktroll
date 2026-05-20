@@ -208,9 +208,12 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(nil).
 		AnyTimes()
 
+	// Return DefaultParams (non-nil MinStake) so the settlement auto-unstake check
+	// in ProcessTokenLogicModules reads a valid min_stake. An empty Params{} has a
+	// nil MinStake pointer and would panic on .MinStake.Amount.
 	mockApplicationKeeper.EXPECT().
 		GetParams(gomock.Any()).
-		Return(apptypes.Params{}).
+		Return(apptypes.DefaultParams()).
 		AnyTimes()
 
 	// Mock the supplier keeper.

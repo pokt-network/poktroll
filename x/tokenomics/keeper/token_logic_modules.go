@@ -220,8 +220,30 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Unbond the application if it has less than the minimum stake.
 	// Use the application from the TLM context as it may have been modified by the TLMs.
+	//
+	// Use the on-chain min_stake governance param, NOT apptypes.DefaultMinStake.
+	// DefaultMinStake is the hardcoded genesis default (1 POKT); mainnet governance
+	// has raised min_stake well above it (e.g. 1,000 POKT). Comparing against the
+	// default left apps below the real min_stake staked indefinitely (issue #1846).
+	//
+	// Stake only decreases via settlement burn, so this check runs in the same block
+	// an application first drops below min_stake — every future crossing is caught here.
+	//
+	// No pending-payment race: the session hydrator stops assigning the app to new
+	// sessions once queryHeight > UnstakeSessionEndHeight (Application.IsActive), and the
+	// unbonding period (ApplicationUnbondingPeriodSessions × NumBlocksPerSession = 1 session
+	// = 60 blocks on mainnet) strictly exceeds the settlement lag (~33 blocks). So the last
+	// session the app is assigned to settles before the app is removed and its stake returned.
+	// Defensive: GetParams returns a zero-value Params{} (nil MinStake) if the
+	// application params have never been written. That cannot happen on a chain
+	// initialized via InitGenesis, but a nil deref here would halt the chain, so
+	// fall back to DefaultMinStake (matching the pre-fix behavior) if unset.
+	minStake := apptypes.DefaultMinStake
+	if appMinStake := k.applicationKeeper.GetParams(ctx).MinStake; appMinStake != nil {
+		minStake = *appMinStake
+	}
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
-	if tlmCtx.Application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
+	if tlmCtx.Application.Stake.Amount.LT(minStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		tlmCtx.Application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, tlmCtx.Application)

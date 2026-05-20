@@ -19,6 +19,10 @@ const (
 // Upgrade_0_1_34 handles the upgrade to release `v0.1.34`.
 // This upgrade adds:
 //   - Deduplicate supplier rev share addresses in service config history.
+//   - Backfill (issue #1846): mark below-min_stake applications as unbonding.
+//     The settlement auto-unstake check now uses the on-chain min_stake param
+//     instead of the hardcoded DefaultMinStake; this sweep clears applications
+//     that dropped below min_stake before the fix and were never force-unbonded.
 //
 // NOTE: Application service config history (added in this release for
 // deterministic historical session queries) requires NO migration: an empty
@@ -63,11 +67,35 @@ var Upgrade_0_1_34 = Upgrade{
 			return nil
 		}
 
+		// Backfill for issue #1846: before v0.1.34 the settlement auto-unstake check
+		// compared application stake against the hardcoded DefaultMinStake (1 POKT)
+		// instead of the on-chain min_stake param, so applications that dropped below
+		// the real min_stake were never force-unbonded. v0.1.34 fixes the check; this
+		// sweep clears the pre-upgrade backlog of below-min_stake applications.
+		unbondBelowMinStakeApplications := func(ctx context.Context, logger cosmoslog.Logger) error {
+			logger.Info("Marking below-min_stake applications as unbonding")
+
+			count, err := keepers.ApplicationKeeper.MarkBelowMinStakeApplicationsUnbonding(ctx)
+			if err != nil {
+				logger.Error("Failed to mark below-min_stake applications as unbonding", "error", err)
+				return err
+			}
+
+			logger.Info("Marked below-min_stake applications as unbonding",
+				"unbonding_applications", count,
+			)
+			return nil
+		}
+
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 			logger := sdkCtx.Logger()
 
 			if err := deduplicateSupplierRevShareAddresses(ctx, logger); err != nil {
+				return vm, err
+			}
+
+			if err := unbondBelowMinStakeApplications(ctx, logger); err != nil {
 				return vm, err
 			}
 
