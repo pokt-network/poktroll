@@ -6,7 +6,7 @@ package token_logic_module
 import (
 	"context"
 	"fmt"
-	"math/big"
+	"sort"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -21,14 +21,24 @@ import (
 // all bonded validators and their delegators.
 //
 // Specifically:
-//   - Validator stake weight is used to distribute rewards regardless of who the block proposer is.
-//   - Commission is not taken into account since this is independent of consensus rewards.
-//   - The validator's self-bonded and delegated stake is taken into account.
-//   - Delegators receive rewards proportional to their delegated stake.
+//   - The total reward is first split across all bonded validators proportional
+//     to each validator's total bonded stake (self-bonded + delegated).
+//   - Each validator's commission rate (from the staking module) is applied to its
+//     pool share: the commission is paid directly to the validator operator account,
+//     mirroring the Cosmos consensus-reward model.
+//   - The post-commission remainder is distributed to that validator's stakeholders
+//     (including the validator's self-delegation) proportional to their delegated stake.
 //
-// For a stakeholder (self-bonded validator or delegator), the distribution formula is:
+// The distribution is computed in two levels, each closed exactly via the Largest
+// Remainder Method (LRM) so that no upokt is left unallocated:
 //
-//	stakeholderReward = totalValidatorRewardAmount × (stakeholderStake / totalBondedStake)
+//	Level 1 (across validators):
+//	  poolShare_v   = totalReward × (validatorBondedTokens_v / totalBondedTokens)
+//
+//	Level 2 (within each validator):
+//	  commission_v  = floor(poolShare_v × commissionRate_v)        → validator account
+//	  remainder_v   = poolShare_v − commission_v
+//	  delegatorReward = remainder_v × (delegatorStake / validatorTotalDelegatedStake)
 func DistributeValidatorRewards(
 	ctx context.Context,
 	logger cosmoslog.Logger,
@@ -36,6 +46,7 @@ func DistributeValidatorRewards(
 	stakingKeeper tokenomicstypes.StakingKeeper,
 	totalValidatorRewardCoin cosmostypes.Coin,
 	settlementOpReason tokenomicstypes.SettlementOpReason,
+	sessionEndHeight int64,
 ) error {
 	logger = logger.With(
 		"method", "DistributeValidatorRewards",
@@ -53,7 +64,7 @@ func DistributeValidatorRewards(
 		return nil
 	}
 
-	// Step 2: Distribute rewards to validators and their delegators
+	// Step 2: Distribute rewards to validators (with commission) and their delegators
 	return distributeRewardsToValidatorsAndDelegators(
 		ctx,
 		logger,
@@ -63,6 +74,7 @@ func DistributeValidatorRewards(
 		totalValidatorBondedTokens,
 		totalValidatorRewardCoin.Amount,
 		settlementOpReason,
+		sessionEndHeight,
 	)
 }
 
@@ -113,14 +125,22 @@ func validateAndPrepareValidatorRewards(
 	return validators, totalValidatorBondedTokens, nil
 }
 
-// distributeRewardsToValidatorsAndDelegators distributes rewards to validators and their delegators.
-// Rewards are distributed based purely on stake proportions without any commission calculations.
+// validatorPoolEntry holds a single validator and the account address derived from
+// its operator address, in the order rewards are distributed.
+type validatorPoolEntry struct {
+	validator stakingtypes.Validator
+	accAddr   string
+}
+
+// distributeRewardsToValidatorsAndDelegators distributes rewards to validators and
+// their delegators using a two-level, commission-aware allocation.
 //
 // The implementation is composed of three main steps:
 //
-//  1. Discover all stakeholders and their stakes
-//  2. Calculate proportional rewards using Largest Remainder Method
-//  3. Create and queue reward transfers
+//  1. Split the total reward across validators by bonded-stake weight (Level 1 LRM).
+//  2. For each validator, carve out its commission and split the remainder across
+//     its delegators by delegated-stake weight (Level 2 LRM).
+//  3. Queue one reward transfer per recipient in deterministic order.
 func distributeRewardsToValidatorsAndDelegators(
 	ctx context.Context,
 	logger cosmoslog.Logger,
@@ -130,6 +150,7 @@ func distributeRewardsToValidatorsAndDelegators(
 	totalBondedTokens math.Int,
 	totalRewardAmount math.Int,
 	settlementOpReason tokenomicstypes.SettlementOpReason,
+	sessionEndHeight int64,
 ) error {
 	logger = logger.With(
 		"method", "distributeToValidatorsAndDelegators",
@@ -137,45 +158,202 @@ func distributeRewardsToValidatorsAndDelegators(
 		"total_reward_amount", totalRewardAmount,
 	)
 
-	logger.Info(fmt.Sprintf(
-		"distributing %s to validators and delegators based on stake weight (total bonded: %s)",
-		totalRewardAmount.String(),
-		totalBondedTokens.String(),
-	))
-
-	// Step 1: Discover all stakeholders and their stakes
-	stakeholderStakeAmounts, sortedStakeAddresses, err := discoverStakeholderStakes(ctx, logger, stakingKeeper, validators)
-	if err != nil {
-		return err
-	}
-	if len(stakeholderStakeAmounts) == 0 {
-		logger.Warn("SHOULD NEVER HAPPEN: no stakeholders found, skipping reward distribution")
+	// Step 1: Build the per-validator stake map and split the total reward across
+	// validators proportional to their bonded stake (Level 1 LRM).
+	validatorEntries, validatorStakeAmounts, totalValidatorStake := buildValidatorStakes(logger, validators)
+	if len(validatorEntries) == 0 {
+		logger.Warn("SHOULD NEVER HAPPEN: no eligible validators found, skipping reward distribution")
 		return nil
 	}
 
-	// Step 2: Calculate proportional rewards using Largest Remainder Method
-	proportionalRewardAmounts := calculateProportionalRewards(logger, stakeholderStakeAmounts, totalBondedTokens, totalRewardAmount)
+	validatorPoolShares := calculateProportionalRewards(logger, validatorStakeAmounts, totalValidatorStake, totalRewardAmount)
 
-	// Step 3: Create and queue reward transfers using sorted addresses for determinism
-	return queueRewardTransfers(logger, result, proportionalRewardAmounts, stakeholderStakeAmounts, totalBondedTokens, validators, settlementOpReason, sortedStakeAddresses)
+	logger.Info(fmt.Sprintf(
+		"distributing %s across %d validators by stake weight (total bonded: %s)",
+		totalRewardAmount.String(),
+		len(validatorEntries),
+		totalBondedTokens.String(),
+	))
+
+	// rewardAmounts accumulates the final reward per recipient account address.
+	// A recipient may receive from multiple sources (e.g. a validator's commission
+	// plus its self-delegation slice, or a delegator delegating to several validators).
+	rewardAmounts := make(map[string]math.Int)
+
+	// validatorAccAddresses identifies which recipients are validator operator accounts,
+	// used only to pick the op-reason label when queueing transfers.
+	validatorAccAddresses := make(map[string]bool, len(validatorEntries))
+	for _, entry := range validatorEntries {
+		validatorAccAddresses[entry.accAddr] = true
+	}
+
+	// Step 2: For each validator (deterministic order), apply commission and distribute
+	// the remainder to its delegators (Level 2 LRM).
+	for _, entry := range validatorEntries {
+		poolShare := validatorPoolShares[entry.accAddr]
+		if poolShare.IsZero() {
+			continue
+		}
+
+		// Carve out the validator's commission and pay it directly to the operator account.
+		commissionRate := entry.validator.Commission.Rate
+		commission := calculateCommission(poolShare, commissionRate)
+		if commission.IsPositive() {
+			addReward(rewardAmounts, entry.accAddr, commission)
+			logger.Debug(fmt.Sprintf(
+				"validator %s commission: %s (rate %s of pool share %s)",
+				entry.accAddr, commission.String(), commissionRate.String(), poolShare.String(),
+			))
+		}
+
+		remainder := poolShare.Sub(commission)
+		if !remainder.IsPositive() {
+			// All of the pool share was taken as commission (100% commission rate).
+			if err := emitValidatorRewardEvent(ctx, validatorRewardSummary{
+				sessionEndHeight:     sessionEndHeight,
+				opReason:             settlementOpReason,
+				entry:                entry,
+				commissionRate:       commissionRate,
+				poolShare:            poolShare,
+				commission:           commission,
+				selfDelegationReward: math.ZeroInt(),
+				delegatorsReward:     math.ZeroInt(),
+				totalDelegatedStake:  math.ZeroInt(),
+				numDelegators:        0,
+			}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// Discover this validator's delegators (including its self-delegation).
+		delegatorStakeAmounts, totalDelegatedStake, ok := collectValidatorDelegationStakes(ctx, logger, stakingKeeper, entry.validator, entry.accAddr)
+
+		// On query failure or absence of delegations, the validator is the sole
+		// stakeholder: the remainder is paid to the operator account as well.
+		if !ok || len(delegatorStakeAmounts) == 0 || totalDelegatedStake.IsZero() {
+			addReward(rewardAmounts, entry.accAddr, remainder)
+			if err := emitValidatorRewardEvent(ctx, validatorRewardSummary{
+				sessionEndHeight:     sessionEndHeight,
+				opReason:             settlementOpReason,
+				entry:                entry,
+				commissionRate:       commissionRate,
+				poolShare:            poolShare,
+				commission:           commission,
+				selfDelegationReward: remainder,
+				delegatorsReward:     math.ZeroInt(),
+				totalDelegatedStake:  math.ZeroInt(),
+				numDelegators:        0,
+			}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// Distribute the remainder across the validator's delegators by stake weight (Level 2 LRM).
+		delegatorRewards := calculateProportionalRewards(logger, delegatorStakeAmounts, totalDelegatedStake, remainder)
+
+		// Split the remainder into the validator's self-delegation slice and the
+		// external delegators' total for the per-validator summary event.
+		//
+		// The operations below (accumulation, single-key match, count) are individually
+		// order-independent, but we iterate in sorted-address order anyway: it is
+		// defense-in-depth on a consensus path, so the loop stays deterministic by
+		// construction even if a future edit adds an order-dependent side effect.
+		selfDelegationReward := math.ZeroInt()
+		numExternalDelegators := uint32(0)
+		sortedDelegators := make([]string, 0, len(delegatorRewards))
+		for delAddr := range delegatorRewards {
+			sortedDelegators = append(sortedDelegators, delAddr)
+		}
+		sort.Strings(sortedDelegators)
+		for _, delAddr := range sortedDelegators {
+			delReward := delegatorRewards[delAddr]
+			addReward(rewardAmounts, delAddr, delReward)
+			if delAddr == entry.accAddr {
+				selfDelegationReward = delReward
+			} else {
+				numExternalDelegators++
+			}
+		}
+		delegatorsReward := remainder.Sub(selfDelegationReward)
+
+		if err := emitValidatorRewardEvent(ctx, validatorRewardSummary{
+			sessionEndHeight:     sessionEndHeight,
+			opReason:             settlementOpReason,
+			entry:                entry,
+			commissionRate:       commissionRate,
+			poolShare:            poolShare,
+			commission:           commission,
+			selfDelegationReward: selfDelegationReward,
+			delegatorsReward:     delegatorsReward,
+			totalDelegatedStake:  totalDelegatedStake,
+			numDelegators:        numExternalDelegators,
+		}); err != nil {
+			return err
+		}
+	}
+
+	// Step 3: Queue one transfer per recipient in deterministic order.
+	return queueRewardTransfers(logger, result, rewardAmounts, validatorAccAddresses, settlementOpReason)
 }
 
-// discoverStakeholderStakes discovers all stakeholders and their stakes:
-//  1. Identifies all validator delegators
-//  2. Collects validator and delegator stake amounts
-//  3. Returns both a stake map and deterministically sorted addresses (by stake descending)
-//
-// IMPORTANT: The returned slice MUST be used to iterate over the map to ensure determinism.
-func discoverStakeholderStakes(
-	ctx context.Context,
-	logger cosmoslog.Logger,
-	stakingKeeper tokenomicstypes.StakingKeeper,
-	validators []stakingtypes.Validator,
-) (map[string]math.Int, []string, error) {
-	// A mapping of address -> stake amount for all stakeholders (validators + delegators)
-	stakeAmounts := make(map[string]math.Int)
+// validatorRewardSummary holds the per-validator reward breakdown emitted as an
+// EventValidatorRewardDistribution.
+type validatorRewardSummary struct {
+	sessionEndHeight     int64
+	opReason             tokenomicstypes.SettlementOpReason
+	entry                validatorPoolEntry
+	commissionRate       math.LegacyDec
+	poolShare            math.Int
+	commission           math.Int
+	selfDelegationReward math.Int
+	delegatorsReward     math.Int
+	totalDelegatedStake  math.Int
+	numDelegators        uint32
+}
 
-	// Process each validator and their delegators
+// emitValidatorRewardEvent emits a single EventValidatorRewardDistribution summarizing how a
+// validator's pool share was split into commission and (self/external) delegator rewards.
+// It is emitted once per validator per op_reason per settlement block — bounded by the
+// validator-set size, so it does NOT scale with delegators or claims (#1758 preserved).
+func emitValidatorRewardEvent(ctx context.Context, summary validatorRewardSummary) error {
+	commissionRate := summary.commissionRate
+	if commissionRate.IsNil() {
+		commissionRate = math.LegacyZeroDec()
+	}
+
+	event := &tokenomicstypes.EventValidatorRewardDistribution{
+		SessionEndBlockHeight:     summary.sessionEndHeight,
+		OpReason:                  summary.opReason,
+		ValidatorOperatorAddress:  summary.entry.validator.GetOperator(),
+		ValidatorAccountAddress:   summary.entry.accAddr,
+		CommissionRate:            commissionRate.String(),
+		PoolShareUpokt:            summary.poolShare.String(),
+		CommissionUpokt:           summary.commission.String(),
+		SelfDelegationRewardUpokt: summary.selfDelegationReward.String(),
+		DelegatorsRewardUpokt:     summary.delegatorsReward.String(),
+		TotalDelegatedStakeUpokt:  summary.totalDelegatedStake.String(),
+		NumDelegators:             summary.numDelegators,
+	}
+
+	return cosmostypes.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(event)
+}
+
+// buildValidatorStakes parses each validator's operator address and returns:
+//  1. validatorEntries: validators with a successfully-derived account address, in
+//     deterministic (account-address-ascending) order;
+//  2. validatorStakeAmounts: account address -> bonded tokens, for Level 1 distribution;
+//  3. totalValidatorStake: the sum of all eligible validators' bonded tokens (the Level 1
+//     denominator), guaranteeing Σ poolShare_v == totalReward after LRM.
+func buildValidatorStakes(
+	logger cosmoslog.Logger,
+	validators []stakingtypes.Validator,
+) ([]validatorPoolEntry, map[string]math.Int, math.Int) {
+	validatorEntries := make([]validatorPoolEntry, 0, len(validators))
+	validatorStakeAmounts := make(map[string]math.Int, len(validators))
+	totalValidatorStake := math.ZeroInt()
+
 	for _, validator := range validators {
 		valAddr, err := cosmostypes.ValAddressFromBech32(validator.GetOperator())
 		if err != nil {
@@ -185,7 +363,6 @@ func discoverStakeholderStakes(
 			))
 			continue
 		}
-		validatorAccAddr := cosmostypes.AccAddress(valAddr)
 
 		validatorBondedTokens := validator.GetBondedTokens()
 		if validatorBondedTokens.IsZero() {
@@ -196,59 +373,67 @@ func discoverStakeholderStakes(
 			continue
 		}
 
-		// Retrieve all delegations for the validator
-		delegations, err := stakingKeeper.GetValidatorDelegations(ctx, valAddr)
-		if err != nil {
-
-			validatorAddrStr := validatorAccAddr.String()
-			stakeAmounts[validatorAddrStr] = validatorBondedTokens
-
-			// On delegation query error, treat the entire validator bonded tokens as self-bonded rewards
-			// This maintains backward compatibility and ensures validators still receive rewards despite delegation query failures
-			logger.Warn(fmt.Sprintf(
-				"SHOULD NEVER HAPPEN: Failed to get delegations for validator %s: %v. Using no delegators distribution. Validator will receive rewards based on all of its bonded tokens.",
-				validator.GetOperator(), err,
-			))
-
-			continue
-		}
-
-		// If no delegations exist, all bonded tokens are validator's stake
-		if len(delegations) == 0 {
-			validatorAddrStr := validatorAccAddr.String()
-			stakeAmounts[validatorAddrStr] = validatorBondedTokens
-
-			logger.Debug(fmt.Sprintf(
-				"Validator %s has no delegations. Using no delegators distribution. Validator will receive rewards based on all of its bonded tokens.",
-				validator.GetOperator(),
-			))
-			continue
-		}
-
-		// Extract and record stake amounts from delegations
-		// DEV_NOTE: This transforms the stakeAmounts map in place.
-		collectDelegationStakes(logger, validator, delegations, stakeAmounts)
+		accAddr := cosmostypes.AccAddress(valAddr).String()
+		validatorEntries = append(validatorEntries, validatorPoolEntry{validator: validator, accAddr: accAddr})
+		validatorStakeAmounts[accAddr] = validatorBondedTokens
+		totalValidatorStake = totalValidatorStake.Add(validatorBondedTokens)
 	}
 
-	// Sort addresses by stake (descending) to ensure deterministic reward distribution
-	sortedAddressesByStake := sortAddressesByStakeDesc(stakeAmounts)
-	return stakeAmounts, sortedAddressesByStake, nil
+	// Sort by account address (ascending) to ensure deterministic Level 2 iteration order.
+	sort.Slice(validatorEntries, func(i, j int) bool {
+		return validatorEntries[i].accAddr < validatorEntries[j].accAddr
+	})
+
+	return validatorEntries, validatorStakeAmounts, totalValidatorStake
 }
 
-// collectDelegationStakes extracts and records stake amounts from a validator's delegations.
-// Converts each delegation's shares to tokens and accumulates them in stakeAmounts.
-// Accumulation (not assignment) is critical because a delegator may delegate to multiple
-// validators: each validator's loop iteration adds to the same delegator key.
-// DEV_NOTE: This transforms the stakeAmounts map in place.
-func collectDelegationStakes(
+// calculateCommission returns floor(poolShare × commissionRate), clamped to [0, poolShare].
+// Commission is computed with the staking module's deterministic LegacyDec arithmetic.
+func calculateCommission(poolShare math.Int, commissionRate math.LegacyDec) math.Int {
+	if commissionRate.IsNil() || !commissionRate.IsPositive() {
+		return math.ZeroInt()
+	}
+	if commissionRate.GTE(math.LegacyOneDec()) {
+		return poolShare
+	}
+	return commissionRate.MulInt(poolShare).TruncateInt()
+}
+
+// collectValidatorDelegationStakes returns the stake map and total delegated stake for a
+// single validator's delegations (including the validator's self-delegation).
+// The boolean return is false if the delegation query failed.
+func collectValidatorDelegationStakes(
+	ctx context.Context,
 	logger cosmoslog.Logger,
+	stakingKeeper tokenomicstypes.StakingKeeper,
 	validator stakingtypes.Validator,
-	delegations []stakingtypes.Delegation,
-	stakeAmounts map[string]math.Int,
-) {
-	// Extract and accumulate stake amounts for each delegator (including validator self-delegation).
-	// A delegator may appear in multiple validators' delegation lists; we accumulate across all
-	// validators so the final stakeAmounts[delegator] reflects their total bonded tokens network-wide.
+	validatorAccAddr string,
+) (map[string]math.Int, math.Int, bool) {
+	valAddr, err := cosmostypes.ValAddressFromBech32(validator.GetOperator())
+	if err != nil {
+		// Already parsed successfully in buildValidatorStakes; treat as sole-stakeholder fallback.
+		return nil, math.ZeroInt(), false
+	}
+
+	delegations, err := stakingKeeper.GetValidatorDelegations(ctx, valAddr)
+	if err != nil {
+		logger.Warn(fmt.Sprintf(
+			"SHOULD NEVER HAPPEN: Failed to get delegations for validator %s: %v. Treating validator as sole stakeholder.",
+			validator.GetOperator(), err,
+		))
+		return nil, math.ZeroInt(), false
+	}
+
+	if len(delegations) == 0 {
+		logger.Debug(fmt.Sprintf(
+			"Validator %s has no delegations. Treating validator as sole stakeholder.",
+			validator.GetOperator(),
+		))
+		return nil, math.ZeroInt(), true
+	}
+
+	stakeAmounts := make(map[string]math.Int, len(delegations))
+	totalDelegatedStake := math.ZeroInt()
 	for _, delegation := range delegations {
 		delegatorAddr, err := cosmostypes.AccAddressFromBech32(delegation.GetDelegatorAddr())
 		if err != nil {
@@ -258,20 +443,34 @@ func collectDelegationStakes(
 		delegatorAddrStr := delegatorAddr.String()
 
 		delegatedShares := delegation.GetShares()
-		if !delegatedShares.IsZero() {
-			// Convert shares to tokens using the validator's exchange rate
-			delegatedTokens := validator.TokensFromShares(delegatedShares).TruncateInt()
-			if delegatedTokens.IsZero() {
-				logger.Warn(fmt.Sprintf("SHOULD NEVER HAPPEN: delegator %s has zero delegated tokens but the delegated share exists. Skipping to the next one...", delegatorAddrStr))
-				continue
-			}
-			// Accumulate: add to existing stake if the delegator already appears from a previous validator.
-			if existing, ok := stakeAmounts[delegatorAddrStr]; ok {
-				stakeAmounts[delegatorAddrStr] = existing.Add(delegatedTokens)
-			} else {
-				stakeAmounts[delegatorAddrStr] = delegatedTokens
-			}
+		if delegatedShares.IsZero() {
+			continue
 		}
+
+		// Convert shares to tokens using the validator's exchange rate.
+		delegatedTokens := validator.TokensFromShares(delegatedShares).TruncateInt()
+		if delegatedTokens.IsZero() {
+			logger.Warn(fmt.Sprintf("SHOULD NEVER HAPPEN: delegator %s has zero delegated tokens but the delegated share exists. Skipping to the next one...", delegatorAddrStr))
+			continue
+		}
+
+		if existing, ok := stakeAmounts[delegatorAddrStr]; ok {
+			stakeAmounts[delegatorAddrStr] = existing.Add(delegatedTokens)
+		} else {
+			stakeAmounts[delegatorAddrStr] = delegatedTokens
+		}
+		totalDelegatedStake = totalDelegatedStake.Add(delegatedTokens)
+	}
+
+	return stakeAmounts, totalDelegatedStake, true
+}
+
+// addReward accumulates a reward amount for a recipient account address in place.
+func addReward(rewardAmounts map[string]math.Int, addr string, amount math.Int) {
+	if existing, ok := rewardAmounts[addr]; ok {
+		rewardAmounts[addr] = existing.Add(amount)
+	} else {
+		rewardAmounts[addr] = amount
 	}
 }
 
@@ -409,36 +608,31 @@ func distributeRemainderTokens(
 	}
 }
 
-// queueRewardTransfers creates and queues reward transfers for all recipients.
+// queueRewardTransfers creates and queues one reward transfer per recipient in
+// deterministic (account-address-ascending) order. Recipients that are validator
+// operator accounts are tagged with the validator op-reason; all others use the
+// delegator op-reason.
 func queueRewardTransfers(
 	logger cosmoslog.Logger,
 	result *tokenomicstypes.ClaimSettlementResult,
 	rewardAmounts map[string]math.Int,
-	stakeAmounts map[string]math.Int,
-	totalBondedTokens math.Int,
-	validators []stakingtypes.Validator,
+	validatorAccAddresses map[string]bool,
 	settlementOpReason tokenomicstypes.SettlementOpReason,
-	sortedStakeAddresses []string,
 ) error {
 	logger = logger.With("method", "queueRewardTransfers")
 
+	// Sort recipient addresses ascending for deterministic queueing.
+	sortedRecipients := make([]string, 0, len(rewardAmounts))
+	for addr := range rewardAmounts {
+		sortedRecipients = append(sortedRecipients, addr)
+	}
+	sort.Strings(sortedRecipients)
+
 	// Use for logging purposes only
 	totalDistributed := math.ZeroInt()
+	numValidators := 0
 
-	// Build a set of validator addresses to easily retrieve their delegators
-	// from the stakeAmounts map.
-	validatorAddresses := make(map[string]bool)
-	for _, validator := range validators {
-		valAddr, err := cosmostypes.ValAddressFromBech32(validator.GetOperator())
-		if err != nil {
-			continue
-		}
-		validatorAccAddr := cosmostypes.AccAddress(valAddr)
-		validatorAddresses[validatorAccAddr.String()] = true
-	}
-
-	// Queue ModToAcctTransfer for each recipient in deterministic order
-	for _, addrStr := range sortedStakeAddresses {
+	for _, addrStr := range sortedRecipients {
 		rewardAmount := rewardAmounts[addrStr]
 		if rewardAmount.IsZero() {
 			logger.Debug(fmt.Sprintf(
@@ -448,33 +642,29 @@ func queueRewardTransfers(
 			continue
 		}
 
-		// Account for the total distributed amount
 		totalDistributed = totalDistributed.Add(rewardAmount)
 		rewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, rewardAmount)
 
-		// Determine if this is a delegator or validator reward
-		isValidator := validatorAddresses[addrStr]
+		// Determine if this is a delegator or validator reward.
+		isValidator := validatorAccAddresses[addrStr]
 		actualRewardOpReason := settlementOpReason
 		recipientType := "validator"
 
-		// This is a delegator reward - use delegator operation reason
-		if !isValidator {
+		if isValidator {
+			numValidators++
+		} else {
+			// This is a delegator reward - use the delegator operation reason.
 			recipientType = "delegator"
-
-			// Update the op reason ac
 			switch settlementOpReason {
-
 			// Mint = Burn
 			case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION:
 				actualRewardOpReason = tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION
-
 			// TLM Global Mint
 			case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION:
 				actualRewardOpReason = tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION
 			}
 		}
 
-		// Queue the reward transfer with the appropriate operation reason
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         actualRewardOpReason,
 			SenderModule:     tokenomicstypes.ModuleName,
@@ -482,25 +672,19 @@ func queueRewardTransfers(
 			Coin:             rewardCoin,
 		})
 
-		stake := stakeAmounts[addrStr]
 		logger.Info(fmt.Sprintf(
-			"queued reward transfer: %s to %s %s (stake: %s, share: %s%%)",
+			"queued reward transfer: %s to %s %s",
 			rewardCoin.String(),
 			recipientType,
 			addrStr,
-			stake.String(),
-			new(big.Rat).SetFrac(
-				stake.BigInt(),
-				totalBondedTokens.BigInt(),
-			).FloatString(2),
 		))
 	}
 
 	logger.Info(fmt.Sprintf(
-		"validator and delegator reward distribution complete: distributed %s to %d validators and %d total stakeholders",
+		"validator and delegator reward distribution complete: distributed %s to %d validators and %d total recipients",
 		totalDistributed.String(),
-		len(validatorAddresses),
-		len(rewardAmounts),
+		numValidators,
+		len(sortedRecipients),
 	))
 
 	return nil

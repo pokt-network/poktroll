@@ -329,6 +329,62 @@ message EventSettlementBatch {
     string op_type = 7;
 }
 
+// EventValidatorRewardDistribution is emitted once per bonded validator per settlement
+// op_reason per settlement block. It summarizes how that validator's slice of the proposer
+// reward pool was split into commission and per-delegator rewards.
+//
+// It does NOT multiply with the number of delegators or claims (it is bounded by the
+// validator-set size), preserving the settlement event-count reduction from #1758.
+//
+// A delegator's reward from this validator can be reconstructed (off-chain / indexer side)
+// without per-delegator events:
+//
+//	delegatorReward = (self_delegation_reward_upokt + delegators_reward_upokt)
+//	                  × (delegatorStake / total_delegated_stake_upokt)
+//
+// where `(self_delegation_reward_upokt + delegators_reward_upokt)` is the post-commission
+// remainder, distributed across all delegations (including the validator's self-delegation)
+// proportional to stake.
+message EventValidatorRewardDistribution {
+    // Next index: 12
+
+    // The session end block height for the batch of settlements.
+    int64 session_end_block_height = 1;
+
+    // The settlement operation reason (distinguishes Mint=Burn from Global Mint pools).
+    SettlementOpReason op_reason = 2;
+
+    // The validator operator (valoper...) address.
+    string validator_operator_address = 3;
+
+    // The validator account (pokt...) address; commission and the self-delegation slice
+    // are paid here.
+    string validator_account_address = 4;
+
+    // The validator's commission rate as a decimal string (e.g. "0.100000000000000000").
+    string commission_rate = 5;
+
+    // The validator's slice of the total proposer reward pool, as upokt.
+    string pool_share_upokt = 6;
+
+    // The commission carved out of pool_share_upokt and paid to the validator account, as upokt.
+    string commission_upokt = 7;
+
+    // The validator's own self-delegation slice of the post-commission remainder, as upokt.
+    // For sole-stakeholder validators (no external delegations), the entire remainder is here.
+    string self_delegation_reward_upokt = 8;
+
+    // The portion of the post-commission remainder paid to external (non-self) delegators, as upokt.
+    string delegators_reward_upokt = 9;
+
+    // The total delegated stake backing this validator (includes the self-delegation), as upokt.
+    // This is the denominator for per-delegator reward attribution.
+    string total_delegated_stake_upokt = 10;
+
+    // The number of external (non-self) delegators that received a reward from this validator.
+    uint32 num_delegators = 11;
+}
+
 // EventApplicationReimbursementRequest is emitted when an application requests a reimbursement from the DAO.
 // It is intended to prevent self dealing attacks when global inflation is enabled.
 // TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.

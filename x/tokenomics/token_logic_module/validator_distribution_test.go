@@ -2,6 +2,7 @@ package token_logic_module
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -13,6 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/app/pocket"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -402,11 +404,10 @@ func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 // delegator has delegations to more than one validator simultaneously.
 //
 // In Cosmos SDK staking, a delegator may stake tokens to multiple validators. Each call to
-// GetValidatorDelegations returns delegations for exactly one validator. The outer loop in
-// discoverStakeholderStakes iterates over validators one at a time, calling collectDelegationStakes
-// per-validator. Without accumulation, a second delegation for the same delegator would silently
-// overwrite the first, causing the delegator to be rewarded only for their stake in the last
-// validator processed — and validators to be over-rewarded for the "missing" delegator stake.
+// GetValidatorDelegations returns delegations for exactly one validator, so a cross-validator
+// delegator is processed once per validator's post-commission remainder distribution. The
+// per-recipient reward accumulator (addReward) must merge these into a single transfer so the
+// delegator is rewarded for their full network-wide stake, not just one validator's slice.
 func TestValidatorRewardDistribution_MultiValidatorDelegator(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -579,6 +580,16 @@ func createValidator(operatorAddr string, tokens int64) stakingtypes.Validator {
 	}
 }
 
+// createValidatorWithCommission creates a bonded validator with the specified operator
+// address, token amount, and commission rate (e.g. 0.10 for 10%).
+func createValidatorWithCommission(operatorAddr string, tokens int64, commissionRate math.LegacyDec) stakingtypes.Validator {
+	validator := createValidator(operatorAddr, tokens)
+	validator.Commission = stakingtypes.Commission{
+		CommissionRates: stakingtypes.CommissionRates{Rate: commissionRate},
+	}
+	return validator
+}
+
 // createDelegation creates a delegation from a delegator to a validator with the specified shares.
 func createDelegation(delegatorAddr, validatorAddr string, shares int64) stakingtypes.Delegation {
 	return stakingtypes.Delegation{
@@ -619,6 +630,7 @@ func executeDistribution(mockStakingKeeper *mocks.MockStakingKeeper, config rewa
 		mockStakingKeeper,
 		rewardCoin,
 		config.opReason,
+		int64(1), // sessionEndHeight (test value; only surfaced in the emitted event)
 	)
 }
 
@@ -638,10 +650,147 @@ func assertTotalDistribution(t *testing.T, result *tokenomicstypes.ClaimSettleme
 
 // getDefaultTestConfig returns a standard test configuration for reward distribution tests.
 func getDefaultTestConfig() rewardDistributionTestConfig {
+	// Use an sdk.Context (not context.Background) so EmitTypedEvent works: the
+	// per-validator EventValidatorRewardDistribution is emitted via the event manager.
+	sdkCtx := cosmostypes.Context{}.
+		WithContext(context.Background()).
+		WithEventManager(cosmostypes.NewEventManager())
+
 	return rewardDistributionTestConfig{
-		ctx:          context.Background(),
+		ctx:          sdkCtx,
 		logger:       log.NewNopLogger(),
 		rewardAmount: math.NewInt(100_000),
 		opReason:     tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+	}
+}
+
+// TestValidatorRewardDistribution_Commission verifies that the validator commission rate
+// is carved out of each validator's pool share before the remainder is distributed to
+// delegators, mirroring the Cosmos consensus-reward model.
+func TestValidatorRewardDistribution_Commission(t *testing.T) {
+	tests := []struct {
+		name           string
+		selfStake      int64
+		delegatorStake int64
+		commissionRate math.LegacyDec
+		rewardAmount   int64
+		// Expected reward to the validator operator account (commission + self-delegation slice).
+		expectedValidatorReward int64
+		// Expected reward to the (single) external delegator.
+		expectedDelegatorReward int64
+		// Expected EventValidatorRewardDistribution field values.
+		expectedCommission   int64
+		expectedSelfDelegate int64
+		expectedDelegators   int64
+	}{
+		{
+			name:                    "10% commission with delegator",
+			selfStake:               100_000,
+			delegatorStake:          900_000,
+			commissionRate:          math.LegacyNewDecWithPrec(10, 2), // 0.10
+			rewardAmount:            100_000,
+			expectedValidatorReward: 19_000, // 10k commission + 90k×(100k/1M)=9k self
+			expectedDelegatorReward: 81_000, // 90k×(900k/1M)
+			expectedCommission:      10_000,
+			expectedSelfDelegate:    9_000,
+			expectedDelegators:      81_000,
+		},
+		{
+			name:                    "zero commission passes everything through by stake",
+			selfStake:               100_000,
+			delegatorStake:          900_000,
+			commissionRate:          math.LegacyZeroDec(),
+			rewardAmount:            100_000,
+			expectedValidatorReward: 10_000, // 0 commission + 100k×(100k/1M)=10k self
+			expectedDelegatorReward: 90_000, // 100k×(900k/1M)
+			expectedCommission:      0,
+			expectedSelfDelegate:    10_000,
+			expectedDelegators:      90_000,
+		},
+		{
+			name:                    "50% commission",
+			selfStake:               200_000,
+			delegatorStake:          800_000,
+			commissionRate:          math.LegacyNewDecWithPrec(50, 2), // 0.50
+			rewardAmount:            100_000,
+			expectedValidatorReward: 60_000, // 50k commission + 50k×(200k/1M)=10k self
+			expectedDelegatorReward: 40_000, // 50k×(800k/1M)
+			expectedCommission:      50_000,
+			expectedSelfDelegate:    10_000,
+			expectedDelegators:      40_000,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+
+			totalStake := tt.selfStake + tt.delegatorStake
+			valOperAddr := sample.ValOperatorAddressBech32()
+			validator := createValidatorWithCommission(valOperAddr, totalStake, tt.commissionRate)
+
+			valAddr, err := cosmostypes.ValAddressFromBech32(valOperAddr)
+			require.NoError(t, err)
+			validatorAccAddr := cosmostypes.AccAddress(valAddr).String()
+			delegatorAddr := sample.AccAddressBech32()
+
+			delegations := map[string][]stakingtypes.Delegation{
+				valOperAddr: {
+					createDelegation(validatorAccAddr, valOperAddr, tt.selfStake),
+					createDelegation(delegatorAddr, valOperAddr, tt.delegatorStake),
+				},
+			}
+			setupValidatorMocks(mockStakingKeeper, []stakingtypes.Validator{validator}, delegations)
+
+			config := getDefaultTestConfig()
+			config.rewardAmount = math.NewInt(tt.rewardAmount)
+			config.opReason = tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION
+
+			result, err := executeDistribution(mockStakingKeeper, config, true)
+			require.NoError(t, err)
+
+			// Full reward must be distributed with no dust.
+			assertTotalDistribution(t, result, math.NewInt(tt.rewardAmount))
+
+			var validatorReward, delegatorReward int64
+			for _, transfer := range result.GetModToAcctTransfers() {
+				switch transfer.RecipientAddress {
+				case validatorAccAddr:
+					validatorReward += transfer.Coin.Amount.Int64()
+					require.Equal(t,
+						tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+						transfer.OpReason, "validator transfer must use the validator op reason")
+				case delegatorAddr:
+					delegatorReward += transfer.Coin.Amount.Int64()
+					require.Equal(t,
+						tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION,
+						transfer.OpReason, "delegator transfer must use the delegator op reason")
+				default:
+					t.Fatalf("unexpected recipient: %s", transfer.RecipientAddress)
+				}
+			}
+
+			require.Equal(t, tt.expectedValidatorReward, validatorReward, "validator reward (commission + self) mismatch")
+			require.Equal(t, tt.expectedDelegatorReward, delegatorReward, "delegator reward mismatch")
+
+			// Verify the per-validator summary event carries the commission breakdown.
+			events := cosmostypes.UnwrapSDKContext(config.ctx).EventManager().Events()
+			rewardEvents := testutilevents.FilterEvents[*tokenomicstypes.EventValidatorRewardDistribution](t, events)
+			require.Len(t, rewardEvents, 1, "exactly one per-validator reward event expected")
+
+			ev := rewardEvents[0]
+			require.Equal(t, valOperAddr, ev.ValidatorOperatorAddress)
+			require.Equal(t, validatorAccAddr, ev.ValidatorAccountAddress)
+			require.Equal(t, tt.commissionRate.String(), ev.CommissionRate)
+			require.Equal(t, fmt.Sprintf("%d", tt.rewardAmount), ev.PoolShareUpokt, "single validator → pool share is the full reward")
+			require.Equal(t, fmt.Sprintf("%d", tt.expectedCommission), ev.CommissionUpokt)
+			require.Equal(t, fmt.Sprintf("%d", tt.expectedSelfDelegate), ev.SelfDelegationRewardUpokt)
+			require.Equal(t, fmt.Sprintf("%d", tt.expectedDelegators), ev.DelegatorsRewardUpokt)
+			require.Equal(t, fmt.Sprintf("%d", totalStake), ev.TotalDelegatedStakeUpokt)
+			require.Equal(t, uint32(1), ev.NumDelegators, "one external delegator")
+		})
 	}
 }

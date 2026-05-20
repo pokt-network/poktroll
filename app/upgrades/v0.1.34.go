@@ -25,6 +25,17 @@ const (
 // history means the application never changed its service config, and
 // GetActiveServiceConfigs falls back to the flat ServiceConfigs snapshot for
 // such apps. History is written lazily, only when an app actually swaps service.
+//
+// CONSENSUS-BREAKING (validator commission on settlement rewards):
+// Settlement reward distribution now applies each validator's commission rate
+// before splitting the post-commission remainder among its delegators
+// (DistributeValidatorRewards in x/tokenomics/token_logic_module/distribution_validator.go).
+// Previously the "proposer" bucket was split purely by network-wide stake weight,
+// ignoring commission entirely (validators earned only their self-bonded share).
+// This changes the bank operations emitted for the same settled claims, so it is
+// consensus-breaking and activates atomically when validators run the v0.1.34
+// binary at the upgrade height. It requires NO KVStore migration or upgrade-handler
+// logic: the new code path simply takes effect from the upgrade height onward.
 var Upgrade_0_1_34 = Upgrade{
 	PlanName: Upgrade_0_1_34_PlanName,
 	// No KVStore migrations in this upgrade.

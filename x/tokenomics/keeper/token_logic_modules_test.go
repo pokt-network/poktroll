@@ -167,7 +167,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *t
 	// Flush batched validator rewards (#1758)
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
-	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext, int64(0))
 	require.NoError(t, flushErr)
 	if batchedResult != nil {
 		pendingResults.Append(batchedResult)
@@ -359,7 +359,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaim
 	// Flush batched validator rewards (#1758)
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
-	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext, int64(0))
 	require.NoError(t, flushErr)
 	if batchedResult != nil {
 		pendingResults.Append(batchedResult)
@@ -816,7 +816,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Flush batched validator rewards (#1758) and append to pending results.
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
-	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext, int64(0))
 	require.NoError(t, flushErr)
 	if batchedResult != nil {
 		pendingResults.Append(batchedResult)
@@ -1425,7 +1425,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	// Flush batched validator rewards (#1758)
 	pendingSettlementResults := make(tlm.ClaimSettlementResults, 0)
 	pendingSettlementResults.Append(settlementResult)
-	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext, int64(0))
 	require.NoError(t, flushErr)
 	if batchedResult != nil {
 		pendingSettlementResults.Append(batchedResult)

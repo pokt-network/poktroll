@@ -177,7 +177,14 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	// Flush batched validator rewards once per settlement batch (#1758).
 	// TLMs accumulated proposer amounts in the shared accumulator during claim processing.
 	// Distributing once with the batched total eliminates per-claim precision loss.
-	batchedResult, flushErr := k.FlushBatchedValidatorRewards(ctx, settlementContext)
+	//
+	// Derive the session end height for the per-validator summary events the same way
+	// ExecutePendingSettledResults does for EventSettlementBatch (first settled result).
+	flushSessionEndHeight := int64(0)
+	if len(settledResults) > 0 {
+		flushSessionEndHeight = settledResults[0].GetSessionEndHeight()
+	}
+	batchedResult, flushErr := k.FlushBatchedValidatorRewards(ctx, settlementContext, flushSessionEndHeight)
 	if flushErr != nil {
 		return settledResults, expiredResults, numDiscardedFaultyClaims, flushErr
 	}
@@ -650,6 +657,7 @@ func (k Keeper) slashSupplierStake(
 func (k Keeper) FlushBatchedValidatorRewards(
 	ctx context.Context,
 	sctx *settlementContext,
+	sessionEndHeight int64,
 ) (*tokenomicstypes.ClaimSettlementResult, error) {
 	logger := k.Logger().With("method", "flushBatchedValidatorRewards")
 
@@ -687,7 +695,7 @@ func (k Keeper) FlushBatchedValidatorRewards(
 
 		if err := tlm.DistributeValidatorRewards(
 			ctx, logger, batchedResult,
-			k.stakingKeeper, rewardCoin, opReason,
+			k.stakingKeeper, rewardCoin, opReason, sessionEndHeight,
 		); err != nil {
 			return nil, tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
 				"failed to flush batched validator rewards for op_reason %q: %v",
