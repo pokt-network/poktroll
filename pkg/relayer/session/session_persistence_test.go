@@ -56,8 +56,8 @@ type SessionPersistenceTestSuite struct {
 	claimToReturn           *prooftypes.Claim
 	createClaimCallCount    int
 	submitProofCallCount    int
-	latestBlockMu sync.Mutex
-	latestBlock   client.Block
+	latestBlockMu           sync.Mutex
+	latestBlock             client.Block
 
 	blockClient    client.BlockClient
 	blockPublishCh chan<- client.Block

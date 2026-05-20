@@ -76,8 +76,8 @@ type ProxyRelayMeter struct {
 	// concurrency risk as the websocket connection logger fix, and is also
 	// pure overhead. Derive once at construction and add per-call dynamic
 	// fields inline via Event methods (e.g. Str, Int) on the chain.
-	isOverServicingLogger          polylog.Logger
-	setNonApplicableRewardLogger   polylog.Logger
+	isOverServicingLogger        polylog.Logger
+	setNonApplicableRewardLogger polylog.Logger
 }
 
 func NewRelayMeter(deps depinject.Config, enableOverServicing bool) (relayer.RelayMeter, error) {
