@@ -123,6 +123,13 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 			app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
 		}
 
+		// Ensure ServiceConfigHistory is an empty slice and not nil, consistent
+		// with GetApplication (proto marshals nil and empty identically, so this
+		// is for in-memory representation consistency).
+		if app.ServiceConfigHistory == nil {
+			app.ServiceConfigHistory = make([]*types.ApplicationServiceConfigUpdate, 0)
+		}
+
 		apps = append(apps, app)
 	}
 
