@@ -72,8 +72,8 @@ func TestMarkBelowMinStakeApplicationsUnbonding(t *testing.T) {
 
 	// atApp and aboveApp: untouched (still active).
 	for _, addr := range []string{atApp.Address, aboveApp.Address} {
-		got, found := applicationModuleKeepers.GetApplication(ctx, addr)
-		require.True(t, found)
+		got, gotFound := applicationModuleKeepers.GetApplication(ctx, addr)
+		require.True(t, gotFound)
 		require.False(t, got.IsUnbonding(), "application at/above min_stake must not be marked unbonding")
 	}
 
