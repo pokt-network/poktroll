@@ -45,6 +45,9 @@ func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).Return(sharedtypes.DefaultParams()).AnyTimes()
+	// Unbonding end height is computed with the params effective at the unstake height
+	// (#543, F1). With no param history this resolves to the default params.
+	mockSharedKeeper.EXPECT().GetParamsAtHeight(gomock.Any(), gomock.Any()).Return(sharedtypes.DefaultParams()).AnyTimes()
 	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).Return(int64(sharedtypes.DefaultNumBlocksPerSession)).AnyTimes()
 
 	k := keeper.NewKeeper(

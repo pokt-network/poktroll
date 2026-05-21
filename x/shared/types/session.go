@@ -1,19 +1,47 @@
 package types
 
+// sessionGridAnchor resolves the session-grid anchor and the session number at that
+// anchor for the given queryHeight, falling back to the genesis block-1 grid (anchor=1,
+// numberAtAnchor=1) whenever the params do not describe the epoch that owns queryHeight.
+//
+// The fallback covers two cases (see #543 anchored-grid spec §3.4):
+//   - anchor <= 0: the anchor is unset (pre-upgrade data / original genesis) → legacy grid.
+//   - anchor > queryHeight: the params describe a LATER epoch than queryHeight. Go integer
+//     division truncates toward zero, so a negative numerator (queryHeight - anchor) would
+//     yield a garbage start height in the future. Fall back to the genesis grid instead.
+//
+// In the correct path, GetParamsAtHeight returns the params whose effective_height (= anchor)
+// is the greatest value <= queryHeight, so anchor <= queryHeight holds and the math is exact.
+func sessionGridAnchor(sharedParams *Params, queryHeight int64) (anchor, numberAtAnchor int64) {
+	anchor = int64(sharedParams.GetSessionGridAnchorHeight())
+	numberAtAnchor = int64(sharedParams.GetSessionNumberAtAnchor())
+	if anchor <= 0 || anchor > queryHeight {
+		// Unset, or params describe a later epoch than queryHeight → genesis block-1 grid.
+		return 1, 1
+	}
+	if numberAtAnchor <= 0 {
+		numberAtAnchor = 1
+	}
+	return anchor, numberAtAnchor
+}
+
 // GetSessionStartHeight returns the block height at which the session containing
 // queryHeight starts, given the passed shared onchain parameters.
 // Returns 0 if the block height is not a consensus produced block.
 // Example: If NumBlocksPerSession == 4, sessions start at blocks 1, 5, 9, etc.
+//
+// Boundaries are measured relative to the params epoch's session-grid anchor (#543), so
+// that changing num_blocks_per_session does not misalign in-flight sessions. With anchor=1
+// this reduces exactly to the legacy block-1 grid.
 func GetSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
 	if queryHeight <= 0 {
 		return 0
 	}
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
+	anchor, _ := sessionGridAnchor(sharedParams, queryHeight)
 
-	// TODO_MAINNET_CRITICAL(@red-0ne, #543): If the num_blocks_per_session param has ever been changed,
-	// this function may cause unexpected behavior.
-	return queryHeight - ((queryHeight - 1) % numBlocksPerSession)
+	return anchor + ((queryHeight-anchor)/numBlocksPerSession)*numBlocksPerSession
 }
 
 // GetSessionEndHeight returns the block height at which the session containing
@@ -37,16 +65,18 @@ func GetSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
 // Returns session number 0 if the block height is not a consensus produced block.
 // Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
 // i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.
+//
+// Session numbers stay monotonic across epoch boundaries via session_number_at_anchor (#543);
+// with anchor=1, numberAtAnchor=1 this reduces exactly to the legacy ((h-1)/N)+1 formula.
 func GetSessionNumber(sharedParams *Params, queryHeight int64) int64 {
 	if queryHeight <= 0 {
 		return 0
 	}
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
+	anchor, numberAtAnchor := sessionGridAnchor(sharedParams, queryHeight)
 
-	// TODO_MAINNET_MIGRATION(@red-0ne, #543): If the num_blocks_per_session param has ever been changed,
-	// this function may cause unexpected behavior.
-	return ((queryHeight - 1) / numBlocksPerSession) + 1
+	return numberAtAnchor + (queryHeight-anchor)/numBlocksPerSession
 }
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period

@@ -30,6 +30,20 @@ const (
 // GetActiveServiceConfigs falls back to the flat ServiceConfigs snapshot for
 // such apps. History is written lazily, only when an app actually swaps service.
 //
+// CONSENSUS-BREAKING (anchored session grid, #543):
+// num_blocks_per_session can now be changed to ANY value via governance without
+// misaligning in-flight sessions. Boundary math (GetSessionStartHeight/EndHeight/Number)
+// is computed relative to a per-epoch grid anchor stored in shared Params
+// (session_grid_anchor_height / session_number_at_anchor) instead of a single modulo from
+// block 1. A shared EndBlocker promotes each params epoch to live at its effective height,
+// so live params always describe the currently-effective epoch (Option B).
+// This handler seeds the genesis epoch: it stamps the current live params with anchor=1,
+// number=1 (which makes the new epoch-relative math reduce EXACTLY to the legacy block-1
+// grid — no boundary moves at the upgrade) AND records that genesis epoch in params history
+// at effective_height=1. The history seed is what lets F1/F2 at-height reads resolve N=60
+// for pre-upgrade heights (protecting actors already mid-unbonding) with no new proto field
+// and no backfill. See docs/session_length_anchored_grid_spec.md §4.6 / §11.3.
+//
 // CONSENSUS-BREAKING (validator commission on settlement rewards):
 // Settlement reward distribution now applies each validator's commission rate
 // before splitting the post-commission remainder among its delegators
@@ -87,6 +101,36 @@ var Upgrade_0_1_34 = Upgrade{
 			return nil
 		}
 
+		// Seed the anchored session grid (#543). Stamp the current live shared params with
+		// the genesis-grid anchor (block 1, session 1) and record that epoch in params
+		// history at effective_height=1. With anchor=1 the new epoch-relative boundary math
+		// is bit-identical to the legacy block-1 grid, so no in-flight session moves at the
+		// upgrade. See docs/session_length_anchored_grid_spec.md §4.6 / §11.3.
+		seedAnchoredSessionGrid := func(ctx context.Context, logger cosmoslog.Logger) error {
+			logger.Info("Seeding anchored session grid (anchor=1, session_number_at_anchor=1)")
+
+			sharedParams := keepers.SharedKeeper.GetParams(ctx)
+			sharedParams.SessionGridAnchorHeight = 1
+			sharedParams.SessionNumberAtAnchor = 1
+
+			// Live params = genesis epoch (legacy block-1 grid).
+			if err := keepers.SharedKeeper.SetParams(ctx, sharedParams); err != nil {
+				logger.Error("Failed to set anchored shared params", "error", err)
+				return err
+			}
+
+			// Seed params history at height 1 so pre-upgrade heights resolve to N=60.
+			if err := keepers.SharedKeeper.SetParamsAtHeight(ctx, 1, sharedParams); err != nil {
+				logger.Error("Failed to seed shared params history at height 1", "error", err)
+				return err
+			}
+
+			logger.Info("Seeded anchored session grid",
+				"num_blocks_per_session", sharedParams.GetNumBlocksPerSession(),
+			)
+			return nil
+		}
+
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 			logger := sdkCtx.Logger()
@@ -96,6 +140,10 @@ var Upgrade_0_1_34 = Upgrade{
 			}
 
 			if err := unbondBelowMinStakeApplications(ctx, logger); err != nil {
+				return vm, err
+			}
+
+			if err := seedAnchoredSessionGrid(ctx, logger); err != nil {
 				return vm, err
 			}
 

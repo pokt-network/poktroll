@@ -36,11 +36,20 @@ func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
-	// Set the parameters.
-	require.NoError(t, k.SetParams(ctx, testSharedParams))
+	// Anchor the test at a realistic mid-session height so the next session boundary is
+	// well-defined. With N=4 anchored at block 1, height 2 is in session [1,4] → the change
+	// becomes effective at block 5 (#543 anchored grid).
+	ctx = ctx.WithBlockHeight(2)
+	const expectedEffectiveHeight int64 = 5
+
+	// Set the parameters (anchor=1, the genesis grid).
+	startParams := testSharedParams
+	startParams.SessionGridAnchorHeight = 1
+	startParams.SessionNumberAtAnchor = 1
+	require.NoError(t, k.SetParams(ctx, startParams))
 
 	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedNumBlocksPerSession, testSharedParams.NumBlocksPerSession)
+	require.NotEqual(t, expectedNumBlocksPerSession, startParams.NumBlocksPerSession)
 
 	// Update the number of blocks per session
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
@@ -51,12 +60,31 @@ func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	// Query the updated params from the keeper
-	updatedParams := k.GetParams(ctx)
-	require.Equal(t, expectedNumBlocksPerSession, updatedParams.NumBlocksPerSession)
+	// NARROW Option B (#543): a num_blocks_per_session change is DEFERRED — live params still
+	// carry the OLD value until the next session boundary so in-flight sessions keep the old N.
+	liveParams := k.GetParams(ctx)
+	require.Equal(t, startParams.NumBlocksPerSession, liveParams.NumBlocksPerSession,
+		"num_blocks_per_session must not change live before the session boundary")
 
-	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, &updatedParams, string(sharedtypes.KeyNumBlocksPerSession))
+	// The new value is recorded in history at the next session boundary, with the grid
+	// anchored there.
+	effectiveParams := k.GetParamsAtHeight(ctx, expectedEffectiveHeight)
+	require.Equal(t, expectedNumBlocksPerSession, effectiveParams.NumBlocksPerSession)
+	require.Equal(t, uint64(expectedEffectiveHeight), effectiveParams.SessionGridAnchorHeight)
+
+	// The shared EndBlocker promotes the new epoch to live at the effective height.
+	boundaryCtx := ctx.WithBlockHeight(expectedEffectiveHeight)
+	require.NoError(t, k.EndBlocker(boundaryCtx))
+	promotedParams := k.GetParams(boundaryCtx)
+	require.Equal(t, expectedNumBlocksPerSession, promotedParams.NumBlocksPerSession)
+	require.Equal(t, uint64(expectedEffectiveHeight), promotedParams.SessionGridAnchorHeight)
+
+	// Ensure the other parameters are unchanged by the promotion.
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &startParams, &promotedParams,
+		string(sharedtypes.KeyNumBlocksPerSession),
+		"SessionGridAnchorHeight",
+		"SessionNumberAtAnchor",
+	)
 }
 
 func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {

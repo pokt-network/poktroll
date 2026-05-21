@@ -50,7 +50,12 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			continue
 		}
 
-		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
+		// Compute the unbonding end height using the shared params that were effective when
+		// the supplier began unbonding (its unstake session end height), NOT the live params.
+		// A later num_blocks_per_session decrease would otherwise shrink the unbonding window
+		// and release the supplier's stake before its in-flight claims settle (#543, F1).
+		unstakeParams := k.sharedKeeper.GetParamsAtHeight(ctx, int64(supplier.GetUnstakeSessionEndHeight()))
+		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&unstakeParams, &supplier)
 
 		// If the unbonding height is ahead of the current height, the supplier
 		// stays in the unbonding state.

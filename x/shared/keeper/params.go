@@ -85,6 +85,27 @@ func (k Keeper) GetParamsAtHeight(ctx context.Context, queryHeight int64) types.
 	return k.GetParams(ctx)
 }
 
+// GetParamsHistoryEntry returns the params recorded with an effective height EXACTLY equal
+// to effectiveHeight, and whether such an entry exists. Unlike GetParamsAtHeight (which
+// finds the most recent entry <= a height), this is an exact-key lookup used by the
+// EndBlocker to detect an epoch that becomes effective at precisely the current block
+// (#543 anchored grid, Option B promotion).
+func (k Keeper) GetParamsHistoryEntry(ctx context.Context, effectiveHeight int64) (types.Params, bool) {
+	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	bz := store.Get(types.ParamsHistoryKey(effectiveHeight))
+	if bz == nil {
+		return types.Params{}, false
+	}
+
+	var paramsUpdate types.ParamsUpdate
+	k.cdc.MustUnmarshal(bz, &paramsUpdate)
+	if paramsUpdate.Params == nil {
+		return types.Params{}, false
+	}
+
+	return *paramsUpdate.Params, true
+}
+
 // HasParamsHistory returns true if any params history entries exist.
 // This is used to efficiently check if history needs initialization without
 // the O(n) cost of GetAllParamsHistory.

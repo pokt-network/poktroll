@@ -325,9 +325,13 @@ func (k Keeper) ensureClaimAmountLimits(
 	minRequiredAppStakeAmt := claimSettlementCoin.Amount.Add(globalInflationAmt)
 	totalClaimedCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, minRequiredAppStakeAmt)
 
-	// get the number of pending sessions that share the application stake at claim time
-	// This is used to calculate the maximum claimable amount for the supplier within a session.
-	numPendingSessions := sharedtypes.GetNumPendingSessions(sharedParams)
+	// Get the number of pending sessions that share the application stake for THIS claim's
+	// session. The divisor must reflect the session length (num_blocks_per_session) that was
+	// effective for the claim's own session, not the live params: a num_blocks_per_session
+	// change between a session and its settlement otherwise re-divides the app stake by a
+	// different concurrency, under- or over-paying the entire transition batch (#543, F2).
+	budgetParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndBlockHeight)
+	numPendingSessions := sharedtypes.GetNumPendingSessions(&budgetParams)
 
 	// The maximum any single supplier can claim is a fraction of the app's total stake
 	// divided by the actual number of suppliers that submitted claims for this session.

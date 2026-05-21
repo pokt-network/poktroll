@@ -289,6 +289,12 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		GetParams(gomock.Any()).
 		Return(sharedtypes.DefaultParams()).
 		AnyTimes()
+	// Settlement reads params at the claim's session-end height for the budget divisor
+	// (#543, F2). With no param history this resolves to the default (live) params.
+	mockSharedKeeper.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		Return(sharedtypes.DefaultParams()).
+		AnyTimes()
 
 	// Mock the session keeper
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)

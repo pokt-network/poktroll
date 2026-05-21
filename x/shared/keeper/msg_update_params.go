@@ -32,16 +32,14 @@ func (k msgServer) UpdateParams(
 
 	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params))
 
-	// Record the new params in history with their effective height.
-	// New params become effective at the start of the next session.
+	// Record the new params in history at their effective height (start of the next session)
+	// and apply the live write per the narrow Option B rule (#543 anchored grid).
+	// recordParamsHistory stamps the derived anchored-grid fields, overwriting any
+	// governance-supplied anchor/number (§3.3). A num_blocks_per_session change is deferred to
+	// the EndBlocker so in-flight sessions keep the old N; any other param takes effect on
+	// live immediately, as before.
 	if err := k.recordParamsHistory(ctx, msg.Params); err != nil {
 		err = fmt.Errorf("unable to record params history: %w", err)
-		logger.Error(err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	if err := k.SetParams(ctx, msg.Params); err != nil {
-		err = fmt.Errorf("unable to set params: %w", err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
