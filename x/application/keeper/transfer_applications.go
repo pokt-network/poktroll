@@ -130,10 +130,18 @@ func (k Keeper) transferApplication(
 	// - summing stake amounts
 	// - taking the union of delegations and service configs
 	dstApp, isDstFound := k.GetApplication(ctx, srcApp.GetPendingTransfer().GetDestinationAddress())
+
+	// finalServiceConfigs is the destination's service config set after the
+	// transfer. It is computed WITHOUT pre-mutating dstApp.ServiceConfigs so that
+	// recordApplicationServiceConfigChange below can compare the destination's
+	// PRIOR set (still on dstApp) against this new set and correctly record a
+	// service swap when the merge adds services.
+	var finalServiceConfigs []*sharedtypes.ApplicationServiceConfig
 	if !isDstFound {
 		dstApp = srcApp //intentional copy
 		dstApp.Address = srcApp.GetPendingTransfer().GetDestinationAddress()
 		dstApp.PendingTransfer = nil
+		finalServiceConfigs = dstApp.ServiceConfigs
 
 		logger.Info(fmt.Sprintf(
 			"transferring application from %q to new application %q",
@@ -145,7 +153,10 @@ func (k Keeper) transferApplication(
 
 		mergeAppDelegatees(&srcApp, &dstApp)
 		mergeAppPendingUndelegations(&srcApp, &dstApp)
-		mergeAppServiceConfigs(&srcApp, &dstApp)
+		// NB: do NOT mutate dstApp.ServiceConfigs here — the merged union is passed
+		// to recordApplicationServiceConfigChange, which needs dstApp to still hold
+		// the prior set to detect the change and append history entries.
+		finalServiceConfigs = mergeAppServiceConfigs(&srcApp, &dstApp)
 		mergeAppPerSessionSpendLimit(&srcApp, &dstApp)
 
 		logger.Info(fmt.Sprintf(
@@ -160,8 +171,9 @@ func (k Keeper) transferApplication(
 	// the same single service — history stays empty and GetActiveServiceConfigs
 	// falls back to the flat snapshot), and records a session-boundary change when
 	// the merge altered the service set, so session hydration (which reads history
-	// once non-empty) can resolve all of the destination's services.
-	k.recordApplicationServiceConfigChange(ctx, &dstApp, dstApp.ServiceConfigs)
+	// once non-empty) can resolve all of the destination's services. It also keeps
+	// dstApp.ServiceConfigs in sync with finalServiceConfigs.
+	k.recordApplicationServiceConfigChange(ctx, &dstApp, finalServiceConfigs)
 
 	// Remove srcApp from the store
 	k.RemoveApplication(ctx, srcApp)
@@ -269,20 +281,28 @@ func mergeAppPendingUndelegations(srcApp, dstApp *apptypes.Application) {
 
 // mergeAppServiceConfigs takes the union of the srcApp and dstApp's service configs
 // and sets the result in dstApp.
-func mergeAppServiceConfigs(srcApp, dstApp *apptypes.Application) {
+// mergeAppServiceConfigs returns the union of the source and destination
+// applications' service configs, preserving the destination's existing order
+// followed by any source-only configs. It does NOT mutate dstApp.ServiceConfigs;
+// the caller passes the returned union to recordApplicationServiceConfigChange,
+// which needs dstApp to still hold its prior set to detect the change.
+func mergeAppServiceConfigs(srcApp, dstApp *apptypes.Application) []*sharedtypes.ApplicationServiceConfig {
 	// Build a set of the destination application's service configs.
 	serviceIDSet := make(map[string]struct{})
 	for _, dstServiceConfig := range dstApp.ServiceConfigs {
 		serviceIDSet[dstServiceConfig.GetServiceId()] = struct{}{}
 	}
 
-	// Build the union of the source and destination applications' service configs by
-	// appending source application service configs which are not already in the set.
+	// Start from the destination's existing configs, then append source-only ones.
+	merged := make([]*sharedtypes.ApplicationServiceConfig, 0, len(dstApp.ServiceConfigs)+len(srcApp.ServiceConfigs))
+	merged = append(merged, dstApp.ServiceConfigs...)
 	for _, srcServiceConfig := range srcApp.ServiceConfigs {
 		if _, ok := serviceIDSet[srcServiceConfig.GetServiceId()]; !ok {
-			dstApp.ServiceConfigs = append(dstApp.ServiceConfigs, srcServiceConfig)
+			merged = append(merged, srcServiceConfig)
 		}
 	}
+
+	return merged
 }
 
 // mergeAppPerSessionSpendLimit merges the per-session spend limits of the source

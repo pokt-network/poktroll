@@ -235,26 +235,22 @@ func (k Keeper) recordApplicationServiceConfigChange(
 		app.BackfillServiceConfigHistory()
 	}
 
-	newServiceIds := make(map[string]struct{}, len(services))
-	for _, svc := range services {
-		newServiceIds[svc.ServiceId] = struct{}{}
-	}
-
 	updatedHistory := make([]*types.ApplicationServiceConfigUpdate, 0, len(app.ServiceConfigHistory)+len(services))
 
 	// Carry forward existing history:
-	// - Drop entries scheduled for this same next session that are superseded by a
-	//   new config for the same service (replaced before ever activating; avoids
-	//   dead entries on repeated same-session swaps).
+	// - Drop entries still scheduled to activate at this same next session boundary.
+	//   Such an entry was opened earlier in the current session and has never served;
+	//   this change supersedes it before it ever takes effect. It is re-opened below
+	//   if its service is still in the new set. Dropping it (rather than deactivating
+	//   it at its own activation height) avoids zero-width entries
+	//   (activation == deactivation) that GenesisState.Validate rejects on re-import.
 	// - Deactivate still-active entries at the next session start.
 	for _, current := range app.ServiceConfigHistory {
 		if current == nil || current.Service == nil {
 			continue
 		}
 
-		scheduledForNextSession := current.ActivationHeight == nextSessionStartHeight
-		_, hasReplacement := newServiceIds[current.Service.ServiceId]
-		if scheduledForNextSession && hasReplacement {
+		if current.ActivationHeight == nextSessionStartHeight {
 			continue
 		}
 

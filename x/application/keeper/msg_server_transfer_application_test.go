@@ -271,3 +271,79 @@ func TestMsgServer_TransferApplication_MergePerSessionSpendLimit(t *testing.T) {
 		})
 	}
 }
+
+// TestMsgServer_TransferApplication_MergeRecordsServiceConfigHistory is a
+// regression test for the transfer-merge service-config-history bug: when a
+// transfer merges the source into an existing destination that already had a
+// service swap (non-empty ServiceConfigHistory), the service IDs merged in from
+// the source must be recorded in the destination's history. Otherwise session
+// hydration (which reads history once non-empty) cannot resolve the merged-in
+// service. See transfer_applications.go mergeAppServiceConfigs.
+func TestMsgServer_TransferApplication_MergeRecordsServiceConfigHistory(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := appkeeper.NewMsgServerImpl(k)
+	sharedParams := sharedtypes.DefaultParams()
+
+	srcBech32 := sample.AccAddressBech32()
+	dstBech32 := sample.AccAddressBech32()
+	defaultStake := &apptypes.DefaultMinStake
+
+	// Stake the source application serving svc1, then initiate the transfer to
+	// the (not-yet-existing) destination.
+	_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address:  srcBech32,
+		Stake:    defaultStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+	})
+	require.NoError(t, err)
+
+	_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, dstBech32))
+	require.NoError(t, err)
+
+	// Stake the destination serving svc2, then swap it to svc3. The swap gives
+	// the destination a NON-EMPTY ServiceConfigHistory — the precondition that
+	// triggered the bug (the merge then took the early no-op path).
+	_, err = srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address:  dstBech32,
+		Stake:    defaultStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc2"}},
+	})
+	require.NoError(t, err)
+	// Re-stake must raise the stake amount, so bump it for the swap.
+	higherStake := apptypes.DefaultMinStake.AddAmount(math.NewInt(1000000))
+	_, err = srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address:  dstBech32,
+		Stake:    &higherStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc3"}},
+	})
+	require.NoError(t, err)
+
+	dstBeforeMerge, isDstFound := k.GetApplication(ctx, dstBech32)
+	require.True(t, isDstFound)
+	require.NotEmpty(t, dstBeforeMerge.ServiceConfigHistory, "test setup: dst must have non-empty history")
+
+	// Fast-forward to the transfer completion height and run the EndBlocker,
+	// which merges src (svc1) into the existing dst (svc3).
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	srcApp, isSrcFound := k.GetApplication(ctx, srcBech32)
+	require.True(t, isSrcFound)
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+	transferCompletionHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight)
+	ctx = sdkCtx.WithBlockHeight(transferCompletionHeight)
+
+	require.NoError(t, k.EndBlockerTransferApplication(ctx))
+
+	// The merged destination must serve BOTH the merged-in svc1 and its own svc3,
+	// resolvable via service config history at a post-merge session height.
+	dstApp, isDstFound := k.GetApplication(ctx, dstBech32)
+	require.True(t, isDstFound)
+
+	queryHeight := transferCompletionHeight + 2*int64(sharedParams.GetNumBlocksPerSession())
+	activeServiceIDs := make(map[string]struct{})
+	for _, svc := range dstApp.GetActiveServiceConfigs(queryHeight) {
+		activeServiceIDs[svc.GetServiceId()] = struct{}{}
+	}
+
+	require.Contains(t, activeServiceIDs, "svc1", "merged-in source service must be recorded in dst history")
+	require.Contains(t, activeServiceIDs, "svc3", "destination's own service must remain active")
+}

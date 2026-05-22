@@ -178,6 +178,61 @@ func TestMsgServer_StakeApplication_ServiceConfigHistory(t *testing.T) {
 	require.Equal(t, "svc2", activeAfter[0].ServiceId)
 }
 
+// TestMsgServer_StakeApplication_ServiceConfigHistory_SameSessionDoubleSwap is a
+// regression test: swapping services twice within a single session
+// (svcA -> svcB -> svcC) must NOT leave a zero-width history entry
+// (activation == deactivation) for the intermediate svcB, which never served.
+// Such an entry is harmless at runtime (IsActive is always false) but is rejected
+// by GenesisState.Validate, breaking genesis export -> import round-trips.
+func TestMsgServer_StakeApplication_ServiceConfigHistory_SameSessionDoubleSwap(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	appAddr := sample.AccAddressBech32()
+	stake := apptypes.DefaultMinStake
+
+	// Stake svcA, then swap to svcB, then to svcC — all in the same session.
+	// Each restake must raise the stake amount.
+	for _, svcID := range []string{"svcA", "svcB", "svcC"} {
+		_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+			Address:  appAddr,
+			Stake:    &stake,
+			Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: svcID}},
+		})
+		require.NoError(t, err)
+		stake = stake.AddAmount(math.NewInt(1000000))
+	}
+
+	app, found := k.GetApplication(ctx, appAddr)
+	require.True(t, found)
+
+	// No zero-width entries, and the never-served intermediate svcB is absent.
+	for _, h := range app.ServiceConfigHistory {
+		require.False(t,
+			h.DeactivationHeight != 0 && h.DeactivationHeight <= h.ActivationHeight,
+			"zero-width history entry for %s (act=%d deact=%d)",
+			h.Service.ServiceId, h.ActivationHeight, h.DeactivationHeight)
+		require.NotEqual(t, "svcB", h.Service.ServiceId, "never-served intermediate svc must not be recorded")
+	}
+
+	// History must round-trip through genesis validation.
+	gs := apptypes.GenesisState{Params: apptypes.DefaultParams(), ApplicationList: []apptypes.Application{app}}
+	require.NoError(t, gs.Validate(), "history with a same-session double swap must pass genesis validation")
+
+	// svcA active before the boundary, svcC active at/after it.
+	sharedParams := sharedtypes.DefaultParams()
+	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	nextSessionStart := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+
+	activeBefore := app.GetActiveServiceConfigs(nextSessionStart - 1)
+	require.Len(t, activeBefore, 1)
+	require.Equal(t, "svcA", activeBefore[0].ServiceId)
+
+	activeAfter := app.GetActiveServiceConfigs(nextSessionStart)
+	require.Len(t, activeAfter, 1)
+	require.Equal(t, "svcC", activeAfter[0].ServiceId)
+}
+
 func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
