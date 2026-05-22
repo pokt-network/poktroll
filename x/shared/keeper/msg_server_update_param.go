@@ -81,9 +81,10 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 	}
 
 	// Record the new params in history at their effective height (start of the next session)
-	// and apply the live write per the narrow Option B rule (#543 anchored grid): a
-	// num_blocks_per_session change is deferred to the EndBlocker (so in-flight sessions keep
-	// the old N), while any other shared param takes effect on live immediately as before.
+	// and apply the live write per Option B (#543 anchored grid): a session-timing param change
+	// (num_blocks_per_session or any session/claim/proof window offset) is deferred to the
+	// EndBlocker so in-flight sessions and claims keep the params they were created under, while
+	// any other shared param takes effect on live immediately as before.
 	if err := k.recordParamsHistory(ctx, params); err != nil {
 		err = fmt.Errorf("unable to record session params history: %w", err)
 		logger.Error(fmt.Sprintf("ERROR: %s", err))
@@ -135,16 +136,22 @@ func (k msgServer) recordParamsHistory(ctx context.Context, newParams types.Para
 		return fmt.Errorf("failed to record new session params: %w", err)
 	}
 
-	// NARROW Option B (#543): defer the LIVE write to the EndBlocker ONLY when the session
-	// grid actually moves — i.e. num_blocks_per_session changes. If live params held the new
-	// (smaller/larger) N before the next boundary, in-flight sessions would be re-measured on
-	// a different grid and misalign (the bug this whole change fixes). For every OTHER shared
-	// param, preserve the legacy behavior of taking effect on live params immediately, but
-	// keep the CURRENT epoch's grid anchor in live (the EndBlocker advances the anchor at the
-	// boundary) so boundary math stays on the unchanged grid in the meantime.
+	// Option B (#543): defer the LIVE write to the EndBlocker for any SESSION-TIMING param
+	// change — num_blocks_per_session and the session/claim/proof window offsets. These params
+	// drive session boundary, claim window, and proof window math, all of which settlement
+	// reads from LIVE params. If live held the new value before the next boundary, an in-flight
+	// session/claim would be re-measured on a different grid or window and misalign — orphaning
+	// the claim (num_blocks_per_session: re-gridded session ID; window offsets: a shrunk window
+	// can mark a claim expired before its proof was ever submittable). Deferring to the boundary
+	// keeps in-flight work on the params it was created under; the EndBlocker promotes the new
+	// epoch at nextSessionStartHeight.
+	//
+	// For every OTHER shared param (unbonding periods, compute-unit economics), preserve the
+	// legacy behavior of taking effect on live params immediately, but keep the CURRENT epoch's
+	// grid anchor in live (the EndBlocker advances the anchor at the boundary) so boundary math
+	// stays on the unchanged grid in the meantime.
 	liveParams := k.GetParams(ctx)
-	gridMoves := newParams.NumBlocksPerSession != liveParams.NumBlocksPerSession
-	if !gridMoves {
+	if !sessionTimingParamsChanged(&liveParams, &newParams) {
 		immediateParams := newParams
 		immediateParams.SessionGridAnchorHeight = liveParams.SessionGridAnchorHeight
 		immediateParams.SessionNumberAtAnchor = liveParams.SessionNumberAtAnchor
@@ -154,4 +161,18 @@ func (k msgServer) recordParamsHistory(ctx context.Context, newParams types.Para
 	}
 
 	return nil
+}
+
+// sessionTimingParamsChanged reports whether any session-timing param differs between
+// the live and new params. These are the params that feed session boundary, claim
+// window, and proof window math; a change to any of them must be deferred to the next
+// session boundary (#543 Option B) so in-flight sessions and claims are not re-measured
+// mid-flight. Grid-anchor metadata is intentionally excluded (it is derived, not governed).
+func sessionTimingParamsChanged(live, next *types.Params) bool {
+	return live.NumBlocksPerSession != next.NumBlocksPerSession ||
+		live.GracePeriodEndOffsetBlocks != next.GracePeriodEndOffsetBlocks ||
+		live.ClaimWindowOpenOffsetBlocks != next.ClaimWindowOpenOffsetBlocks ||
+		live.ClaimWindowCloseOffsetBlocks != next.ClaimWindowCloseOffsetBlocks ||
+		live.ProofWindowOpenOffsetBlocks != next.ProofWindowOpenOffsetBlocks ||
+		live.ProofWindowCloseOffsetBlocks != next.ProofWindowCloseOffsetBlocks
 }
