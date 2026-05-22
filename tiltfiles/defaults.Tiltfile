@@ -72,7 +72,7 @@ observability:
 
 ollama:
   # Whether to deploy Ollama (for AI agent support)
-  enabled: false
+  enabled: true
   # Ollama model to use (e.g., llama2, mistral, qwen)
   model: qwen:0.5b
 

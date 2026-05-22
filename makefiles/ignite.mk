@@ -37,6 +37,9 @@ RELEASE_TARGETS_NOCGO := $(LINUX_TARGETS) $(DARWIN_TARGETS)
 CC_LINUX_AMD64 ?= x86_64-linux-gnu-gcc
 CC_LINUX_ARM64 ?= aarch64-linux-gnu-gcc
 
+# Docker Tag
+DOCKER_TAG ?= ghcr.io/pokt-network/pocketd:rc
+
 ##########################
 ### Ignite Build Tasks ###
 ##########################
@@ -143,6 +146,10 @@ ignite_release_extract_binaries: ## Extract all archives to release_binaries/<ar
 		find "$$tmp" -name "pocketd" -type f -exec cp {} "release_binaries/$$bname" \; ; \
 		rm -rf "$$tmp"; \
 	done
+
+.PHONY: docker_build_cgo_disabled
+docker_build_cgo_disabled: ignite_pocketd_build ignite_release ignite_release_extract_binaries
+	docker build -f Dockerfile.release -t $(DOCKER_TAG) .
 
 #################################
 ### Ignite Version Management ###

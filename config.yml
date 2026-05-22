@@ -263,18 +263,7 @@ genesis:
           service_configs:
             - service_id: anvil
           stake:
-            # NB: This value should be exactly 1upokt smaller than the value in
-            # `application1_stake_config.yaml` so that the stake command causes a state change.
-            amount: "100000068" # ~100 POKT
-            denom: upokt
-        - address: pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm
-          delegatee_gateway_addresses:
-            [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
-          service_configs:
-            - service_id: rest
-          stake:
-            # NB: This value should be exactly 1upokt smaller than the value in
-            # `application1_stake_config.yaml` so that the stake command causes a state change.
+            # DEV_NOTE: Value should be exactly 1upokt smaller than `application1_stake_config.yaml` so that the stake command causes a state change.
             amount: "100000068" # ~100 POKT
             denom: upokt
         - address: pokt1lqyu4v88vp8tzc86eaqr4lq8rwhssyn6rfwzex
@@ -285,22 +274,30 @@ genesis:
           stake:
             amount: "100000068" # ~100 POKT
             denom: upokt
+        - address: pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm
+          delegatee_gateway_addresses:
+            [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
+          service_configs:
+            - service_id: rest
+          stake:
+            # DEV_NOTE: Value should be exactly 1upokt smaller than `application1_stake_config.yaml` so that the stake command causes a state change.
+            amount: "100000068" # ~100 POKT
+            denom: upokt
         - address: pokt1pn64d94e6u5g8cllsnhgrl6t96ysnjw59j5gst
           delegatee_gateway_addresses:
             [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
           service_configs:
-            - service_id: static
+            - service_id: ollama
           stake:
-            amount: "10000000000000"
+            # DEV_NOTE: Value should be exactly 1upokt smaller than `application1_stake_config.yaml` so that the stake command causes a state change.
+            amount: "100000068" # ~100 POKT
             denom: upokt
     # For ref, see proto/poktroll/supplier/params.proto
     supplier:
       params:
-        # TODO_MAINNET_MIGRATION(@olshansk): Determine realistic amount for minimum gateway stake amount.
         min_stake:
           amount: "1000000" # 1 POKT
           denom: upokt
-        # TODO_MAINNET_MIGRATION(@olshansk): Determine realistic amount for supplier staking fee.
         staking_fee:
           amount: "1000000" # 1 POKT
           denom: upokt
@@ -324,6 +321,22 @@ genesis:
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: 100
+            - service_id: rest
+              endpoints:
+                - configs: []
+                  rpc_type: REST
+                  url: http://relayminer1:8545
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: 100
+            - service_id: ollama
+              endpoints:
+                - configs: []
+                  rpc_type: REST
+                  url: http://relayminer1:8545
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: 100
             - service_id: static
               endpoints:
                 - configs: []
@@ -333,22 +346,20 @@ genesis:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: 100
           stake:
-            # NB: This value should be exactly 1upokt smaller than the value in
+            # DEV_NOTE: Value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
             amount: "1000068"
             denom: upokt
     # For ref, see proto/poktroll/gateway/params.proto
     gateway:
       params:
-        # TODO_MAINNET_MIGRATION(@olshansk): Determine realistic amount for minimum gateway stake amount.
         min_stake:
           amount: "1000000" # 1 POKT
           denom: upokt
       gatewayList:
         - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
           stake:
-            # NB: This value should be exactly 1upokt smaller than the value in
-            # `gateway1_stake_config.yaml` so that the stake command causes a state change.
+            # DEV_NOTE: Value should be exactly 1upokt smaller than the value in `gateway1_stake_config.yaml` so that the stake command causes a state change.
             amount: "1000068"
             denom: upokt
     # For ref, see proto/poktroll/service/params.proto
@@ -367,14 +378,14 @@ genesis:
           name: "anvilws"
           compute_units_per_relay: 100
           owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
-        - id: ollama
-          name: "ollama"
-          compute_units_per_relay: 100
-          owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
         - id: rest
           name: "rest"
           compute_units_per_relay: 100
           owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
+        - id: ollama
+          name: "ollama"
+          compute_units_per_relay: 100
+          owner_address: pokt1pn64d94e6u5g8cllsnhgrl6t96ysnjw59j5gst
         - id: static
           name: "static"
           compute_units_per_relay: 1

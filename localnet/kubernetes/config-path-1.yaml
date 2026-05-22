@@ -13,3 +13,6 @@ shannon_config:
     gateway_private_key_hex: cf09805c952fa999e9a63a9f434147b0a5abfd10f268879694c6b5a70e1ae177
     owned_apps_private_keys_hex:
       - 2d00ef074d9b51e46886dc9a1df11e7b986611d0f336bdcf1f0adce3e037ec0a # anvil - app1 - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+      - 7cbbaa043b9b63baa7d6bb087483b0a6a9f82596c19dce4c5028eb43e5b63674 # anvilws - app3 - pokt1lqyu4v88vp8tzc86eaqr4lq8rwhssyn6rfwzex
+      - 7e7571a8c61b0887ff8a9017bb4ad83c016b193234f9dc8b6a8ce10c7c483600 # rest - app2 - pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm
+      - 84e4f2257f24d9e1517d414b834bbbfa317e0d53fef21c1528a07a5fa8c70d57 # ollama - app4 - pokt1pn64d94e6u5g8cllsnhgrl6t96ysnjw59j5gst
