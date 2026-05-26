@@ -530,7 +530,9 @@ func (k Keeper) GetExpiringClaimsSessionEndHeights(
 // end (not just live).
 //
 // Why per-epoch: a claim's settlement height is
-//   blockHeight = sessionEndHeight + GetSessionEndToProofWindowCloseBlocks(P_at_sessionEnd) + 1
+//
+//	blockHeight = sessionEndHeight + GetSessionEndToProofWindowCloseBlocks(P_at_sessionEnd) + 1
+//
 // where P_at_sessionEnd is the shared params epoch effective at the claim's
 // sessionEndHeight. Live params can differ from P_at_sessionEnd whenever a
 // window-offset change was promoted between a claim's session end and its
