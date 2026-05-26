@@ -60,7 +60,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	// just live) so a claim created under an older window-offset configuration whose
 	// lifecycle crossed a param-change boundary is still located by its actual stored
 	// sessionEndHeight — closing the cross-session window-offset orphan class (O2).
-	candidateSessionEndHeights := k.getExpiringClaimsSessionEndHeights(ctx, settlementContext, blockHeight)
+	candidateSessionEndHeights := k.candidateSessionEndHeightsForLiveParams(ctx, settlementContext.GetSharedParams(), blockHeight)
 	collectedClaims := make([]prooftypes.Claim, 0, estimatedClaimCount)
 	for _, sessionEndHeight := range candidateSessionEndHeights {
 		expiringClaimsIterator := k.proofKeeper.GetSessionEndHeightClaimsIterator(ctx, sessionEndHeight)
@@ -511,9 +511,23 @@ func (k Keeper) GetExpiringClaimsIterator(
 	return k.proofKeeper.GetSessionEndHeightClaimsIterator(ctx, expiringSessionEndHeight)
 }
 
-// getExpiringClaimsSessionEndHeights returns the deduplicated set of sessionEndHeight
-// values whose claims are ripe for settlement at blockHeight, computed under the
-// shared params epoch effective at EACH candidate's session end (not just live).
+// GetExpiringClaimsSessionEndHeights returns the deduplicated set of sessionEndHeight
+// values whose claims are ripe for settlement at blockHeight. Queries live shared
+// params and delegates to candidateSessionEndHeightsForLiveParams; exported for use
+// by observability tooling and benchmarks that need the candidate set without
+// having a settlementContext on hand. See candidateSessionEndHeightsForLiveParams
+// for the algorithm.
+func (k Keeper) GetExpiringClaimsSessionEndHeights(
+	ctx cosmostypes.Context,
+	blockHeight int64,
+) []int64 {
+	return k.candidateSessionEndHeightsForLiveParams(ctx, k.sharedKeeper.GetParams(ctx), blockHeight)
+}
+
+// candidateSessionEndHeightsForLiveParams returns the deduplicated set of
+// sessionEndHeight values whose claims are ripe for settlement at blockHeight,
+// computed under the shared params epoch effective at EACH candidate's session
+// end (not just live).
 //
 // Why per-epoch: a claim's settlement height is
 //   blockHeight = sessionEndHeight + GetSessionEndToProofWindowCloseBlocks(P_at_sessionEnd) + 1
@@ -530,13 +544,14 @@ func (k Keeper) GetExpiringClaimsIterator(
 // Epochs with identical offsets collapse to one candidate. With no recent param
 // changes the function returns exactly one candidate (live), matching legacy
 // behavior at zero added cost.
-func (k Keeper) getExpiringClaimsSessionEndHeights(
+//
+// liveParams is injected so the settlement Phase 1 loop can pass the snapshot
+// already held in settlementContext, avoiding a redundant store read.
+func (k Keeper) candidateSessionEndHeightsForLiveParams(
 	ctx cosmostypes.Context,
-	settlementContext *settlementContext,
+	liveParams sharedtypes.Params,
 	blockHeight int64,
 ) []int64 {
-	liveParams := settlementContext.GetSharedParams()
-
 	// Lookback bound: a claim's lifecycle is sessionEnd + (grace + claimWindow + proofWindow).
 	// 4*N is a safe upper bound covering reasonable historical offset configurations;
 	// a hard floor of 240 blocks covers default-N=60 chains regardless of param drift.
