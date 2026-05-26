@@ -43,10 +43,17 @@ jobs:
           cache: "yarn"
           cache-dependency-path: docusaurus/yarn.lock
 
+      - name: Enable Corepack
+        # Must run AFTER setup-node so it enables for the installed Node
+        # version (not the runner's pre-installed system Node). Required to
+        # pick up the `packageManager: yarn@4.x` field in docusaurus/package.json;
+        # setup-node ships Yarn 1 by default, which cannot read Yarn 4 lockfiles.
+        run: corepack enable
+
       - name: Install dependencies
         run: |
           cd docusaurus
-          yarn install
+          yarn install --immutable
 
       - name: Build
         run: |
@@ -74,10 +81,16 @@ jobs:
           cache: "yarn"
           cache-dependency-path: docusaurus/yarn.lock
 
+      - name: Enable Corepack
+        # See validate job above — must run after setup-node, required for
+        # Yarn 4 lockfile compatibility (Corepack picks up the packageManager
+        # field in docusaurus/package.json).
+        run: corepack enable
+
       - name: Install dependencies
         run: |
           cd docusaurus
-          yarn install
+          yarn install --immutable
 
       - name: Build
         run: |
