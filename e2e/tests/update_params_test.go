@@ -483,8 +483,9 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		// governance-settable params.
 		var liveSharedRes sharedtypes.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &liveSharedRes)
-		params.SessionGridAnchorHeight = liveSharedRes.GetParams().GetSessionGridAnchorHeight()
-		params.SessionNumberAtAnchor = liveSharedRes.GetParams().GetSessionNumberAtAnchor()
+		liveParams := liveSharedRes.GetParams()
+		params.SessionGridAnchorHeight = liveParams.SessionGridAnchorHeight
+		params.SessionNumberAtAnchor = liveParams.SessionNumberAtAnchor
 
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
