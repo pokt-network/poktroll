@@ -18,16 +18,39 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// TestWindowOffsetChange_CrossSessionClaimStillSettles is the encoded repro for the
-// cross-session window-offset orphan class (O2). It creates a claim under one set of
-// window offsets, changes a window offset BEFORE the claim's proof window closes
-// (the claim's lifecycle straddles a session boundary at which the new offsets are
-// promoted to live), then advances to the original settlement height and asserts the
-// claim still settles. Before the per-epoch candidate sessionEndHeight scan in
-// settlement, the loop computed expiringSessionEndHeight against LIVE offsets only —
-// after the promotion live's E no longer matched the claim's actual stored
-// sessionEndHeight, orphaning the claim forever.
-func TestWindowOffsetChange_CrossSessionClaimStillSettles(t *testing.T) {
+// TestWindowOffsetChange_CrossSessionClaimStillSettles_Shrink encodes the
+// cross-session window-offset orphan class (O2), SHRINK direction. The claim is
+// created under a larger proof window; mid-session governance shrinks the proof
+// window; the change is deferred to the next session boundary and promoted there;
+// at the claim's original settlement height (under OLD offsets) live offsets give
+// a SMALLER tail and therefore a DIFFERENT expiringSessionEndHeight than the
+// claim's stored sessionEndHeight. Before the per-epoch candidate scan in
+// settlement, the loop missed the claim. The fix walks recent params history
+// epochs and computes a candidate sessionEndHeight under each epoch's offsets, so
+// the claim is located under the OLD epoch's offsets.
+func TestWindowOffsetChange_CrossSessionClaimStillSettles_Shrink(t *testing.T) {
+	runWindowOffsetCrossSessionTest(t, 2 /* oldProofClose */, 1 /* newProofClose */)
+}
+
+// TestWindowOffsetChange_CrossSessionClaimStillSettles_Grow is the symmetric case:
+// growing a window offset. The claim is created under a smaller proof window;
+// mid-session governance grows the proof window; under live (new, larger) offsets
+// at the claim's original settlement height, expiringSessionEndHeight is LOWER
+// than the claim's stored sessionEndHeight. The same per-epoch candidate scan
+// locates the claim under the OLD epoch's offsets and settles it at the
+// originally-scheduled height instead of letting it drift to a later block under
+// the new larger window.
+func TestWindowOffsetChange_CrossSessionClaimStillSettles_Grow(t *testing.T) {
+	runWindowOffsetCrossSessionTest(t, 1 /* oldProofClose */, 2 /* newProofClose */)
+}
+
+// runWindowOffsetCrossSessionTest is the shared body for the O2 cross-session
+// orphan tests. Sets up an in-flight claim under oldProofClose, changes
+// ProofWindowCloseOffsetBlocks to newProofClose mid-session, runs the EndBlocker
+// at the boundary to promote, then settles at the claim's ORIGINAL settlement
+// height (under oldProofClose). Asserts the claim settles regardless of the
+// direction of the offset change.
+func runWindowOffsetCrossSessionTest(t *testing.T, oldProofClose, newProofClose int64) {
 	service := sharedtypes.Service{
 		Id:                   "svc1",
 		Name:                 "svcName1",
@@ -73,8 +96,6 @@ func TestWindowOffsetChange_CrossSessionClaimStillSettles(t *testing.T) {
 
 	const (
 		n                int64 = 4
-		oldProofClose    int64 = 2
-		newProofClose    int64 = 1 // shrink — the orphan-inducing direction
 		gracePeriod      int64 = 1
 		claimWindowOpen  int64 = 1
 		claimWindowClose int64 = 2
@@ -122,7 +143,8 @@ func TestWindowOffsetChange_CrossSessionClaimStillSettles(t *testing.T) {
 	require.Equal(t, int64(1), inFlightSession.Header.SessionStartBlockHeight)
 	require.Equal(t, n, inFlightSession.Header.SessionEndBlockHeight)
 
-	// --- Shrink ProofWindowCloseOffsetBlocks while the session is in flight ---
+	// --- Change ProofWindowCloseOffsetBlocks while the session is in flight ---
+	// Direction (shrink/grow) is parameterized via oldProofClose/newProofClose.
 	// The change is deferred (#543 Option B + session-timing-deferral extension): live
 	// offsets are unchanged until the next session boundary (n+1).
 	sharedMsgSrv := sharedkeeper.NewMsgServerImpl(*concreteShared)
