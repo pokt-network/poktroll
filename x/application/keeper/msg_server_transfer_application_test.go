@@ -347,3 +347,73 @@ func TestMsgServer_TransferApplication_MergeRecordsServiceConfigHistory(t *testi
 	require.Contains(t, activeServiceIDs, "svc1", "merged-in source service must be recorded in dst history")
 	require.Contains(t, activeServiceIDs, "svc3", "destination's own service must remain active")
 }
+
+// TestMsgServer_TransferApplication_NewAddressRewritesHistoryAppAddress is a
+// regression test for the transfer-to-new-address service config history
+// ApplicationAddress bug: when an application with non-empty
+// ServiceConfigHistory transfers to a new address (no merge), the copied
+// history entries' ApplicationAddress field is rewritten to the destination's
+// new address. Without the rewrite, indexers and queries that filter history
+// by app address would miss the dst app's pre-transfer entries.
+func TestMsgServer_TransferApplication_NewAddressRewritesHistoryAppAddress(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := appkeeper.NewMsgServerImpl(k)
+
+	srcBech32 := sample.AccAddressBech32()
+	dstBech32 := sample.AccAddressBech32()
+
+	// Stake src serving svc1, then swap to svc2 to populate ServiceConfigHistory
+	// with two entries (both naming srcBech32 as the ApplicationAddress).
+	stake := apptypes.DefaultMinStake
+	_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address:  srcBech32,
+		Stake:    &stake,
+		Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+	})
+	require.NoError(t, err)
+
+	higherStake := apptypes.DefaultMinStake.AddAmount(math.NewInt(1000000))
+	_, err = srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address:  srcBech32,
+		Stake:    &higherStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc2"}},
+	})
+	require.NoError(t, err)
+
+	srcBeforeTransfer, ok := k.GetApplication(ctx, srcBech32)
+	require.True(t, ok)
+	require.NotEmpty(t, srcBeforeTransfer.ServiceConfigHistory,
+		"test setup: src must have non-empty history before transfer")
+	for _, entry := range srcBeforeTransfer.ServiceConfigHistory {
+		require.Equal(t, srcBech32, entry.ApplicationAddress,
+			"test setup: src history entries must reference src address")
+	}
+
+	// Initiate transfer to a NEW address (dst does not yet exist).
+	_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, dstBech32))
+	require.NoError(t, err)
+
+	sharedParams := sharedtypes.DefaultParams()
+	srcApp, ok := k.GetApplication(ctx, srcBech32)
+	require.True(t, ok)
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+	transferCompletionHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(transferCompletionHeight)
+
+	require.NoError(t, k.EndBlockerTransferApplication(ctx))
+
+	// Every history entry on the destination must name the destination address.
+	dstApp, isDstFound := k.GetApplication(ctx, dstBech32)
+	require.True(t, isDstFound)
+	require.NotEmpty(t, dstApp.ServiceConfigHistory,
+		"dst must inherit non-empty history from src")
+	for _, entry := range dstApp.ServiceConfigHistory {
+		require.Equal(t, dstBech32, entry.ApplicationAddress,
+			"dst history entry must name the dst address after transfer; got entry for service %q with ApplicationAddress=%q",
+			entry.GetService().GetServiceId(), entry.ApplicationAddress)
+	}
+
+	// src is removed by the transfer EndBlocker.
+	_, isSrcFound := k.GetApplication(ctx, srcBech32)
+	require.False(t, isSrcFound, "src must be removed after a completed transfer")
+}

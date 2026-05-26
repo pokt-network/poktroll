@@ -143,6 +143,28 @@ func (k Keeper) transferApplication(
 		dstApp.PendingTransfer = nil
 		finalServiceConfigs = dstApp.ServiceConfigs
 
+		// Rewrite ApplicationAddress on each copied history entry to the new
+		// dst address. The shallow copy above aliased dstApp.ServiceConfigHistory
+		// with srcApp.ServiceConfigHistory (both slices point at the same
+		// *ApplicationServiceConfigUpdate values), and each entry's
+		// ApplicationAddress still names the SOURCE app. Without this rewrite,
+		// indexers and queries that filter history by app address would miss the
+		// dst app's pre-transfer entries. Allocate a fresh slice with cloned
+		// entries to avoid mutating srcApp's view (srcApp is removed below, but
+		// clarity is worth the small alloc).
+		if len(dstApp.ServiceConfigHistory) > 0 {
+			rewrittenHistory := make([]*apptypes.ApplicationServiceConfigUpdate, 0, len(dstApp.ServiceConfigHistory))
+			for _, entry := range dstApp.ServiceConfigHistory {
+				if entry == nil {
+					continue
+				}
+				cloned := *entry
+				cloned.ApplicationAddress = dstApp.Address
+				rewrittenHistory = append(rewrittenHistory, &cloned)
+			}
+			dstApp.ServiceConfigHistory = rewrittenHistory
+		}
+
 		logger.Info(fmt.Sprintf(
 			"transferring application from %q to new application %q",
 			srcApp.GetAddress(), dstApp.GetAddress(),
