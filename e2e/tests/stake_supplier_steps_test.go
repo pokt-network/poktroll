@@ -54,6 +54,16 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 	s.AllModuleParamsShouldBeUpdated(paramModuleName)
 }
 
+// derivedSharedParamFieldNames lists shared module Params fields that are NOT
+// governance-settable — they are derived runtime metadata stamped per epoch by
+// the shared keeper (#543 anchored grid). They have no corresponding ParamX
+// constant and no case in buildSharedMsgUpdateParams' switch, so including them
+// in a params update map would fatally fail. Skip them in the reflection helper.
+var derivedSharedParamFieldNames = map[string]struct{}{
+	"session_grid_anchor_height": {},
+	"session_number_at_anchor":   {},
+}
+
 // paramsAnyMapFromParamStruct construct a paramsAnyMap from any
 // protobuf Param message type (tx.proto) using reflection.
 func paramsAnyMapFromParamsStruct(paramStruct any) paramsAnyMap {
@@ -63,6 +73,13 @@ func paramsAnyMapFromParamsStruct(paramStruct any) paramsAnyMap {
 		fieldValue := paramsReflectValue.Field(i)
 		fieldStruct := paramsReflectValue.Type().Field(i)
 		paramName := cases.ToSnakeCase(fieldStruct.Name)
+
+		// Skip derived (non-governance-settable) fields. The shared module's
+		// anchor metadata fields are stamped per-epoch by the keeper, not set by
+		// MsgUpdateParam(s), and have no corresponding ParamX constant.
+		if _, isDerived := derivedSharedParamFieldNames[paramName]; isDerived {
+			continue
+		}
 
 		fieldTypeName := fieldStruct.Type.Name()
 		// TODO_IMPROVE: MsgUpdateParam currently only supports int64 and not uint64 value types.
