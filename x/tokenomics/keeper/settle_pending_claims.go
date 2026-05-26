@@ -55,26 +55,34 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	// Phase 1: Collect claims into memory and build supplier count map.
 	// This avoids iterating the KV store twice while providing actual supplier counts
 	// needed for the per-supplier cap calculation in ensureClaimAmountLimits.
-	expiringClaimsIterator := k.GetExpiringClaimsIterator(ctx, settlementContext, blockHeight)
+	//
+	// Candidate sessionEndHeights are computed against EACH recent params epoch (not
+	// just live) so a claim created under an older window-offset configuration whose
+	// lifecycle crossed a param-change boundary is still located by its actual stored
+	// sessionEndHeight — closing the cross-session window-offset orphan class (O2).
+	candidateSessionEndHeights := k.getExpiringClaimsSessionEndHeights(ctx, settlementContext, blockHeight)
 	collectedClaims := make([]prooftypes.Claim, 0, estimatedClaimCount)
-	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
-		claim, iterErr := expiringClaimsIterator.Value()
-		if iterErr != nil {
-			numDiscardedFaultyClaims++
-			claimKey := string(expiringClaimsIterator.Key())
-			claimErr := tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
-				"[UNEXPECTED ERROR] Critical error during claim settlement during session with key %s. Claim will be discarded to prevent chain halt: %s",
-				claimKey, iterErr)
-			logger.Error(claimErr.Error())
-			continue
+	for _, sessionEndHeight := range candidateSessionEndHeights {
+		expiringClaimsIterator := k.proofKeeper.GetSessionEndHeightClaimsIterator(ctx, sessionEndHeight)
+		for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
+			claim, iterErr := expiringClaimsIterator.Value()
+			if iterErr != nil {
+				numDiscardedFaultyClaims++
+				claimKey := string(expiringClaimsIterator.Key())
+				claimErr := tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+					"[UNEXPECTED ERROR] Critical error during claim settlement during session with key %s. Claim will be discarded to prevent chain halt: %s",
+					claimKey, iterErr)
+				logger.Error(claimErr.Error())
+				continue
+			}
+			collectedClaims = append(collectedClaims, claim)
+			settlementContext.IncrementSupplierCount(
+				claim.SessionHeader.ApplicationAddress,
+				claim.SessionHeader.SessionId,
+			)
 		}
-		collectedClaims = append(collectedClaims, claim)
-		settlementContext.IncrementSupplierCount(
-			claim.SessionHeader.ApplicationAddress,
-			claim.SessionHeader.SessionId,
-		)
+		expiringClaimsIterator.Close()
 	}
-	expiringClaimsIterator.Close()
 
 	logger.Info(fmt.Sprintf("Phase 1 complete: collected %d claims for settlement", len(collectedClaims)))
 
@@ -483,7 +491,15 @@ func (k Keeper) executeAggregatedModToAcctTransfers(
 	return nil
 }
 
-// GetExpiringClaimsIterator returns an iterator of all claims expiring at the current block height.
+// GetExpiringClaimsIterator returns an iterator of all claims expiring at the current
+// block height under live shared params.
+//
+// DEPRECATED: Computes the candidate sessionEndHeight using LIVE params only, which
+// misses claims whose lifecycle crossed a window-offset param change boundary
+// (cross-session O2 orphan class). Use getExpiringClaimsSessionEndHeights + per-E
+// iterators instead. Kept for external/test compatibility; the settlement Phase 1
+// loop no longer calls it.
+//
 // DEV_NOTE: It is exported for testing purposes.
 func (k Keeper) GetExpiringClaimsIterator(
 	ctx cosmostypes.Context,
@@ -493,6 +509,75 @@ func (k Keeper) GetExpiringClaimsIterator(
 	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&settlementContext.sharedParams)
 	expiringSessionEndHeight := blockHeight - (sessionEndToProofWindowCloseNumBlocks + 1)
 	return k.proofKeeper.GetSessionEndHeightClaimsIterator(ctx, expiringSessionEndHeight)
+}
+
+// getExpiringClaimsSessionEndHeights returns the deduplicated set of sessionEndHeight
+// values whose claims are ripe for settlement at blockHeight, computed under the
+// shared params epoch effective at EACH candidate's session end (not just live).
+//
+// Why per-epoch: a claim's settlement height is
+//   blockHeight = sessionEndHeight + GetSessionEndToProofWindowCloseBlocks(P_at_sessionEnd) + 1
+// where P_at_sessionEnd is the shared params epoch effective at the claim's
+// sessionEndHeight. Live params can differ from P_at_sessionEnd whenever a
+// window-offset change was promoted between a claim's session end and its
+// proof-window-close height — a normal occurrence since a claim's lifecycle commonly
+// spans two session boundaries. Solving for sessionEndHeight against LIVE only
+// misses the actual stored value under those conditions, orphaning the claim
+// forever (O2 class).
+//
+// The function walks params history backward bounded by maxLookbackBlocks, computes
+// a candidate sessionEndHeight under each recent epoch's offsets, and deduplicates.
+// Epochs with identical offsets collapse to one candidate. With no recent param
+// changes the function returns exactly one candidate (live), matching legacy
+// behavior at zero added cost.
+func (k Keeper) getExpiringClaimsSessionEndHeights(
+	ctx cosmostypes.Context,
+	settlementContext *settlementContext,
+	blockHeight int64,
+) []int64 {
+	liveParams := settlementContext.GetSharedParams()
+
+	// Lookback bound: a claim's lifecycle is sessionEnd + (grace + claimWindow + proofWindow).
+	// 4*N is a safe upper bound covering reasonable historical offset configurations;
+	// a hard floor of 240 blocks covers default-N=60 chains regardless of param drift.
+	maxLookbackBlocks := int64(4 * liveParams.NumBlocksPerSession)
+	if maxLookbackBlocks < 240 {
+		maxLookbackBlocks = 240
+	}
+	earliest := blockHeight - maxLookbackBlocks
+
+	seen := make(map[int64]struct{}, 2)
+	candidates := make([]int64, 0, 2)
+
+	addCandidate := func(p *sharedtypes.Params) {
+		offsetBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(p)
+		E := blockHeight - (offsetBlocks + 1)
+		if E < 0 {
+			return
+		}
+		if _, ok := seen[E]; ok {
+			return
+		}
+		seen[E] = struct{}{}
+		candidates = append(candidates, E)
+	}
+
+	// Always include the candidate derived from live params (current epoch) — this is
+	// the common case where no recent window-offset change has happened.
+	addCandidate(&liveParams)
+
+	// Walk params history backward from blockHeight, adding a candidate per recent
+	// epoch's offsets. Older epochs cannot have any still-in-flight claims so we stop
+	// once we cross the lookback bound.
+	k.sharedKeeper.IterateParamsHistoryReverse(ctx, blockHeight, func(effHeight int64, p sharedtypes.Params) bool {
+		if effHeight < earliest {
+			return true
+		}
+		addCandidate(&p)
+		return false
+	})
+
+	return candidates
 }
 
 // slashSupplierStake slashes the stake of a supplier and transfers the total

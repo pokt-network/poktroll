@@ -117,6 +117,41 @@ func (k Keeper) HasParamsHistory(ctx context.Context) bool {
 	return iterator.Valid()
 }
 
+// IterateParamsHistoryReverse iterates params history entries in reverse order of
+// effective_height starting from the largest entry with effective_height <= fromHeight.
+// The callback fn is invoked for each entry; returning stop=true halts iteration.
+//
+// Used by callers that need to resolve, for each historical params epoch, what
+// claim/session timing math applies — e.g. settlement walking recent epochs to
+// find every candidate sessionEndHeight whose proof window closes at the current
+// block (cross-session window-offset orphan class, O2).
+func (k Keeper) IterateParamsHistoryReverse(
+	ctx context.Context,
+	fromHeight int64,
+	fn func(effectiveHeight int64, params types.Params) (stop bool),
+) {
+	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	historyStore := prefix.NewStore(store, types.ParamsHistoryKeyPrefix)
+
+	// end key is exclusive; +1 so an entry at effective_height == fromHeight is included.
+	endKey := make([]byte, 8)
+	binary.BigEndian.PutUint64(endKey, uint64(fromHeight+1))
+
+	iterator := historyStore.ReverseIterator(nil, endKey)
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var paramsUpdate types.ParamsUpdate
+		k.cdc.MustUnmarshal(iterator.Value(), &paramsUpdate)
+		if paramsUpdate.Params == nil {
+			continue
+		}
+		if fn(paramsUpdate.EffectiveHeight, *paramsUpdate.Params) {
+			return
+		}
+	}
+}
+
 // GetAllParamsHistory returns all historical session params updates.
 // This is primarily used for genesis export and debugging.
 func (k Keeper) GetAllParamsHistory(ctx context.Context) []types.ParamsUpdate {

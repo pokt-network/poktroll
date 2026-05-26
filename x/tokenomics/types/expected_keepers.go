@@ -81,6 +81,15 @@ type SharedKeeper interface {
 	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 	GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64
+	// IterateParamsHistoryReverse walks params history entries in reverse effective_height
+	// order starting from the largest entry with effective_height <= fromHeight. Used by
+	// settlement to compute candidate sessionEndHeights under each recent epoch's window
+	// offsets, closing the cross-session window-offset orphan class (O2).
+	IterateParamsHistoryReverse(
+		ctx context.Context,
+		fromHeight int64,
+		fn func(effectiveHeight int64, params sharedtypes.Params) (stop bool),
+	)
 
 	// Setters
 	SetParams(ctx context.Context, params sharedtypes.Params) error
