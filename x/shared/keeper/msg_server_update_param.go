@@ -124,14 +124,26 @@ func (k msgServer) recordParamsHistory(ctx context.Context, newParams types.Para
 	nextSessionStartHeight := currentSessionEndHeight + 1
 
 	// Stamp the new epoch's DERIVED grid-anchor metadata (governance-supplied values are
-	// overwritten — these fields are not user-settable). The anchor is the next session
-	// boundary; the session number continues monotonically from the current epoch.
-	newParams.SessionGridAnchorHeight = uint64(nextSessionStartHeight)
-	newParams.SessionNumberAtAnchor = uint64(types.GetSessionNumber(&effectiveParams, currentHeight) + 1)
+	// overwritten — these fields are not user-settable). The anchor MUST move only when
+	// num_blocks_per_session changes: the new N does not align with the old grid, so the
+	// anchor records the new starting point. For any OTHER param change, the grid is
+	// unchanged and the previous epoch's anchor is mathematically equivalent to a new
+	// anchor at nextSessionStartHeight (since nextSessionStartHeight is already on the
+	// current grid). Carrying the previous anchor forward keeps the field stable when N
+	// is unchanged — surprises observers/tests less and matches the field's "describes
+	// the current grid" semantics.
+	if newParams.NumBlocksPerSession != effectiveParams.NumBlocksPerSession {
+		newParams.SessionGridAnchorHeight = uint64(nextSessionStartHeight)
+		newParams.SessionNumberAtAnchor = uint64(types.GetSessionNumber(&effectiveParams, currentHeight) + 1)
+	} else {
+		newParams.SessionGridAnchorHeight = effectiveParams.SessionGridAnchorHeight
+		newParams.SessionNumberAtAnchor = effectiveParams.SessionNumberAtAnchor
+	}
 
 	// Always record the new params in history at their effective height (next session
 	// boundary). The shared EndBlocker promotes this entry to live when block height reaches
-	// nextSessionStartHeight, advancing the grid anchor.
+	// nextSessionStartHeight — advancing the grid anchor only when N changed; otherwise the
+	// promotion is a no-op for the anchor and updates only the changed param(s).
 	if err := k.SetParamsAtHeight(ctx, nextSessionStartHeight, newParams); err != nil {
 		return fmt.Errorf("failed to record new session params: %w", err)
 	}
