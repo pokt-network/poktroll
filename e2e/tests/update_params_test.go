@@ -473,6 +473,19 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.ComputeUnitsToTokensMultiplier = uint64(computeUnitsToTokensMultiplier.value.(int64))
 		}
 
+		// SessionGridAnchorHeight and SessionNumberAtAnchor are DERIVED runtime state
+		// (re-stamped per epoch by recordParamsHistory + EndBlocker, #543 anchored grid)
+		// — not governance-settable, not part of DefaultParams beyond the genesis seed.
+		// Their live values advance each session boundary, so a direct equality check
+		// against the DefaultParams baseline (anchor=1, number=1) will mismatch on any
+		// post-genesis chain. Read the live values from the actual response and overlay
+		// them onto the expected struct so the comparison is restricted to the
+		// governance-settable params.
+		var liveSharedRes sharedtypes.QueryParamsResponse
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &liveSharedRes)
+		params.SessionGridAnchorHeight = liveSharedRes.GetParams().GetSessionGridAnchorHeight()
+		params.SessionNumberAtAnchor = liveSharedRes.GetParams().GetSessionNumberAtAnchor()
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&sharedtypes.QueryParamsResponse{
