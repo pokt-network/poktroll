@@ -62,10 +62,15 @@ func deduplicateSupplierConfigHistory(logger cosmoslog.Logger, supplier *sharedt
 }
 
 // hasDuplicateRevShareAddresses returns true if any address appears more than
-// once in the rev share list.
+// once in the rev share list. Nil entries are skipped — pre-validation-era
+// state could carry nil ServiceRevenueShare pointers and the upgrade-handler
+// migration must not panic on them.
 func hasDuplicateRevShareAddresses(revShares []*sharedtypes.ServiceRevenueShare) bool {
 	seen := make(map[string]struct{}, len(revShares))
 	for _, rs := range revShares {
+		if rs == nil {
+			continue
+		}
 		if _, exists := seen[rs.Address]; exists {
 			return true
 		}
@@ -76,12 +81,16 @@ func hasDuplicateRevShareAddresses(revShares []*sharedtypes.ServiceRevenueShare)
 
 // mergeRevShareDuplicates merges entries with the same address by summing their
 // percentages. The order of the deduplicated list follows the first occurrence
-// of each address in the original list.
+// of each address in the original list. Nil entries are skipped (see
+// hasDuplicateRevShareAddresses for rationale).
 func mergeRevShareDuplicates(revShares []*sharedtypes.ServiceRevenueShare) []*sharedtypes.ServiceRevenueShare {
 	merged := make(map[string]uint64, len(revShares))
 	order := make([]string, 0, len(revShares))
 
 	for _, rs := range revShares {
+		if rs == nil {
+			continue
+		}
 		if _, exists := merged[rs.Address]; !exists {
 			order = append(order, rs.Address)
 		}

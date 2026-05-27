@@ -68,8 +68,15 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 
 		sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
 
+		// Defensive: GetParams returns a zero-value Params{} (nil MinStake) if params
+		// were never written. Fall back to DefaultMinStake to avoid a nil-deref that
+		// would halt the chain at the EndBlocker. Mirrors MarkBelowMinStakeApplicationsUnbonding.
+		minStake := apptypes.DefaultMinStake
+		if appMinStake := k.GetParams(ctx).MinStake; appMinStake != nil {
+			minStake = *appMinStake
+		}
 		unbondingReason := apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE
-		if application.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
+		if application.GetStake().Amount.LT(minStake.Amount) {
 			unbondingReason = apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE
 		}
 
