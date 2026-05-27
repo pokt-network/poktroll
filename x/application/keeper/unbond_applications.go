@@ -178,18 +178,44 @@ func (k Keeper) UnbondApplication(ctx context.Context, app *apptypes.Application
 	}
 
 	// Send the coins from the application pool back to the application.
-	err = k.bankKeeper.SendCoinsFromModuleToAccount(
+	// If the transfer fails (e.g., a legacy module-account-owned application
+	// — new occurrences are blocked by the stake-time module-account-owner
+	// check, but pre-v0.1.34 state can still trip this), log the error,
+	// emit EventApplicationStakeStuckInModulePool for indexer/governance
+	// visibility, and continue.
+	//
+	// Why not halt the chain: pre-existing legacy state must not be allowed
+	// to brick the EndBlocker. Coins remain in the application module pool;
+	// the event surfaces them for a governance reclaim path. Removing the
+	// application from state keeps the unbonding queue making progress and
+	// prevents an infinite-retry on the same dead entry every session-end.
+	// Mirror of the supplier-side fix in x/supplier/keeper/unbond_suppliers.go.
+	if sendErr := k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx, apptypes.ModuleName, appAddr, []cosmostypes.Coin{*app.Stake},
-	)
-	if err != nil {
+	); sendErr != nil {
 		logger.Error(fmt.Sprintf(
-			"could not send %v coins from module %s to account %s due to %v",
-			app.Stake, appAddr, apptypes.ModuleName, err,
+			"could not send %v coins from module %s to account %s due to %v; application will be removed and coins will remain in module pool (see EventApplicationStakeStuckInModulePool)",
+			app.Stake, apptypes.ModuleName, appAddr, sendErr,
 		))
-		return err
+
+		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+		sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+		stuckSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+		stuckEvent := &apptypes.EventApplicationStakeStuckInModulePool{
+			ApplicationAddress: app.Address,
+			StuckCoin:          app.Stake,
+			Reason:             sendErr.Error(),
+			SessionEndHeight:   stuckSessionEndHeight,
+		}
+		if emitErr := sdkCtx.EventManager().EmitTypedEvent(stuckEvent); emitErr != nil {
+			logger.Error(fmt.Sprintf("failed to emit EventApplicationStakeStuckInModulePool: %+v; %s", stuckEvent, emitErr))
+		}
 	}
 
-	// Remove the Application from the store.
+	// Remove the Application from the store. We do this even when the bank
+	// send above failed: leaving the dead entry in the unbonding queue would
+	// cause infinite-retry on every session-end EndBlocker — far worse than
+	// the (already-emitted, indexer-visible) stuck-coins consequence.
 	k.RemoveApplication(ctx, *app)
 	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", app))
 

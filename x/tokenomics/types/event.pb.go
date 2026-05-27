@@ -932,6 +932,19 @@ func (m *EventSettlementBatch) GetOpType() string {
 // over-count under VALIDATOR and under-count under DELEGATOR.
 type EventValidatorRewardDistribution struct {
 	// The session end block height for the batch of settlements.
+	//
+	// Caveat (cross-session batches): when settlement processes claims that
+	// belong to DIFFERENT session_end_block_heights in the same settlement
+	// block (the O2 cross-session candidate-scan path, exercised after a
+	// window-offset change), this field reports the session_end_block_height
+	// of the FIRST claim in the batched results — it does NOT identify every
+	// session contributing to the pool. Indexers wanting a canonical timestamp
+	// for the validator-reward summary should use the settlement block height
+	// from the SDK header (the height at which this event was emitted) rather
+	// than treating session_end_block_height as definitive. On the common
+	// path (single-session settlement, by far the typical case on mainnet),
+	// this field and the settlement block height differ by exactly the
+	// claim/proof-window offsets, and there is no ambiguity.
 	SessionEndBlockHeight int64 `protobuf:"varint,1,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
 	// The settlement operation reason (distinguishes Mint=Burn from Global Mint pools).
 	OpReason SettlementOpReason `protobuf:"varint,2,opt,name=op_reason,json=opReason,proto3,enum=pocket.tokenomics.SettlementOpReason" json:"op_reason,omitempty"`

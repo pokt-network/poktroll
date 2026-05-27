@@ -188,6 +188,13 @@ func (k Keeper) IterateParamsHistoryReverse(
 
 // GetAllParamsHistory returns all historical session params updates.
 // This is primarily used for genesis export and debugging.
+//
+// Defensive Unmarshal: a corrupted history entry (partial write, downgrade
+// from a newer schema, on-disk bit rot) is logged and skipped rather than
+// allowed to halt genesis export via MustUnmarshal. The sister production
+// readers (GetParamsAtHeight, GetParamsHistoryEntry, IterateParamsHistoryReverse)
+// apply the same pattern; aligning this reader keeps the params-history
+// surface uniformly halt-safe.
 func (k Keeper) GetAllParamsHistory(ctx context.Context) []types.ParamsUpdate {
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	historyStore := prefix.NewStore(store, types.ParamsHistoryKeyPrefix)
@@ -198,7 +205,13 @@ func (k Keeper) GetAllParamsHistory(ctx context.Context) []types.ParamsUpdate {
 	var history []types.ParamsUpdate
 	for ; iterator.Valid(); iterator.Next() {
 		var paramsUpdate types.ParamsUpdate
-		k.cdc.MustUnmarshal(iterator.Value(), &paramsUpdate)
+		if err := k.cdc.Unmarshal(iterator.Value(), &paramsUpdate); err != nil {
+			k.logger.Error(fmt.Sprintf(
+				"GetAllParamsHistory: failed to unmarshal params history entry: %v; skipping entry",
+				err,
+			))
+			continue
+		}
 		history = append(history, paramsUpdate)
 	}
 

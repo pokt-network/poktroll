@@ -109,14 +109,42 @@ var Upgrade_0_1_34 = Upgrade{
 		seedAnchoredSessionGrid := func(ctx context.Context, logger cosmoslog.Logger) error {
 			logger.Info("Seeding anchored session grid (anchor=1, session_number_at_anchor=1)")
 
-			sharedParams := keepers.SharedKeeper.GetParams(ctx)
-			sharedParams.SessionGridAnchorHeight = 1
-			sharedParams.SessionNumberAtAnchor = 1
+			liveParams := keepers.SharedKeeper.GetParams(ctx)
 
-			// Live params = genesis epoch (legacy block-1 grid).
-			if err := keepers.SharedKeeper.SetParams(ctx, sharedParams); err != nil {
-				logger.Error("Failed to set anchored shared params", "error", err)
-				return err
+			// Live params idempotency guard: only stamp anchor=1 if the live
+			// params don't already carry an anchor. On mainnet (and any chain
+			// upgrading from v0.1.33) the anchor field is zero in live params
+			// pre-upgrade, so the stamp proceeds normally. On testnets where a
+			// previous rehearsal already pinned a non-default anchor, we must
+			// NOT clobber that customization — symmetric with the history-seed
+			// guard below.
+			if liveParams.SessionGridAnchorHeight == 0 {
+				stampedParams := liveParams
+				stampedParams.SessionGridAnchorHeight = 1
+				stampedParams.SessionNumberAtAnchor = 1
+				if err := keepers.SharedKeeper.SetParams(ctx, stampedParams); err != nil {
+					logger.Error("Failed to set anchored shared params", "error", err)
+					return err
+				}
+				logger.Info("Stamped live shared params with genesis-grid anchor",
+					"anchor_height", stampedParams.SessionGridAnchorHeight,
+					"session_number_at_anchor", stampedParams.SessionNumberAtAnchor,
+				)
+			} else {
+				logger.Info("Skipping live shared params anchor stamp — anchor already set",
+					"anchor_height", liveParams.SessionGridAnchorHeight,
+					"session_number_at_anchor", liveParams.SessionNumberAtAnchor,
+				)
+			}
+
+			// Compute the params snapshot the history would seed with: even if the
+			// live-params stamp above was skipped (testnet re-run), we still want
+			// the height=1 history entry to carry the anchor-stamped shape if it
+			// is absent. This keeps the two seeds in lock-step.
+			historySeedParams := keepers.SharedKeeper.GetParams(ctx)
+			if historySeedParams.SessionGridAnchorHeight == 0 {
+				historySeedParams.SessionGridAnchorHeight = 1
+				historySeedParams.SessionNumberAtAnchor = 1
 			}
 
 			// Seed params history at height 1 so pre-upgrade heights resolve to N=60.
@@ -127,13 +155,13 @@ var Upgrade_0_1_34 = Upgrade{
 			// precedence over the handler's default.
 			if _, exists := keepers.SharedKeeper.GetParamsHistoryEntry(ctx, 1); exists {
 				logger.Info("Skipping shared params history seed at height 1 — entry already exists")
-			} else if err := keepers.SharedKeeper.SetParamsAtHeight(ctx, 1, sharedParams); err != nil {
+			} else if err := keepers.SharedKeeper.SetParamsAtHeight(ctx, 1, historySeedParams); err != nil {
 				logger.Error("Failed to seed shared params history at height 1", "error", err)
 				return err
 			}
 
 			logger.Info("Seeded anchored session grid",
-				"num_blocks_per_session", sharedParams.GetNumBlocksPerSession(),
+				"num_blocks_per_session", historySeedParams.GetNumBlocksPerSession(),
 			)
 			return nil
 		}
