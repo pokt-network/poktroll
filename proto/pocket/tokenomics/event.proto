@@ -398,6 +398,64 @@ message EventValidatorRewardDistribution {
     uint32 num_delegators = 11;
 }
 
+// EventSupplierRevShareFallbackDistribution is emitted during settlement when a
+// supplier's per-service RevShare list cannot be used as-is to distribute the
+// supplier's slice of the reward. The known triggers are:
+//
+//  1. Sum of revshare percentages != 100 (validation perimeter hole: the
+//     stake-time ValidateServiceRevShare guarantees sum == 100 for NEW stakes,
+//     but pre-v0.1.34 state migrated via the duplicate-revshare merge
+//     (`x/supplier/keeper/migrate_duplicate_revshare.go`) can produce a merged
+//     list with sum > 100 — that supplier survives in store until it restakes).
+//  2. Duplicate recipient addresses observed AFTER migration (defensive — the
+//     migration is expected to have removed them, but settlement validates
+//     independently to avoid silent map-overwrite data loss).
+//  3. A negative remainder computed during proportional distribution (defensive
+//     overflow check; should be unreachable when sum == 100 holds).
+//
+// On any of the above, settlement pays the full supplier slice to the supplier's
+// `owner_address` (a proto-level field guaranteed populated at stake time,
+// independent of any revshare config). This rescues the chain from a `NewCoin`
+// panic on negative amount AND keeps supplier revenue flowing to the rightful
+// owner, while signalling clearly that the operator's revshare config is broken
+// and needs to be re-staked.
+//
+// Indexers should treat this event as a "supplier config is broken" beacon:
+// payouts via this event will NOT appear in the revshare-configured recipients'
+// balances. Operator follow-up = restake supplier with clean revshare.
+//
+// Expected occurrences on a healthy mainnet: zero. Non-zero count post-upgrade
+// indicates pre-existing duplicate-revshare suppliers that the migration could
+// not normalize back to sum == 100; combine with B2 pre-upgrade enumeration to
+// reach out to affected operators.
+message EventSupplierRevShareFallbackDistribution {
+    // The operator address of the supplier whose revshare config was rejected.
+    string supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // The owner address that received the full supplier slice as fallback.
+    string supplier_owner_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // The Service ID for the claim whose distribution triggered the fallback.
+    string service_id = 3;
+
+    // The session end block height of the settled claim that triggered the fallback.
+    int64 session_end_block_height = 4;
+
+    // The full amount paid to the owner as fallback, as a coin string (e.g. "1000upokt").
+    string amount = 5;
+
+    // The settlement operation reason (TLM source) that produced the supplier slice.
+    SettlementOpReason op_reason = 6;
+
+    // Observed sum of revshare percentages, 0-255+ in theory but practically a
+    // small positive integer different from 100. Reported for operator triage.
+    uint64 observed_sum_percentage = 7;
+
+    // Human-readable reason describing why the fallback engaged
+    // (e.g. "sum 110 != 100", "duplicate address ...", "negative remainder").
+    string reason = 8;
+}
+
 // EventApplicationReimbursementRequest is emitted when an application requests a reimbursement from the DAO.
 // It is intended to prevent self dealing attacks when global inflation is enabled.
 // TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.
