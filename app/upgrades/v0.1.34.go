@@ -120,7 +120,14 @@ var Upgrade_0_1_34 = Upgrade{
 			}
 
 			// Seed params history at height 1 so pre-upgrade heights resolve to N=60.
-			if err := keepers.SharedKeeper.SetParamsAtHeight(ctx, 1, sharedParams); err != nil {
+			// Idempotency guard: only write if no entry exists at height 1. On mainnet
+			// the entry is fresh (history is empty pre-upgrade). On testnets where a
+			// previous rehearsal may have already seeded a different grid, we must NOT
+			// clobber that customization — the operator's existing pinning takes
+			// precedence over the handler's default.
+			if _, exists := keepers.SharedKeeper.GetParamsHistoryEntry(ctx, 1); exists {
+				logger.Info("Skipping shared params history seed at height 1 — entry already exists")
+			} else if err := keepers.SharedKeeper.SetParamsAtHeight(ctx, 1, sharedParams); err != nil {
 				logger.Error("Failed to seed shared params history at height 1", "error", err)
 				return err
 			}

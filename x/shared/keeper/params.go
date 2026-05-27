@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -73,8 +74,17 @@ func (k Keeper) GetParamsAtHeight(ctx context.Context, queryHeight int64) types.
 
 	if iterator.Valid() {
 		var paramsUpdate types.ParamsUpdate
-		k.cdc.MustUnmarshal(iterator.Value(), &paramsUpdate)
-		if paramsUpdate.Params != nil {
+		// Defensive: a corrupted history entry (e.g., partial write, downgrade
+		// from a newer schema, on-disk bit rot) must not halt the chain via
+		// MustUnmarshal. Log + fall through to GetParams; resolving to live
+		// params is the same behavior as a missing entry, which downstream
+		// callers already tolerate.
+		if err := k.cdc.Unmarshal(iterator.Value(), &paramsUpdate); err != nil {
+			k.logger.Error(fmt.Sprintf(
+				"GetParamsAtHeight: failed to unmarshal params history entry at queryHeight=%d: %v; falling back to live params",
+				queryHeight, err,
+			))
+		} else if paramsUpdate.Params != nil {
 			return *paramsUpdate.Params
 		}
 	}
@@ -98,7 +108,18 @@ func (k Keeper) GetParamsHistoryEntry(ctx context.Context, effectiveHeight int64
 	}
 
 	var paramsUpdate types.ParamsUpdate
-	k.cdc.MustUnmarshal(bz, &paramsUpdate)
+	// Defensive: a corrupted history entry must not halt the chain. Treat an
+	// unmarshal failure the same as a missing entry — callers (the EndBlocker
+	// promotion path) already handle "no entry at this height" by falling
+	// through to the live params, so the safest recovery is to surface this as
+	// "no entry" rather than panic the chain on the deferred-promotion block.
+	if err := k.cdc.Unmarshal(bz, &paramsUpdate); err != nil {
+		k.logger.Error(fmt.Sprintf(
+			"GetParamsHistoryEntry: failed to unmarshal params history entry at effectiveHeight=%d: %v; treating as missing",
+			effectiveHeight, err,
+		))
+		return types.Params{}, false
+	}
 	if paramsUpdate.Params == nil {
 		return types.Params{}, false
 	}

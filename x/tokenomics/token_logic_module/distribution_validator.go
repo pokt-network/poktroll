@@ -168,10 +168,17 @@ func distributeRewardsToValidatorsAndDelegators(
 
 	validatorPoolShares := calculateProportionalRewards(logger, validatorStakeAmounts, totalValidatorStake, totalRewardAmount)
 
+	// Log both the validator-set total (the chain-level number passed in from
+	// validateAndPrepareValidatorRewards) AND the eligible-stake total (the
+	// actual denominator used for the proportional split, which excludes any
+	// validators dropped by buildValidatorStakes — e.g., unparseable operator
+	// addresses). The two will normally match; surfacing both makes drift
+	// observable in audit logs.
 	logger.Info(fmt.Sprintf(
-		"distributing %s across %d validators by stake weight (total bonded: %s)",
+		"distributing %s across %d validators by stake weight (eligible_stake: %s, validator_set_total: %s)",
 		totalRewardAmount.String(),
 		len(validatorEntries),
+		totalValidatorStake.String(),
 		totalBondedTokens.String(),
 	))
 

@@ -917,6 +917,19 @@ func (m *EventSettlementBatch) GetOpType() string {
 // where `(self_delegation_reward_upokt + delegators_reward_upokt)` is the post-commission
 // remainder, distributed across all delegations (including the validator's self-delegation)
 // proportional to stake.
+//
+// CROSS-DELEGATION ACCOUNTING NOTE (for indexers):
+// When the SAME pokt address is both a validator's account AND a delegator on a
+// different validator, its income from BOTH sources is bucketed under the
+// validator-side op_reason in EventSettlementBatch (because the bank-batch
+// accumulator keys on (recipient, op_reason), not source). Per-validator
+// breakdown reported BY THIS EVENT stays correct — commission_upokt is
+// unambiguously validator income and delegators_reward_upokt /
+// self_delegation_reward_upokt are unambiguously delegator-side. Indexers
+// building "VALIDATOR vs DELEGATOR" totals across the bank-batch stream
+// should sum from this event (per-validator) rather than from
+// EventSettlementBatch alone, otherwise cross-delegation accounts will
+// over-count under VALIDATOR and under-count under DELEGATOR.
 type EventValidatorRewardDistribution struct {
 	// The session end block height for the batch of settlements.
 	SessionEndBlockHeight int64 `protobuf:"varint,1,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
