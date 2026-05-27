@@ -47,6 +47,14 @@ linters:
           - staticcheck
         text: "SA1019.*SimulationOperations is deprecated"
         path: ^app/sim(_bench)?_test\.go$
+      # The settlement bench intentionally exercises the lower-level EmitEvent
+      # API to measure raw bank-event aggregation overhead. Converting to
+      # EmitTypedEvent would change what's being benchmarked. The deprecation
+      # is paired with the telemetry/OTel migration (out of scope for v0.1.34).
+      - linters:
+          - staticcheck
+        text: "SA1019.*EmitEvent is deprecated"
+        path: ^x/tokenomics/keeper/settle_pending_claims_bench_test\.go$
     paths:
       - third_party$
       - builtin$
