@@ -32,11 +32,11 @@ func TestTwoSessionTimingParamChanges_SameSession_LastOneWins(t *testing.T) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
 
 	const (
-		oldN            int64 = 4
-		intermediateN   int64 = 5  // first proposal
-		finalN          int64 = 7  // second proposal (must win)
-		boundaryHeight  int64 = oldN + 1
-		insideSession   int64 = 2  // mid-session height for the proposals
+		oldN           int64 = 4
+		intermediateN  int64 = 5 // first proposal
+		finalN         int64 = 7 // second proposal (must win)
+		boundaryHeight int64 = oldN + 1
+		insideSession  int64 = 2 // mid-session height for the proposals
 	)
 
 	// Anchored grid at the genesis with N=oldN. Unbonding periods chosen so
