@@ -25,6 +25,7 @@ query-gas-limit = "0"
 [grpc]
   address = "localhost:9090"
   enable = true
+  historical-grpc-address-block-range = "{}"
   max-recv-msg-size = "100000000"
   max-send-msg-size = "2147483647"
 
