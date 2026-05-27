@@ -8,7 +8,7 @@
 
 # The version of the CometBFT binary that created or
 # last modified the config file. Do not modify this.
-version = "0.38.19"
+version = "0.38.22"
 
 #######################################################################
 ###                   Main Base Config Options                      ###
@@ -388,6 +388,9 @@ chunk_request_timeout = "10s"
 # The number of concurrent chunk fetchers to run (default: 1).
 chunk_fetchers = "4"
 
+# Maximum number of chunks allowed in a snapshot (default: 100000).
+max_snapshot_chunks = 100000
+
 #######################################################
 ###       Block Sync Configuration Options          ###
 #######################################################
@@ -441,6 +444,9 @@ create_empty_blocks_interval = "0s"
 # Reactor sleep duration parameters
 peer_gossip_sleep_duration = "100ms"
 peer_query_maj23_sleep_duration = "2s"
+
+# Maximum allowed difference between proposed block time and wall-clock time.
+block_time_tolerance = "1m0s"
 
 #######################################################
 ###         Storage Configuration Options           ###
