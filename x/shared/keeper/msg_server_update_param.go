@@ -11,6 +11,30 @@ import (
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// UpdateParam patches a SINGLE shared param. For session-timing params (six of
+// the params guarded by Option B deferred promotion) the new value is written to
+// params history at the next session boundary; for all other params the change
+// takes effect on live immediately.
+//
+// KNOWN LIMITATION — cross-param loss in same session (audit pass 3 MED2):
+// Each call's base is the LIVE params snapshot (line below). For session-timing
+// changes, live is NOT updated until the next-boundary EndBlocker. If governance
+// submits TWO MsgUpdateParam txs in the same in-flight session, each targeting a
+// DIFFERENT session-timing param, both writes use the same (stale) live base and
+// SetParamsAtHeight at the same effective_height — the second write overwrites
+// the first, dropping the first param's change.
+//
+// Workaround: governance proposals that change MULTIPLE session-timing params in
+// one go MUST use the bulk MsgUpdateParams (which takes a full Params struct in
+// one shot) rather than chained MsgUpdateParam calls. The bulk handler is in
+// msg_update_params.go and writes the union atomically. Same-param sequential
+// updates work correctly (the second call writes the same effective_height key
+// with the final value — the last-write-wins semantic the SDK consumers expect;
+// see TestTwoSessionTimingParamChanges_SameSession_LastOneWins for the pin).
+//
+// A proper fix that reads from "next-effective state" instead of LIVE is
+// consensus-affecting (it changes what gets promoted at the boundary on chained
+// calls) and deferred to a follow-up release with explicit governance signal.
 func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
 	logger := k.logger.With(
 		"method", "UpdateParam",

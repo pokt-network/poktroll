@@ -174,11 +174,21 @@ var Upgrade_0_1_34 = Upgrade{
 				return vm, err
 			}
 
-			if err := unbondBelowMinStakeApplications(ctx, logger); err != nil {
+			// Seed the anchored session grid BEFORE marking below-min-stake applications
+			// for unbonding. The unbond pass calls `GetSessionEndHeight` which routes
+			// through `sessionGridAnchor` — with an unstamped (anchor=0) live params
+			// snapshot the call resolves to the legacy block-1 grid via the fallback,
+			// which is correct but order-dependent on that fallback continuing to behave
+			// that way. Seeding first means the unbond pass reads a stamped (anchor=1,
+			// session=1) live params and never relies on the fallback. The output state
+			// is IDENTICAL — the fallback path and the stamped path return the same
+			// session end height on mainnet first run — but the ordering makes the
+			// dependency explicit instead of latent. Audit pass 3 MED1.
+			if err := seedAnchoredSessionGrid(ctx, logger); err != nil {
 				return vm, err
 			}
 
-			if err := seedAnchoredSessionGrid(ctx, logger); err != nil {
+			if err := unbondBelowMinStakeApplications(ctx, logger); err != nil {
 				return vm, err
 			}
 
