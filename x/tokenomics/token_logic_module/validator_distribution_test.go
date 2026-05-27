@@ -571,6 +571,39 @@ func TestValidatorRewardDistribution_WithDelegators_ErrorCases(t *testing.T) {
 
 // createValidator creates a bonded validator with the specified operator address and token amount.
 // The validator's delegator shares are set equal to the token amount for simplicity.
+// TestBuildValidatorStakes_DuplicateAccAddressIsSkipped pins the defense-in-depth
+// guard at the AccAddress dedupe step of buildValidatorStakes. Two validators
+// sharing the same operator address (consensus-impossible in production, since
+// the staking module keys by OperatorAddress) must NOT silently overwrite each
+// other in the stake map — the second occurrence is skipped and its tokens are
+// NOT counted in totalValidatorStake.
+func TestBuildValidatorStakes_DuplicateAccAddressIsSkipped(t *testing.T) {
+	const duplicateValBondedTokens = int64(1_000_000)
+	const uniqueValBondedTokens = int64(500_000)
+
+	duplicateOperator := sample.ValOperatorAddressBech32()
+	uniqueOperator := sample.ValOperatorAddressBech32()
+
+	// Same OperatorAddress on both validators → identical AccAddress derivation.
+	// Mirrors the "duplicate underlying bytes" hypothetical the audit's H3 flags.
+	validators := []stakingtypes.Validator{
+		createValidator(duplicateOperator, duplicateValBondedTokens),
+		createValidator(duplicateOperator, duplicateValBondedTokens), // exact duplicate
+		createValidator(uniqueOperator, uniqueValBondedTokens),
+	}
+
+	entries, stakeMap, totalStake := buildValidatorStakes(log.NewNopLogger(), validators)
+
+	// Two unique entries — the duplicate's second occurrence was dropped.
+	require.Len(t, entries, 2, "duplicate accAddr must be skipped, not merged or counted twice")
+	require.Len(t, stakeMap, 2)
+
+	// Total reflects ONLY the unique-addressed contributions, NOT 2× the duplicate.
+	expectedTotal := math.NewInt(duplicateValBondedTokens + uniqueValBondedTokens)
+	require.Equal(t, expectedTotal, totalStake,
+		"duplicate validator tokens must not double-count toward the Level-1 LRM denominator")
+}
+
 func createValidator(operatorAddr string, tokens int64) stakingtypes.Validator {
 	return stakingtypes.Validator{
 		OperatorAddress: operatorAddr,

@@ -238,7 +238,42 @@ func distributeRewardsToValidatorsAndDelegators(
 
 		// On query failure or absence of delegations, the validator is the sole
 		// stakeholder: the remainder is paid to the operator account as well.
+		// We log distinctly here for operator diagnostics — the three trigger
+		// conditions look identical from this branch but have very different
+		// causes:
+		//
+		//   - !ok                                — staking-keeper query failed
+		//     (already logged Warn inside collectValidatorDelegationStakes)
+		//   - len(delegatorStakeAmounts) == 0    — no delegations on a BONDED
+		//     validator. This SHOULD be unreachable since the staking module
+		//     enforces a self-delegation at bond time, but a genesis-imported
+		//     validator that bypassed MsgDelegate could trip this. We Warn
+		//     because the remainder going entirely to the operator is the
+		//     correct behavior here, but the operator-side missing-data is
+		//     itself a fact worth surfacing.
+		//   - totalDelegatedStake.IsZero()       — all delegations had zero
+		//     shares. Also surprising for a bonded validator.
+		//
+		// All three paths credit the full remainder to the operator account;
+		// this matches the previous behavior. Only the visibility changes.
 		if !ok || len(delegatorStakeAmounts) == 0 || totalDelegatedStake.IsZero() {
+			switch {
+			case !ok:
+				// already-logged by callee; nothing to add here.
+			case len(delegatorStakeAmounts) == 0 && entry.validator.GetBondedTokens().IsPositive():
+				logger.Warn(fmt.Sprintf(
+					"Validator %s is bonded with %s tokens but has zero delegations. Crediting full remainder %s to operator %s.",
+					entry.validator.GetOperator(),
+					entry.validator.GetBondedTokens().String(),
+					remainder.String(),
+					entry.accAddr,
+				))
+			case totalDelegatedStake.IsZero():
+				logger.Warn(fmt.Sprintf(
+					"Validator %s has delegations but total delegated stake is zero (all shares zero). Crediting full remainder %s to operator %s.",
+					entry.validator.GetOperator(), remainder.String(), entry.accAddr,
+				))
+			}
 			addReward(rewardAmounts, entry.accAddr, remainder)
 			if err := emitValidatorRewardEvent(ctx, validatorRewardSummary{
 				sessionEndHeight:     sessionEndHeight,
@@ -302,7 +337,7 @@ func distributeRewardsToValidatorsAndDelegators(
 	}
 
 	// Step 3: Queue one transfer per recipient in deterministic order.
-	return queueRewardTransfers(logger, result, rewardAmounts, validatorAccAddresses, settlementOpReason)
+	return queueRewardTransfers(logger, result, rewardAmounts, validatorAccAddresses, settlementOpReason, totalRewardAmount)
 }
 
 // validatorRewardSummary holds the per-validator reward breakdown emitted as an
@@ -381,6 +416,25 @@ func buildValidatorStakes(
 		}
 
 		accAddr := cosmostypes.AccAddress(valAddr).String()
+
+		// Defense-in-depth: the staking module enforces ValAddress uniqueness in
+		// the bonded set (validators are keyed by OperatorAddress), and AccAddress
+		// is a 1:1 byte-equivalent of ValAddress with a different bech32 prefix.
+		// In practice the duplicate branch below is consensus-impossible. The
+		// guard catches any future code path that somehow injects two validators
+		// with the same underlying address bytes — silently overwriting in
+		// validatorStakeAmounts would (a) drop one validator's stake from the
+		// Level-1 denominator and (b) double-count a single validator's bonded
+		// tokens. Both outcomes are settlement-corrupting; skipping the duplicate
+		// is the safer side of the unreachable branch.
+		if _, exists := validatorStakeAmounts[accAddr]; exists {
+			logger.Error(fmt.Sprintf(
+				"SHOULD NEVER HAPPEN: duplicate validator AccAddress %s in bonded set; skipping the second occurrence (validator: %s)",
+				accAddr, validator.GetOperator(),
+			))
+			continue
+		}
+
 		validatorEntries = append(validatorEntries, validatorPoolEntry{validator: validator, accAddr: accAddr})
 		validatorStakeAmounts[accAddr] = validatorBondedTokens
 		totalValidatorStake = totalValidatorStake.Add(validatorBondedTokens)
@@ -545,7 +599,13 @@ func applyLargestRemainderMethod(
 	}
 
 	// Calculate remainder tokens to distribute.
-	// Use BigInt conversion to avoid potential Int64() panic on overflow.
+	//
+	// Conversion note: `BigInt().Int64()` does NOT panic on overflow — it
+	// silently truncates the bottom 64 bits. That truncation is acceptable here
+	// because `remainderInt` is bounded by `len(stakeholders)` (at most a few
+	// hundred validators + delegators on mainnet) — well below MaxInt64. If the
+	// stakeholder set ever grew to billions, the LRM remainder distribution
+	// algorithm would have other scaling problems long before overflow.
 	remainderInt := totalRewardAmount.Sub(totalDistributedRewardAmount)
 	remainder := remainderInt.BigInt().Int64()
 
@@ -625,6 +685,7 @@ func queueRewardTransfers(
 	rewardAmounts map[string]math.Int,
 	validatorAccAddresses map[string]bool,
 	settlementOpReason tokenomicstypes.SettlementOpReason,
+	expectedTotalReward math.Int,
 ) error {
 	logger = logger.With("method", "queueRewardTransfers")
 
@@ -693,6 +754,27 @@ func queueRewardTransfers(
 		numValidators,
 		len(sortedRecipients),
 	))
+
+	// Conservation check (telemetry only). The Largest Remainder Method is
+	// mathematically conservative: the sum of all per-recipient rewards must
+	// equal the input total. A drift here would indicate either a bug in the
+	// LRM remainder distribution or a future code path that adds/drops
+	// recipients between Step 2 and queueRewardTransfers. We log loud but do
+	// NOT return an error — failing the entire settlement on a logging
+	// invariant would be a worse outcome than the drift itself.
+	//
+	// Skipping the check when expectedTotalReward.IsZero() — for callers that
+	// don't pass a meaningful total (this branch is unreachable today but the
+	// guard keeps the log readable if a future caller passes ZeroInt).
+	if !expectedTotalReward.IsZero() && !totalDistributed.Equal(expectedTotalReward) {
+		logger.Error(fmt.Sprintf(
+			"VALIDATOR REWARD CONSERVATION BREACH: distributed=%s, expected=%s, delta=%s, op_reason=%s",
+			totalDistributed.String(),
+			expectedTotalReward.String(),
+			expectedTotalReward.Sub(totalDistributed).String(),
+			settlementOpReason.String(),
+		))
+	}
 
 	return nil
 }
