@@ -794,3 +794,264 @@ func TestValidatorRewardDistribution_Commission(t *testing.T) {
 		})
 	}
 }
+
+// TestValidatorRewardDistribution_FullCommission covers the upper-boundary
+// 100% commission case as a standalone test (NOT a table entry of
+// TestValidatorRewardDistribution_Commission) because the production code
+// short-circuits the remainder path before calling GetValidatorDelegations.
+// The table test's shared setupValidatorMocks unconditionally expects that
+// call, which would fail the gomock controller for this case.
+//
+// Distribution semantics under 100% commission:
+//   - commission = poolShare (all of it)
+//   - remainder = poolShare - commission = 0
+//   - The !remainder.IsPositive() branch in distributeRewardsToValidatorsAndDelegators
+//     emits the per-validator event with selfDelegationReward = 0,
+//     delegatorsReward = 0, totalDelegatedStake = 0, numDelegators = 0, and
+//     `continue`s WITHOUT consulting the delegations index.
+//
+// This guards against accidental division-by-zero or 'commission > pool'
+// regressions at the upper boundary and pins the event shape indexers will
+// see for full-commission validators.
+func TestValidatorRewardDistribution_FullCommission(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+
+	const (
+		totalStake   int64 = 1_000_000
+		rewardAmount int64 = 100_000
+	)
+
+	valOperAddr := sample.ValOperatorAddressBech32()
+	validator := createValidatorWithCommission(valOperAddr, totalStake, math.LegacyOneDec())
+
+	// Only GetBondedValidatorsByPower is expected — NOT GetValidatorDelegations.
+	// The 100% commission short-circuit returns before consulting delegations.
+	mockStakingKeeper.EXPECT().
+		GetBondedValidatorsByPower(gomock.Any()).
+		Return([]stakingtypes.Validator{validator}, nil)
+
+	valAddr, err := cosmostypes.ValAddressFromBech32(valOperAddr)
+	require.NoError(t, err)
+	validatorAccAddr := cosmostypes.AccAddress(valAddr).String()
+
+	config := getDefaultTestConfig()
+	config.rewardAmount = math.NewInt(rewardAmount)
+	config.opReason = tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION
+
+	result, err := executeDistribution(mockStakingKeeper, config, true)
+	require.NoError(t, err)
+
+	// All of the reward must reach the validator account; nothing leaks elsewhere.
+	assertTotalDistribution(t, result, math.NewInt(rewardAmount))
+
+	transfers := result.GetModToAcctTransfers()
+	require.Len(t, transfers, 1,
+		"100%% commission with single validator → exactly one transfer (commission → validator account)")
+	require.Equal(t, validatorAccAddr, transfers[0].RecipientAddress,
+		"sole recipient must be the validator account")
+	require.Equal(t, int64(rewardAmount), transfers[0].Coin.Amount.Int64(),
+		"validator account receives the full reward amount as commission")
+	require.Equal(t,
+		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+		transfers[0].OpReason,
+		"transfer must carry the validator op_reason — there is no delegator transfer to bucket under DELEGATOR")
+
+	// Verify the per-validator summary event reflects the full-commission shape.
+	events := cosmostypes.UnwrapSDKContext(config.ctx).EventManager().Events()
+	rewardEvents := testutilevents.FilterEvents[*tokenomicstypes.EventValidatorRewardDistribution](t, events)
+	require.Len(t, rewardEvents, 1, "exactly one per-validator reward event expected")
+
+	ev := rewardEvents[0]
+	require.Equal(t, valOperAddr, ev.ValidatorOperatorAddress)
+	require.Equal(t, validatorAccAddr, ev.ValidatorAccountAddress)
+	require.Equal(t, math.LegacyOneDec().String(), ev.CommissionRate, "commission rate must serialize as the canonical OneDec string")
+	require.Equal(t, fmt.Sprintf("%d", rewardAmount), ev.PoolShareUpokt, "single validator → pool share is the full reward")
+	require.Equal(t, fmt.Sprintf("%d", rewardAmount), ev.CommissionUpokt, "100%% commission → commission equals pool share")
+	require.Equal(t, "0", ev.SelfDelegationRewardUpokt, "no remainder after 100%% commission → self-delegation reward is zero")
+	require.Equal(t, "0", ev.DelegatorsRewardUpokt, "no remainder after 100%% commission → delegators reward is zero")
+	require.Equal(t, "0", ev.TotalDelegatedStakeUpokt,
+		"short-circuit path reports totalDelegatedStake=0 because the delegations index is not consulted")
+	require.Equal(t, uint32(0), ev.NumDelegators,
+		"short-circuit path reports numDelegators=0 because the delegations index is not consulted")
+}
+
+// TestValidatorRewardDistribution_CrossDelegatorWithCommission covers the
+// scenario the audit flagged as P2 (cross-delegation bucketing): when the
+// SAME pokt account is both validator A's operator account AND a delegator
+// on validator B, the bank-batch accumulator buckets A's combined income
+// (commission + self-delegation from A's own pool + delegator-side slice
+// from B's pool) under the VALIDATOR op_reason. The per-validator
+// EventValidatorRewardDistribution still reports the correct breakdown.
+//
+// This test pins the behavior documented in the
+// EventValidatorRewardDistribution proto's CROSS-DELEGATION ACCOUNTING
+// NOTE: indexers building "VALIDATOR vs DELEGATOR" totals must sum from
+// the per-validator event (which correctly separates commission /
+// self-delegation / external-delegator income) rather than from
+// EventSettlementBatch alone.
+//
+// Setup:
+//   - Validator A: Tokens=1M, self-delegation 1M, commission 10%.
+//   - Validator B: Tokens=1M, self-delegation 800k, A delegates 200k.
+//     B's commission 10%.
+//   - reward = 200k, evenly split (both have equal stake).
+//
+// Math:
+//   - poolShare_A = poolShare_B = 100k.
+//   - A's pool: commission_A=10k, remainder=90k, A-self=1M sole delegator
+//     → A gets 90k self → A account += 10k + 90k = 100k from A's pool.
+//   - B's pool: commission_B=10k, remainder=90k, delegations [B-self=800k,
+//     A=200k]. B-self gets 90k×(800k/1M) = 72k; A gets 90k×(200k/1M) = 18k.
+//     B account += 10k + 72k = 82k from B's pool. A account += 18k from
+//     B's pool (as delegator).
+//   - Total to A: 100k + 18k = 118k. Total to B: 82k. Pool: 200k. No dust.
+//
+// Bucketing assertion:
+//   - The transfer to A's account is tagged VALIDATOR op_reason for the
+//     ENTIRE 118k (NOT split into 100k VALIDATOR + 18k DELEGATOR). This is
+//     because the transfer accumulator keys on recipient ∈ validatorAccAddresses,
+//     not on the source of each contribution. The per-validator event for
+//     B still correctly reports delegatorsReward=18k (with A as the sole
+//     external delegator), so indexers retain the breakdown.
+func TestValidatorRewardDistribution_CrossDelegatorWithCommission(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+
+	const (
+		totalValidatorStake int64 = 1_000_000
+
+		// Validator B's delegation split.
+		bSelfStake  int64 = 800_000
+		aCrossStake int64 = 200_000 // A delegates this on B
+
+		rewardAmount int64 = 200_000
+
+		// Pre-computed expected amounts (see the doc-block math above).
+		expectedCommission     int64 = 10_000
+		expectedASelfFromAPool int64 = 90_000           // A's full 1M self-delegation, sole on A
+		expectedBSelfFromBPool int64 = 72_000           // 90k × (800k/1M)
+		expectedAFromBPool     int64 = 18_000           // 90k × (200k/1M)
+		expectedATotalReceived int64 = 100_000 + 18_000 // 118k
+		expectedBTotalReceived int64 = 82_000           // 10k + 72k
+	)
+	commissionRate := math.LegacyNewDecWithPrec(10, 2) // 0.10
+
+	// --- Validators -----------------------------------------------------------
+	aOperAddr := sample.ValOperatorAddressBech32()
+	bOperAddr := sample.ValOperatorAddressBech32()
+	validatorA := createValidatorWithCommission(aOperAddr, totalValidatorStake, commissionRate)
+	validatorB := createValidatorWithCommission(bOperAddr, totalValidatorStake, commissionRate)
+
+	aValAddr, err := cosmostypes.ValAddressFromBech32(aOperAddr)
+	require.NoError(t, err)
+	bValAddr, err := cosmostypes.ValAddressFromBech32(bOperAddr)
+	require.NoError(t, err)
+	aAccAddr := cosmostypes.AccAddress(aValAddr).String()
+	bAccAddr := cosmostypes.AccAddress(bValAddr).String()
+
+	// Cross-delegation: A delegates aCrossStake on B in addition to A's full
+	// self-delegation on itself.
+	delegations := map[string][]stakingtypes.Delegation{
+		aOperAddr: {
+			createDelegation(aAccAddr, aOperAddr, totalValidatorStake),
+		},
+		bOperAddr: {
+			createDelegation(bAccAddr, bOperAddr, bSelfStake),
+			createDelegation(aAccAddr, bOperAddr, aCrossStake),
+		},
+	}
+	setupValidatorMocks(mockStakingKeeper, []stakingtypes.Validator{validatorA, validatorB}, delegations)
+
+	// --- Execute distribution -------------------------------------------------
+	config := getDefaultTestConfig()
+	config.rewardAmount = math.NewInt(rewardAmount)
+	config.opReason = tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION
+
+	result, err := executeDistribution(mockStakingKeeper, config, true)
+	require.NoError(t, err)
+
+	assertTotalDistribution(t, result, math.NewInt(rewardAmount))
+
+	// --- Tally transfers by recipient ----------------------------------------
+	transfersByRecipient := make(map[string]int64)
+	opReasonByRecipient := make(map[string]tokenomicstypes.SettlementOpReason)
+	for _, transfer := range result.GetModToAcctTransfers() {
+		transfersByRecipient[transfer.RecipientAddress] += transfer.Coin.Amount.Int64()
+		// All transfers to a given recipient should share the same op_reason
+		// (the bucketing collapses by recipient address); the loop captures
+		// the last-seen and the post-loop assertion verifies consistency.
+		opReasonByRecipient[transfer.RecipientAddress] = transfer.OpReason
+	}
+
+	require.Equal(t, expectedATotalReceived, transfersByRecipient[aAccAddr],
+		"A's account must receive: commission_A + self-delegation_A + delegator-on-B slice = 10k + 90k + 18k = 118k")
+	require.Equal(t, expectedBTotalReceived, transfersByRecipient[bAccAddr],
+		"B's account must receive: commission_B + self-delegation_B = 10k + 72k = 82k")
+
+	// --- Bucketing assertion (P2 audit finding) -------------------------------
+	// Even though 18k of A's 118k came from a DELEGATOR-side source (A's stake
+	// on validator B), the transfer is tagged VALIDATOR because A is in
+	// validatorAccAddresses. This is the documented behavior — indexers
+	// summing VALIDATOR vs DELEGATOR from EventSettlementBatch ALONE would
+	// over-count A under VALIDATOR.
+	require.Equal(t,
+		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+		opReasonByRecipient[aAccAddr],
+		"A's combined transfer (validator + delegator income) MUST bucket under VALIDATOR — documented in EventValidatorRewardDistribution proto comment")
+	require.Equal(t,
+		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+		opReasonByRecipient[bAccAddr],
+		"B's transfer is purely validator income and is tagged VALIDATOR")
+
+	// No DELEGATOR-tagged transfer for A is expected — the cross-delegation
+	// slice is absorbed under VALIDATOR. This is the bucketing audit finding.
+	for _, transfer := range result.GetModToAcctTransfers() {
+		if transfer.RecipientAddress == aAccAddr {
+			require.NotEqual(t,
+				tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION,
+				transfer.OpReason,
+				"no transfer to A should be tagged DELEGATOR — the cross-delegation slice is absorbed under VALIDATOR")
+		}
+	}
+
+	// --- Per-validator events preserve the breakdown indexers need ------------
+	// The EventValidatorRewardDistribution events are the source of truth for
+	// indexers building cross-delegation-aware totals (per the proto note).
+	events := cosmostypes.UnwrapSDKContext(config.ctx).EventManager().Events()
+	rewardEvents := testutilevents.FilterEvents[*tokenomicstypes.EventValidatorRewardDistribution](t, events)
+	require.Len(t, rewardEvents, 2, "exactly one per-validator reward event per validator")
+
+	// Locate the events by validator operator address (emission order is not
+	// guaranteed to match construction order).
+	var evA, evB *tokenomicstypes.EventValidatorRewardDistribution
+	for _, ev := range rewardEvents {
+		switch ev.ValidatorOperatorAddress {
+		case aOperAddr:
+			evA = ev
+		case bOperAddr:
+			evB = ev
+		}
+	}
+	require.NotNil(t, evA, "expected EventValidatorRewardDistribution for validator A")
+	require.NotNil(t, evB, "expected EventValidatorRewardDistribution for validator B")
+
+	// Validator A: sole self-delegator, no external delegators.
+	require.Equal(t, fmt.Sprintf("%d", expectedCommission), evA.CommissionUpokt)
+	require.Equal(t, fmt.Sprintf("%d", expectedASelfFromAPool), evA.SelfDelegationRewardUpokt)
+	require.Equal(t, "0", evA.DelegatorsRewardUpokt, "validator A has no external delegators")
+	require.Equal(t, uint32(0), evA.NumDelegators)
+
+	// Validator B: one external delegator (A) with 200k of the 1M stake.
+	require.Equal(t, fmt.Sprintf("%d", expectedCommission), evB.CommissionUpokt)
+	require.Equal(t, fmt.Sprintf("%d", expectedBSelfFromBPool), evB.SelfDelegationRewardUpokt)
+	require.Equal(t, fmt.Sprintf("%d", expectedAFromBPool), evB.DelegatorsRewardUpokt,
+		"validator B's external delegator slice — this is the cross-delegation income that gets bucketed under VALIDATOR for A in EventSettlementBatch")
+	require.Equal(t, uint32(1), evB.NumDelegators, "A is the sole external delegator on B")
+	require.Equal(t, fmt.Sprintf("%d", totalValidatorStake), evB.TotalDelegatedStakeUpokt,
+		"B's total delegated stake = 800k self + 200k A = 1M")
+}
