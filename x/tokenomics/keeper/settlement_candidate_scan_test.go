@@ -137,3 +137,129 @@ func TestSettlementCandidateScan_MultiEpochCorrectness(t *testing.T) {
 	require.Equal(t, expectedClaimBySessionEnd, foundSessionIDs,
 		"each expected claim must be located at its corresponding candidate sessionEndHeight")
 }
+
+// TestSettlementCandidateScan_GenesisSeededOldEpochOnLongRunningChain is the
+// regression test for the O2 lookback-bound bug surfaced in audit pass 3.
+//
+// Scenario (mainnet v0.1.34 long-running chain + FIRST post-upgrade window-offset change):
+//   - v0.1.34 upgrade handler seeds params history at h=1 with the genesis epoch's params.
+//     That entry persists for the lifetime of the chain and is the ONLY history representation
+//     of the "OLD" epoch immediately after the first post-upgrade window-offset change.
+//   - At some later block (>>240 blocks past h=1), governance changes window offsets via
+//     `MsgUpdateParam`, which writes a NEW history entry at the next session boundary.
+//   - A claim created in the LAST session under the OLD epoch must still be locatable at
+//     settlement time, even though its stored sessionEndHeight resolves only under h=1's
+//     offsets — not under the (now-live) NEW offsets.
+//
+// Pre-fix bug:
+//
+//	The legacy `candidateSessionEndHeightsForLiveParams` had a `max(4*N, 240)` lookback
+//	bound. On a long-running chain, h=1 falls far below `blockHeight - 240`, so the
+//	reverse iterator's `effHeight < earliest` check fires immediately on h=1 → STOP →
+//	OLD epoch never produces a candidate → claim orphaned forever.
+//
+// This test pins the fix that drops the `earliest` global stop and replaces it with a
+// per-epoch in-flight check that lets the iterator continue past the genesis-seeded
+// entry.
+func TestSettlementCandidateScan_GenesisSeededOldEpochOnLongRunningChain(t *testing.T) {
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil,
+		testkeeper.WithProofRequirement(false),
+		testkeeper.WithDefaultModuleBalances(),
+	)
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	// Choose params so the OLD epoch's LAST possible claim has its proof-window-close
+	// EXACTLY at blockHeight. That maximises the in-flight overlap: at blockHeight,
+	// the OLD epoch still owns one settling claim. Pre-fix bug would have skipped
+	// h=1 because its effHeight < (blockHeight - max(4*N, 240)) → orphaned.
+	const (
+		N           int64 = 4
+		blockHeight int64 = 720_301
+		// OLD epoch's last session ends at newEpochEff - 1 = 720_240. Its proof window
+		// closes at 720_240 + oldTail + 1. Choose oldTail = 60 so close == 720_301.
+		oldTail     uint64 = 60
+		newEpochEff int64  = 720_241
+	)
+
+	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
+	sharedParams.NumBlocksPerSession = uint64(N)
+	sharedParams.SessionGridAnchorHeight = 1
+	sharedParams.SessionNumberAtAnchor = 1
+	sharedParams.GracePeriodEndOffsetBlocks = 1
+	sharedParams.SupplierUnbondingPeriodSessions = 16
+	sharedParams.ApplicationUnbondingPeriodSessions = 16
+	sharedParams.GatewayUnbondingPeriodSessions = 16
+
+	// OLD epoch: long proof-window-close offset so a claim ending at 720_240 still
+	// has its proof window open at 720_301.
+	oldEpochParams := sharedParams
+	oldEpochParams.ClaimWindowOpenOffsetBlocks = 0
+	oldEpochParams.ClaimWindowCloseOffsetBlocks = 0
+	oldEpochParams.ProofWindowOpenOffsetBlocks = 0
+	oldEpochParams.ProofWindowCloseOffsetBlocks = oldTail
+
+	// NEW epoch (LIVE at blockHeight): different (smaller) offsets so the candidate
+	// sessionEndHeight derived from live params is DIFFERENT from the OLD one.
+	newEpochParams := sharedParams
+	newEpochParams.ClaimWindowOpenOffsetBlocks = 0
+	newEpochParams.ClaimWindowCloseOffsetBlocks = 0
+	newEpochParams.ProofWindowOpenOffsetBlocks = 0
+	newEpochParams.ProofWindowCloseOffsetBlocks = 30
+
+	require.NoError(t, keepers.SharedKeeper.SetParams(sdkCtx, newEpochParams))
+
+	concreteShared, ok := keepers.SharedKeeper.(*sharedkeeper.Keeper)
+	require.True(t, ok, "expected a concrete shared keeper")
+
+	// History h=1 = OLD epoch (the v0.1.34 upgrade-handler-seeded entry — note
+	// blockHeight - 1 == 720_300, FAR above any reasonable max(4*N, 240) floor).
+	require.NoError(t, concreteShared.SetParamsAtHeight(sdkCtx, 1, oldEpochParams))
+	// History h=newEpochEff = NEW epoch (mirrors what `MsgUpdateParam` would write).
+	require.NoError(t, concreteShared.SetParamsAtHeight(sdkCtx, newEpochEff, newEpochParams))
+
+	// Sanity-derive the two candidate sessionEndHeights at the given blockHeight under
+	// each epoch's offsets. These MUST both appear in the result; the OLD one is what
+	// the pre-fix bug dropped.
+	oldComputedTail := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&oldEpochParams)
+	newComputedTail := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&newEpochParams)
+	expectedOldCandidate := blockHeight - int64(oldComputedTail) - 1
+	expectedNewCandidate := blockHeight - int64(newComputedTail) - 1
+	require.NotEqual(t, expectedOldCandidate, expectedNewCandidate,
+		"test setup invariant: OLD and NEW candidate sessionEndHeights must differ")
+
+	// Insert a claim at the OLD-epoch-derived sessionEndHeight. This is the claim
+	// that the pre-fix bug would orphan.
+	oldClaimSessionID := "old-epoch-claim"
+	oldClaim := prooftypes.Claim{
+		SupplierOperatorAddress: sample.AccAddressBech32(),
+		SessionHeader: &sessiontypes.SessionHeader{
+			SessionId:               oldClaimSessionID,
+			ApplicationAddress:      sample.AccAddressBech32(),
+			ServiceId:               "svc1",
+			SessionStartBlockHeight: expectedOldCandidate - 3,
+			SessionEndBlockHeight:   expectedOldCandidate,
+		},
+	}
+	keepers.UpsertClaim(sdkCtx, oldClaim)
+
+	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
+
+	candidates := keepers.GetExpiringClaimsSessionEndHeights(sdkCtx, blockHeight)
+
+	require.Contains(t, candidates, expectedOldCandidate,
+		"O2 regression: OLD-epoch candidate sessionEndHeight (%d) must be in the candidate set "+
+			"even though its history entry (h=1) is far below any `blockHeight - max(4*N, 240)` floor",
+		expectedOldCandidate)
+	require.Contains(t, candidates, expectedNewCandidate,
+		"NEW-epoch candidate (%d) must always be in the set (derived from live params)",
+		expectedNewCandidate)
+
+	// Confirm the claim can actually be located via the candidate path.
+	iter := keepers.GetSessionEndHeightClaimsIterator(sdkCtx, expectedOldCandidate)
+	defer iter.Close()
+	require.True(t, iter.Valid(), "iterator over OLD-candidate sessionEndHeight must yield the seeded claim")
+	got, getErr := iter.Value()
+	require.NoError(t, getErr)
+	require.Equal(t, oldClaimSessionID, got.GetSessionHeader().GetSessionId(),
+		"claim located via OLD-epoch candidate must match the seeded claim")
+}

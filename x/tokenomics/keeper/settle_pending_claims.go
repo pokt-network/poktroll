@@ -541,11 +541,32 @@ func (k Keeper) GetExpiringClaimsSessionEndHeights(
 // misses the actual stored value under those conditions, orphaning the claim
 // forever (O2 class).
 //
-// The function walks params history backward bounded by maxLookbackBlocks, computes
-// a candidate sessionEndHeight under each recent epoch's offsets, and deduplicates.
-// Epochs with identical offsets collapse to one candidate. With no recent param
-// changes the function returns exactly one candidate (live), matching legacy
-// behavior at zero added cost.
+// The function walks params history backward and computes a candidate
+// sessionEndHeight under each historical epoch's offsets, deduplicating across
+// epochs with identical offsets. With no recent param changes the function returns
+// exactly one candidate (live), matching legacy behavior at zero added cost.
+//
+// Per-epoch in-flight filter — NOT a global lookback cutoff:
+// We track `nextEffHeight` across the reverse iteration so we know each epoch's
+// owned session-end range bound by (nextEffHeight - 1). An epoch with NO in-flight
+// claims at blockHeight is skipped via the in-flight check below — but the walk
+// CONTINUES because OLDER epochs may have had different (potentially longer)
+// proof-window offsets and may still own in-flight claims.
+//
+// Why no `effHeight < earliest` global stop:
+// The v0.1.34 upgrade handler seeds the params history at h=1 with the genesis
+// epoch's params. On a long-running chain (e.g. mainnet at ~720K blocks at the
+// time of the FIRST post-upgrade window-offset change), the only history
+// representation of the OLD epoch is that h=1 entry — far below any reasonable
+// blockHeight - N*K floor. Early-stopping on `effHeight < earliest` would skip
+// the OLD epoch's offsets entirely and orphan every claim whose stored
+// sessionEndHeight resolves under those offsets but not under the NEW live ones.
+// See TestSettlementCandidateScan_GenesisSeededOldEpochOnLongRunningChain for
+// the regression that pinned this.
+//
+// Performance note: params history is governance-rate-limited. Mainnet would
+// accumulate at most a few entries per N change per year. The unbounded reverse
+// walk is bounded in practice and dominated by the per-iteration map lookup.
 //
 // liveParams is injected so the settlement Phase 1 loop can pass the snapshot
 // already held in settlementContext, avoiding a redundant store read.
@@ -554,15 +575,6 @@ func (k Keeper) candidateSessionEndHeightsForLiveParams(
 	liveParams sharedtypes.Params,
 	blockHeight int64,
 ) []int64 {
-	// Lookback bound: a claim's lifecycle is sessionEnd + (grace + claimWindow + proofWindow).
-	// 4*N is a safe upper bound covering reasonable historical offset configurations;
-	// a hard floor of 240 blocks covers default-N=60 chains regardless of param drift.
-	maxLookbackBlocks := int64(4 * liveParams.NumBlocksPerSession)
-	if maxLookbackBlocks < 240 {
-		maxLookbackBlocks = 240
-	}
-	earliest := blockHeight - maxLookbackBlocks
-
 	seen := make(map[int64]struct{}, 2)
 	candidates := make([]int64, 0, 2)
 
@@ -583,14 +595,19 @@ func (k Keeper) candidateSessionEndHeightsForLiveParams(
 	// the common case where no recent window-offset change has happened.
 	addCandidate(&liveParams)
 
-	// Walk params history backward from blockHeight, adding a candidate per recent
-	// epoch's offsets. Older epochs cannot have any still-in-flight claims so we stop
-	// once we cross the lookback bound.
+	// Walk params history. For each historical epoch, compute its in-flight horizon
+	// under that epoch's OWN offsets and the upper bound of its owned session-end
+	// range (nextEffHeight - 1). Add a candidate only when the horizon still reaches
+	// blockHeight; ALWAYS continue iterating (older epochs may have longer tails).
+	nextEffHeight := blockHeight + 1
 	k.sharedKeeper.IterateParamsHistoryReverse(ctx, blockHeight, func(effHeight int64, p sharedtypes.Params) bool {
-		if effHeight < earliest {
-			return true
+		thisEpochTail := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&p)
+		lastSessionEndUnderThisEpoch := nextEffHeight - 1
+		lastProofCloseUnderThisEpoch := lastSessionEndUnderThisEpoch + int64(thisEpochTail) + 1
+		if lastProofCloseUnderThisEpoch >= blockHeight {
+			addCandidate(&p)
 		}
-		addCandidate(&p)
+		nextEffHeight = effHeight
 		return false
 	})
 
