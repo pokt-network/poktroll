@@ -68,6 +68,12 @@ func NewParams() Params {
 		GatewayUnbondingPeriodSessions:     DefaultGatewayUnbondingPeriodSessions,
 		ComputeUnitsToTokensMultiplier:     DefaultComputeUnitsToTokensMultiplier,
 		ComputeUnitCostGranularity:         DefaultComputeUnitCostGranularity,
+		// Anchored session grid (#543): the genesis epoch's grid begins at block 1 with
+		// session number 1, which makes the epoch-relative boundary math reduce exactly to
+		// the legacy block-1 grid. These are DERIVED fields, set by the param-update handler
+		// on each subsequent epoch; they are not governable (excluded from ParamSetPairs).
+		SessionGridAnchorHeight: 1,
+		SessionNumberAtAnchor:   1,
 	}
 }
 

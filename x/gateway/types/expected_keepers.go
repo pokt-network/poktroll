@@ -28,5 +28,10 @@ type BankKeeper interface {
 
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
+	// GetParamsAtHeight returns the shared params that were effective at the given height.
+	// Used to compute a gateway's unbonding end height with the session length that was in
+	// effect when it began unbonding, so a later num_blocks_per_session decrease cannot
+	// release it early (#543 anchored grid, F1).
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 }

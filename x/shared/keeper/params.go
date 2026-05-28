@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -73,8 +74,17 @@ func (k Keeper) GetParamsAtHeight(ctx context.Context, queryHeight int64) types.
 
 	if iterator.Valid() {
 		var paramsUpdate types.ParamsUpdate
-		k.cdc.MustUnmarshal(iterator.Value(), &paramsUpdate)
-		if paramsUpdate.Params != nil {
+		// Defensive: a corrupted history entry (e.g., partial write, downgrade
+		// from a newer schema, on-disk bit rot) must not halt the chain via
+		// MustUnmarshal. Log + fall through to GetParams; resolving to live
+		// params is the same behavior as a missing entry, which downstream
+		// callers already tolerate.
+		if err := k.cdc.Unmarshal(iterator.Value(), &paramsUpdate); err != nil {
+			k.logger.Error(fmt.Sprintf(
+				"GetParamsAtHeight: failed to unmarshal params history entry at queryHeight=%d: %v; falling back to live params",
+				queryHeight, err,
+			))
+		} else if paramsUpdate.Params != nil {
 			return *paramsUpdate.Params
 		}
 	}
@@ -83,6 +93,38 @@ func (k Keeper) GetParamsAtHeight(ctx context.Context, queryHeight int64) types.
 	// This maintains backwards compatibility for chains that haven't
 	// recorded any param history yet.
 	return k.GetParams(ctx)
+}
+
+// GetParamsHistoryEntry returns the params recorded with an effective height EXACTLY equal
+// to effectiveHeight, and whether such an entry exists. Unlike GetParamsAtHeight (which
+// finds the most recent entry <= a height), this is an exact-key lookup used by the
+// EndBlocker to detect an epoch that becomes effective at precisely the current block
+// (#543 anchored grid, Option B promotion).
+func (k Keeper) GetParamsHistoryEntry(ctx context.Context, effectiveHeight int64) (types.Params, bool) {
+	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	bz := store.Get(types.ParamsHistoryKey(effectiveHeight))
+	if bz == nil {
+		return types.Params{}, false
+	}
+
+	var paramsUpdate types.ParamsUpdate
+	// Defensive: a corrupted history entry must not halt the chain. Treat an
+	// unmarshal failure the same as a missing entry — callers (the EndBlocker
+	// promotion path) already handle "no entry at this height" by falling
+	// through to the live params, so the safest recovery is to surface this as
+	// "no entry" rather than panic the chain on the deferred-promotion block.
+	if err := k.cdc.Unmarshal(bz, &paramsUpdate); err != nil {
+		k.logger.Error(fmt.Sprintf(
+			"GetParamsHistoryEntry: failed to unmarshal params history entry at effectiveHeight=%d: %v; treating as missing",
+			effectiveHeight, err,
+		))
+		return types.Params{}, false
+	}
+	if paramsUpdate.Params == nil {
+		return types.Params{}, false
+	}
+
+	return *paramsUpdate.Params, true
 }
 
 // HasParamsHistory returns true if any params history entries exist.
@@ -96,8 +138,63 @@ func (k Keeper) HasParamsHistory(ctx context.Context) bool {
 	return iterator.Valid()
 }
 
+// IterateParamsHistoryReverse iterates params history entries in reverse order of
+// effective_height starting from the largest entry with effective_height <= fromHeight.
+// The callback fn is invoked for each entry; returning stop=true halts iteration.
+//
+// Used by callers that need to resolve, for each historical params epoch, what
+// claim/session timing math applies — e.g. settlement walking recent epochs to
+// find every candidate sessionEndHeight whose proof window closes at the current
+// block (cross-session window-offset orphan class, O2).
+func (k Keeper) IterateParamsHistoryReverse(
+	ctx context.Context,
+	fromHeight int64,
+	fn func(effectiveHeight int64, params types.Params) (stop bool),
+) {
+	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	historyStore := prefix.NewStore(store, types.ParamsHistoryKeyPrefix)
+
+	// end key is exclusive; +1 so an entry at effective_height == fromHeight is included.
+	endKey := make([]byte, 8)
+	binary.BigEndian.PutUint64(endKey, uint64(fromHeight+1))
+
+	iterator := historyStore.ReverseIterator(nil, endKey)
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var paramsUpdate types.ParamsUpdate
+		// Defensive: skip-and-log on corrupted history entries instead of halting
+		// via MustUnmarshal. Same rationale as GetParamsAtHeight + GetParamsHistoryEntry —
+		// a corrupted entry must not halt the chain at settlement (the only caller of
+		// this iterator is the O2 cross-session candidate scan in
+		// candidateSessionEndHeightsForLiveParams). Skipping yields a degraded scan
+		// — that epoch's candidates are missed — which is observable and recoverable;
+		// halting is not.
+		if err := k.cdc.Unmarshal(iterator.Value(), &paramsUpdate); err != nil {
+			k.logger.Error(fmt.Sprintf(
+				"IterateParamsHistoryReverse: failed to unmarshal params history entry at fromHeight=%d: %v; skipping entry",
+				fromHeight, err,
+			))
+			continue
+		}
+		if paramsUpdate.Params == nil {
+			continue
+		}
+		if fn(paramsUpdate.EffectiveHeight, *paramsUpdate.Params) {
+			return
+		}
+	}
+}
+
 // GetAllParamsHistory returns all historical session params updates.
 // This is primarily used for genesis export and debugging.
+//
+// Defensive Unmarshal: a corrupted history entry (partial write, downgrade
+// from a newer schema, on-disk bit rot) is logged and skipped rather than
+// allowed to halt genesis export via MustUnmarshal. The sister production
+// readers (GetParamsAtHeight, GetParamsHistoryEntry, IterateParamsHistoryReverse)
+// apply the same pattern; aligning this reader keeps the params-history
+// surface uniformly halt-safe.
 func (k Keeper) GetAllParamsHistory(ctx context.Context) []types.ParamsUpdate {
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	historyStore := prefix.NewStore(store, types.ParamsHistoryKeyPrefix)
@@ -108,7 +205,13 @@ func (k Keeper) GetAllParamsHistory(ctx context.Context) []types.ParamsUpdate {
 	var history []types.ParamsUpdate
 	for ; iterator.Valid(); iterator.Next() {
 		var paramsUpdate types.ParamsUpdate
-		k.cdc.MustUnmarshal(iterator.Value(), &paramsUpdate)
+		if err := k.cdc.Unmarshal(iterator.Value(), &paramsUpdate); err != nil {
+			k.logger.Error(fmt.Sprintf(
+				"GetAllParamsHistory: failed to unmarshal params history entry: %v; skipping entry",
+				err,
+			))
+			continue
+		}
 		history = append(history, paramsUpdate)
 	}
 

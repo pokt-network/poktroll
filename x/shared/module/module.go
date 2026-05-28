@@ -145,9 +145,12 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 }
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
-// The end block implementation is optional.
-func (am AppModule) EndBlock(_ context.Context) error {
-	return nil
+// It promotes a params epoch to live when it becomes effective, maintaining the anchored-
+// session-grid invariant `live params == currently-effective epoch` (#543, Option B).
+// See keeper.EndBlocker for the strict ordering requirement (shared must run after all
+// modules that read live shared params).
+func (am AppModule) EndBlock(ctx context.Context) error {
+	return am.keeper.EndBlocker(ctx)
 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.

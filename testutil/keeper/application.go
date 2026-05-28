@@ -100,6 +100,13 @@ func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, contex
 			return sharedtypes.DefaultParams()
 		}).
 		AnyTimes()
+	// Unbonding end height is computed with the params effective at the unstake height
+	// (#543, F1). With no param history this resolves to the default params.
+	mockSharedKeeper.EXPECT().GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ int64) sharedtypes.Params {
+			return sharedtypes.DefaultParams()
+		}).
+		AnyTimes()
 	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, queryHeight int64) int64 {
 			return testsession.GetSessionEndHeightWithDefaultParams(queryHeight)

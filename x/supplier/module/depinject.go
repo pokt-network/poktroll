@@ -56,6 +56,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.Logger,
 		authority.String(),
 
+		in.AccountKeeper,
 		in.BankKeeper,
 		in.SharedKeeper,
 		in.ServiceKeeper,

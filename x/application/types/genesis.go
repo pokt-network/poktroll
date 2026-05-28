@@ -64,6 +64,25 @@ func (gs GenesisState) Validate() error {
 			return ErrAppInvalidServiceConfigs.Wrapf("%s", err.Error())
 		}
 
+		// Validate the service config history when present. History is optional in
+		// genesis (pre-upgrade exports lack it and are backfilled on import), but
+		// any present entry must be well-formed: a non-nil service and a sane
+		// activation/deactivation window.
+		for _, configUpdate := range app.ServiceConfigHistory {
+			if configUpdate == nil || configUpdate.Service == nil {
+				return ErrAppInvalidServiceConfigs.Wrapf(
+					"nil service config history entry for application %q", app.Address,
+				)
+			}
+			if configUpdate.DeactivationHeight != 0 &&
+				configUpdate.DeactivationHeight <= configUpdate.ActivationHeight {
+				return ErrAppInvalidServiceConfigs.Wrapf(
+					"application %q service config history has deactivation height %d <= activation height %d",
+					app.Address, configUpdate.DeactivationHeight, configUpdate.ActivationHeight,
+				)
+			}
+		}
+
 		// Validate the per-session spend limit if set
 		if err := ValidatePerSessionSpendLimit(app.PerSessionSpendLimit); err != nil {
 			return err

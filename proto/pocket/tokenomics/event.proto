@@ -329,6 +329,146 @@ message EventSettlementBatch {
     string op_type = 7;
 }
 
+// EventValidatorRewardDistribution is emitted once per bonded validator per settlement
+// op_reason per settlement block. It summarizes how that validator's slice of the proposer
+// reward pool was split into commission and per-delegator rewards.
+//
+// It does NOT multiply with the number of delegators or claims (it is bounded by the
+// validator-set size), preserving the settlement event-count reduction from #1758.
+//
+// A delegator's reward from this validator can be reconstructed (off-chain / indexer side)
+// without per-delegator events:
+//
+//	delegatorReward = (self_delegation_reward_upokt + delegators_reward_upokt)
+//	                  × (delegatorStake / total_delegated_stake_upokt)
+//
+// where `(self_delegation_reward_upokt + delegators_reward_upokt)` is the post-commission
+// remainder, distributed across all delegations (including the validator's self-delegation)
+// proportional to stake.
+//
+// CROSS-DELEGATION ACCOUNTING NOTE (for indexers):
+// When the SAME pokt address is both a validator's account AND a delegator on a
+// different validator, its income from BOTH sources is bucketed under the
+// validator-side op_reason in EventSettlementBatch (because the bank-batch
+// accumulator keys on (recipient, op_reason), not source). Per-validator
+// breakdown reported BY THIS EVENT stays correct — commission_upokt is
+// unambiguously validator income and delegators_reward_upokt /
+// self_delegation_reward_upokt are unambiguously delegator-side. Indexers
+// building "VALIDATOR vs DELEGATOR" totals across the bank-batch stream
+// should sum from this event (per-validator) rather than from
+// EventSettlementBatch alone, otherwise cross-delegation accounts will
+// over-count under VALIDATOR and under-count under DELEGATOR.
+message EventValidatorRewardDistribution {
+    // Next index: 12
+
+    // The session end block height for the batch of settlements.
+    //
+    // Caveat (cross-session batches): when settlement processes claims that
+    // belong to DIFFERENT session_end_block_heights in the same settlement
+    // block (the O2 cross-session candidate-scan path, exercised after a
+    // window-offset change), this field reports the session_end_block_height
+    // of the FIRST claim in the batched results — it does NOT identify every
+    // session contributing to the pool. Indexers wanting a canonical timestamp
+    // for the validator-reward summary should use the settlement block height
+    // from the SDK header (the height at which this event was emitted) rather
+    // than treating session_end_block_height as definitive. On the common
+    // path (single-session settlement, by far the typical case on mainnet),
+    // this field and the settlement block height differ by exactly the
+    // claim/proof-window offsets, and there is no ambiguity.
+    int64 session_end_block_height = 1;
+
+    // The settlement operation reason (distinguishes Mint=Burn from Global Mint pools).
+    SettlementOpReason op_reason = 2;
+
+    // The validator operator (valoper...) address.
+    string validator_operator_address = 3;
+
+    // The validator account (pokt...) address; commission and the self-delegation slice
+    // are paid here.
+    string validator_account_address = 4;
+
+    // The validator's commission rate as a decimal string (e.g. "0.100000000000000000").
+    string commission_rate = 5;
+
+    // The validator's slice of the total proposer reward pool, as upokt.
+    string pool_share_upokt = 6;
+
+    // The commission carved out of pool_share_upokt and paid to the validator account, as upokt.
+    string commission_upokt = 7;
+
+    // The validator's own self-delegation slice of the post-commission remainder, as upokt.
+    // For sole-stakeholder validators (no external delegations), the entire remainder is here.
+    string self_delegation_reward_upokt = 8;
+
+    // The portion of the post-commission remainder paid to external (non-self) delegators, as upokt.
+    string delegators_reward_upokt = 9;
+
+    // The total delegated stake backing this validator (includes the self-delegation), as upokt.
+    // This is the denominator for per-delegator reward attribution.
+    string total_delegated_stake_upokt = 10;
+
+    // The number of external (non-self) delegators that received a reward from this validator.
+    uint32 num_delegators = 11;
+}
+
+// EventSupplierRevShareFallbackDistribution is emitted during settlement when a
+// supplier's per-service RevShare list cannot be used as-is to distribute the
+// supplier's slice of the reward. The known triggers are:
+//
+//  1. Sum of revshare percentages != 100 (validation perimeter hole: the
+//     stake-time ValidateServiceRevShare guarantees sum == 100 for NEW stakes,
+//     but pre-v0.1.34 state migrated via the duplicate-revshare merge
+//     (`x/supplier/keeper/migrate_duplicate_revshare.go`) can produce a merged
+//     list with sum > 100 — that supplier survives in store until it restakes).
+//  2. Duplicate recipient addresses observed AFTER migration (defensive — the
+//     migration is expected to have removed them, but settlement validates
+//     independently to avoid silent map-overwrite data loss).
+//  3. A negative remainder computed during proportional distribution (defensive
+//     overflow check; should be unreachable when sum == 100 holds).
+//
+// On any of the above, settlement pays the full supplier slice to the supplier's
+// `owner_address` (a proto-level field guaranteed populated at stake time,
+// independent of any revshare config). This rescues the chain from a `NewCoin`
+// panic on negative amount AND keeps supplier revenue flowing to the rightful
+// owner, while signalling clearly that the operator's revshare config is broken
+// and needs to be re-staked.
+//
+// Indexers should treat this event as a "supplier config is broken" beacon:
+// payouts via this event will NOT appear in the revshare-configured recipients'
+// balances. Operator follow-up = restake supplier with clean revshare.
+//
+// Expected occurrences on a healthy mainnet: zero. Non-zero count post-upgrade
+// indicates pre-existing duplicate-revshare suppliers that the migration could
+// not normalize back to sum == 100; combine with B2 pre-upgrade enumeration to
+// reach out to affected operators.
+message EventSupplierRevShareFallbackDistribution {
+    // The operator address of the supplier whose revshare config was rejected.
+    string supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // The owner address that received the full supplier slice as fallback.
+    string supplier_owner_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // The Service ID for the claim whose distribution triggered the fallback.
+    string service_id = 3;
+
+    // The session end block height of the settled claim that triggered the fallback.
+    int64 session_end_block_height = 4;
+
+    // The full amount paid to the owner as fallback, as a coin string (e.g. "1000upokt").
+    string amount = 5;
+
+    // The settlement operation reason (TLM source) that produced the supplier slice.
+    SettlementOpReason op_reason = 6;
+
+    // Observed sum of revshare percentages, 0-255+ in theory but practically a
+    // small positive integer different from 100. Reported for operator triage.
+    uint64 observed_sum_percentage = 7;
+
+    // Human-readable reason describing why the fallback engaged
+    // (e.g. "sum 110 != 100", "duplicate address ...", "negative remainder").
+    string reason = 8;
+}
+
 // EventApplicationReimbursementRequest is emitted when an application requests a reimbursement from the DAO.
 // It is intended to prevent self dealing attacks when global inflation is enabled.
 // TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.

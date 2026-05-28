@@ -95,39 +95,3 @@ func sortAddressesByFractionDesc(
 
 	return sortedAddressesWithNonZeroFractions
 }
-
-// sortAddressesByStakeDesc sorts addresses by stake amount (descending).
-// Uses lexicographical address ordering as tie-breaker for determinism.
-func sortAddressesByStakeDesc(stakeAmounts map[string]math.Int) []string {
-	type addressStake struct {
-		address string
-		stake   math.Int
-	}
-	addressStakes := make([]addressStake, 0, len(stakeAmounts))
-
-	// Build a slice of addressStake pairs for sorting
-	for addr, stake := range stakeAmounts {
-		addressStakes = append(addressStakes, addressStake{addr, stake})
-	}
-
-	// Sorting to ensure onchain behavior is deterministic:
-	// Sort by:
-	// 1. Stake (descending value)
-	// 2. Address (ascending lexicographical order)
-	sort.Slice(addressStakes, func(i, j int) bool {
-		// Tie-breaker: lexicographical address order
-		if addressStakes[i].stake.Equal(addressStakes[j].stake) {
-			return addressStakes[i].address < addressStakes[j].address
-		}
-		// Descending (largest stake first)
-		return addressStakes[i].stake.GT(addressStakes[j].stake)
-	})
-
-	// Extract sorted addresses
-	sortedAddressesByStake := make([]string, len(addressStakes))
-	for i, addrStake := range addressStakes {
-		sortedAddressesByStake[i] = addrStake.address
-	}
-
-	return sortedAddressesByStake
-}

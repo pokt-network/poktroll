@@ -170,6 +170,11 @@ var (
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
+		// NOTE (#543 anchored session grid): `shared` promotes params epochs in its EndBlocker,
+		// not its BeginBlocker, so BeginBlocker order is not load-bearing for the grid. But do
+		// NOT add a shared-params consumer AFTER `shared` here either — the starport scaffold
+		// appends new modules below; a consumer placed there would run on block `anchor` with
+		// already-promoted new params while peers used old, causing a one-block inconsistency.
 		sharedmoduletypes.ModuleName,
 		migrationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
@@ -202,6 +207,12 @@ var (
 		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
+		// CRITICAL (#543 anchored session grid, Option B): the shared module EndBlocker
+		// promotes a newly-effective params epoch to live, so it MUST run AFTER every module
+		// above that reads live shared params (service, session, proof, tokenomics, gateway,
+		// application, supplier). Do NOT insert a shared-params consumer below this line, and
+		// do NOT move `shared` earlier — either breaks the `live == current epoch` invariant
+		// at the session boundary block. Asserted by TestEndBlockerOrdering.
 		sharedmoduletypes.ModuleName,
 		migrationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers

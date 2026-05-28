@@ -57,6 +57,8 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 	supplierBalanceMap := make(map[string]int64)
 
 	ctrl := gomock.NewController(t)
+	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
+	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes().
 		Do(func(ctx context.Context, addr sdk.AccAddress, module string, coins sdk.Coins) {
@@ -91,6 +93,7 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
+		mockAccountKeeper,
 		mockBankKeeper,
 		sharedKeeper,
 		serviceKeeper,

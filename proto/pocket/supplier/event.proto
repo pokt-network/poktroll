@@ -64,6 +64,39 @@ message EventSupplierUnbondingCanceled {
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }
 
+// EventSupplierStakeStuckInModulePool is emitted when EndBlockerUnbondSuppliers
+// could NOT return the supplier's bonded stake to its owner account (e.g., the
+// owner is a blocked module account, the bank module rejected the send). The
+// supplier is removed from state anyway to keep the chain making progress, but
+// the coins remain stranded in the supplier module pool. Indexers should track
+// these events so governance can propose a reclaim transfer; without this event
+// the loss would be invisible to off-chain observers.
+//
+// Pre-v0.1.34 the same scenario only produced a Logger().Error line — easy to
+// miss in operator workflows. The new stake-time module-account-owner check
+// prevents NEW occurrences, so this event should fire only for legacy state.
+message EventSupplierStakeStuckInModulePool {
+  // operator_address identifies the removed supplier.
+  string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // owner_address is the address the bank module refused to send to. Either a
+  // blocked module account or an otherwise rejected recipient.
+  string owner_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // stuck_coin is the coin that remains in the supplier module pool with no
+  // owner to claim it.
+  cosmos.base.v1beta1.Coin stuck_coin = 3 [(gogoproto.jsontag) = "stuck_coin"];
+
+  // reason is the bank-module error string captured at the time of the failed
+  // send. Free-form, intended for human triage.
+  string reason = 4 [(gogoproto.jsontag) = "reason"];
+
+  // session_end_height is the session-end height of the EndBlocker that
+  // attempted (and failed) the return-of-stake. Useful for correlating with
+  // settlement events in the same block.
+  int64 session_end_height = 5 [(gogoproto.jsontag) = "session_end_height"];
+}
+
 // EventSupplierServiceConfigActivated is emitted when a supplier service configuration
 // becomes effective at a specific block height.
 message EventSupplierServiceConfigActivated {

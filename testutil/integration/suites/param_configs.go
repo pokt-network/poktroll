@@ -272,3 +272,19 @@ var (
 		NewParamClientFn: migrationtypes.NewQueryClient,
 	}
 )
+
+// nonSettableParamFields are Params struct fields that are DERIVED metadata rather than
+// individually-settable governance parameters, and so are NOT valid MsgUpdateParam names.
+// The anchored-session-grid anchor fields (#543) are stamped by the shared param-update
+// handler, not set by governance. ParamsSuite-driven tests skip these when iterating a
+// module's Params fields to construct per-field MsgUpdateParam messages.
+var nonSettableParamFields = map[string]bool{
+	"SessionGridAnchorHeight": true,
+	"SessionNumberAtAnchor":   true,
+}
+
+// IsNonSettableParamField reports whether a Params struct field is derived metadata that
+// cannot be set via MsgUpdateParam (see nonSettableParamFields).
+func IsNonSettableParamField(fieldName string) bool {
+	return nonSettableParamFields[fieldName]
+}

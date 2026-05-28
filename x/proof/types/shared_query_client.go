@@ -37,6 +37,15 @@ func (sqc *SharedKeeperQueryClient) GetParams(
 	return &sharedParams, nil
 }
 
+// GetParamsAtHeight returns the shared params that were effective at queryHeight.
+func (sqc *SharedKeeperQueryClient) GetParamsAtHeight(
+	ctx context.Context,
+	queryHeight int64,
+) (*sharedtypes.Params, error) {
+	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
+	return &sharedParams, nil
+}
+
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
 // for the session which includes queryHeight elapses.
 // The grace period is the number of blocks after the session ends during which relays

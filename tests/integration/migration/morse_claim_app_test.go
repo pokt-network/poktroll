@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/app/pocket"
+	apptestutil "github.com/pokt-network/poktroll/testutil/application"
 	"github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
@@ -137,11 +138,30 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 			expectedFinalStake := initialAppStake.Add(expectedClaimedStake)
 			expectedBalance := expectedMorseClaimableAccount.GetUnstakedBalance()
 
+			// The Morse claim re-stakes the app at the claim height, which deactivates
+			// the original "nosvc" config and activates s.appServiceConfig, both at the
+			// next session start boundary. Derive that boundary from the chain rather
+			// than hard-coding it, so the fixture survives session-length param changes.
+			nosvcConfig := &sharedtypes.ApplicationServiceConfig{ServiceId: "nosvc"}
+			sharedParams := s.GetSharedParams(s.T())
+			claimHeight := s.SdkCtx().BlockHeight() - 1
+			transitionHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, claimHeight)
+
+			expectedServiceConfigHistory := []*apptypes.ApplicationServiceConfigUpdate{
+				apptestutil.CreateServiceConfigUpdateFromServiceConfig(
+					shannonDestAddr, nosvcConfig, 1, transitionHeight,
+				),
+				apptestutil.CreateServiceConfigUpdateFromServiceConfig(
+					shannonDestAddr, s.appServiceConfig, transitionHeight, 0,
+				),
+			}
+
 			// Assert that the claim msg response is correct.
 			expectedApp := apptypes.Application{
-				Address:        shannonDestAddr,
-				Stake:          &expectedFinalStake,
-				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
+				Address:              shannonDestAddr,
+				Stake:                &expectedFinalStake,
+				ServiceConfigs:       []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
+				ServiceConfigHistory: expectedServiceConfigHistory,
 			}
 			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{}
 			s.Equal(expectedClaimApplicationRes, claimAppRes)
