@@ -208,9 +208,12 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(nil).
 		AnyTimes()
 
+	// Return DefaultParams (non-nil MinStake) so the settlement auto-unstake check
+	// in ProcessTokenLogicModules reads a valid min_stake. An empty Params{} has a
+	// nil MinStake pointer and would panic on .MinStake.Amount.
 	mockApplicationKeeper.EXPECT().
 		GetParams(gomock.Any()).
-		Return(apptypes.Params{}).
+		Return(apptypes.DefaultParams()).
 		AnyTimes()
 
 	// Mock the supplier keeper.
@@ -284,6 +287,12 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockSharedKeeper.EXPECT().GetProofWindowCloseHeight(gomock.Any(), gomock.Any()).AnyTimes()
 	mockSharedKeeper.EXPECT().
 		GetParams(gomock.Any()).
+		Return(sharedtypes.DefaultParams()).
+		AnyTimes()
+	// Settlement reads params at the claim's session-end height for the budget divisor
+	// (#543, F2). With no param history this resolves to the default (live) params.
+	mockSharedKeeper.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
 		Return(sharedtypes.DefaultParams()).
 		AnyTimes()
 
@@ -542,6 +551,7 @@ func NewTokenomicsModuleKeepers(
 		runtime.NewKVStoreService(keys[suppliertypes.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
+		accountKeeper,
 		bankKeeper,
 		sharedKeeper,
 		serviceKeeper,

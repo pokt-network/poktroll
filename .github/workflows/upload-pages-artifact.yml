@@ -36,6 +36,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Enable Corepack
+        # Must run BEFORE setup-node@v4. Setup-node probes `yarn --version`
+        # during its cache-setup step; with `packageManager: yarn@4.x` set in
+        # docusaurus/package.json, system Yarn 1 (the default on Ubuntu
+        # runners) errors out. Corepack installs a shim that routes `yarn`
+        # through the packageManager-declared version. Ubuntu runners already
+        # ship Node with Corepack support, so this works without setup-node.
+        run: corepack enable
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -46,7 +55,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd docusaurus
-          yarn install
+          yarn install --immutable
 
       - name: Build
         run: |
@@ -67,6 +76,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Enable Corepack
+        # See validate job above — must run BEFORE setup-node@v4 so its
+        # `yarn --version` cache probe goes through the Corepack shim.
+        run: corepack enable
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -77,7 +91,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd docusaurus
-          yarn install
+          yarn install --immutable
 
       - name: Build
         run: |

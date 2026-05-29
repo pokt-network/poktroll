@@ -261,6 +261,7 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 		Address:                   s.appBech32,
 		Stake:                     &expectedEndStake,
 		ServiceConfigs:            s.appServiceConfigs,
+		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		UnstakeSessionEndHeight:   uint64(sessionEndHeight),

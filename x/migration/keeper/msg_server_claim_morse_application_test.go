@@ -50,6 +50,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		Address:                   shannonDestAddr,
 		Stake:                     &applicationStake,
 		ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{&testAppServiceConfig},
+		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 	}

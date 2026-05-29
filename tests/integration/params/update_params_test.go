@@ -94,10 +94,38 @@ func (s *msgUpdateParamsTestSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
 			params, err := s.QueryModuleParams(t, moduleName)
 			require.NoError(t, err)
 
+			// Compares all SETTABLE params fields, ignoring derived metadata (e.g. the
+			// anchored-session-grid anchor, #543) which the handler stamps rather than
+			// echoing from the request.
+			equalIgnoringDerived := func(expected, actual any) bool {
+				expectedVal := reflect.ValueOf(expected)
+				actualVal := reflect.ValueOf(actual)
+				for i := 0; i < expectedVal.NumField(); i++ {
+					name := expectedVal.Type().Field(i).Name
+					if suites.IsNonSettableParamField(name) {
+						continue
+					}
+					if !reflect.DeepEqual(expectedVal.Field(i).Interface(), actualVal.Field(i).Interface()) {
+						return false
+					}
+				}
+				return true
+			}
+
+			// A shared num_blocks_per_session change takes effect on live params only at the
+			// next session boundary under the anchored grid (#543); advance blocks until the
+			// settable params reflect the update (a no-op for modules with immediate effect).
+			const maxAdvanceBlocks = 30
+			for i := 0; i < maxAdvanceBlocks && !equalIgnoringDerived(expectedParams, params); i++ {
+				s.GetApp().NextBlock(t)
+				params, err = s.QueryModuleParams(t, moduleName)
+				require.NoError(t, err)
+			}
+
 			// Assert that the module's params are updated.
 			require.True(t,
-				reflect.DeepEqual(expectedParams, params),
-				"expected:\n%+v\nto deeply equal:\n%+v",
+				equalIgnoringDerived(expectedParams, params),
+				"expected (ignoring derived fields):\n%+v\nto deeply equal:\n%+v",
 				expectedParams, params,
 			)
 		})

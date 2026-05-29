@@ -109,6 +109,7 @@ func ValidateServiceRevShare(revShareList []*ServiceRevenueShare) error {
 		return ErrSharedInvalidRevShare.Wrap("no rev share configurations")
 	}
 
+	seenAddresses := make(map[string]struct{}, len(revShareList))
 	for _, revShare := range revShareList {
 		if revShare == nil {
 			return ErrSharedInvalidRevShare.Wrap("rev share cannot be nil")
@@ -122,6 +123,12 @@ func ValidateServiceRevShare(revShareList []*ServiceRevenueShare) error {
 		if _, err := sdk.AccAddressFromBech32(revShare.Address); err != nil {
 			return ErrSharedInvalidRevShare.Wrapf("invalid rev share address %s; (%v)", revShare.Address, err)
 		}
+
+		// Check for duplicate revenue share addresses
+		if _, exists := seenAddresses[revShare.Address]; exists {
+			return ErrSharedInvalidRevShare.Wrapf("duplicate rev share address: %s", revShare.Address)
+		}
+		seenAddresses[revShare.Address] = struct{}{}
 
 		if revShare.RevSharePercentage <= 0 || revShare.RevSharePercentage > 100 {
 			return ErrSharedInvalidRevShare.Wrapf(

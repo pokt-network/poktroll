@@ -258,6 +258,11 @@ type SessionQueryClient interface {
 type SharedQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
 	GetParams(ctx context.Context) (*sharedtypes.Params, error)
+	// GetParamsAtHeight queries the chain for the shared module parameters that were
+	// effective at the given block height. Window-timing computations use this so that a
+	// session is always evaluated with the num_blocks_per_session that was in effect when it
+	// started, rather than the live value (#543 anchored session grid).
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) (*sharedtypes.Params, error)
 	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
 	// for the session that includes queryHeight elapses.
 	// The grace period is the number of blocks after the session ends during which relays

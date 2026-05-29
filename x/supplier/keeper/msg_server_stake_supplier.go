@@ -118,6 +118,19 @@ func (k Keeper) StakeSupplier(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	// Reject module accounts as owner address to prevent chain halts during unbonding.
+	ownerAddr, _ := sdk.AccAddressFromBech32(msg.OwnerAddress)
+	if ownerAcct := k.accountKeeper.GetAccount(ctx, ownerAddr); ownerAcct != nil {
+		if _, isModuleAccount := ownerAcct.(sdk.ModuleAccountI); isModuleAccount {
+			return nil, status.Error(
+				codes.InvalidArgument,
+				suppliertypes.ErrSupplierInvalidAddress.Wrapf(
+					"owner address %s is a module account and cannot be used", msg.OwnerAddress,
+				).Error(),
+			)
+		}
+	}
+
 	// Check if the services the supplier is staking for exist
 	for _, serviceConfig := range msg.Services {
 		if _, serviceFound := k.serviceKeeper.GetService(ctx, serviceConfig.ServiceId); !serviceFound {

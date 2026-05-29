@@ -263,9 +263,14 @@ genesis:
           service_configs:
             - service_id: anvil
           stake:
+            # 200 POKT — 100 POKT headroom above min_stake (100 POKT) so settlement
+            # burns over the e2e suite cannot push the app below min_stake and
+            # trigger the #1846 auto-unbond check. Previous value (100000068) had
+            # only 68 upokt of headroom, masked by the hardcoded-default bug fixed
+            # in v0.1.34 (the on-chain min_stake is now read correctly).
             # NB: This value should be exactly 1upokt smaller than the value in
             # `application1_stake_config.yaml` so that the stake command causes a state change.
-            amount: "100000068" # ~100 POKT
+            amount: "200000000" # 200 POKT
             denom: upokt
         - address: pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm
           delegatee_gateway_addresses:
@@ -273,9 +278,10 @@ genesis:
           service_configs:
             - service_id: rest
           stake:
+            # 200 POKT — 100 POKT headroom above min_stake; see app1 comment above.
             # NB: This value should be exactly 1upokt smaller than the value in
             # `application1_stake_config.yaml` so that the stake command causes a state change.
-            amount: "100000068" # ~100 POKT
+            amount: "200000000" # 200 POKT
             denom: upokt
         - address: pokt1lqyu4v88vp8tzc86eaqr4lq8rwhssyn6rfwzex
           delegatee_gateway_addresses:
@@ -283,7 +289,8 @@ genesis:
           service_configs:
             - service_id: anvilws
           stake:
-            amount: "100000068" # ~100 POKT
+            # 200 POKT — 100 POKT headroom above min_stake; see app1 comment above.
+            amount: "200000000" # 200 POKT
             denom: upokt
         - address: pokt1pn64d94e6u5g8cllsnhgrl6t96ysnjw59j5gst
           delegatee_gateway_addresses:

@@ -232,6 +232,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[suppliertypes.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
+		accountKeeper,
 		bankKeeper,
 		sharedKeeper,
 		serviceKeeper,

@@ -161,7 +161,14 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 		)
 	}
 
-	for _, appServiceConfig := range foundApp.ServiceConfigs {
+	// Resolve the service configs that were active at the session's block height
+	// from the application's service config history, rather than the flat (latest)
+	// ServiceConfigs snapshot. This makes historical session queries deterministic:
+	// a session for a past height returns the service the app was staked for at
+	// that height, even if a later restake swapped it. Uses sh.blockHeight to
+	// match the supplier hydration activation check.
+	activeServiceConfigs := foundApp.GetActiveServiceConfigs(sh.blockHeight)
+	for _, appServiceConfig := range activeServiceConfigs {
 		if appServiceConfig.ServiceId == sh.sessionHeader.ServiceId {
 			sh.session.Application = &foundApp
 			return nil

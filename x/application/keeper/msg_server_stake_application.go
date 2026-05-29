@@ -11,6 +11,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeApplication) (*types.MsgStakeApplicationResponse, error) {
@@ -174,10 +175,10 @@ func (k Keeper) StakeApplication(
 }
 
 func (k Keeper) createApplication(
-	_ context.Context,
+	ctx context.Context,
 	msg *types.MsgStakeApplication,
 ) types.Application {
-	return types.Application{
+	app := types.Application{
 		Address:                   msg.Address,
 		Stake:                     msg.Stake,
 		ServiceConfigs:            msg.Services,
@@ -185,6 +186,110 @@ func (k Keeper) createApplication(
 		PendingUndelegations:      make(map[uint64]types.UndelegatingGatewayList),
 		PerSessionSpendLimit:      normalizeSpendLimit(msg.PerSessionSpendLimit),
 	}
+
+	// A newly-staked application leaves service_config_history empty on purpose:
+	// an empty history means "never changed", and GetActiveServiceConfigs falls
+	// back to the flat ServiceConfigs for all heights. History is only written
+	// once the app actually swaps its service (see recordApplicationServiceConfigChange).
+
+	return app
+}
+
+// recordApplicationServiceConfigChange updates the application's service config
+// to the provided services, recording the change in service_config_history only
+// when the set of service IDs actually changes.
+//
+// Behavior:
+//   - No service-membership change (stake bump, endpoint tweak): only the flat
+//     ServiceConfigs snapshot is refreshed; history is left untouched. This keeps
+//     "never changed" apps with empty history (GetActiveServiceConfigs falls back
+//     to the flat snapshot).
+//   - Service-membership change: the previously-active config is closed at the
+//     next session start and the new config opens at the next session start, so
+//     in-progress sessions stay deterministic (old active until nextSession, new
+//     active from nextSession). On the FIRST ever change, the prior (flat) config
+//     is first materialized into history as active since height 1, preserving the
+//     pre-change timeline.
+//
+// History is never pruned (keep-forever) — see the proto comment on
+// Application.service_config_history for why.
+func (k Keeper) recordApplicationServiceConfigChange(
+	ctx context.Context,
+	app *types.Application,
+	services []*sharedtypes.ApplicationServiceConfig,
+) {
+	// If the set of service IDs is unchanged, this is not a service swap: just
+	// refresh the flat snapshot and leave history as-is.
+	if appServiceIdSetEqual(app.ServiceConfigs, services) {
+		app.ServiceConfigs = services
+		return
+	}
+
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+
+	// First ever change: materialize the prior (flat) config into history as
+	// active since height 1, so the pre-change period remains resolvable.
+	if len(app.ServiceConfigHistory) == 0 {
+		app.BackfillServiceConfigHistory()
+	}
+
+	updatedHistory := make([]*types.ApplicationServiceConfigUpdate, 0, len(app.ServiceConfigHistory)+len(services))
+
+	// Carry forward existing history:
+	// - Drop entries still scheduled to activate at this same next session boundary.
+	//   Such an entry was opened earlier in the current session and has never served;
+	//   this change supersedes it before it ever takes effect. It is re-opened below
+	//   if its service is still in the new set. Dropping it (rather than deactivating
+	//   it at its own activation height) avoids zero-width entries
+	//   (activation == deactivation) that GenesisState.Validate rejects on re-import.
+	// - Deactivate still-active entries at the next session start.
+	for _, current := range app.ServiceConfigHistory {
+		if current == nil || current.Service == nil {
+			continue
+		}
+
+		if current.ActivationHeight == nextSessionStartHeight {
+			continue
+		}
+
+		if current.DeactivationHeight == 0 {
+			current.DeactivationHeight = nextSessionStartHeight
+		}
+		updatedHistory = append(updatedHistory, current)
+	}
+
+	// Open the new configs at the next session start.
+	for _, svc := range services {
+		updatedHistory = append(updatedHistory, &types.ApplicationServiceConfigUpdate{
+			ApplicationAddress: app.Address,
+			Service:            svc,
+			ActivationHeight:   nextSessionStartHeight,
+		})
+	}
+
+	app.ServiceConfigHistory = updatedHistory
+	// Keep the flat snapshot in sync with the latest staked services.
+	app.ServiceConfigs = services
+}
+
+// appServiceIdSetEqual reports whether two application service config slices
+// cover the same set of service IDs.
+func appServiceIdSetEqual(a, b []*sharedtypes.ApplicationServiceConfig) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	ids := make(map[string]struct{}, len(a))
+	for _, svc := range a {
+		ids[svc.ServiceId] = struct{}{}
+	}
+	for _, svc := range b {
+		if _, ok := ids[svc.ServiceId]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // normalizeSpendLimit returns nil for nil or zero input (no limit),
@@ -200,7 +305,7 @@ func normalizeSpendLimit(limit *sdk.Coin) *sdk.Coin {
 }
 
 func (k Keeper) updateApplication(
-	_ context.Context,
+	ctx context.Context,
 	app *types.Application,
 	msg *types.MsgStakeApplication,
 ) error {
@@ -223,7 +328,12 @@ func (k Keeper) updateApplication(
 	if len(msg.Services) == 0 {
 		return types.ErrAppInvalidServiceConfigs.Wrapf("must have at least one service")
 	}
-	app.ServiceConfigs = msg.Services
+
+	// Record the service-config change in history (only if the service set
+	// actually changed; next-session activation) and refresh the flat
+	// ServiceConfigs snapshot, instead of destructively overwriting it. This
+	// preserves the previous config for historical session queries at past heights.
+	k.recordApplicationServiceConfigChange(ctx, app, msg.Services)
 
 	// Three-way per-session spend limit semantics:
 	// nil = preserve existing limit, zero = clear limit, positive = set new limit.

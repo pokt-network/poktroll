@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
@@ -36,11 +37,20 @@ func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
-	// Set the parameters.
-	require.NoError(t, k.SetParams(ctx, testSharedParams))
+	// Anchor the test at a realistic mid-session height so the next session boundary is
+	// well-defined. With N=4 anchored at block 1, height 2 is in session [1,4] → the change
+	// becomes effective at block 5 (#543 anchored grid).
+	ctx = ctx.WithBlockHeight(2)
+	const expectedEffectiveHeight int64 = 5
+
+	// Set the parameters (anchor=1, the genesis grid).
+	startParams := testSharedParams
+	startParams.SessionGridAnchorHeight = 1
+	startParams.SessionNumberAtAnchor = 1
+	require.NoError(t, k.SetParams(ctx, startParams))
 
 	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedNumBlocksPerSession, testSharedParams.NumBlocksPerSession)
+	require.NotEqual(t, expectedNumBlocksPerSession, startParams.NumBlocksPerSession)
 
 	// Update the number of blocks per session
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
@@ -51,12 +61,31 @@ func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	// Query the updated params from the keeper
-	updatedParams := k.GetParams(ctx)
-	require.Equal(t, expectedNumBlocksPerSession, updatedParams.NumBlocksPerSession)
+	// NARROW Option B (#543): a num_blocks_per_session change is DEFERRED — live params still
+	// carry the OLD value until the next session boundary so in-flight sessions keep the old N.
+	liveParams := k.GetParams(ctx)
+	require.Equal(t, startParams.NumBlocksPerSession, liveParams.NumBlocksPerSession,
+		"num_blocks_per_session must not change live before the session boundary")
 
-	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, &updatedParams, string(sharedtypes.KeyNumBlocksPerSession))
+	// The new value is recorded in history at the next session boundary, with the grid
+	// anchored there.
+	effectiveParams := k.GetParamsAtHeight(ctx, expectedEffectiveHeight)
+	require.Equal(t, expectedNumBlocksPerSession, effectiveParams.NumBlocksPerSession)
+	require.Equal(t, uint64(expectedEffectiveHeight), effectiveParams.SessionGridAnchorHeight)
+
+	// The shared EndBlocker promotes the new epoch to live at the effective height.
+	boundaryCtx := ctx.WithBlockHeight(expectedEffectiveHeight)
+	require.NoError(t, k.EndBlocker(boundaryCtx))
+	promotedParams := k.GetParams(boundaryCtx)
+	require.Equal(t, expectedNumBlocksPerSession, promotedParams.NumBlocksPerSession)
+	require.Equal(t, uint64(expectedEffectiveHeight), promotedParams.SessionGridAnchorHeight)
+
+	// Ensure the other parameters are unchanged by the promotion.
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &startParams, &promotedParams,
+		string(sharedtypes.KeyNumBlocksPerSession),
+		"SessionGridAnchorHeight",
+		"SessionNumberAtAnchor",
+	)
 }
 
 func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
@@ -83,27 +112,19 @@ func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	sharedParams.ApplicationUnbondingPeriodSessions = minUnbodningPeriodSessions
 
-	// Set the parameters to their default values
-	require.NoError(t, k.SetParams(ctx, sharedParams))
-
-	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedClaimWindowOpenOffestBlocks, sharedParams.ClaimWindowOpenOffsetBlocks)
-
 	// Update the claim window open offset blocks param
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      sharedtypes.ParamClaimWindowOpenOffsetBlocks,
 		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedClaimWindowOpenOffestBlocks},
 	}
-	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
-	require.NoError(t, err)
 
-	// Query the updated params from the keeper
-	updatedParams := k.GetParams(ctx)
-	require.Equal(t, expectedClaimWindowOpenOffestBlocks, updatedParams.ClaimWindowOpenOffsetBlocks)
-
-	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, &updatedParams, string(sharedtypes.KeyClaimWindowOpenOffsetBlocks))
+	// A claim window offset is a session-timing param: deferred to the next session
+	// boundary (#543 Option B) so in-flight claims keep the window they were created under.
+	requireSessionTimingParamDeferred(t, k, msgSrv, ctx, sharedParams, updateParamMsg,
+		string(sharedtypes.KeyClaimWindowOpenOffsetBlocks),
+		func(p sharedtypes.Params) uint64 { return p.ClaimWindowOpenOffsetBlocks },
+		expectedClaimWindowOpenOffestBlocks)
 }
 
 func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
@@ -130,27 +151,19 @@ func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	sharedParams.ApplicationUnbondingPeriodSessions = minUnbodningPeriodSessions
 
-	// Set the parameters to their default values
-	require.NoError(t, k.SetParams(ctx, sharedParams))
-
-	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedClaimWindowCloseOffestBlocks, sharedParams.ClaimWindowCloseOffsetBlocks)
-
 	// Update the claim window close offset blocks param
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      sharedtypes.ParamClaimWindowCloseOffsetBlocks,
 		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedClaimWindowCloseOffestBlocks},
 	}
-	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
-	require.NoError(t, err)
 
-	// Query the updated params from the keeper
-	updatedParams := k.GetParams(ctx)
-	require.Equal(t, expectedClaimWindowCloseOffestBlocks, updatedParams.ClaimWindowCloseOffsetBlocks)
-
-	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, &updatedParams, string(sharedtypes.KeyClaimWindowCloseOffsetBlocks))
+	// A claim window offset is a session-timing param: deferred to the next session
+	// boundary (#543 Option B) so in-flight claims keep the window they were created under.
+	requireSessionTimingParamDeferred(t, k, msgSrv, ctx, sharedParams, updateParamMsg,
+		string(sharedtypes.KeyClaimWindowCloseOffsetBlocks),
+		func(p sharedtypes.Params) uint64 { return p.ClaimWindowCloseOffsetBlocks },
+		expectedClaimWindowCloseOffestBlocks)
 }
 
 func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
@@ -181,27 +194,19 @@ func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	sharedParams.GatewayUnbondingPeriodSessions = minUnbodningPeriodSessions
 
-	// Set the parameters to their default values
-	require.NoError(t, k.SetParams(ctx, sharedParams))
-
-	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedProofWindowOpenOffestBlocks, sharedParams.ProofWindowOpenOffsetBlocks)
-
 	// Update the proof window open offset blocks param
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      sharedtypes.ParamProofWindowOpenOffsetBlocks,
 		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedProofWindowOpenOffestBlocks},
 	}
-	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
-	require.NoError(t, err)
 
-	// Query the updated params from the keeper
-	updatedParams := k.GetParams(ctx)
-	require.Equal(t, expectedProofWindowOpenOffestBlocks, updatedParams.ProofWindowOpenOffsetBlocks)
-
-	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, &updatedParams, string(sharedtypes.KeyProofWindowOpenOffsetBlocks))
+	// A proof window offset is a session-timing param: deferred to the next session
+	// boundary (#543 Option B) so in-flight claims keep the window they were created under.
+	requireSessionTimingParamDeferred(t, k, msgSrv, ctx, sharedParams, updateParamMsg,
+		string(sharedtypes.KeyProofWindowOpenOffsetBlocks),
+		func(p sharedtypes.Params) uint64 { return p.ProofWindowOpenOffsetBlocks },
+		expectedProofWindowOpenOffestBlocks)
 }
 
 func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
@@ -228,27 +233,19 @@ func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	sharedParams.ApplicationUnbondingPeriodSessions = minUnbodningPeriodSessions
 
-	// Set the parameters to their default values
-	require.NoError(t, k.SetParams(ctx, sharedParams))
-
-	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedProofWindowCloseOffestBlocks, sharedParams.ProofWindowCloseOffsetBlocks)
-
 	// Update the proof window close offset blocks param
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      sharedtypes.ParamProofWindowCloseOffsetBlocks,
 		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedProofWindowCloseOffestBlocks},
 	}
-	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
-	require.NoError(t, err)
 
-	// Query the updated params from the keeper
-	updatedParams := k.GetParams(ctx)
-	require.Equal(t, expectedProofWindowCloseOffestBlocks, updatedParams.ProofWindowCloseOffsetBlocks)
-
-	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, &updatedParams, string(sharedtypes.KeyProofWindowCloseOffsetBlocks))
+	// A proof window offset is a session-timing param: deferred to the next session
+	// boundary (#543 Option B) so in-flight claims keep the window they were created under.
+	requireSessionTimingParamDeferred(t, k, msgSrv, ctx, sharedParams, updateParamMsg,
+		string(sharedtypes.KeyProofWindowCloseOffsetBlocks),
+		func(p sharedtypes.Params) uint64 { return p.ProofWindowCloseOffsetBlocks },
+		expectedProofWindowCloseOffestBlocks)
 }
 
 func TestMsgUpdateParam_UpdateGracePeriodEndOffsetBlocks(t *testing.T) {
@@ -263,27 +260,19 @@ func TestMsgUpdateParam_UpdateGracePeriodEndOffsetBlocks(t *testing.T) {
 	// GracePeriodEndOffsetBlocks to pass UpdateParam validation.
 	sharedParams.ClaimWindowOpenOffsetBlocks = expectedGracePeriodEndOffestBlocks
 
-	// Set the parameters to their default values
-	require.NoError(t, k.SetParams(ctx, sharedParams))
-
-	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedGracePeriodEndOffestBlocks, sharedParams.GetGracePeriodEndOffsetBlocks())
-
-	// Update the proof window close offset blocks param
+	// Update the grace period end offset blocks param
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      sharedtypes.ParamGracePeriodEndOffsetBlocks,
 		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedGracePeriodEndOffestBlocks},
 	}
-	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
-	require.NoError(t, err)
 
-	// Query the updated params from the keeper
-	updatedParams := k.GetParams(ctx)
-	require.Equal(t, expectedGracePeriodEndOffestBlocks, updatedParams.GetGracePeriodEndOffsetBlocks())
-
-	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, &updatedParams, string(sharedtypes.KeyGracePeriodEndOffsetBlocks))
+	// The grace period end offset is a session-timing param: deferred to the next session
+	// boundary (#543 Option B) so in-flight sessions keep the grace period they began under.
+	requireSessionTimingParamDeferred(t, k, msgSrv, ctx, sharedParams, updateParamMsg,
+		string(sharedtypes.KeyGracePeriodEndOffsetBlocks),
+		func(p sharedtypes.Params) uint64 { return p.GracePeriodEndOffsetBlocks },
+		expectedGracePeriodEndOffestBlocks)
 }
 
 func TestMsgUpdateParam_UpdateSupplierUnbondingPeriodSessions(t *testing.T) {
@@ -473,4 +462,61 @@ func getMinActorUnbondingPeriodSessions(
 	deltaBlocks := newParamBlocksValue - oldParamBlocksValue
 	newProofWindowCloseBlocks := uint64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(params)) + deltaBlocks
 	return (newProofWindowCloseBlocks / params.NumBlocksPerSession) + 1
+}
+
+// requireSessionTimingParamDeferred asserts that a session-timing param update is
+// DEFERRED to the next session boundary (#543 Option B): the live params are
+// unchanged immediately after UpdateParam, the new value is recorded in history at
+// the next session boundary, and the shared EndBlocker promotes it to live at that
+// height. baseParams must use the testSharedParams grid (N=4); the helper anchors it
+// at block 1 and runs the update at block 2, so the boundary is block 5.
+func requireSessionTimingParamDeferred(
+	t *testing.T,
+	k keeper.Keeper,
+	msgSrv sharedtypes.MsgServer,
+	ctx sdk.Context,
+	baseParams sharedtypes.Params,
+	updateMsg *sharedtypes.MsgUpdateParam,
+	paramKey string,
+	getField func(sharedtypes.Params) uint64,
+	expected uint64,
+) {
+	t.Helper()
+
+	// Anchor the genesis grid at block 1 and run the update at a mid-session height.
+	// With N=4 anchored at block 1, height 2 is in session [1,4] → the change becomes
+	// effective at block 5.
+	const queryHeight int64 = 2
+	const effectiveHeight int64 = 5
+	ctx = ctx.WithBlockHeight(queryHeight)
+
+	startParams := baseParams
+	startParams.SessionGridAnchorHeight = 1
+	startParams.SessionNumberAtAnchor = 1
+	require.NoError(t, k.SetParams(ctx, startParams))
+
+	require.NotEqual(t, expected, getField(startParams),
+		"test setup: new value must differ from the starting value")
+
+	_, err := msgSrv.UpdateParam(ctx, updateMsg)
+	require.NoError(t, err)
+
+	// Deferred: live params must NOT change before the session boundary.
+	require.Equal(t, getField(startParams), getField(k.GetParams(ctx)),
+		"session-timing param must not change live before the session boundary")
+
+	// The new value is recorded in history at the next session boundary.
+	require.Equal(t, expected, getField(k.GetParamsAtHeight(ctx, effectiveHeight)),
+		"new value must be recorded at the next session boundary")
+
+	// The shared EndBlocker promotes the new epoch to live at the effective height.
+	boundaryCtx := ctx.WithBlockHeight(effectiveHeight)
+	require.NoError(t, k.EndBlocker(boundaryCtx))
+	promoted := k.GetParams(boundaryCtx)
+	require.Equal(t, expected, getField(promoted),
+		"EndBlocker must promote the new value to live at the boundary")
+
+	// Other params unchanged by the promotion (ignore derived grid metadata).
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &startParams, &promoted,
+		paramKey, "SessionGridAnchorHeight", "SessionNumberAtAnchor")
 }

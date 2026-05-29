@@ -54,6 +54,12 @@ func (s *msgUpdateParamTestSuite) TestUnauthorizedMsgUpdateParamFails() {
 			validParamsFieldValue := validParamsValue.Field(fieldIdx)
 			fieldName := validParamsValue.Type().Field(fieldIdx).Name
 
+			// Skip derived (non-settable) param fields such as the anchored-session-grid
+			// anchor (#543); they are not valid MsgUpdateParam names.
+			if suites.IsNonSettableParamField(fieldName) {
+				continue
+			}
+
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {
 				// Reset the app state in order to assert that each module
@@ -87,6 +93,12 @@ func (s *msgUpdateParamTestSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 		for fieldIdx := 0; fieldIdx < validParamsValue.NumField(); fieldIdx++ {
 			fieldExpectedValue := validParamsValue.Field(fieldIdx)
 			fieldName := validParamsValue.Type().Field(fieldIdx).Name
+
+			// Skip derived (non-settable) param fields such as the anchored-session-grid
+			// anchor (#543); they are not valid MsgUpdateParam names.
+			if suites.IsNonSettableParamField(fieldName) {
+				continue
+			}
 
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {
@@ -132,9 +144,21 @@ func (s *msgUpdateParamTestSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 				// Query for the module's params.
 				params, err := s.QueryModuleParams(t, moduleName)
 				require.NoError(t, err)
+				paramValue := reflect.ValueOf(params).FieldByName(fieldName)
 
-				paramsValue := reflect.ValueOf(params)
-				paramValue := paramsValue.FieldByName(fieldName)
+				// Under the anchored session grid (#543), a num_blocks_per_session change is
+				// deferred: it takes effect on live params only at the next session boundary
+				// (so in-flight sessions keep the old length). Every other shared param — and
+				// every other module's params — still takes effect immediately, so this loop
+				// is a no-op for them. Advance blocks until the change is promoted to live.
+				const maxAdvanceBlocks = 30
+				for i := 0; i < maxAdvanceBlocks &&
+					!reflect.DeepEqual(fieldExpectedValue.Interface(), paramValue.Interface()); i++ {
+					s.GetApp().NextBlock(t)
+					params, err = s.QueryModuleParams(t, moduleName)
+					require.NoError(t, err)
+					paramValue = reflect.ValueOf(params).FieldByName(fieldName)
+				}
 				require.Equal(t, fieldExpectedValue.Interface(), paramValue.Interface())
 			})
 		}

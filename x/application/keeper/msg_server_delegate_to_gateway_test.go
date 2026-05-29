@@ -42,6 +42,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 		Address:                   stakeMsg.GetAddress(),
 		Stake:                     stakeMsg.GetStake(),
 		ServiceConfigs:            stakeMsg.GetServices(),
+		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
@@ -151,6 +152,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 		Address:                   stakeMsg.GetAddress(),
 		Stake:                     stakeMsg.GetStake(),
 		ServiceConfigs:            stakeMsg.GetServices(),
+		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
 		DelegateeGatewayAddresses: []string{gatewayAddr},
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
@@ -287,6 +289,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 			Address:                   stakeMsg.GetAddress(),
 			Stake:                     stakeMsg.GetStake(),
 			ServiceConfigs:            stakeMsg.GetServices(),
+			ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
 			DelegateeGatewayAddresses: gatewayAddresses[:i+1],
 			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		}

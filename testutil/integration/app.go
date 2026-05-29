@@ -448,6 +448,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		logger,
 		authority.String(),
 
+		accountKeeper,
 		bankKeeper,
 		sharedKeeper,
 		serviceKeeper,

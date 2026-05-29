@@ -329,6 +329,19 @@ func (s *suite) getKeyAddress(keyName string) string {
 func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 	s.Helper()
 
+	// Session-timing shared params (num_blocks_per_session and the session/claim/proof
+	// window offsets and grace period offset) are deferred to the next session boundary
+	// by the shared EndBlocker — see #543 anchored grid, Option B. Live params therefore
+	// lag the recorded value until the boundary, so this assertion must wait for that
+	// promotion before querying. Comparing against live before the boundary would compare
+	// against the OLD value still in effect and falsely fail.
+	if moduleName == sharedtypes.ModuleName {
+		if paramsMap, ok := s.expectedModuleParams[moduleName]; ok &&
+			expectedSetIncludesSharedTimingParam(paramsMap) {
+			s.waitForSharedTimingParamPromotion()
+		}
+	}
+
 	argsAndFlags := []string{
 		"query",
 		moduleName,
@@ -460,6 +473,20 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.ComputeUnitsToTokensMultiplier = uint64(computeUnitsToTokensMultiplier.value.(int64))
 		}
 
+		// SessionGridAnchorHeight and SessionNumberAtAnchor are DERIVED runtime state
+		// (re-stamped per epoch by recordParamsHistory + EndBlocker, #543 anchored grid)
+		// — not governance-settable, not part of DefaultParams beyond the genesis seed.
+		// Their live values advance each session boundary, so a direct equality check
+		// against the DefaultParams baseline (anchor=1, number=1) will mismatch on any
+		// post-genesis chain. Read the live values from the actual response and overlay
+		// them onto the expected struct so the comparison is restricted to the
+		// governance-settable params.
+		var liveSharedRes sharedtypes.QueryParamsResponse
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &liveSharedRes)
+		liveParams := liveSharedRes.GetParams()
+		params.SessionGridAnchorHeight = liveParams.SessionGridAnchorHeight
+		params.SessionNumberAtAnchor = liveParams.SessionNumberAtAnchor
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&sharedtypes.QueryParamsResponse{
@@ -534,4 +561,58 @@ func assertUpdatedParams[P cosmostypes.Msg](
 	err := s.cdc.UnmarshalJSON(queryParamsResJSON, queryParamsMsg)
 	require.NoError(s, err)
 	require.EqualValues(s, expectedParamsRes, queryParamsMsg)
+}
+
+// expectedSetIncludesSharedTimingParam reports whether any session-timing shared
+// param is in the expected updated set. These params are deferred to the next
+// session boundary (#543 anchored grid, Option B) — num_blocks_per_session, all
+// claim/proof window offsets, and the grace period offset — so live params lag
+// the recorded value until the boundary; the caller must wait before asserting
+// live equality. The unbonding-period and compute-unit params keep the legacy
+// immediate-live behavior and are NOT in this set.
+func expectedSetIncludesSharedTimingParam(paramsMap paramsAnyMap) bool {
+	timingKeys := [...]string{
+		sharedtypes.ParamNumBlocksPerSession,
+		sharedtypes.ParamGracePeriodEndOffsetBlocks,
+		sharedtypes.ParamClaimWindowOpenOffsetBlocks,
+		sharedtypes.ParamClaimWindowCloseOffsetBlocks,
+		sharedtypes.ParamProofWindowOpenOffsetBlocks,
+		sharedtypes.ParamProofWindowCloseOffsetBlocks,
+	}
+	for _, k := range timingKeys {
+		if _, ok := paramsMap[k]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// waitForSharedTimingParamPromotion blocks until the next session boundary so that
+// any pending session-timing shared param change recorded in history has been
+// promoted to live params by the shared EndBlocker (#543 anchored grid, Option B).
+// The boundary is computed from the CURRENT live shared params: even if the update
+// tx has already shifted history's view of the next epoch, live still describes the
+// current epoch and so anchors the boundary the EndBlocker will promote at.
+func (s *suite) waitForSharedTimingParamPromotion() {
+	s.Helper()
+
+	argsAndFlags := []string{
+		"query",
+		sharedtypes.ModuleName,
+		"params",
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
+	require.NoError(s, err)
+
+	var sharedParamsRes sharedtypes.QueryParamsResponse
+	s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &sharedParamsRes)
+	liveParams := sharedParamsRes.GetParams()
+
+	currentHeight := s.getCurrentBlockHeight()
+	boundary := sharedtypes.GetNextSessionStartHeight(&liveParams, currentHeight)
+
+	// Wait one block past the boundary so the shared EndBlocker has fired at the
+	// boundary block and the new params have been promoted to live.
+	s.waitForBlockHeight(boundary + 1)
 }

@@ -2,6 +2,8 @@ package channel
 
 import (
 	"context"
+	"runtime"
+	"sync"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
 )
@@ -30,6 +32,61 @@ func Map[S, D any](
 		},
 		dstProducer,
 	)
+
+	return dstObservable
+}
+
+// MapParallel behaves like Map but applies transformFn concurrently across
+// numWorkers goroutines that all read from the same source observer.
+//
+// IMPORTANT: OUTPUT ORDER IS NOT PRESERVED. Workers race to consume and publish,
+// so notifications may be emitted in a different order than received. Only use
+// MapParallel where the downstream consumer is order-independent — e.g. inserting
+// into a set or a sparse-merkle-sum-trie keyed by a content hash, where insertion
+// is commutative. For ordered/serial semantics use Map.
+//
+// It is intended for CPU-bound, pure, per-item transforms (e.g. marshal + hash)
+// that would otherwise bottleneck on Map's single consumer goroutine.
+//
+// numWorkers <= 0 falls back to runtime.GOMAXPROCS(0).
+func MapParallel[S, D any](
+	ctx context.Context,
+	srcObservable observable.Observable[S],
+	transformFn MapFn[S, D],
+	numWorkers int,
+	opts ...option[D],
+) observable.Observable[D] {
+	if numWorkers <= 0 {
+		numWorkers = runtime.GOMAXPROCS(0)
+	}
+
+	dstObservable, dstProducer := NewObservable[D](opts...)
+	srcObserver := srcObservable.Subscribe(ctx)
+
+	go func() {
+		var wg sync.WaitGroup
+		wg.Add(numWorkers)
+		for i := 0; i < numWorkers; i++ {
+			go func() {
+				defer wg.Done()
+				// Each worker drains the shared source channel; channel receive is
+				// safe across goroutines and delivers every value to exactly one worker.
+				for srcNotification := range srcObserver.Ch() {
+					dstNotification, skip := transformFn(ctx, srcNotification)
+					if skip {
+						continue
+					}
+					// Concurrent sends to dstProducer are safe (channel sends are
+					// goroutine-safe); the destination observable fans them out.
+					dstProducer <- dstNotification
+				}
+			}()
+		}
+		// Close the destination producer only after ALL workers have observed the
+		// source channel close and drained — closing earlier would drop in-flight work.
+		wg.Wait()
+		close(dstProducer)
+	}()
 
 	return dstObservable
 }

@@ -47,15 +47,21 @@ type channelObserver[V any] struct {
 
 type UnsubscribeFunc[V any] func(toRemove observable.Observer[V])
 
+// NewObserver creates a new observer with the given context, unsubscribe callback,
+// and channel buffer size. A bufferSize <= 0 falls back to defaultSubscribeBufferSize.
 func NewObserver[V any](
 	ctx context.Context,
 	onUnsubscribe UnsubscribeFunc[V],
+	bufferSize int,
 ) *channelObserver[V] {
+	if bufferSize <= 0 {
+		bufferSize = defaultSubscribeBufferSize
+	}
 	// Create a channel for the observer and append it to the observers list
 	return &channelObserver[V]{
 		ctx:           ctx,
 		observerMu:    new(sync.RWMutex),
-		observerCh:    make(chan V, defaultSubscribeBufferSize),
+		observerCh:    make(chan V, bufferSize),
 		onUnsubscribe: onUnsubscribe,
 	}
 }

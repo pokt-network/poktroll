@@ -21,6 +21,15 @@ var DefaultRequestTimeoutDuration time.Duration = time.Duration(DefaultRequestTi
 // DefaultMaxBodySize defines the default maximum HTTP body size as a string, used as a fallback if unspecified.
 const DefaultMaxBodySize = "20MB"
 
+// DefaultServedRelaysBufferSize is the fallback buffer size of the served-relays →
+// mining channel. Matches the historical hardcoded observable publish buffer so
+// behaviour is unchanged when the config omits the field.
+const DefaultServedRelaysBufferSize uint64 = 1_000
+
+// DefaultMiningPipelineBufferSize is the fallback per-observer buffer size inside
+// the mining pipeline. Matches the historical hardcoded subscribe buffer.
+const DefaultMiningPipelineBufferSize uint64 = 50
+
 // DefaultMinedRelaysStorePath is the default path for the mined relays storage.
 // It is used when the deprecated :memory: or :memory_pebble: values are found in the config.
 const DefaultMinedRelaysStorePath = ".pocket/smt"
@@ -124,6 +133,19 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 	// When disabled, relay requests are validated only if their session is known,
 	// or validation is deferred if their session is unknown.
 	relayMinerConfig.EnableEagerRelayRequestValidation = yamlRelayMinerConfig.EnableEagerRelayRequestValidation
+
+	// Mining pipeline tuning knobs. Fall back to the historical hardcoded values
+	// when unset (0) so existing configs behave identically.
+	if yamlRelayMinerConfig.ServedRelaysBufferSize == 0 {
+		yamlRelayMinerConfig.ServedRelaysBufferSize = DefaultServedRelaysBufferSize
+	}
+	if yamlRelayMinerConfig.MiningPipelineBufferSize == 0 {
+		yamlRelayMinerConfig.MiningPipelineBufferSize = DefaultMiningPipelineBufferSize
+	}
+	relayMinerConfig.ServedRelaysBufferSize = int(yamlRelayMinerConfig.ServedRelaysBufferSize)
+	relayMinerConfig.MiningPipelineBufferSize = int(yamlRelayMinerConfig.MiningPipelineBufferSize)
+	// 0 means "auto" (GOMAXPROCS); resolved at miner construction time.
+	relayMinerConfig.MiningWorkers = int(yamlRelayMinerConfig.MiningWorkers)
 
 	// No additional validation on metrics. The server would fail to start if they are invalid
 	// which is the intended behaviour.

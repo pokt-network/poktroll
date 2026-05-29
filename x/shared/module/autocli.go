@@ -17,6 +17,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "params",
 					Short:     "Shows the parameters of the module",
 				},
+				{
+					RpcMethod:      "ParamsAtHeight",
+					Use:            "params-at-height [height]",
+					Short:          "Shows the shared parameters that were effective at a given block height",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "height"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},

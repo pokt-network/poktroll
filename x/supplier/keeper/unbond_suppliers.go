@@ -50,7 +50,12 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			continue
 		}
 
-		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
+		// Compute the unbonding end height using the shared params that were effective when
+		// the supplier began unbonding (its unstake session end height), NOT the live params.
+		// A later num_blocks_per_session decrease would otherwise shrink the unbonding window
+		// and release the supplier's stake before its in-flight claims settle (#543, F1).
+		unstakeParams := k.sharedKeeper.GetParamsAtHeight(ctx, int64(supplier.GetUnstakeSessionEndHeight()))
+		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&unstakeParams, &supplier)
 
 		// If the unbonding height is ahead of the current height, the supplier
 		// stays in the unbonding state.
@@ -77,14 +82,37 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 		// Coin#IsPositive returns false if the coin is 0.
 		if supplier.Stake.IsPositive() {
 			// Send the coins from the supplier pool back to the supplier.
+			// If the transfer fails (e.g., a legacy module-account owner — new
+			// occurrences are blocked by the stake-time module-account-owner
+			// check, but pre-v0.1.34 state can still trip this), log the error,
+			// emit EventSupplierStakeStuckInModulePool for indexer/governance
+			// visibility, and continue.
+			//
+			// Why not halt the chain: pre-existing legacy state must not be
+			// allowed to brick the EndBlocker. Coins remain in the supplier
+			// module pool; the event surfaces them for a governance reclaim
+			// path. Removing the supplier from state keeps the unbonding queue
+			// making progress and prevents an infinite-retry on the same dead
+			// entry every session-end.
 			if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 				ctx, suppliertypes.ModuleName, ownerAddress, []cosmostypes.Coin{*supplier.Stake},
 			); err != nil {
 				logger.Error(fmt.Sprintf(
-					"could not send %s coins from module %s to account %s due to %s",
+					"could not send %s coins from module %s to account %s due to %s; supplier will be removed and coins will remain in module pool (see EventSupplierStakeStuckInModulePool)",
 					supplier.Stake.String(), suppliertypes.ModuleName, ownerAddress, err,
 				))
-				return numUnbondedSuppliers, err
+
+				stuckSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+				stuckEvent := &suppliertypes.EventSupplierStakeStuckInModulePool{
+					OperatorAddress:  supplier.OperatorAddress,
+					OwnerAddress:     supplier.OwnerAddress,
+					StuckCoin:        supplier.Stake,
+					Reason:           err.Error(),
+					SessionEndHeight: stuckSessionEndHeight,
+				}
+				if emitErr := sdkCtx.EventManager().EmitTypedEvent(stuckEvent); emitErr != nil {
+					logger.Error(fmt.Sprintf("failed to emit EventSupplierStakeStuckInModulePool: %+v; %s", stuckEvent, emitErr))
+				}
 			}
 		}
 
@@ -92,8 +120,15 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 		k.RemoveSupplier(ctx, supplierOperatorAddress.String())
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 
+		// Defensive: GetParams returns a zero-value Params{} (nil MinStake) if params
+		// were never written. Fall back to DefaultMinStake to avoid a nil-deref that
+		// would halt the chain at the EndBlocker.
+		minStake := suppliertypes.DefaultMinStake
+		if supMinStake := k.GetParams(ctx).MinStake; supMinStake != nil {
+			minStake = *supMinStake
+		}
 		unbondingReason := suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY
-		if supplier.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
+		if supplier.GetStake().Amount.LT(minStake.Amount) {
 			unbondingReason = suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE
 		}
 

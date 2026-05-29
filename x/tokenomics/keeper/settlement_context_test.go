@@ -932,9 +932,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 			proofMissingPenalty = *s.keepers.ProofKeeper.GetParams(sdkCtx).ProofMissingPenalty
 		}
 
-		// The event no longer contains the full claim, so we construct the expected event with individual fields
+		// The event no longer contains the full claim, so we construct the expected event with individual fields.
+		// The penalty equals the full stake on the first occurrence and 0 afterwards,
+		// so the supplier's post-slash stake is 0upokt for every slashing event here.
 		expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
 			ProofMissingPenalty:     proofMissingPenalty.String(),
+			SupplierStakeAfterSlash: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0).String(),
 			ServiceId:               slashingEvent.GetServiceId(),
 			ApplicationAddress:      slashingEvent.GetApplicationAddress(),
 			SessionEndBlockHeight:   slashingEvent.GetSessionEndBlockHeight(),
@@ -1657,7 +1660,7 @@ func (s *TestSuite) TestSettlePendingClaims_FlushBatchedValidatorRewards_EmptyAc
 	sctx := tokenomicskeeper.NewSettlementContext(ctx, s.keepers.Keeper, s.keepers.Logger())
 
 	// Flush with an empty accumulator should return (nil, nil).
-	result, err := s.keepers.FlushBatchedValidatorRewards(ctx, sctx)
+	result, err := s.keepers.FlushBatchedValidatorRewards(ctx, sctx, int64(0))
 	require.NoError(t, err, "flushing an empty accumulator should not return an error")
 	require.Nil(t, result, "flushing an empty accumulator should return a nil result")
 }

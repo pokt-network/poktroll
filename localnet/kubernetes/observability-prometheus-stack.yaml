@@ -34,11 +34,15 @@ grafana:
 
 prometheus:
   prometheusSpec:
+    # Newer prometheus-operator CRD validation rejects null selectors:
+    # `spec.<X>Selector.matchLabels in body must be of type object: "null"`.
+    # Use empty object `{}` instead — semantically equivalent to "match all"
+    # under Kubernetes label selector semantics and accepted by the CRD.
     scrapeConfigSelector:
-      matchLabels: null
+      matchLabels: {}
     serviceMonitorSelector:
-      matchLabels: null
+      matchLabels: {}
     ruleSelector:
-      matchLabels: null
+      matchLabels: {}
     podMonitorSelector:
-      matchLabels: null
+      matchLabels: {}

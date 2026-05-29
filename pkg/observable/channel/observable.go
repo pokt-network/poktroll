@@ -34,6 +34,11 @@ type channelObservable[V any] struct {
 	// publishCh is an observable-wide channel that is used to receive values
 	// which are subsequently fanned out to observers.
 	publishCh chan V
+	// subscribeBufferSize is the buffer size of each observer channel created by
+	// Subscribe. Defaults to defaultSubscribeBufferSize; override via
+	// WithSubscribeBufferSize for high-throughput pipelines that need more
+	// breathing room between the publisher and a slow consumer.
+	subscribeBufferSize int
 }
 
 // NewObservable creates a new observable which is notified when the publishCh
@@ -41,7 +46,8 @@ type channelObservable[V any] struct {
 func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V) {
 	// initialize an observable that publishes messages from 1 publishCh to N observers
 	obs := &channelObservable[V]{
-		observerManager: newObserverManager[V](),
+		observerManager:     newObserverManager[V](),
+		subscribeBufferSize: defaultSubscribeBufferSize,
 	}
 
 	for _, opt := range opts {
@@ -68,6 +74,26 @@ func WithPublisher[V any](publishCh chan V) option[V] {
 	}
 }
 
+// WithPublishBufferSize returns an option function which sets the buffer size of
+// the observable's publish channel. Use this instead of WithPublisher when only
+// the buffer size (not a pre-existing channel) needs to be customized.
+// A larger buffer absorbs bigger producer bursts before sends block/drop.
+func WithPublishBufferSize[V any](size int) option[V] {
+	return func(obs *channelObservable[V]) {
+		obs.publishCh = make(chan V, size)
+	}
+}
+
+// WithSubscribeBufferSize returns an option function which sets the buffer size of
+// each observer channel created by the observable's Subscribe method.
+// A larger buffer gives a slow consumer more slack before it stalls the publisher
+// (and, transitively, the upstream pipeline).
+func WithSubscribeBufferSize[V any](size int) option[V] {
+	return func(obs *channelObservable[V]) {
+		obs.subscribeBufferSize = size
+	}
+}
+
 // Subscribe returns an observer which is notified when the publishCh channel
 // receives a value.
 func (obs *channelObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
@@ -84,7 +110,7 @@ func (obs *channelObservable[V]) Subscribe(ctx context.Context) observable.Obser
 
 	// Create a new observer and add it to the list of observers to be notified
 	// when publishCh receives a new value.
-	observer := NewObserver[V](ctx, removeAndCancel)
+	observer := NewObserver[V](ctx, removeAndCancel, obs.subscribeBufferSize)
 	obs.add(observer)
 
 	// asynchronously wait for the context to be done and then unsubscribe

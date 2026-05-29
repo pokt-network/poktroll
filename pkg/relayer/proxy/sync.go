@@ -528,7 +528,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		default:
 			// Channel is full - log warning but don't block the response
 			// This prevents signature validation timeouts that cause "missing supplier operator signature" errors
-			logger.Warn().Msg("⚠️ Relay mining channel full - dropping relay from mining pipeline (prevents signature timeout)")
+			//
+			// The relay was SERVED but is now LOST from the mining pipeline: the supplier
+			// did the work and will NOT be paid for it. Record a metric so this reward
+			// leakage is measurable (the log is probabilistic to avoid flooding under
+			// sustained drops, but the counter captures every drop).
+			relayer.CaptureDroppedRelay(serviceId, supplierOperatorAddress, "mining_channel_full")
+			logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).
+				Msg("⚠️ Relay mining channel full - dropping relay from mining pipeline (prevents signature timeout)")
 			// Don't mark as rewardable since it wasn't forwarded to miner
 		}
 	}

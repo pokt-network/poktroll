@@ -75,6 +75,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 			Address:                   stakeMsg.GetAddress(),
 			Stake:                     stakeMsg.GetStake(),
 			ServiceConfigs:            stakeMsg.GetServices(),
+			ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
 			DelegateeGatewayAddresses: expectedGatewayAddresses[:i+1],
 			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		}
@@ -107,6 +108,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 		Address:                   stakeMsg.GetAddress(),
 		Stake:                     stakeMsg.GetStake(),
 		ServiceConfigs:            stakeMsg.GetServices(),
+		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
 		DelegateeGatewayAddresses: expectedGatewayAddresses,
 		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
 			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},
@@ -207,6 +209,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 		Address:                   stakeMsg.GetAddress(),
 		Stake:                     stakeMsg.GetStake(),
 		ServiceConfigs:            stakeMsg.GetServices(),
+		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
 		DelegateeGatewayAddresses: []string{gatewayAddr2},
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
@@ -280,6 +283,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 		Address:                   stakeMsg.GetAddress(),
 		Stake:                     stakeMsg.GetStake(),
 		ServiceConfigs:            stakeMsg.GetServices(),
+		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
 		DelegateeGatewayAddresses: []string{gatewayAddr},
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
@@ -324,6 +328,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 		Address:                   stakeMsg.GetAddress(),
 		Stake:                     stakeMsg.GetStake(),
 		ServiceConfigs:            stakeMsg.GetServices(),
+		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
 			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},

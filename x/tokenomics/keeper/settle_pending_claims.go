@@ -55,26 +55,34 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	// Phase 1: Collect claims into memory and build supplier count map.
 	// This avoids iterating the KV store twice while providing actual supplier counts
 	// needed for the per-supplier cap calculation in ensureClaimAmountLimits.
-	expiringClaimsIterator := k.GetExpiringClaimsIterator(ctx, settlementContext, blockHeight)
+	//
+	// Candidate sessionEndHeights are computed against EACH recent params epoch (not
+	// just live) so a claim created under an older window-offset configuration whose
+	// lifecycle crossed a param-change boundary is still located by its actual stored
+	// sessionEndHeight — closing the cross-session window-offset orphan class (O2).
+	candidateSessionEndHeights := k.candidateSessionEndHeightsForLiveParams(ctx, settlementContext.GetSharedParams(), blockHeight)
 	collectedClaims := make([]prooftypes.Claim, 0, estimatedClaimCount)
-	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
-		claim, iterErr := expiringClaimsIterator.Value()
-		if iterErr != nil {
-			numDiscardedFaultyClaims++
-			claimKey := string(expiringClaimsIterator.Key())
-			claimErr := tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
-				"[UNEXPECTED ERROR] Critical error during claim settlement during session with key %s. Claim will be discarded to prevent chain halt: %s",
-				claimKey, iterErr)
-			logger.Error(claimErr.Error())
-			continue
+	for _, sessionEndHeight := range candidateSessionEndHeights {
+		expiringClaimsIterator := k.proofKeeper.GetSessionEndHeightClaimsIterator(ctx, sessionEndHeight)
+		for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
+			claim, iterErr := expiringClaimsIterator.Value()
+			if iterErr != nil {
+				numDiscardedFaultyClaims++
+				claimKey := string(expiringClaimsIterator.Key())
+				claimErr := tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+					"[UNEXPECTED ERROR] Critical error during claim settlement during session with key %s. Claim will be discarded to prevent chain halt: %s",
+					claimKey, iterErr)
+				logger.Error(claimErr.Error())
+				continue
+			}
+			collectedClaims = append(collectedClaims, claim)
+			settlementContext.IncrementSupplierCount(
+				claim.SessionHeader.ApplicationAddress,
+				claim.SessionHeader.SessionId,
+			)
 		}
-		collectedClaims = append(collectedClaims, claim)
-		settlementContext.IncrementSupplierCount(
-			claim.SessionHeader.ApplicationAddress,
-			claim.SessionHeader.SessionId,
-		)
+		expiringClaimsIterator.Close()
 	}
-	expiringClaimsIterator.Close()
 
 	logger.Info(fmt.Sprintf("Phase 1 complete: collected %d claims for settlement", len(collectedClaims)))
 
@@ -177,7 +185,14 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	// Flush batched validator rewards once per settlement batch (#1758).
 	// TLMs accumulated proposer amounts in the shared accumulator during claim processing.
 	// Distributing once with the batched total eliminates per-claim precision loss.
-	batchedResult, flushErr := k.FlushBatchedValidatorRewards(ctx, settlementContext)
+	//
+	// Derive the session end height for the per-validator summary events the same way
+	// ExecutePendingSettledResults does for EventSettlementBatch (first settled result).
+	flushSessionEndHeight := int64(0)
+	if len(settledResults) > 0 {
+		flushSessionEndHeight = settledResults[0].GetSessionEndHeight()
+	}
+	batchedResult, flushErr := k.FlushBatchedValidatorRewards(ctx, settlementContext, flushSessionEndHeight)
 	if flushErr != nil {
 		return settledResults, expiredResults, numDiscardedFaultyClaims, flushErr
 	}
@@ -476,7 +491,15 @@ func (k Keeper) executeAggregatedModToAcctTransfers(
 	return nil
 }
 
-// GetExpiringClaimsIterator returns an iterator of all claims expiring at the current block height.
+// GetExpiringClaimsIterator returns an iterator of all claims expiring at the current
+// block height under live shared params.
+//
+// DEPRECATED: Computes the candidate sessionEndHeight using LIVE params only, which
+// misses claims whose lifecycle crossed a window-offset param change boundary
+// (cross-session O2 orphan class). Use getExpiringClaimsSessionEndHeights + per-E
+// iterators instead. Kept for external/test compatibility; the settlement Phase 1
+// loop no longer calls it.
+//
 // DEV_NOTE: It is exported for testing purposes.
 func (k Keeper) GetExpiringClaimsIterator(
 	ctx cosmostypes.Context,
@@ -486,6 +509,109 @@ func (k Keeper) GetExpiringClaimsIterator(
 	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&settlementContext.sharedParams)
 	expiringSessionEndHeight := blockHeight - (sessionEndToProofWindowCloseNumBlocks + 1)
 	return k.proofKeeper.GetSessionEndHeightClaimsIterator(ctx, expiringSessionEndHeight)
+}
+
+// GetExpiringClaimsSessionEndHeights returns the deduplicated set of sessionEndHeight
+// values whose claims are ripe for settlement at blockHeight. Queries live shared
+// params and delegates to candidateSessionEndHeightsForLiveParams; exported for use
+// by observability tooling and benchmarks that need the candidate set without
+// having a settlementContext on hand. See candidateSessionEndHeightsForLiveParams
+// for the algorithm.
+func (k Keeper) GetExpiringClaimsSessionEndHeights(
+	ctx cosmostypes.Context,
+	blockHeight int64,
+) []int64 {
+	return k.candidateSessionEndHeightsForLiveParams(ctx, k.sharedKeeper.GetParams(ctx), blockHeight)
+}
+
+// candidateSessionEndHeightsForLiveParams returns the deduplicated set of
+// sessionEndHeight values whose claims are ripe for settlement at blockHeight,
+// computed under the shared params epoch effective at EACH candidate's session
+// end (not just live).
+//
+// Why per-epoch: a claim's settlement height is
+//
+//	blockHeight = sessionEndHeight + GetSessionEndToProofWindowCloseBlocks(P_at_sessionEnd) + 1
+//
+// where P_at_sessionEnd is the shared params epoch effective at the claim's
+// sessionEndHeight. Live params can differ from P_at_sessionEnd whenever a
+// window-offset change was promoted between a claim's session end and its
+// proof-window-close height — a normal occurrence since a claim's lifecycle commonly
+// spans two session boundaries. Solving for sessionEndHeight against LIVE only
+// misses the actual stored value under those conditions, orphaning the claim
+// forever (O2 class).
+//
+// The function walks params history backward and computes a candidate
+// sessionEndHeight under each historical epoch's offsets, deduplicating across
+// epochs with identical offsets. With no recent param changes the function returns
+// exactly one candidate (live), matching legacy behavior at zero added cost.
+//
+// Per-epoch in-flight filter — NOT a global lookback cutoff:
+// We track `nextEffHeight` across the reverse iteration so we know each epoch's
+// owned session-end range bound by (nextEffHeight - 1). An epoch with NO in-flight
+// claims at blockHeight is skipped via the in-flight check below — but the walk
+// CONTINUES because OLDER epochs may have had different (potentially longer)
+// proof-window offsets and may still own in-flight claims.
+//
+// Why no `effHeight < earliest` global stop:
+// The v0.1.34 upgrade handler seeds the params history at h=1 with the genesis
+// epoch's params. On a long-running chain (e.g. mainnet at ~720K blocks at the
+// time of the FIRST post-upgrade window-offset change), the only history
+// representation of the OLD epoch is that h=1 entry — far below any reasonable
+// blockHeight - N*K floor. Early-stopping on `effHeight < earliest` would skip
+// the OLD epoch's offsets entirely and orphan every claim whose stored
+// sessionEndHeight resolves under those offsets but not under the NEW live ones.
+// See TestSettlementCandidateScan_GenesisSeededOldEpochOnLongRunningChain for
+// the regression that pinned this.
+//
+// Performance note: params history is governance-rate-limited. Mainnet would
+// accumulate at most a few entries per N change per year. The unbounded reverse
+// walk is bounded in practice and dominated by the per-iteration map lookup.
+//
+// liveParams is injected so the settlement Phase 1 loop can pass the snapshot
+// already held in settlementContext, avoiding a redundant store read.
+func (k Keeper) candidateSessionEndHeightsForLiveParams(
+	ctx cosmostypes.Context,
+	liveParams sharedtypes.Params,
+	blockHeight int64,
+) []int64 {
+	seen := make(map[int64]struct{}, 2)
+	candidates := make([]int64, 0, 2)
+
+	addCandidate := func(p *sharedtypes.Params) {
+		offsetBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(p)
+		E := blockHeight - (offsetBlocks + 1)
+		if E < 0 {
+			return
+		}
+		if _, ok := seen[E]; ok {
+			return
+		}
+		seen[E] = struct{}{}
+		candidates = append(candidates, E)
+	}
+
+	// Always include the candidate derived from live params (current epoch) — this is
+	// the common case where no recent window-offset change has happened.
+	addCandidate(&liveParams)
+
+	// Walk params history. For each historical epoch, compute its in-flight horizon
+	// under that epoch's OWN offsets and the upper bound of its owned session-end
+	// range (nextEffHeight - 1). Add a candidate only when the horizon still reaches
+	// blockHeight; ALWAYS continue iterating (older epochs may have longer tails).
+	nextEffHeight := blockHeight + 1
+	k.sharedKeeper.IterateParamsHistoryReverse(ctx, blockHeight, func(effHeight int64, p sharedtypes.Params) bool {
+		thisEpochTail := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&p)
+		lastSessionEndUnderThisEpoch := nextEffHeight - 1
+		lastProofCloseUnderThisEpoch := lastSessionEndUnderThisEpoch + int64(thisEpochTail) + 1
+		if lastProofCloseUnderThisEpoch >= blockHeight {
+			addCandidate(&p)
+		}
+		nextEffHeight = effHeight
+		return false
+	})
+
+	return candidates
 }
 
 // slashSupplierStake slashes the stake of a supplier and transfers the total
@@ -624,6 +750,7 @@ func (k Keeper) slashSupplierStake(
 	claim := claimSettlementResult.GetClaim()
 	events = append(events, &tokenomicstypes.EventSupplierSlashed{
 		ProofMissingPenalty:     slashingCoin.String(),
+		SupplierStakeAfterSlash: remainingStakeCoin.String(),
 		ServiceId:               claim.SessionHeader.ServiceId,
 		ApplicationAddress:      claim.SessionHeader.ApplicationAddress,
 		SessionEndBlockHeight:   claim.SessionHeader.SessionEndBlockHeight,
@@ -650,6 +777,7 @@ func (k Keeper) slashSupplierStake(
 func (k Keeper) FlushBatchedValidatorRewards(
 	ctx context.Context,
 	sctx *settlementContext,
+	sessionEndHeight int64,
 ) (*tokenomicstypes.ClaimSettlementResult, error) {
 	logger := k.Logger().With("method", "flushBatchedValidatorRewards")
 
@@ -687,7 +815,7 @@ func (k Keeper) FlushBatchedValidatorRewards(
 
 		if err := tlm.DistributeValidatorRewards(
 			ctx, logger, batchedResult,
-			k.stakingKeeper, rewardCoin, opReason,
+			k.stakingKeeper, rewardCoin, opReason, sessionEndHeight,
 		); err != nil {
 			return nil, tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
 				"failed to flush batched validator rewards for op_reason %q: %v",
@@ -868,6 +996,7 @@ func (k Keeper) settleClaim(
 				NumRelays:                numClaimRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
+				NumEstimatedRelays:       numEstimatedRelays,
 				ClaimedUpokt:             claimeduPOKT.String(),
 				ServiceId:                claim.SessionHeader.ServiceId,
 				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,

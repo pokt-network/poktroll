@@ -50,7 +50,11 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			continue
 		}
 
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
+		// Compute the unbonding end height using the shared params effective when the
+		// application began unbonding (its unstake session end height), NOT the live params,
+		// so a later num_blocks_per_session decrease cannot release it early (#543, F1).
+		unstakeParams := k.sharedKeeper.GetParamsAtHeight(ctx, int64(application.GetUnstakeSessionEndHeight()))
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&unstakeParams, &application)
 
 		// If the unbonding height is ahead of the current height, the application
 		// stays in the unbonding state.
@@ -64,8 +68,15 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 
 		sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
 
+		// Defensive: GetParams returns a zero-value Params{} (nil MinStake) if params
+		// were never written. Fall back to DefaultMinStake to avoid a nil-deref that
+		// would halt the chain at the EndBlocker. Mirrors MarkBelowMinStakeApplicationsUnbonding.
+		minStake := apptypes.DefaultMinStake
+		if appMinStake := k.GetParams(ctx).MinStake; appMinStake != nil {
+			minStake = *appMinStake
+		}
 		unbondingReason := apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE
-		if application.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
+		if application.GetStake().Amount.LT(minStake.Amount) {
 			unbondingReason = apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE
 		}
 
@@ -86,6 +97,74 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	return nil
 }
 
+// MarkBelowMinStakeApplicationsUnbonding scans every application and begins
+// unbonding for any active (non-unbonding) application whose stake is below the
+// on-chain min_stake param. It returns the number of applications marked.
+//
+// This is a one-time backfill for the v0.1.34 upgrade. Before v0.1.34 the
+// settlement auto-unstake check compared against the hardcoded DefaultMinStake
+// (1 POKT) instead of the on-chain min_stake (issue #1846), so applications that
+// dropped below the real min_stake were never force-unbonded. Going forward the
+// settlement path (token_logic_modules.go) catches every new crossing, since stake
+// only decreases via settlement burn; this sweep clears the pre-upgrade backlog of
+// idle applications that may never be settled again.
+//
+// Iteration is over the application store in key order (deterministic) and the
+// emitted event / state mutation mirror the settlement auto-unstake path, so this
+// is consensus-safe to run inside the upgrade handler.
+func (k Keeper) MarkBelowMinStakeApplicationsUnbonding(ctx context.Context) (int, error) {
+	logger := k.Logger().With("method", "MarkBelowMinStakeApplicationsUnbonding")
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+
+	// Defensive: GetParams returns a zero-value Params{} (nil MinStake) if params
+	// were never written. Fall back to DefaultMinStake to avoid a nil deref that
+	// would fail the upgrade handler.
+	minStake := apptypes.DefaultMinStake
+	if appMinStake := k.GetParams(ctx).MinStake; appMinStake != nil {
+		minStake = *appMinStake
+	}
+
+	marked := 0
+	for _, application := range k.GetAllApplications(ctx) {
+		// Skip applications that are already unbonding; do not disturb their
+		// existing UnstakeSessionEndHeight / unbonding timeline.
+		if application.IsUnbonding() {
+			continue
+		}
+
+		// Only force-unbond applications below the on-chain min_stake.
+		if !application.GetStake().Amount.LT(minStake.Amount) {
+			continue
+		}
+
+		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
+
+		unbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
+			Application:        &application,
+			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
+			SessionEndHeight:   sessionEndHeight,
+			UnbondingEndHeight: unbondingEndHeight,
+		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
+			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
+			logger.Error(err.Error())
+			return marked, err
+		}
+
+		// Persist the unbonding state; SetApplication writes the unstaking index
+		// that EndBlockerUnbondApplications iterates to complete the unbonding.
+		k.SetApplication(ctx, application)
+		marked++
+	}
+
+	logger.Info(fmt.Sprintf("marked %d applications below min_stake (%s) as unbonding", marked, minStake))
+	return marked, nil
+}
+
 // UnbondApplication transfers the application stake to the bank module balance for the
 // corresponding account and removes the application from the application module state.
 func (k Keeper) UnbondApplication(ctx context.Context, app *apptypes.Application) error {
@@ -99,18 +178,44 @@ func (k Keeper) UnbondApplication(ctx context.Context, app *apptypes.Application
 	}
 
 	// Send the coins from the application pool back to the application.
-	err = k.bankKeeper.SendCoinsFromModuleToAccount(
+	// If the transfer fails (e.g., a legacy module-account-owned application
+	// — new occurrences are blocked by the stake-time module-account-owner
+	// check, but pre-v0.1.34 state can still trip this), log the error,
+	// emit EventApplicationStakeStuckInModulePool for indexer/governance
+	// visibility, and continue.
+	//
+	// Why not halt the chain: pre-existing legacy state must not be allowed
+	// to brick the EndBlocker. Coins remain in the application module pool;
+	// the event surfaces them for a governance reclaim path. Removing the
+	// application from state keeps the unbonding queue making progress and
+	// prevents an infinite-retry on the same dead entry every session-end.
+	// Mirror of the supplier-side fix in x/supplier/keeper/unbond_suppliers.go.
+	if sendErr := k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx, apptypes.ModuleName, appAddr, []cosmostypes.Coin{*app.Stake},
-	)
-	if err != nil {
+	); sendErr != nil {
 		logger.Error(fmt.Sprintf(
-			"could not send %v coins from module %s to account %s due to %v",
-			app.Stake, appAddr, apptypes.ModuleName, err,
+			"could not send %v coins from module %s to account %s due to %v; application will be removed and coins will remain in module pool (see EventApplicationStakeStuckInModulePool)",
+			app.Stake, apptypes.ModuleName, appAddr, sendErr,
 		))
-		return err
+
+		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+		sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+		stuckSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+		stuckEvent := &apptypes.EventApplicationStakeStuckInModulePool{
+			ApplicationAddress: app.Address,
+			StuckCoin:          app.Stake,
+			Reason:             sendErr.Error(),
+			SessionEndHeight:   stuckSessionEndHeight,
+		}
+		if emitErr := sdkCtx.EventManager().EmitTypedEvent(stuckEvent); emitErr != nil {
+			logger.Error(fmt.Sprintf("failed to emit EventApplicationStakeStuckInModulePool: %+v; %s", stuckEvent, emitErr))
+		}
 	}
 
-	// Remove the Application from the store.
+	// Remove the Application from the store. We do this even when the bank
+	// send above failed: leaving the dead entry in the unbonding queue would
+	// cause infinite-retry on every session-end EndBlocker — far worse than
+	// the (already-emitted, indexer-visible) stuck-coins consequence.
 	k.RemoveApplication(ctx, *app)
 	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", app))
 

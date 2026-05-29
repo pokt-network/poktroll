@@ -127,10 +127,18 @@ func WithClaimSettlementCacheClearFn() func(context.Context, depinject.Config, C
 // isAtClaimSettlementHeight returns true if the current height is the height at
 // which claims for the current session will be settled.
 func isAtClaimSettlementHeight(sharedParams *sharedtypes.Params, currentHeight int64) bool {
-	currentSessionStartHeight := sharedtypes.GetSessionStartHeight(sharedParams, currentHeight)
-	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
-	claimSettlementHeight := currentSessionStartHeight + sessionEndToProofWindowCloseNumBlocks
-	return currentHeight == claimSettlementHeight
+	// A session settles at sessionEnd + tail + 1 (tail = cumulative claim+proof window
+	// offsets), so the session settling at currentHeight ended `tail + 1` blocks earlier.
+	// The previous formula (sessionStart + tail) fired `tail` blocks into the CURRENT session
+	// instead, which never happens once tail >= N (mainnet tail = 32, so N = 30/20/10 never
+	// fired) and left the difficulty cache stale. Detect a real settlement boundary by
+	// checking that the height `tail + 1` blocks back is an actual session end (#543, O1).
+	tail := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
+	settledSessionEndHeight := currentHeight - tail - 1
+	if settledSessionEndHeight <= 0 {
+		return false
+	}
+	return sharedtypes.IsSessionEndHeight(sharedParams, settledSessionEndHeight)
 }
 
 // shouldClearCache is used bye the helpers in this file to:

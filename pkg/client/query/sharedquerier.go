@@ -104,6 +104,46 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 	return &res.Params, nil
 }
 
+// GetParamsAtHeight queries & returns the shared params that were effective at queryHeight.
+//
+// Window-timing computations must evaluate a session with the num_blocks_per_session that
+// was in effect when that session started, not the live value. After a session-length
+// change (#543 anchored grid), an old-epoch session computed with live (new-epoch) params
+// would resolve to the wrong session grid and the RelayMiner would submit its claim/proof at
+// the wrong window. queryHeight <= 0 falls back to the live params.
+func (sq *sharedQuerier) GetParamsAtHeight(ctx context.Context, queryHeight int64) (*sharedtypes.Params, error) {
+	if queryHeight <= 0 {
+		return sq.GetParams(ctx)
+	}
+
+	// Fast path: if queryHeight falls within the current (live) params epoch, the live
+	// params ARE the params effective at queryHeight — serve them from the existing cache
+	// without an extra RPC. Under the narrow Option B invariant (#543) live params always
+	// describe the currently-effective epoch, and the relayer only asks about past/current
+	// session heights, so anchor <= queryHeight means queryHeight belongs to the live epoch.
+	// Only an older-epoch height (queryHeight < anchor, i.e. after a recent N change) needs
+	// the historical lookup.
+	if liveParams, err := sq.GetParams(ctx); err == nil {
+		if int64(liveParams.GetSessionGridAnchorHeight()) <= queryHeight {
+			return liveParams, nil
+		}
+	}
+
+	logger := sq.logger.With("query_client", "shared", "method", "GetParamsAtHeight")
+
+	req := &sharedtypes.QueryParamsAtHeightRequest{Height: queryHeight}
+	res, err := retry.Call(ctx, func() (*sharedtypes.QueryParamsAtHeightResponse, error) {
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return sq.sharedQuerier.ParamsAtHeight(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
+	if err != nil {
+		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
+	}
+
+	return &res.Params, nil
+}
+
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
 //
@@ -113,7 +153,7 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 // TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 // we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error) {
-	sharedParams, err := sq.GetParams(ctx)
+	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
 	if err != nil {
 		return 0, err
 	}
@@ -129,7 +169,7 @@ func (sq *sharedQuerier) GetClaimWindowOpenHeight(ctx context.Context, queryHeig
 // TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 // we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetProofWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error) {
-	sharedParams, err := sq.GetParams(ctx)
+	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
 	if err != nil {
 		return 0, err
 	}
@@ -150,7 +190,7 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams, err := sq.GetParams(ctx)
+	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
 	if err != nil {
 		return 0, err
 	}
@@ -168,7 +208,7 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierClaimCommitHeight")
 
-	sharedParams, err := sq.GetParams(ctx)
+	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
 	if err != nil {
 		return 0, err
 	}
@@ -230,7 +270,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierProofCommitHeight")
 
-	sharedParams, err := sq.GetParams(ctx)
+	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
 	if err != nil {
 		return 0, err
 	}

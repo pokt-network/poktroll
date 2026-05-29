@@ -49,6 +49,44 @@ func (claim *Claim) GetNumEstimatedComputeUnits(
 	return new(big.Int).Div(numerator, denominator).Uint64(), nil
 }
 
+// GetNumEstimatedRelays returns the claim's probabilistic estimate of the total
+// number of relays served in the session, derived from the relay mining difficulty.
+//
+// Since numClaimedComputeUnits = numRelays * computeUnitsPerRelay (validated at
+// claim creation), numEstimatedRelays = numEstimatedComputeUnits / computeUnitsPerRelay.
+//
+// Returns 0 when numRelays or computeUnitsPerRelay is 0 (e.g. empty claims),
+// avoiding a division by zero. This mirrors the computation used when emitting
+// EventClaimSettled (see settle_pending_claims.go) so all claim lifecycle events
+// report a consistent num_estimated_relays.
+func (claim *Claim) GetNumEstimatedRelays(
+	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
+) (numEstimatedRelays uint64, err error) {
+	numRelays, err := claim.GetNumRelays()
+	if err != nil {
+		return 0, err
+	}
+	if numRelays == 0 {
+		return 0, nil
+	}
+
+	numClaimedComputeUnits, err := claim.GetNumClaimedComputeUnits()
+	if err != nil {
+		return 0, err
+	}
+	computeUnitsPerRelay := numClaimedComputeUnits / numRelays
+	if computeUnitsPerRelay == 0 {
+		return 0, nil
+	}
+
+	numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+	if err != nil {
+		return 0, err
+	}
+
+	return numEstimatedComputeUnits / computeUnitsPerRelay, nil
+}
+
 // GetClaimeduPOKT returns the claim's token reward in uPOKT.
 // At a high-level, the following is done:
 // estimatedOffchainComputeUnits = claim.NumVolumeApplicableComputeUnits * service.RelayMiningDifficulty

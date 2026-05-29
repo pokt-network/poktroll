@@ -78,6 +78,11 @@ type relayerProxy struct {
 	// pingEnabled indicates whether the relay servers should be pinged before starting them.
 	// This is useful to ensure that the backend nodes are reachable before starting the servers.
 	pingEnabled bool
+
+	// servedRelaysBufferSize is the buffer size of servedRelaysPublishCh, the channel
+	// that forwards served relays into the mining pipeline. When full, relays are
+	// dropped (served but unpaid). A value <= 0 uses the observable's default buffer.
+	servedRelaysBufferSize int
 }
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns
@@ -113,14 +118,29 @@ func NewRelayerProxy(
 		return nil, err
 	}
 
-	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
-
-	rp.servedRelays = servedRelays
-	rp.servedRelaysPublishCh = servedRelaysProducer
-
+	// Apply options first so a configured servedRelaysBufferSize is honored when
+	// the served-relays observable (and its publish channel) is created below.
 	for _, opt := range opts {
 		opt(rp)
 	}
+
+	// The publish buffer of this observable is the drop point under high load
+	// (sync.go forwards reward-eligible relays here via a non-blocking send).
+	// Size it from config when provided; otherwise fall back to the default.
+	var (
+		servedRelays         relayer.RelaysObservable
+		servedRelaysProducer chan<- *types.Relay
+	)
+	if rp.servedRelaysBufferSize > 0 {
+		servedRelays, servedRelaysProducer = channel.NewObservable[*types.Relay](
+			channel.WithPublishBufferSize[*types.Relay](rp.servedRelaysBufferSize),
+		)
+	} else {
+		servedRelays, servedRelaysProducer = channel.NewObservable[*types.Relay]()
+	}
+
+	rp.servedRelays = servedRelays
+	rp.servedRelaysPublishCh = servedRelaysProducer
 
 	if err := rp.validateConfig(); err != nil {
 		return nil, err

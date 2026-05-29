@@ -167,7 +167,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *t
 	// Flush batched validator rewards (#1758)
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
-	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext, int64(0))
 	require.NoError(t, flushErr)
 	if batchedResult != nil {
 		pendingResults.Append(batchedResult)
@@ -217,7 +217,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *t
 	// the appropriate amount w.r.t token distribution.
 	// The supplier gets a percentage of the total settlement based on MintEqualsBurnClaimDistribution
 	supplierAllocation := appBurn.MulRaw(int64(keepers.Keeper.GetParams(ctx).MintEqualsBurnClaimDistribution.Supplier * 100)).QuoRaw(100)
-	shareAmounts := tlm.GetSupplierShareholderAmountMap(supplierRevShares, supplierAllocation)
+	shareAmounts, err := tlm.GetSupplierShareholderAmountMap(supplierRevShares, supplierAllocation)
+	require.NoError(t, err)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
 		require.Equal(t, expectedShareAmount, shareHolderBalance.Amount)
@@ -359,7 +360,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaim
 	// Flush batched validator rewards (#1758)
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
-	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext, int64(0))
 	require.NoError(t, flushErr)
 	if batchedResult != nil {
 		pendingResults.Append(batchedResult)
@@ -415,7 +416,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaim
 	// the appropriate amount w.r.t token distribution.
 	// The supplier gets a percentage of the total settlement based on MintEqualsBurnClaimDistribution
 	supplierAllocation := appBurn.MulRaw(int64(keepers.Keeper.GetParams(ctx).MintEqualsBurnClaimDistribution.Supplier * 100)).QuoRaw(100)
-	shareAmounts := tlm.GetSupplierShareholderAmountMap(supplierRevShares, supplierAllocation)
+	shareAmounts, err := tlm.GetSupplierShareholderAmountMap(supplierRevShares, supplierAllocation)
+	require.NoError(t, err)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
 		require.Equal(t, expectedShareAmount, shareHolderBalance.Amount)
@@ -816,7 +818,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Flush batched validator rewards (#1758) and append to pending results.
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
-	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext, int64(0))
 	require.NoError(t, flushErr)
 	if batchedResult != nil {
 		pendingResults.Append(batchedResult)
@@ -1184,8 +1186,131 @@ func TestProcessTokenLogicModules_AppStakeTooLowRoundingToZero(t *testing.T) {
 	t.Skip("TODO_TEST: Test application stake that is too low which results in stake/num_suppliers rounding down to zero")
 }
 
+// TestProcessTokenLogicModules_AppStakeDropsBelowMinStakeAfterSession asserts that
+// when settlement burns an application's stake below the on-chain min_stake param,
+// the application is marked for unbonding.
+//
+// This is a discriminating test for issue #1846: min_stake is set to 1,000 POKT and
+// the post-settlement stake lands at ~999.999 POKT — far above the hardcoded
+// DefaultMinStake (1 POKT) the buggy code compared against. Under the old code the
+// app would NOT unbond; it must unbond now that the on-chain param is used.
 func TestProcessTokenLogicModules_AppStakeDropsBelowMinStakeAfterSession(t *testing.T) {
-	t.Skip("TODO_TEST: Test that application stake being auto-unbonding after the stake drops below the required minimum when settling session accounting")
+	// CUTTM configured so 1 compute unit costs exactly 1 upokt.
+	globalComputeUnitCostGranularity := uint64(1000000)
+	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
+	serviceComputeUnitsPerRelay := uint64(1)
+	service := prepareTestService(serviceComputeUnitsPerRelay)
+	numRelays := uint64(1000)
+
+	numTokensClaimed := getNumTokensClaimed(
+		numRelays,
+		serviceComputeUnitsPerRelay,
+		globalComputeUnitsToTokensMultiplier,
+		globalComputeUnitCostGranularity,
+	)
+	require.Greater(t, numTokensClaimed, int64(0))
+
+	// On-chain min_stake well above DefaultMinStake (1 POKT).
+	minStakeAmount := cosmosmath.NewInt(1_000_000_000) // 1,000 POKT
+	minStakeCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, minStakeAmount)
+	appParams := apptypes.DefaultParams()
+	appParams.MinStake = &minStakeCoin
+
+	// App starts just above min_stake so the settlement burn (numTokensClaimed)
+	// pushes it just below: initial = min_stake + burn - 1 -> post-burn = min_stake - 1.
+	appInitialStake := minStakeAmount.Add(cosmosmath.NewInt(numTokensClaimed)).Sub(cosmosmath.NewInt(1))
+
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
+		cosmoslog.NewNopLogger(),
+		testkeeper.WithService(*service),
+		testkeeper.WithDefaultModuleBalances(),
+		testkeeper.WithTokenLogicModules([]tlm.TokenLogicModule{
+			tlm.NewRelayBurnEqualsMintTLM(),
+		}),
+		testkeeper.WithModuleParams(map[string]cosmostypes.Msg{
+			apptypes.ModuleName: &appParams,
+		}),
+	)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
+	keepers.SetService(ctx, *service)
+
+	// Simplify settlement math: 1 compute unit -> 1 upokt, no inflation, all to supplier.
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	require.NoError(t, keepers.SharedKeeper.SetParams(ctx, sharedParams))
+
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.GlobalInflationPerClaim = 0
+	tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
+		Dao:         0,
+		Proposer:    0,
+		Supplier:    1,
+		SourceOwner: 0,
+		Application: 0,
+	}
+	require.NoError(t, keepers.Keeper.SetParams(ctx, tokenomicsParams))
+
+	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
+
+	// Add the application staked just above min_stake.
+	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
+	app := apptypes.Application{
+		Address:        sample.AccAddressBech32(),
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+	}
+	keepers.SetApplication(ctx, app)
+	require.False(t, app.IsUnbonding())
+
+	// Add a supplier whose single shareholder is itself.
+	supplierAddr := sample.AccAddressBech32()
+	services := []*sharedtypes.SupplierServiceConfig{{
+		ServiceId: service.Id,
+		RevShare: []*sharedtypes.ServiceRevenueShare{
+			{Address: supplierAddr, RevSharePercentage: uint64(100)},
+		},
+	}}
+	supplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, cosmosmath.NewInt(1000000))
+	supplier := sharedtypes.Supplier{
+		OwnerAddress:    supplierAddr,
+		OperatorAddress: supplierAddr,
+		Stake:           &supplierStake,
+		Services:        services,
+		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			supplierAddr, services, 1, 0,
+		),
+	}
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
+
+	// Settle the claim.
+	claim := prepareTestClaim(numRelays, service, &app, &supplier)
+	pendingResult := tlm.NewClaimSettlementResult(claim)
+
+	settlementContext := tokenomicskeeper.NewSettlementContext(ctx, keepers.Keeper, keepers.Logger())
+	require.NoError(t, settlementContext.ClaimCacheWarmUp(ctx, &claim))
+	settlementContext.IncrementSupplierCount(claim.SessionHeader.ApplicationAddress, claim.SessionHeader.SessionId)
+
+	ctx, _ = testutilevents.ResetEventManager(ctx)
+	_, err := keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+	require.NoError(t, err)
+
+	// The application stake dropped below min_stake and must now be unbonding.
+	gotApp, found := keepers.GetApplication(ctx, app.Address)
+	require.True(t, found)
+	require.Less(t, gotApp.GetStake().Amount.Int64(), minStakeAmount.Int64(),
+		"settlement should have burned the app stake below min_stake")
+	require.True(t, gotApp.IsUnbonding(), "app below min_stake must be marked unbonding")
+	require.Equal(t, uint64(expectedSessionEndHeight), gotApp.GetUnstakeSessionEndHeight())
+
+	// An EventApplicationUnbondingBegin with the BELOW_MIN_STAKE reason is emitted.
+	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	unbondingBeginEvents := testutilevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events)
+	require.Len(t, unbondingBeginEvents, 1)
+	require.Equal(t,
+		apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
+		unbondingBeginEvents[0].GetReason(),
+	)
+	require.Equal(t, app.Address, unbondingBeginEvents[0].GetApplication().GetAddress())
 }
 
 // prepareTestClaim uses the given number of relays and compute unit per relay in the
@@ -1425,7 +1550,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	// Flush batched validator rewards (#1758)
 	pendingSettlementResults := make(tlm.ClaimSettlementResults, 0)
 	pendingSettlementResults.Append(settlementResult)
-	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext)
+	batchedResult, flushErr := keepers.FlushBatchedValidatorRewards(ctx, settlementContext, int64(0))
 	require.NoError(t, flushErr)
 	if batchedResult != nil {
 		pendingSettlementResults.Append(batchedResult)
@@ -1477,7 +1602,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 		"Application cost amount mismatch: expected %s, got %s", expectedApplicationCostAmount, actualApplicationCostAmount)
 
 	// Verify supplier shareholders received expected reward distribution
-	expectedSupplierShareholderRewardAmounts := tlm.GetSupplierShareholderAmountMap(supplierRevenueShareholders, expectedSupplierRewardAmount)
+	expectedSupplierShareholderRewardAmounts, err := tlm.GetSupplierShareholderAmountMap(supplierRevenueShareholders, expectedSupplierRewardAmount)
+	require.NoError(t, err)
 	for shareholderAddress, expectedShareholderRewardAmount := range expectedSupplierShareholderRewardAmounts {
 		shareholderBalanceAfterSettlement := getBalance(t, ctx, keepers, shareholderAddress)
 		shareholderBalanceBeforeSettlement := supplierShareholderBalancesBeforeSettlement[shareholderAddress]

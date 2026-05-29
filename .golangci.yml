@@ -35,6 +35,26 @@ linters:
       - linters:
           - errcheck
         path: _test\.go$
+      # cosmos-sdk v0.53.7 added SA1019 deprecation markers on APIs we cannot
+      # avoid: InvariantRegistry is part of the AppModule interface contract,
+      # and simtestutil.SimulationOperations is used in sim tests. The deprecation
+      # is bound to x/crisis removal which is out of scope for v0.1.34.
+      # Re-evaluate when bumping to SDK v0.54.x.
+      - linters:
+          - staticcheck
+        text: "SA1019.*InvariantRegistry is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019.*SimulationOperations is deprecated"
+        path: ^app/sim(_bench)?_test\.go$
+      # The settlement bench intentionally exercises the lower-level EmitEvent
+      # API to measure raw bank-event aggregation overhead. Converting to
+      # EmitTypedEvent would change what's being benchmarked. The deprecation
+      # is paired with the telemetry/OTel migration (out of scope for v0.1.34).
+      - linters:
+          - staticcheck
+        text: "SA1019.*EmitEvent is deprecated"
+        path: ^x/tokenomics/keeper/settle_pending_claims_bench_test\.go$
     paths:
       - third_party$
       - builtin$

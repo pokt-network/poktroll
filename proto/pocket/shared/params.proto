@@ -83,6 +83,20 @@ message Params {
   // ongoing sessions. This prevents sessions from settling using parameters that
   // were not in effect during their creation.
   uint64 compute_unit_cost_granularity = 11 [(gogoproto.jsontag) = "compute_unit_cost_granularity", (gogoproto.moretags) = "yaml:\"compute_unit_cost_granularity\""];
+
+  // session_grid_anchor_height is the block height at which this params epoch's session
+  // grid begins. Boundary math is computed relative to this anchor instead of block 1, so
+  // that changing num_blocks_per_session does not misalign in-flight sessions (#543).
+  // DERIVED metadata, NOT governable: set by the param-update handler to the next session
+  // boundary; any value supplied via governance is ignored/overwritten. A zero value falls
+  // back to the genesis block-1 grid (legacy behavior).
+  uint64 session_grid_anchor_height = 12 [(gogoproto.jsontag) = "session_grid_anchor_height"];
+
+  // session_number_at_anchor is the session number of the session starting at
+  // session_grid_anchor_height. Used to keep GetSessionNumber monotonic across epochs
+  // (epoch-relative numbering would otherwise reset at each change).
+  // DERIVED metadata, NOT governable.
+  uint64 session_number_at_anchor = 13 [(gogoproto.jsontag) = "session_number_at_anchor"];
 }
 
 // ParamsUpdate stores a snapshot of shared parameters

@@ -118,29 +118,12 @@ func TestValidatorRewardDistribution_DeterministicOrdering(t *testing.T) {
 			accAddresses[i] = cosmostypes.AccAddress(valAddr).String()
 		}
 
-		// Create expected order: sort by stake desc, then by address for equal stakes
-		type addrStake struct {
-			addr  string
-			stake int64
-		}
-
-		addrStakes := make([]addrStake, 4)
-		for i := 0; i < 4; i++ {
-			addrStakes[i] = addrStake{accAddresses[i], stakes[i]}
-		}
-
-		// Sort by stake desc, then by address
-		sort.Slice(addrStakes, func(i, j int) bool {
-			if addrStakes[i].stake == addrStakes[j].stake {
-				return addrStakes[i].addr < addrStakes[j].addr
-			}
-			return addrStakes[i].stake > addrStakes[j].stake
-		})
-
+		// Transfers are queued in account-address-ascending order (deterministic),
+		// independent of stake. All validators here are sole stakeholders (no
+		// delegations, zero commission), so each receives its full pool share.
 		expectedOrder := make([]string, 4)
-		for i, as := range addrStakes {
-			expectedOrder[i] = as.addr
-		}
+		copy(expectedOrder, accAddresses)
+		sort.Strings(expectedOrder)
 
 		// Test execution
 		ctrl := gomock.NewController(t)

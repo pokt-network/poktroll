@@ -35,6 +35,22 @@ type YAMLRelayMinerConfig struct {
 	EnableOverServicing               bool                           `yaml:"enable_over_servicing"`
 	EnableEagerRelayRequestValidation bool                           `yaml:"enable_eager_relay_request_validation"`
 
+	// ServedRelaysBufferSize is the buffer size of the channel that forwards
+	// served, reward-eligible relays into the mining pipeline. When this buffer
+	// fills, relays are DROPPED (served but unpaid). Raise it for high-throughput
+	// suppliers to absorb bursts. Defaults to DefaultServedRelaysBufferSize.
+	ServedRelaysBufferSize uint64 `yaml:"served_relays_buffer_size"`
+	// MiningPipelineBufferSize is the per-observer channel buffer size used inside
+	// the mining pipeline (miner + session-tree stages). Larger values give slow
+	// consumers more slack before stalling upstream. Defaults to
+	// DefaultMiningPipelineBufferSize.
+	MiningPipelineBufferSize uint64 `yaml:"mining_pipeline_buffer_size"`
+	// MiningWorkers is the number of concurrent workers that hash/mine served
+	// relays. 0 means auto (GOMAXPROCS). The mining transform is pure and
+	// per-relay independent, so parallelizing it is safe and raises sustained
+	// throughput before the served-relays buffer fills.
+	MiningWorkers uint64 `yaml:"mining_workers"`
+
 	// TODO_IMPROVE: Add a EnableErrorPropagation flag to control whether errors (i.e. non-2XX HTTP status codes)
 	// are propagated back to the client or masked as internal errors.
 	//
@@ -120,6 +136,15 @@ type RelayMinerConfig struct {
 	Ping                              *RelayMinerPingConfig
 	EnableOverServicing               bool
 	EnableEagerRelayRequestValidation bool
+	// ServedRelaysBufferSize is the buffer size of the served-relays → mining
+	// channel (drop point under load). See YAML field of the same name.
+	ServedRelaysBufferSize int
+	// MiningPipelineBufferSize is the per-observer buffer size inside the mining
+	// pipeline. See YAML field of the same name.
+	MiningPipelineBufferSize int
+	// MiningWorkers is the number of concurrent relay-mining workers (0 = auto).
+	// See YAML field of the same name.
+	MiningWorkers int
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:

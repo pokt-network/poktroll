@@ -285,6 +285,12 @@ func New(
 		return nil, err
 	}
 
+	// Optional in-process KV-state streamer; no-op unless [streaming.file] is set.
+	// Appended after RegisterStreamingServices so its listeners are preserved.
+	if err := RegisterInProcessFileStreamer(app.BaseApp, appOpts, app.kvStoreKeys()); err != nil {
+		return nil, err
+	}
+
 	/****  Module Options ****/
 
 	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code.

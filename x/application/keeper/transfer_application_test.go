@@ -187,10 +187,12 @@ func (s *MergeAppDelegateesSuite) TestMergeServiceConfigs() {
 		},
 	}
 
-	mergeAppServiceConfigs(srcApp, dstApp)
+	merged := mergeAppServiceConfigs(srcApp, dstApp)
 
 	expectedSvcCfgs := []*sharedtypes.ApplicationServiceConfig{
 		svc1Cfg, svc2Cfg, svc3Cfg,
 	}
-	require.ElementsMatch(s.T(), expectedSvcCfgs, dstApp.ServiceConfigs)
+	// mergeAppServiceConfigs returns the union without mutating dstApp.ServiceConfigs.
+	require.ElementsMatch(s.T(), expectedSvcCfgs, merged)
+	require.ElementsMatch(s.T(), []*sharedtypes.ApplicationServiceConfig{svc2Cfg, svc3Cfg}, dstApp.ServiceConfigs)
 }
