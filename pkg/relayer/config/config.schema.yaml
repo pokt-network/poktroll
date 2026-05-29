@@ -60,6 +60,45 @@ properties:
     type: boolean
     default: false
 
+  # Enable eager relay request validation (optional)
+  enable_eager_relay_request_validation:
+    description: |
+      Validate every incoming relay request immediately on receipt, instead of
+      deferring validation for requests whose session is not yet known.
+    type: boolean
+    default: false
+
+  # Served relays buffer size (optional)
+  served_relays_buffer_size:
+    description: |
+      Buffer size of the channel that forwards served, reward-eligible relays into
+      the mining pipeline. When this buffer fills, relays are DROPPED from mining
+      (served but unpaid), tracked by the relayminer_relays_dropped_total metric.
+      Raise it for high-throughput suppliers to absorb bursts.
+    type: integer
+    minimum: 1
+    default: 1000
+
+  # Mining pipeline buffer size (optional)
+  mining_pipeline_buffer_size:
+    description: |
+      Per-observer channel buffer size inside the mining pipeline. A larger value
+      gives a slow consumer more slack before it stalls the pipeline upstream.
+    type: integer
+    minimum: 1
+    default: 50
+
+  # Mining workers (optional)
+  mining_workers:
+    description: |
+      Number of concurrent workers that hash/mine served relays. 0 means auto
+      (GOMAXPROCS). The mining transform is pure and per-relay independent, so
+      parallelizing it raises sustained throughput before the served-relays
+      buffer fills.
+    type: integer
+    minimum: 0
+    default: 0
+
   # Pocket node configuration (required)
   pocket_node:
     description: "Configuration for connecting to Pocket blockchain nodes."

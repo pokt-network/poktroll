@@ -114,3 +114,32 @@ Removes the actual throughput ceiling.
 Ship **Fix 1 + Fix 2** together (safe, immediate operator value + tunability). Land
 **Fix 3** behind careful review + benchmark. None are consensus-breaking — RelayMiner is
 offchain — so no coordinated upgrade required.
+
+## Status: implemented (commit `3abd1039e`, branch `rc/0.1.34`)
+
+All three fixes landed + the config knobs are documented/schematized
+(`config.schema.yaml`, `relayminer_config_full_example.yaml`,
+`docusaurus/.../4_relayminer_config.md`). Benchmark: serial 36.3ms → parallel-8
+9.2ms (~3.95×) on 2000 CPU-bound items. Tests green under `-race`.
+
+## Secondary items investigated — NOT fixed (with rationale)
+
+- **Ring-signature verification "12–20 RPC/relay" — debunked.** The ring client is
+  uncached, but the queriers it delegates to (`GetApplication`, `GetAccount`/pubkeys,
+  `GetSession`) are all `KeyValueCache`-backed and cleared per-session. Steady state =
+  cache hits; RPCs fire only cold at session rollover. Not a per-relay storm. No action.
+- **Observer `notify` RLock-hold during 100ms retry** (`observer.go`). Real mechanism
+  (a full observer channel can block `goPublish` and stall `Unsubscribe`), but the relay
+  pipeline is **1:1** (one observer per stage), so the "blocks all other observers" case
+  doesn't arise. It reduces to ordinary backpressure, already covered by Fixes 1/2/3. The
+  shutdown stall is ≤100ms. Not worth the core-primitive risk now.
+- **`knownSessionsMutex`** (`http_server.go`). Hot path is a cheap `RLock`; writes only on
+  new-session discovery; `pruneOutdatedKnownSessions` is a brief whole-map scan per block.
+  Not work-loss. Low priority (note: existing TODO flags unbounded map growth / no LRU).
+- **WebSocket bridge blocking send** (`websockets/bridge.go:346,461`). Emits to the miner
+  with a **blocking** send (no drop) *before* the over-servicing check — by design, per the
+  code comment ("each request/response eligible"). A full producer buffer stalls the bridge
+  `messageLoop`, freezing both WS connection reads. Mitigated already: it sends to the
+  **same** channel Fix 2 now sizes (`served_relays_buffer_size`) and Fix 3 drains faster.
+  The over-servicing-emit asymmetry vs the HTTP path is intentional, not a confirmed bug —
+  flagged for product decision, not fixed here.

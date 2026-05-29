@@ -128,6 +128,9 @@ smt_store_path: <string>
 disable_smt_persistence: <boolean>
 enable_over_servicing: <boolean>
 enable_eager_relay_request_validation: <boolean>
+served_relays_buffer_size: <uint64>
+mining_pipeline_buffer_size: <uint64>
+mining_workers: <uint64>
 ```
 
 ### `default_signing_key_names`
@@ -255,6 +258,49 @@ Controls when validation happens relative to forwarding the request.
 | ----------------------- | ------- | ---------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Eager Mode**          | `true`  | Validate first (signature, session, rate limiting), serve later                                | Predictable backend load           | Higher per-request latency                                  | Use when you prefer strict validation before backend load (e.g., highly constrained backends or when minimizing optimistic risk is critical).                                      |
 | **Lazy Mode (default)** | `false` | Serve first for unknown sessions, then validate later. Known sessions still validate up-front. | Best cold-start throughput/latency | May transiently forward requests that later fail validation | Use to optimize throughput and latency during cold starts or when many sessions are initially unknown. Improves perceived QoS but may forward requests that later fail validation. |
+
+### `served_relays_buffer_size`
+
+_`Optional`_ (default: `1000`)
+
+Buffer size of the in-memory channel that forwards served, reward-eligible relays
+into the mining pipeline.
+
+When this buffer is full, the `RelayMiner` **drops** the relay from the mining
+pipeline: the relay is still served to the client, but no claim evidence is
+recorded, so the supplier earns **no reward** for that work. Every drop is counted
+by the `relayminer_relays_dropped_total` Prometheus metric
+(labeled by `service_id`, `supplier_operator_address`, and `reason`).
+
+Raise this for high-throughput suppliers that observe a nonzero
+`relayminer_relays_dropped_total`, to absorb bursts while the mining pipeline
+catches up. Tune alongside `mining_workers`, which raises the rate at which this
+buffer drains.
+
+### `mining_pipeline_buffer_size`
+
+_`Optional`_ (default: `50`)
+
+Per-observer channel buffer size used inside the mining pipeline (the miner and
+session-tree stages). A larger value gives a slow consumer more slack before it
+stalls the pipeline upstream.
+
+Most operators should leave this at the default and tune `served_relays_buffer_size`
+and `mining_workers` first.
+
+### `mining_workers`
+
+_`Optional`_ (default: `0` = auto, i.e. `GOMAXPROCS`)
+
+Number of concurrent workers that hash/mine served relays.
+
+The mining transform (marshal + hash + difficulty check) is pure and per-relay
+independent, so it is parallelized safely across workers. Increasing this raises
+sustained mining throughput, which is the primary lever for preventing
+`served_relays_buffer_size` from filling (and dropping relays) under high load.
+
+`0` lets the `RelayMiner` pick `GOMAXPROCS`. Set an explicit value to cap mining
+CPU usage on shared hosts.
 
 ### `metrics`
 

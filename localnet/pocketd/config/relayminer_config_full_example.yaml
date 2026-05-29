@@ -28,6 +28,19 @@ enable_eager_relay_request_validation: false
 # When disabled (default): Strictly enforces session-based rate limits.
 enable_over_servicing: false
 
+# Mining pipeline throughput tuning (optional).
+# Defaults match the historical hardcoded values, so omitting them changes nothing.
+# Tune these only for high-throughput suppliers observing dropped relays
+# (see the relayminer_relays_dropped_total metric).
+#
+# Buffer size of the channel that forwards served, reward-eligible relays into the
+# mining pipeline. When full, relays are DROPPED from mining (served but unpaid).
+served_relays_buffer_size: 1000
+# Per-observer channel buffer size inside the mining pipeline.
+mining_pipeline_buffer_size: 50
+# Number of concurrent relay-mining (hash) workers. 0 = auto (GOMAXPROCS).
+mining_workers: 0
+
 # Prometheus exporter configuration
 metrics:
   # Enable or disable the metrics exporter
