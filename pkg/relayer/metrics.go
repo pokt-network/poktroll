@@ -26,6 +26,7 @@ const (
 	delayedRelayRequestRateLimitingCheckTotal  = "delayed_relay_request_rate_limiting_check_total"
 	blockHeightCurrent                         = "block_height_current"
 	instructionTimeSeconds                     = "instruction_time_seconds"
+	relaysDroppedTotal                         = "relays_dropped_total"
 )
 
 var (
@@ -240,6 +241,23 @@ var (
 		Help:      "Histogram of request instruction times in milliseconds for performance analysis.",
 		Buckets:   defaultBuckets,
 	}, []string{"instruction"})
+
+	// RelaysDroppedTotal is a Counter metric for relays that were served to the
+	// client but DROPPED from the mining pipeline (never added to the session tree).
+	//
+	// A dropped relay is permanently lost reward: the supplier did the work but will
+	// not be compensated on-chain because no evidence enters the SMST.
+	// It is labeled by 'service_id', 'supplier_operator_address', and 'reason'
+	// (e.g. "mining_channel_full") to quantify and localize reward leakage under load.
+	//
+	// Usage:
+	// - Alert when nonzero: it directly measures unpaid work.
+	// - Correlate with throughput to size mining pipeline buffers/workers.
+	RelaysDroppedTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      relaysDroppedTotal,
+		Help:      "Total number of served relays dropped from the mining pipeline (lost reward), labeled by service ID, supplier, and reason.",
+	}, []string{"service_id", "supplier_operator_address", "reason"})
 )
 
 // CaptureRelayDuration records the internal end-to-end duration of handling a relay which includes
@@ -333,4 +351,18 @@ func CaptureDelayedRelayRequestRateLimitingCheck(serviceId string, supplierOpera
 // This metric is used to monitor block progression over time and detect stalled block updates.
 func CaptureBlockHeight(height int64) {
 	BlockHeightCurrent.Set(float64(height))
+}
+
+// CaptureDroppedRelay records a relay that was served to the client but dropped
+// from the mining pipeline (i.e. never added to the session tree), making it
+// reward-ineligible. The reason localizes WHERE the drop happened
+// (e.g. "mining_channel_full").
+func CaptureDroppedRelay(serviceId, supplierOperatorAddress, reason string) {
+	RelaysDroppedTotal.
+		With(
+			"service_id", serviceId,
+			"supplier_operator_address", supplierOperatorAddress,
+			"reason", reason,
+		).
+		Add(1)
 }

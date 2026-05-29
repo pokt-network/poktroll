@@ -587,30 +587,36 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 	}
 }
 
-// SupplyMiner constructs a Miner instance and returns a new depinject.Config with it supplied.
+// NewSupplyMinerFn returns a SupplierFn which constructs a Miner instance and
+// returns a new depinject.Config with it supplied.
 //
-// - Supplies Miner to the dependency injection config
-// - Returns updated config and error if any
+//   - Supplies Miner to the dependency injection config
+//   - Configures mining concurrency (numWorkers) and the mined-relays observable
+//     buffer size (miningPipelineBufferSize); 0 means "use the miner default"
 //
 // Parameters:
-//   - ctx: Context for the function
-//   - deps: Dependency injection config
-//   - cmd: Cobra command
+//   - numWorkers: number of concurrent relay-mining workers (0 = auto/GOMAXPROCS)
+//   - miningPipelineBufferSize: per-observer buffer in the mining pipeline (0 = default)
 //
 // Returns:
-//   - depinject.Config: Updated dependency injection config
-//   - error: Error if setup fails
-func SupplyMiner(
-	_ context.Context,
-	deps depinject.Config,
-	_ *cobra.Command,
-) (depinject.Config, error) {
-	mnr, err := miner.NewMiner(deps)
-	if err != nil {
-		return nil, err
-	}
+//   - SupplierFn: Supplier function for dependency injection
+func NewSupplyMinerFn(numWorkers, miningPipelineBufferSize int) SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		mnr, err := miner.NewMiner(
+			deps,
+			miner.WithMiningWorkers(numWorkers),
+			miner.WithMiningPipelineBufferSize(miningPipelineBufferSize),
+		)
+		if err != nil {
+			return nil, err
+		}
 
-	return depinject.Configs(deps, depinject.Supply(mnr)), nil
+		return depinject.Configs(deps, depinject.Supply(mnr)), nil
+	}
 }
 
 // SupplyRelayMeterFn returns a function which constructs a RelayMeter instance
@@ -745,6 +751,7 @@ func NewSupplyRelayAuthenticatorFn(
 func NewSupplyRelayerProxyFn(
 	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
 	pingEnabled bool,
+	servedRelaysBufferSize int,
 ) SupplierFn {
 	return func(
 		_ context.Context,
@@ -755,6 +762,7 @@ func NewSupplyRelayerProxyFn(
 			deps,
 			proxy.WithServicesConfigMap(servicesConfigMap),
 			proxy.WithPingEnabled(pingEnabled),
+			proxy.WithServedRelaysBufferSize(servedRelaysBufferSize),
 		)
 		if err != nil {
 			return nil, err

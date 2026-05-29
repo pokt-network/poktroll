@@ -34,6 +34,16 @@ type miner struct {
 	serviceQueryClient client.ServiceQueryClient
 	blockClient        client.BlockClient
 	relayMeter         relayer.RelayMeter
+
+	// miningWorkers is the number of concurrent goroutines used to hash/mine served
+	// relays. The mining transform is pure and per-relay independent, so fanning it
+	// out raises sustained throughput before the upstream served-relays buffer fills
+	// (and starts dropping relays). 0 means auto (runtime.GOMAXPROCS).
+	miningWorkers int
+
+	// miningPipelineBufferSize is the per-observer channel buffer size for the
+	// mined-relays observable produced by MinedRelays. 0 keeps the default.
+	miningPipelineBufferSize int
 }
 
 // NewMiner creates a new miner from the given dependencies and options. It
@@ -67,6 +77,23 @@ func NewMiner(
 	return mnr, nil
 }
 
+// WithMiningWorkers sets the number of concurrent relay-mining workers.
+// A value <= 0 means auto (runtime.GOMAXPROCS). See miner.miningWorkers.
+func WithMiningWorkers(numWorkers int) relayer.MinerOption {
+	return func(m relayer.Miner) {
+		m.(*miner).miningWorkers = numWorkers
+	}
+}
+
+// WithMiningPipelineBufferSize sets the per-observer channel buffer size for the
+// mined-relays observable. A value <= 0 keeps the default. See
+// miner.miningPipelineBufferSize.
+func WithMiningPipelineBufferSize(size int) relayer.MinerOption {
+	return func(m relayer.Miner) {
+		m.(*miner).miningPipelineBufferSize = size
+	}
+}
+
 // MinedRelays maps servedRelaysObs through a pipeline which:
 // 1. Hashes the relay
 // 2. Checks if it's above the mining difficulty
@@ -87,7 +114,21 @@ func (mnr *miner) MinedRelays(
 	// Map servedRelaysObs to a new observable of an either type, populated with
 	// the minedRelay or an error. It is notified after the relay has been mined
 	// or an error has been encountered, respectively.
-	eitherMinedRelaysObs := channel.Map(ctx, relaysObs, mnr.mapMineDehydratedRelay)
+	//
+	// MapParallel (not Map) is used here because mapMineDehydratedRelay is a pure,
+	// per-relay-independent, CPU-bound transform (marshal + hash + cached difficulty
+	// lookup). A single consumer goroutine bottlenecks at high throughput and backs
+	// up the served-relays buffer, causing relay drops. Output order does not matter:
+	// downstream insertion into the SMST is keyed by relay hash and commutative.
+	// A miningPipelineBufferSize <= 0 falls back to the observable's default buffer
+	// (handled inside NewObserver), so the option can be passed unconditionally.
+	eitherMinedRelaysObs := channel.MapParallel(
+		ctx,
+		relaysObs,
+		mnr.mapMineDehydratedRelay,
+		mnr.miningWorkers,
+		channel.WithSubscribeBufferSize[either.Either[*relayer.MinedRelay]](mnr.miningPipelineBufferSize),
+	)
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherMinedRelaysObs))
 
 	return filter.EitherSuccess(ctx, eitherMinedRelaysObs)

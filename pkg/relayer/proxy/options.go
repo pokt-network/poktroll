@@ -23,3 +23,13 @@ func WithPingEnabled(pingEnabled bool) relayer.RelayerProxyOption {
 		relProxy.(*relayerProxy).pingEnabled = pingEnabled
 	}
 }
+
+// WithServedRelaysBufferSize sets the buffer size of the channel that forwards
+// served, reward-eligible relays into the mining pipeline. When this buffer fills,
+// relays are dropped from mining (served but unpaid), so high-throughput suppliers
+// should raise it. A value <= 0 keeps the observable's default buffer size.
+func WithServedRelaysBufferSize(size int) relayer.RelayerProxyOption {
+	return func(relProxy relayer.RelayerProxy) {
+		relProxy.(*relayerProxy).servedRelaysBufferSize = size
+	}
+}
