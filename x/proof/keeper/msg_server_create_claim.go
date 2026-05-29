@@ -140,6 +140,16 @@ func (k msgServer) CreateClaim(
 		)
 	}
 
+	// numEstimatedRelays mirrors EventClaimSettled.num_estimated_relays so indexers
+	// can read it directly off claim lifecycle events instead of re-deriving it.
+	numEstimatedRelays, err := claim.GetNumEstimatedRelays(relayMiningDifficulty)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			types.ErrProofInvalidClaimRootHash.Wrapf("failed to calculate estimated relays: %v", err).Error(),
+		)
+	}
+
 	// Emit the appropriate event based on whether the claim was created or updated.
 	var claimUpsertEvent proto.Message
 	switch isExistingClaim {
@@ -149,6 +159,7 @@ func (k msgServer) CreateClaim(
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
+				NumEstimatedRelays:       numEstimatedRelays,
 				ClaimedUpokt:             claimedUPOKT.String(),
 				ServiceId:                claim.SessionHeader.ServiceId,
 				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
@@ -163,6 +174,7 @@ func (k msgServer) CreateClaim(
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
+				NumEstimatedRelays:       numEstimatedRelays,
 				ClaimedUpokt:             claimedUPOKT.String(),
 				ServiceId:                claim.SessionHeader.ServiceId,
 				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,

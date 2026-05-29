@@ -750,6 +750,7 @@ func (k Keeper) slashSupplierStake(
 	claim := claimSettlementResult.GetClaim()
 	events = append(events, &tokenomicstypes.EventSupplierSlashed{
 		ProofMissingPenalty:     slashingCoin.String(),
+		SupplierStakeAfterSlash: remainingStakeCoin.String(),
 		ServiceId:               claim.SessionHeader.ServiceId,
 		ApplicationAddress:      claim.SessionHeader.ApplicationAddress,
 		SessionEndBlockHeight:   claim.SessionHeader.SessionEndBlockHeight,
@@ -995,6 +996,7 @@ func (k Keeper) settleClaim(
 				NumRelays:                numClaimRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
+				NumEstimatedRelays:       numEstimatedRelays,
 				ClaimedUpokt:             claimeduPOKT.String(),
 				ServiceId:                claim.SessionHeader.ServiceId,
 				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,

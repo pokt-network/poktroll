@@ -9,7 +9,7 @@ import "gogoproto/gogo.proto";
 import "pocket/proof/types.proto";
 
 message EventClaimCreated {
-  // Next index: 13
+  // Next index: 14
 
   // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
@@ -42,11 +42,18 @@ message EventClaimCreated {
 
   // The operator address of the supplier which submitted the claim.
   string supplier_operator_address = 12 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The probabilistic estimate of the total number of relays served this session.
+  // num_estimated_relays = num_estimated_compute_units / compute_units_per_relay.
+  // Mirrors EventClaimSettled.num_estimated_relays so indexers do not have to
+  // re-derive it; the off-chain derivation divides by num_relays and breaks when
+  // num_relays == 0 (e.g. empty claims), which this field avoids.
+  uint64 num_estimated_relays = 13 [(gogoproto.jsontag) = "num_estimated_relays"];
 }
 
 // TODO_TEST: Add coverage for claim updates.
 message EventClaimUpdated {
-  // Next index: 13
+  // Next index: 14
 
   // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
@@ -79,10 +86,17 @@ message EventClaimUpdated {
 
   // The operator address of the supplier which updated the claim.
   string supplier_operator_address = 12 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The probabilistic estimate of the total number of relays served this session.
+  // num_estimated_relays = num_estimated_compute_units / compute_units_per_relay.
+  // Mirrors EventClaimSettled.num_estimated_relays so indexers do not have to
+  // re-derive it; the off-chain derivation divides by num_relays and breaks when
+  // num_relays == 0 (e.g. empty claims), which this field avoids.
+  uint64 num_estimated_relays = 13 [(gogoproto.jsontag) = "num_estimated_relays"];
 }
 
 message EventProofSubmitted {
-  // Next index: 13
+  // Next index: 14
 
   // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
@@ -115,11 +129,18 @@ message EventProofSubmitted {
 
   // The operator address of the supplier which submitted the proof.
   string supplier_operator_address = 12 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The probabilistic estimate of the total number of relays served this session.
+  // num_estimated_relays = num_estimated_compute_units / compute_units_per_relay.
+  // Mirrors EventClaimSettled.num_estimated_relays so indexers do not have to
+  // re-derive it; the off-chain derivation divides by num_relays and breaks when
+  // num_relays == 0 (e.g. empty claims), which this field avoids.
+  uint64 num_estimated_relays = 13 [(gogoproto.jsontag) = "num_estimated_relays"];
 }
 
 // TODO_TEST: Add coverage for proof updates.
 message EventProofUpdated {
-  // Next index: 13
+  // Next index: 14
 
   // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
@@ -152,6 +173,13 @@ message EventProofUpdated {
 
   // The operator address of the supplier which updated the proof.
   string supplier_operator_address = 12 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The probabilistic estimate of the total number of relays served this session.
+  // num_estimated_relays = num_estimated_compute_units / compute_units_per_relay.
+  // Mirrors EventClaimSettled.num_estimated_relays so indexers do not have to
+  // re-derive it; the off-chain derivation divides by num_relays and breaks when
+  // num_relays == 0 (e.g. empty claims), which this field avoids.
+  uint64 num_estimated_relays = 13 [(gogoproto.jsontag) = "num_estimated_relays"];
 }
 
 // Event emitted after a proof has been checked for validity in the proof module's

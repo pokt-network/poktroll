@@ -137,6 +137,12 @@ func (k msgServer) SubmitProof(
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("failed to get estimated compute units: %v", err).Error())
 	}
+	// numEstimatedRelays mirrors EventClaimSettled.num_estimated_relays so indexers
+	// can read it directly off proof lifecycle events instead of re-deriving it.
+	numEstimatedRelays, err := claim.GetNumEstimatedRelays(relayMiningDifficulty)
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("failed to get estimated relays: %v", err).Error())
+	}
 
 	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
@@ -154,6 +160,7 @@ func (k msgServer) SubmitProof(
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
+				NumEstimatedRelays:       numEstimatedRelays,
 				ClaimedUpokt:             claimedUPOKT.String(),
 				ServiceId:                claim.SessionHeader.ServiceId,
 				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
@@ -168,6 +175,7 @@ func (k msgServer) SubmitProof(
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
+				NumEstimatedRelays:       numEstimatedRelays,
 				ClaimedUpokt:             claimedUPOKT.String(),
 				ServiceId:                claim.SessionHeader.ServiceId,
 				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
