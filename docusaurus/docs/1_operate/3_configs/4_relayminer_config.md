@@ -505,6 +505,16 @@ The URL of the service that the `RelayMiner` will forward the requests to when
 a relay is received, also known as **data node** or **service node**.
 It MUST be a valid URL (not just a host) and be reachable from the `RelayMiner` instance.
 
+:::note You must run this backend node yourself
+
+`backend_url` points to a full node of the chain you are serving (e.g. an Ethereum or
+Base node). This node is **separate infrastructure that you run, sync, and maintain** —
+it is not provided by Pocket or the `RelayMiner`, and its hardware footprint is usually
+far larger than the `RelayMiner` itself. See
+[Backend Service Node sizing](../4_faq/6_hardware_requirements.md#backend-service-node).
+
+:::
+
 #### `authentication`
 
 _`Optional`_

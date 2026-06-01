@@ -94,6 +94,37 @@ The source code for the Homebrew formula can be found at [homebrew-pocketd](http
 
 ---
 
+## Configuring the keyring backend
+
+`pocketd` stores keys using a configurable keyring backend (`os`, `file`, `test`, etc.).
+For a funds-holding node, prefer `file` (encrypted, prompts for a passphrase) or `os`
+over `test`.
+
+Set it with `pocketd config set`:
+
+```bash
+pocketd config set client keyring-backend file
+```
+
+Verify it took effect:
+
+```bash
+pocketd config get client keyring-backend
+# "file"
+```
+
+:::warning `pocketd config keyring-backend <value>` is a silent no-op
+
+Running `pocketd config keyring-backend file` does **not** set anything. It is parsed
+as an unknown subcommand, so it just prints the `config` help text and exits `0` —
+giving the false impression that it worked. Always use the
+`pocketd config set client keyring-backend <value>` form above, or pass
+`--keyring-backend <value>` explicitly on each command.
+
+:::
+
+---
+
 ## Alternative Methods
 
 ### Using release binaries

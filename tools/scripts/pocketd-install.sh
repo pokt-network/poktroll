@@ -15,6 +15,20 @@
 #
 #   (You can find available versions, including dev-releases, at https://github.com/pokt-network/poktroll/releases)
 #
+# SECURITY: This script is piped from the internet into your shell. To inspect it
+# before running, download it first and read it:
+#
+#     curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh -o pocketd-install.sh
+#     less pocketd-install.sh   # review, then:
+#     bash pocketd-install.sh
+#
+# The downloaded release tarball is verified against the published `release_checksum`
+# (SHA256) before installation; a checksum mismatch aborts the install.
+#
+# SCOPE: This installs ONLY the `pocketd` CLI binary into /usr/local/bin. It does
+# NOT set up a full node, Cosmovisor, or a systemd service. To run a full node, see:
+#     https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet
+#
 # Flags:
 #   -u, --upgrade   Force reinstallation of the latest (or specified) version by removing the existing binary first.
 #   --tag <tag>     Install a specific release version (e.g., v0.1.12-dev1).
@@ -47,6 +61,57 @@ done
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1
+}
+
+# Function to verify a downloaded tarball against the published SHA256 checksum.
+#
+# - Downloads the `release_checksum` file (standard sha256sum format) from the same release.
+# - If the checksum file (or a matching entry) is absent (e.g. older releases predating
+#   published checksums), warns and continues.
+# - If an entry exists but does NOT match, aborts the installation.
+verify_checksum() {
+    local tarball="$1"
+    local checksum_file="release_checksum"
+
+    echo "🔐 Verifying download against published SHA256 checksum..."
+
+    if ! curl -sSfLO "${BASE_URL}/${checksum_file}" 2>/dev/null; then
+        echo "⚠️  Could not download ${checksum_file} from ${BASE_URL}."
+        echo "    Skipping checksum verification (this release may predate published checksums)."
+        return 0
+    fi
+
+    local expected
+    expected=$(awk -v f="${tarball}" '$2 == f {print $1}' "${checksum_file}")
+
+    if [ -z "${expected}" ]; then
+        echo "⚠️  No checksum entry for ${tarball} in ${checksum_file}; skipping verification."
+        rm -f "${checksum_file}"
+        return 0
+    fi
+
+    local actual
+    if command_exists sha256sum; then
+        actual=$(sha256sum "${tarball}" | awk '{print $1}')
+    elif command_exists shasum; then
+        actual=$(shasum -a 256 "${tarball}" | awk '{print $1}')
+    else
+        echo "❌ Neither sha256sum nor shasum is available; cannot verify checksum. Aborting."
+        rm -f "${checksum_file}" "${tarball}"
+        exit 1
+    fi
+
+    if [ "${expected}" != "${actual}" ]; then
+        echo "❌ Checksum verification FAILED for ${tarball}"
+        echo "    expected: ${expected}"
+        echo "    actual:   ${actual}"
+        echo "    Refusing to install a tarball that does not match the published checksum."
+        rm -f "${checksum_file}" "${tarball}"
+        exit 1
+    fi
+
+    echo "✅ Checksum verified: ${actual}"
+    rm -f "${checksum_file}"
 }
 
 # Function to install pocketd if not present
@@ -117,6 +182,9 @@ install_pocketd() {
     # Download the appropriate tarball
     curl -LO "${BASE_URL}/${TARBALL}"
 
+    # Verify the downloaded tarball against the published SHA256 checksum before installing.
+    verify_checksum "${TARBALL}"
+
     # Create directory for binary if it doesn't exist
     sudo mkdir -p /usr/local/bin
 
@@ -130,8 +198,12 @@ install_pocketd() {
     # Clean up the downloaded tarball
     rm "${TARBALL}"
 
-    echo "🌿 Successfully installed pocketd version:"
+    echo "🌿 Successfully installed the pocketd CLI version:"
     pocketd version
+    echo ""
+    echo "ℹ️  This installed the pocketd CLI binary ONLY."
+    echo "   It did NOT set up a full node, Cosmovisor, or a systemd service."
+    echo "   To run a full node, follow: https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet"
 }
 
 install_pocketd
