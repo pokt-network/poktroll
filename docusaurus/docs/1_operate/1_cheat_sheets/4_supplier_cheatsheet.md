@@ -138,6 +138,21 @@ flowchart TB
 - [Stake or find a `service`](1_service_cheatsheet.md)
 - [Review hardware requirements](../4_faq/6_hardware_requirements.md)
 
+:::warning You must run a backend node for each service you serve
+
+Staking POKT is not enough. A `Supplier` must **run, sync, and maintain a backend
+node of every chain it serves** (e.g. an Ethereum, Base, or Solana node). The
+`RelayMiner` only proxies relays to that backend — it does not provide the chain data
+itself.
+
+This cheat sheet uses a local **Anvil** node as a stand-in backend so you can complete
+the flow quickly. Serving a real mainnet service (e.g. `eth`, `base`) means standing
+up that chain's full node separately, which is typically the largest cost of running a
+Supplier. See [Hardware Requirements → Backend Service Node](../4_faq/6_hardware_requirements.md#backend-service-node)
+before staking for a real service.
+
+:::
+
 :::note Optional Vultr Setup
 
 The instructions on this page assume you have experience maintaining backend services.
