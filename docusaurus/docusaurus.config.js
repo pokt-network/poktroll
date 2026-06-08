@@ -78,8 +78,12 @@ const config = {
   ],
   */
   // GitHub pages deployment config.
-  url: "https://pocket.com/",
-  baseUrl: "/",
+  // Site is served at https://pokt-network.github.io/poktroll/ (no custom
+  // domain configured — Pages cname is null), so baseUrl MUST be the repo
+  // subpath or the JS bundle 404s and the site falls back to the blank
+  // "did not load properly" page.
+  url: "https://pokt-network.github.io",
+  baseUrl: "/poktroll/",
 
   // Custom domain config.
   // url: "https://docs.poktroll.com",

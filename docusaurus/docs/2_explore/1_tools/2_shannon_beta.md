@@ -6,10 +6,9 @@ sidebar_position: 2
 ## Explorers
 
 - 🚰 [MACT Faucet for claiming tokens](https://faucet.beta.testnet.pokt.network/mact/)
-- 🪙 [StakeNodes' Faucet](https://faucet.beta.testnet.pokt.network/pokt/)
-- 🗺️ [StakeNodes' Explorer](https://explorer.pocket.network/pocket-beta)
-- 🗺️ [Soothe's Explorer](https://shannon-beta.trustsoothe.io)
-- 👨‍💻 [Soothe's GraphQL Playground](https://shannon-beta-api.trustsoothe.io/)
+- 🚰 [POKT Faucet Beta](https://faucet.beta.testnet.pokt.network/pokt/)
+- 🗺️ [Poktscan beta Explorer](https://poktscan.beta.pocket.network/)
+- 👨‍💻 [Beta's GraphQL Playground](https://data.beta.pocket.network/)
 
 ## RPC Endpoints
 

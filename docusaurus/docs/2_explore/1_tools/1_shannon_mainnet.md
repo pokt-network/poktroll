@@ -4,10 +4,11 @@ sidebar_position: 1
 ---
 
 - 🚰 [StakeNode's MACT Faucet for claiming POKT](https://faucet.pocket.network)
-- 🗺️ [StakeNodes' Explorer](https://explorer.pocket.network/pocket-mainnet)
-- 🗺️ [Soothe's Explorer](https://shannon-mainnet.trustsoothe.io)
+- 🗺️ [Pocket Network Explorer](https://explorer.pocket.network/)
+- 🗺️ [Poktscan Explorer](https://poktscan.pocket.network/)
 - 🗺️ [Blockval's Explorer](https://explorer.blockval.io/pocket)
-- 👨‍💻 [Soothe's GraphQL Playground](https://shannon-mainnet-api.trustsoothe.io)
+- 🗺️ [Chaintools's Explorer](https://explorer.chaintools.tech/pocket-network)
+- 👨‍💻 [PocketDex GraphQL Playground](https://data.pocket.network/)
 
 <!-- TODO_MAINNET_MIGRATION(@bryanchriswhite): Add a link to the MACT Faucet once it's live. -->
 
