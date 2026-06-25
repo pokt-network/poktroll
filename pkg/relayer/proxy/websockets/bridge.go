@@ -109,6 +109,15 @@ type bridge struct {
 	// It ensures that the bridge only serves relay requests matching the session
 	// it was created for.
 	session *sessiontypes.Session
+
+	// stopChan is the publish channel of the stop observable shared with both
+	// connections. The bridge owns closing it on teardown (see Run) so the
+	// observable's goPublish goroutine can terminate; otherwise it leaks one
+	// goroutine (plus the observable and its buffer) per websocket connection.
+	stopChan chan<- error
+
+	// stopChanCloseOnce guards the single close of stopChan.
+	stopChanCloseOnce sync.Once
 }
 
 // NewBridge creates a new websocket bridge between the gateway and the service backend.
@@ -205,6 +214,7 @@ func NewBridge(
 		relaysProducer:     serverRelaysProducer,
 		blockClient:        blockClient,
 		session:            session,
+		stopChan:           stopChan,
 	}
 
 	return bridge, nil
@@ -229,7 +239,18 @@ func (b *bridge) Run(closeHeight int64) {
 		},
 	)
 
-	b.logger.Info().Msg("bridge started")
+	// ForEach has returned, so b.ctx is done. The connections' cleanup goroutines
+	// (driven by the same ctx) close the underlying sockets, which unblocks
+	// connLoop/pingLoop. Wait for those sender goroutines to finish so nothing can
+	// write to stopChan, then close it exactly once. This lets the stop
+	// observable's goPublish goroutine return (it only exits when its publish
+	// channel closes); without it, goPublish leaks one goroutine, plus the
+	// observable and its buffer, for every websocket connection the bridge serves.
+	b.serviceBackendConn.waitSenders()
+	b.gatewayConn.waitSenders()
+	b.stopChanCloseOnce.Do(func() { close(b.stopChan) })
+
+	b.logger.Info().Msg("bridge stopped")
 }
 
 // messageLoop is the main loop of the bridge:
