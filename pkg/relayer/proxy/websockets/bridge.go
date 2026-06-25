@@ -224,7 +224,14 @@ func NewBridge(
 // It is a blocking method and should be called in a goroutine.
 // It is scheduled to stop when the closeHeight is reached.
 func (b *bridge) Run(closeHeight int64) {
-	go b.messageLoop()
+	// Track messageLoop completion: it is a stopChan sender (via the
+	// handleGatewayIncomingMessage / handleServiceBackendIncomingMessage error
+	// paths), so stopChan must not be closed until it has returned.
+	msgLoopDone := make(chan struct{})
+	go func() {
+		defer close(msgLoopDone)
+		b.messageLoop()
+	}()
 
 	channel.ForEach(
 		b.ctx,
@@ -239,13 +246,18 @@ func (b *bridge) Run(closeHeight int64) {
 		},
 	)
 
-	// ForEach has returned, so b.ctx is done. The connections' cleanup goroutines
-	// (driven by the same ctx) close the underlying sockets, which unblocks
-	// connLoop/pingLoop. Wait for those sender goroutines to finish so nothing can
-	// write to stopChan, then close it exactly once. This lets the stop
-	// observable's goPublish goroutine return (it only exits when its publish
+	// ForEach has returned, so b.ctx is done. Every goroutine that can write to
+	// stopChan must be confirmed stopped before it is closed, or a late send
+	// panics ("send on closed channel") and crashes the RelayMiner. The senders are:
+	//   - messageLoop (this bridge goroutine), via the incoming-message handlers
+	//   - connLoop and pingLoop on each connection, via handleError
+	// connLoop/pingLoop are unblocked by the connections' cleanup goroutines, which
+	// are driven by the same ctx and close the underlying sockets.
+	// Once all senders are done, close stopChan exactly once so the stop
+	// observable's goPublish goroutine returns (it only exits when its publish
 	// channel closes); without it, goPublish leaks one goroutine, plus the
 	// observable and its buffer, for every websocket connection the bridge serves.
+	<-msgLoopDone
 	b.serviceBackendConn.waitSenders()
 	b.gatewayConn.waitSenders()
 	b.stopChanCloseOnce.Do(func() { close(b.stopChan) })
