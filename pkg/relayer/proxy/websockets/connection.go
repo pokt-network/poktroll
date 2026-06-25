@@ -263,6 +263,18 @@ func (c *connection) handleError(err error) {
 		logger.Error().Err(err).Msg("connection closed unexpectedly")
 	}
 
+	// Resilience backstop: the bridge closes stopChan on teardown only after every
+	// known sender (connLoop, pingLoop, messageLoop) has stopped, so this send
+	// should never hit a closed channel. But a send-on-closed panic here would
+	// crash the entire RelayMiner process, so recover and drop the late signal
+	// rather than risk taking the process down — the bridge is already shutting
+	// down and cleanup is driven by ctx regardless.
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Warn().Msgf("dropped stop signal during bridge shutdown: %v", r)
+		}
+	}()
+
 	c.stopChan <- err
 }
 
