@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"net/url"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -87,6 +88,11 @@ type connection struct {
 
 	// isClosed is a flag that indicates whether the connection is closed.
 	isClosed atomic.Bool
+
+	// senderWG tracks the goroutines that may send on stopChan (connLoop and
+	// pingLoop, via handleError). The bridge waits on it before closing stopChan
+	// so there is never a send on a closed channel.
+	senderWG sync.WaitGroup
 }
 
 // connectServiceBackend establishes a websocket connection established by the
@@ -144,6 +150,10 @@ func newConnection(
 
 	c.isClosed.Store(false)
 
+	// Track the two goroutines that may send on stopChan so the bridge can wait
+	// for them to finish before closing it (see bridge.Run / connection.waitSenders).
+	c.senderWG.Add(2)
+
 	// Start the connection's message and ping loops.
 	go c.connLoop()
 	go c.pingLoop()
@@ -154,9 +164,16 @@ func newConnection(
 	return c
 }
 
+// waitSenders blocks until the goroutines that may send on stopChan (connLoop
+// and pingLoop) have returned. The bridge calls this before closing stopChan.
+func (c *connection) waitSenders() {
+	c.senderWG.Wait()
+}
+
 // connLoop reads messages from the websocket connection and sends them to the
 // bridge's message channel.
 func (c *connection) connLoop() {
+	defer c.senderWG.Done()
 	for {
 		// Read the next message from the websocket connection and forward it to the
 		// message channel.
@@ -172,10 +189,18 @@ func (c *connection) connLoop() {
 			return
 		}
 
-		c.msgChan <- message{
+		// Forward the message, but bail out if the bridge is shutting down.
+		// msgChan is unbuffered and only drained by the bridge's messageLoop,
+		// which exits on ctx cancellation; without this select, connLoop would
+		// block here forever after teardown and stall waitSenders.
+		select {
+		case c.msgChan <- message{
 			data:        msg,
 			source:      c.source,
 			messageType: messageType,
+		}:
+		case <-c.ctx.Done():
+			return
 		}
 	}
 }
@@ -184,6 +209,7 @@ func (c *connection) connLoop() {
 // If the peer does not respond with a pong message within the allowed time,
 // the connection is closed.
 func (c *connection) pingLoop() {
+	defer c.senderWG.Done()
 	logger := c.pingLogger
 
 	ticker := time.NewTicker(pingPeriod)
