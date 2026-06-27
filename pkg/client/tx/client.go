@@ -57,10 +57,13 @@ const (
 	// burst exceeding the block gas limit, a mempool recheck eviction, a node
 	// restart, ...) it is never re-injected and the claim/proof is forfeited at
 	// window close (PROOF_MISSING) even when later blocks in the window are empty.
-	// One in-window re-broadcast recovers it. Keep small to avoid flooding the
-	// mempool with duplicates.
+	// Re-broadcasts are spread evenly across the window (see collectDueRebroadcasts)
+	// so a single bad block does not sink the tx. Two recovers the residual tail
+	// observed on mainnet where a single mid-window resend still missed (the resend
+	// itself landing in a second congested/empty block). Keep small to avoid
+	// flooding the mempool with duplicates.
 	// TODO_TECHDEBT: make this (and txRebroadcastSafetyBlocks) configurable.
-	maxTxRebroadcasts = 1
+	maxTxRebroadcasts = 2
 
 	// txRebroadcastSafetyBlocks stops re-broadcasting once the chain is within this
 	// many blocks of a tx's timeout height, since a resend that late cannot land.
@@ -758,10 +761,16 @@ func (txnClient *txClient) collectDueRebroadcasts(currentHeight int64) []rebroad
 		if pending.rebroadcasts >= maxTxRebroadcasts {
 			continue
 		}
-		// Wait until the window midpoint, giving the original tx maximal chance to
-		// land on its own before a duplicate is added to the mempool.
-		midpointHeight := pending.submitHeight + (pending.timeoutHeight-pending.submitHeight)/2
-		if currentHeight < midpointHeight {
+		// Spread re-broadcasts evenly across the window: the k-th re-broadcast
+		// (1-based) is due at submitHeight + window*k/(maxTxRebroadcasts+1). This
+		// gives the original tx maximal time to land on its own before the first
+		// duplicate, and spaces retries instead of clustering them, so a single
+		// congested/empty block does not sink the tx. With maxTxRebroadcasts=1 this
+		// reduces to the window midpoint.
+		window := pending.timeoutHeight - pending.submitHeight
+		nextRebroadcast := int64(pending.rebroadcasts) + 1
+		dueHeight := pending.submitHeight + window*nextRebroadcast/int64(maxTxRebroadcasts+1)
+		if currentHeight < dueHeight {
 			continue
 		}
 		// Stop once too close to the timeout height for a resend to still land.
