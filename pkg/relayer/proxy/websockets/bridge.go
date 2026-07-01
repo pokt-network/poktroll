@@ -9,6 +9,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -109,6 +110,15 @@ type bridge struct {
 	// It ensures that the bridge only serves relay requests matching the session
 	// it was created for.
 	session *sessiontypes.Session
+
+	// stopChan is the publish channel of the stop observable shared with both
+	// connections. The bridge owns closing it on teardown (see Run) so the
+	// observable's goPublish goroutine can terminate; otherwise it leaks one
+	// goroutine (plus the observable and its buffer) per websocket connection.
+	stopChan chan<- error
+
+	// stopChanCloseOnce guards the single close of stopChan.
+	stopChanCloseOnce sync.Once
 }
 
 // NewBridge creates a new websocket bridge between the gateway and the service backend.
@@ -205,7 +215,19 @@ func NewBridge(
 		relaysProducer:     serverRelaysProducer,
 		blockClient:        blockClient,
 		session:            session,
+		stopChan:           stopChan,
 	}
+
+	// Tear the bridge down as soon as either connection signals stop (client or
+	// service-backend disconnect/error) instead of holding it until closeHeight.
+	// Run only cancels the bridge context when a committed block reaches
+	// closeHeight, so without this a websocket client that disconnects early keeps
+	// the bridge's Run/messageLoop goroutines, its per-bridge CommittedBlocksSequence
+	// subscription and ~a dozen observer goroutines pinned for the rest of the
+	// session. Under connection churn that accumulates into a large goroutine/heap
+	// footprint. stopBridgeObservable only emits on disconnect/error, so live
+	// connections are unaffected and still ride until closeHeight.
+	go goCancelBridgeOnStop(ctx, cancelCtx, stopBridgeObservable)
 
 	return bridge, nil
 }
@@ -214,7 +236,14 @@ func NewBridge(
 // It is a blocking method and should be called in a goroutine.
 // It is scheduled to stop when the closeHeight is reached.
 func (b *bridge) Run(closeHeight int64) {
-	go b.messageLoop()
+	// Track messageLoop completion: it is a stopChan sender (via the
+	// handleGatewayIncomingMessage / handleServiceBackendIncomingMessage error
+	// paths), so stopChan must not be closed until it has returned.
+	msgLoopDone := make(chan struct{})
+	go func() {
+		defer close(msgLoopDone)
+		b.messageLoop()
+	}()
 
 	channel.ForEach(
 		b.ctx,
@@ -229,7 +258,47 @@ func (b *bridge) Run(closeHeight int64) {
 		},
 	)
 
-	b.logger.Info().Msg("bridge started")
+	// ForEach has returned, so b.ctx is done. Every goroutine that can write to
+	// stopChan must be confirmed stopped before it is closed, or a late send
+	// panics ("send on closed channel") and crashes the RelayMiner. The senders are:
+	//   - messageLoop (this bridge goroutine), via the incoming-message handlers
+	//   - connLoop and pingLoop on each connection, via handleError
+	// connLoop/pingLoop are unblocked by the connections' cleanup goroutines, which
+	// are driven by the same ctx and close the underlying sockets.
+	// Once all senders are done, close stopChan exactly once so the stop
+	// observable's goPublish goroutine returns (it only exits when its publish
+	// channel closes); without it, goPublish leaks one goroutine, plus the
+	// observable and its buffer, for every websocket connection the bridge serves.
+	<-msgLoopDone
+	b.serviceBackendConn.waitSenders()
+	b.gatewayConn.waitSenders()
+	b.stopChanCloseOnce.Do(func() { close(b.stopChan) })
+
+	b.logger.Info().Msg("bridge stopped")
+}
+
+// goCancelBridgeOnStop cancels the bridge context as soon as the stop observable
+// emits, which happens when either connection reports a disconnect or error (see
+// connection.handleError). Cancelling the context makes Run's block-sequence
+// ForEach return and drives the normal teardown (waitSenders + the single
+// stopChan close), releasing the bridge's goroutines, its CommittedBlocksSequence
+// subscription and its observers immediately rather than at closeHeight.
+//
+// It also returns when the context is already done (the closeHeight teardown
+// path), so the watcher goroutine never outlives the bridge. cancelCtx is
+// idempotent, so calling it again on that path is a no-op.
+//
+// It is blocking and intended to be run in its own goroutine.
+func goCancelBridgeOnStop(
+	ctx context.Context,
+	cancelCtx context.CancelFunc,
+	stopBridgeObservable observable.Observable[error],
+) {
+	select {
+	case <-stopBridgeObservable.Subscribe(ctx).Ch():
+	case <-ctx.Done():
+	}
+	cancelCtx()
 }
 
 // messageLoop is the main loop of the bridge:

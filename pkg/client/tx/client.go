@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"hash/fnv"
 	"sync"
 	"time"
 
@@ -49,6 +50,25 @@ const (
 	// MUST set a timeout when using unordered transactions. 10 minutes is the maximum, use 9 for safety.
 	// See: https://docs.cosmos.network/v0.53/build/architecture/adr-070-unordered-account
 	txTimeoutTimestampDelay = time.Minute * 9
+
+	// maxTxRebroadcasts is the number of times the tx client will re-broadcast a
+	// still-pending (un-included) transaction before its timeout height. A
+	// claim/proof tx is broadcast exactly once at its assigned commit height; if
+	// that broadcast is evicted from the mempool before inclusion (window-open
+	// burst exceeding the block gas limit, a mempool recheck eviction, a node
+	// restart, ...) it is never re-injected and the claim/proof is forfeited at
+	// window close (PROOF_MISSING) even when later blocks in the window are empty.
+	// Re-broadcasts are spread evenly across the window (see collectDueRebroadcasts)
+	// so a single bad block does not sink the tx. Two recovers the residual tail
+	// observed on mainnet where a single mid-window resend still missed (the resend
+	// itself landing in a second congested/empty block). Keep small to avoid
+	// flooding the mempool with duplicates.
+	// TODO_TECHDEBT: make this (and txRebroadcastSafetyBlocks) configurable.
+	maxTxRebroadcasts = 2
+
+	// txRebroadcastSafetyBlocks stops re-broadcasting once the chain is within this
+	// many blocks of a tx's timeout height, since a resend that late cannot land.
+	txRebroadcastSafetyBlocks = 1
 )
 
 // TODO_TECHDEBT(@bryanchriswhite): Refactor this to use the EventsReplayClient
@@ -114,6 +134,11 @@ type txClient struct {
 	// is used to ensure that transactions error channels receive and close in the event
 	// that they have not already by the given timeout height.
 	txTimeoutPool txTimeoutPool
+	// rebroadcastPool maps tx_hash->pendingRebroadcast for transactions that have
+	// been broadcast but not yet observed on-chain. The committed-block loop uses
+	// it to re-broadcast txs that may have been evicted from the mempool before
+	// inclusion (see rebroadcastDuePendingTxs). Guarded by txsMutex.
+	rebroadcastPool map[txHash]*pendingRebroadcast
 
 	// gasPrices is the gas unit prices used for sending transactions.
 	gasPrices *cosmostypes.DecCoins
@@ -144,6 +169,28 @@ type (
 	height             = int64
 	txHash             = string
 )
+
+// pendingRebroadcast holds the signed bytes and scheduling metadata required to
+// re-broadcast a transaction that has not yet been observed on-chain.
+type pendingRebroadcast struct {
+	// txBz is the signed transaction bytes. Re-broadcasting identical bytes is
+	// idempotent: the tx hash is unchanged, so existing inclusion/timeout tracking
+	// keeps applying and CometBFT dedups duplicates by hash.
+	txBz []byte
+	// submitHeight is the block height observed when the tx was first broadcast.
+	submitHeight int64
+	// timeoutHeight is the tx's TimeoutHeight (e.g. proof/claim window close).
+	timeoutHeight int64
+	// rebroadcasts counts how many times the tx has been re-broadcast so far.
+	rebroadcasts int
+}
+
+// rebroadcastItem is a unit of re-broadcast work handed out of the locked
+// collection step to the (unlocked) broadcast step.
+type rebroadcastItem struct {
+	txHash string
+	txBz   []byte
+}
 
 // NewTxClient attempts to construct a new TxClient using the given dependencies
 // and options.
@@ -178,6 +225,7 @@ func NewTxClient(
 		commitTimeoutHeightOffset: DefaultCommitTimeoutHeightOffset,
 		txErrorChans:              make(txErrorChansByHash),
 		txTimeoutPool:             make(txTimeoutPool),
+		rebroadcastPool:           make(map[txHash]*pendingRebroadcast),
 	}
 
 	if err = depinject.Inject(
@@ -324,6 +372,10 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		return nil, either.SyncErr(err)
 	}
 
+	// Capture the height at which the tx is broadcast; used to schedule an in-window
+	// re-broadcast if the tx is evicted from the mempool before inclusion.
+	submitHeight := txnClient.blockClient.LastBlock(ctx).Height()
+
 	txResponse, err = retry.Call(ctx, func() (*cosmostypes.TxResponse, error) {
 		response, txErr := txnClient.txCtx.BroadcastTx(txBz)
 		// Wrap timeout height error to make it non-retryable.
@@ -341,7 +393,12 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		return txResponse, either.SyncErr(ErrCheckTx.Wrapf("%s", txResponse.RawLog))
 	}
 
-	return txResponse, txnClient.addPendingTransactions(encoding.NormalizeTxHashHex(txResponse.TxHash), timeoutHeight)
+	return txResponse, txnClient.addPendingTransactions(
+		encoding.NormalizeTxHashHex(txResponse.TxHash),
+		txBz,
+		submitHeight,
+		timeoutHeight,
+	)
 }
 
 // SignAndBroadcast signs a set of Cosmos SDK messages, constructs a transaction,
@@ -453,6 +510,8 @@ func (txnClient *txClient) validateConfigAndSetDefaults() error {
 //     provided transaction hash.
 func (txnClient *txClient) addPendingTransactions(
 	txHash string,
+	txBz []byte,
+	submitHeight int64,
 	timeoutHeight int64,
 ) either.AsyncError {
 	txnClient.txsMutex.Lock()
@@ -484,6 +543,18 @@ func (txnClient *txClient) addPendingTransactions(
 		// NB: both maps hold a reference to the same channel so that we can check
 		// if the channel has already been closed when timing out.
 		txnClient.txErrorChans[txHash] = errCh
+	}
+
+	// Track the signed bytes so the committed-block loop can re-broadcast the tx
+	// if it is evicted from the mempool before inclusion. The entry is removed
+	// once the tx is observed on-chain (goSubscribeToOwnTxs) or times out
+	// (goTimeoutPendingTransactions).
+	if _, ok := txnClient.rebroadcastPool[txHash]; !ok {
+		txnClient.rebroadcastPool[txHash] = &pendingRebroadcast{
+			txBz:          txBz,
+			submitHeight:  submitHeight,
+			timeoutHeight: timeoutHeight,
+		}
 	}
 
 	return either.AsyncErr(errCh)
@@ -570,6 +641,8 @@ func (txnClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 			// Close and remove from txErrChans
 			close(txErrCh)
 			delete(txnClient.txErrorChans, txHashHex)
+			// Tx is on-chain: stop tracking it for re-broadcast.
+			delete(txnClient.rebroadcastPool, txHashHex)
 		}
 
 		txnClient.txsMutex.Unlock()
@@ -596,10 +669,15 @@ func (txnClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 		default:
 		}
 
+		currentHeight := block.Height()
+
+		// Re-broadcast any still-pending txs that are due at this height, to
+		// recover from a possible mempool eviction before their timeout height.
+		txnClient.rebroadcastDuePendingTxs(currentHeight)
+
 		txnClient.txsMutex.Lock()
 
 		// Retrieve transactions associated with the current block's height.
-		currentHeight := block.Height()
 		txsByHash, ok := txnClient.txTimeoutPool[currentHeight]
 		if !ok {
 			// If no transactions are found for the current block height, continue.
@@ -618,6 +696,7 @@ func (txnClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 				}
 				// Remove the processed transaction.
 				delete(txsByHash, txHash)
+				delete(txnClient.rebroadcastPool, txHash)
 				txnClient.txsMutex.Unlock()
 				continue
 			default:
@@ -628,14 +707,111 @@ func (txnClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 				// Send a tx client timeout error.
 				txErrCh <- err
 			}
-			close(txErrCh)            // Close the error channel.
-			delete(txsByHash, txHash) // Remove the transaction.
+			close(txErrCh)                            // Close the error channel.
+			delete(txsByHash, txHash)                 // Remove the transaction.
+			delete(txnClient.rebroadcastPool, txHash) // Stop tracking it for re-broadcast.
 		}
 
 		// Clean up the txTimeoutPool for the current block height.
 		delete(txnClient.txTimeoutPool, currentHeight)
 		txnClient.txsMutex.Unlock()
 	}
+}
+
+// rebroadcastDuePendingTxs re-broadcasts the signed bytes of any still-pending
+// transaction whose original broadcast may have been evicted from the mempool
+// before inclusion.
+//
+// A claim/proof tx is broadcast exactly once at its assigned commit height. If it
+// is dropped before inclusion (a window-open burst exceeding the block gas limit,
+// a mempool recheck eviction, a node restart, ...) it is never re-injected and the
+// claim/proof is forfeited at window close (PROOF_MISSING) even when later blocks
+// in the window are empty. To recover into those empty tail blocks without
+// flooding the mempool with duplicates, each pending tx is re-broadcast at most
+// maxTxRebroadcasts times, no earlier than the window midpoint, and not within
+// txRebroadcastSafetyBlocks of its timeout height. The signed bytes are identical,
+// so the tx hash is unchanged and existing inclusion/timeout tracking still applies.
+func (txnClient *txClient) rebroadcastDuePendingTxs(currentHeight int64) {
+	for _, item := range txnClient.collectDueRebroadcasts(currentHeight) {
+		// Re-broadcasting identical bytes is idempotent: CometBFT dedups by hash,
+		// so a "tx already exists in cache" response means the original is still
+		// pending and is safe to ignore.
+		if _, err := txnClient.txCtx.BroadcastTx(item.txBz); err != nil {
+			txnClient.logger.Debug().Err(err).Msgf(
+				"[TX] re-broadcast of pending tx %q at height %d returned an error (likely already pending)",
+				item.txHash, currentHeight,
+			)
+			continue
+		}
+		txnClient.logger.Info().Msgf(
+			"[TX] re-broadcast un-included tx %q at height %d to recover from possible mempool eviction",
+			item.txHash, currentHeight,
+		)
+	}
+}
+
+// collectDueRebroadcasts returns the pending txs that are due for a re-broadcast
+// at currentHeight, incrementing their re-broadcast counter under lock. The actual
+// (network-bound) BroadcastTx happens outside the lock in rebroadcastDuePendingTxs.
+func (txnClient *txClient) collectDueRebroadcasts(currentHeight int64) []rebroadcastItem {
+	txnClient.txsMutex.Lock()
+	defer txnClient.txsMutex.Unlock()
+
+	var due []rebroadcastItem
+	for hash, pending := range txnClient.rebroadcastPool {
+		if pending.rebroadcasts >= maxTxRebroadcasts {
+			continue
+		}
+		// Spread re-broadcasts evenly across the window: the k-th re-broadcast
+		// (1-based) is due at submitHeight + window*k/(maxTxRebroadcasts+1). This
+		// gives the original tx maximal time to land on its own before the first
+		// duplicate, and spaces retries instead of clustering them, so a single
+		// congested/empty block does not sink the tx. With maxTxRebroadcasts=1 this
+		// reduces to the window midpoint.
+		window := pending.timeoutHeight - pending.submitHeight
+		slot := window / int64(maxTxRebroadcasts+1)
+		nextRebroadcast := int64(pending.rebroadcasts) + 1
+		dueHeight := pending.submitHeight + window*nextRebroadcast/int64(maxTxRebroadcasts+1)
+		// A whole claim/proof batch is broadcast at window open, so every tx in it
+		// shares submitHeight and timeoutHeight and would otherwise re-broadcast on
+		// the exact same block, producing a synchronized BroadcastTx/CheckTx burst on
+		// the node (observed as a load spike late in the window, including for txs
+		// already committed but not yet cleared from the pool by goSubscribeToOwnTxs).
+		// Add a deterministic per-tx offset in [0, slot) to fan the batch out across
+		// the slot's blocks, then clamp below the safety boundary so the jitter never
+		// pushes a tx past the point where a resend can still land.
+		dueHeight += rebroadcastJitter(hash, slot)
+		if maxDueHeight := pending.timeoutHeight - txRebroadcastSafetyBlocks - 1; dueHeight > maxDueHeight {
+			dueHeight = maxDueHeight
+		}
+		if currentHeight < dueHeight {
+			continue
+		}
+		// Stop once too close to the timeout height for a resend to still land.
+		if currentHeight >= pending.timeoutHeight-txRebroadcastSafetyBlocks {
+			continue
+		}
+		pending.rebroadcasts++
+		due = append(due, rebroadcastItem{txHash: hash, txBz: pending.txBz})
+	}
+	return due
+}
+
+// rebroadcastJitter returns a stable per-tx block offset in [0, slot) derived from
+// the transaction hash. It is used to fan a batch of txs that share the same
+// re-broadcast due height (e.g. all claims broadcast at window open) across the
+// blocks of a slot instead of firing them on a single block. The offset is a pure
+// function of the hash, so a given tx always jitters to the same height across the
+// client's lifetime. This is an off-chain scheduling hint only (not consensus
+// state), so any stable hash is fine. A slot of 0 or 1 yields no jitter.
+func rebroadcastJitter(txHash string, slot int64) int64 {
+	if slot <= 1 {
+		return 0
+	}
+	h := fnv.New32a()
+	// hash.Hash.Write never returns an error.
+	_, _ = h.Write([]byte(txHash))
+	return int64(h.Sum32()) % slot
 }
 
 // TODO_CONSIDERATION: Simplify error handling by removing custom tx client timeout errors
