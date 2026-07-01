@@ -331,15 +331,16 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 	// See x/proof/keeper/session.go:167 for the same pattern.
 	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
 
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
-	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
-
-	// TODO_TECHDEBT(@red-0ne): Update the method header of this function to accept (sharedParams, claim, BlockHash).
-	// After doing so, please review all calling sites and simplify them accordingly.
+	// CONSENSUS HARDENING — the block-hash arg to GetEarliestSupplierProofCommitHeight is
+	// unused (proof distribution seeding disabled), so do NOT read it here: a gas-metered
+	// GetBlockHash read for a discarded value adds a latent nondeterminism surface on this
+	// on-chain path. See the note in x/proof/types/shared_query_client.go
+	// (GetEarliestSupplierClaimCommitHeight) about the beta-lego block-432943 divergence
+	// whose signature this matches (suspected carrier, not a proven root cause).
 	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
-		proofWindowOpenBlockHash,
+		nil,
 		supplierOperatorAddress,
 	)
 
