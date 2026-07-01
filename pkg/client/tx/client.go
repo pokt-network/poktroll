@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"hash/fnv"
 	"sync"
 	"time"
 
@@ -768,8 +769,21 @@ func (txnClient *txClient) collectDueRebroadcasts(currentHeight int64) []rebroad
 		// congested/empty block does not sink the tx. With maxTxRebroadcasts=1 this
 		// reduces to the window midpoint.
 		window := pending.timeoutHeight - pending.submitHeight
+		slot := window / int64(maxTxRebroadcasts+1)
 		nextRebroadcast := int64(pending.rebroadcasts) + 1
 		dueHeight := pending.submitHeight + window*nextRebroadcast/int64(maxTxRebroadcasts+1)
+		// A whole claim/proof batch is broadcast at window open, so every tx in it
+		// shares submitHeight and timeoutHeight and would otherwise re-broadcast on
+		// the exact same block, producing a synchronized BroadcastTx/CheckTx burst on
+		// the node (observed as a load spike late in the window, including for txs
+		// already committed but not yet cleared from the pool by goSubscribeToOwnTxs).
+		// Add a deterministic per-tx offset in [0, slot) to fan the batch out across
+		// the slot's blocks, then clamp below the safety boundary so the jitter never
+		// pushes a tx past the point where a resend can still land.
+		dueHeight += rebroadcastJitter(hash, slot)
+		if maxDueHeight := pending.timeoutHeight - txRebroadcastSafetyBlocks - 1; dueHeight > maxDueHeight {
+			dueHeight = maxDueHeight
+		}
 		if currentHeight < dueHeight {
 			continue
 		}
@@ -781,6 +795,23 @@ func (txnClient *txClient) collectDueRebroadcasts(currentHeight int64) []rebroad
 		due = append(due, rebroadcastItem{txHash: hash, txBz: pending.txBz})
 	}
 	return due
+}
+
+// rebroadcastJitter returns a stable per-tx block offset in [0, slot) derived from
+// the transaction hash. It is used to fan a batch of txs that share the same
+// re-broadcast due height (e.g. all claims broadcast at window open) across the
+// blocks of a slot instead of firing them on a single block. The offset is a pure
+// function of the hash, so a given tx always jitters to the same height across the
+// client's lifetime. This is an off-chain scheduling hint only (not consensus
+// state), so any stable hash is fine. A slot of 0 or 1 yields no jitter.
+func rebroadcastJitter(txHash string, slot int64) int64 {
+	if slot <= 1 {
+		return 0
+	}
+	h := fnv.New32a()
+	// hash.Hash.Write never returns an error.
+	_, _ = h.Write([]byte(txHash))
+	return int64(h.Sum32()) % slot
 }
 
 // TODO_CONSIDERATION: Simplify error handling by removing custom tx client timeout errors
