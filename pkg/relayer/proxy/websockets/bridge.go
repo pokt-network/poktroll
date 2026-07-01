@@ -9,6 +9,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -217,6 +218,17 @@ func NewBridge(
 		stopChan:           stopChan,
 	}
 
+	// Tear the bridge down as soon as either connection signals stop (client or
+	// service-backend disconnect/error) instead of holding it until closeHeight.
+	// Run only cancels the bridge context when a committed block reaches
+	// closeHeight, so without this a websocket client that disconnects early keeps
+	// the bridge's Run/messageLoop goroutines, its per-bridge CommittedBlocksSequence
+	// subscription and ~a dozen observer goroutines pinned for the rest of the
+	// session. Under connection churn that accumulates into a large goroutine/heap
+	// footprint. stopBridgeObservable only emits on disconnect/error, so live
+	// connections are unaffected and still ride until closeHeight.
+	go goCancelBridgeOnStop(ctx, cancelCtx, stopBridgeObservable)
+
 	return bridge, nil
 }
 
@@ -263,6 +275,30 @@ func (b *bridge) Run(closeHeight int64) {
 	b.stopChanCloseOnce.Do(func() { close(b.stopChan) })
 
 	b.logger.Info().Msg("bridge stopped")
+}
+
+// goCancelBridgeOnStop cancels the bridge context as soon as the stop observable
+// emits, which happens when either connection reports a disconnect or error (see
+// connection.handleError). Cancelling the context makes Run's block-sequence
+// ForEach return and drives the normal teardown (waitSenders + the single
+// stopChan close), releasing the bridge's goroutines, its CommittedBlocksSequence
+// subscription and its observers immediately rather than at closeHeight.
+//
+// It also returns when the context is already done (the closeHeight teardown
+// path), so the watcher goroutine never outlives the bridge. cancelCtx is
+// idempotent, so calling it again on that path is a no-op.
+//
+// It is blocking and intended to be run in its own goroutine.
+func goCancelBridgeOnStop(
+	ctx context.Context,
+	cancelCtx context.CancelFunc,
+	stopBridgeObservable observable.Observable[error],
+) {
+	select {
+	case <-stopBridgeObservable.Subscribe(ctx).Ch():
+	case <-ctx.Done():
+	}
+	cancelCtx()
 }
 
 // messageLoop is the main loop of the bridge:
