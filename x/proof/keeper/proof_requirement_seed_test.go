@@ -56,8 +56,7 @@ func TestKeeper_GetProofRequirementSeedBlockHash_UsesHistoricalParams(t *testing
 	// Historical params at sessionEndHeight = default params.
 	defaultParams := sharedtypes.DefaultParams()
 
-	// Block hashes — distinct per height so we can distinguish them.
-	blockHashA := []byte("block_hash_A_proof_window_open_default")
+	// Block hash for the seed block (the one live GetBlockHash read).
 	seedBlockHashDefault := []byte("seed_block_hash_default")
 
 	// Expect GetParamsAtHeight to be called with sessionEndHeight.
@@ -68,18 +67,14 @@ func TestKeeper_GetProofRequirementSeedBlockHash_UsesHistoricalParams(t *testing
 	// Compute the expected proof window open height with default params.
 	proofWindowOpenHeightDefault := sharedtypes.GetProofWindowOpenHeight(&defaultParams, sessionEndHeight)
 
-	// GetBlockHash is called twice:
-	// 1. For proofWindowOpenHeight (to get the block hash used as seed for random offset)
-	// 2. For earliestSupplierProofCommitHeight - 1 (the actual seed block hash)
-	mockSessionKeeper.EXPECT().
-		GetBlockHash(gomock.Any(), proofWindowOpenHeightDefault).
-		Return(blockHashA)
-
-	// The earliest proof commit height depends on a random offset seeded by
-	// (proofWindowOpenBlockHash, supplierAddr). We capture the exact height
-	// by computing it ourselves.
+	// getProofRequirementSeedBlockHash now reads GetBlockHash exactly once — for
+	// earliestSupplierProofCommitHeight-1 (the actual proof-requirement seed block).
+	// The former read of the proof-window-open block hash fed the unused distribution-seed
+	// arg of GetEarliestSupplierProofCommitHeight and was removed as a consensus-hardening
+	// measure (a discarded gas-metered read on the on-chain path). Since that arg is
+	// unused, passing nil yields the same earliest commit height.
 	earliestCommitHeightDefault := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		&defaultParams, sessionEndHeight, blockHashA, supplierAddr,
+		&defaultParams, sessionEndHeight, nil, supplierAddr,
 	)
 	mockSessionKeeper.EXPECT().
 		GetBlockHash(gomock.Any(), earliestCommitHeightDefault-1).
@@ -101,10 +96,8 @@ func TestKeeper_GetProofRequirementSeedBlockHash_UsesHistoricalParams(t *testing
 		GetParamsAtHeight(gomock.Any(), sessionEndHeight).
 		Return(defaultParams)
 
-	// Same expectations as scenario 1, because historical params are the same.
-	mockSessionKeeper.EXPECT().
-		GetBlockHash(gomock.Any(), proofWindowOpenHeightDefault).
-		Return(blockHashA)
+	// Same expectation as scenario 1 (one live seed read), because historical params
+	// are the same.
 	mockSessionKeeper.EXPECT().
 		GetBlockHash(gomock.Any(), earliestCommitHeightDefault-1).
 		Return(seedBlockHashDefault)

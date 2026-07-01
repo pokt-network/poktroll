@@ -89,18 +89,22 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 	supplierOperatorAddr string,
 ) (int64, error) {
 	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight)
 
-	// Fetch the claim window open block hash so that it can be used as part of the
-	// pseudo-random seed for generating the claim distribution offset.
-	// NB: Raw byte slice representations of block hashes don't need to be normalized.
-	claimWindowOpenBlockHashBz := sqc.sessionKeeper.GetBlockHash(ctx, claimWindowOpenHeight)
-
-	// Get the earliest claim commit height for the given supplier.
+	// CONSENSUS HARDENING — do NOT read the claim-window-open block hash here.
+	// The claimWindowOpenBlockHash arg to sharedtypes.GetEarliestSupplierClaimCommitHeight
+	// is unused (claim distribution seeding is disabled), so the value is discarded — yet
+	// GetBlockHash is a gas-metered store read on the MsgCreateClaim (FinalizeBlock) path.
+	// A discarded read that still consumes consensus gas is a latent nondeterminism
+	// surface: if it ever returned a different byte length across nodes, gas_used would
+	// diverge and LastResultsHash split while AppHash stayed identical. That is the
+	// signature of the beta-lego block-432943 halt (transient, self-healed on re-exec);
+	// this read is a suspected carrier, not a proven root cause. Passing nil removes the
+	// surface. Re-add only if distribution seeding is re-enabled deterministically on AND
+	// off chain.
 	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		queryHeight,
-		claimWindowOpenBlockHashBz,
+		nil,
 		supplierOperatorAddr,
 	), nil
 }
@@ -113,18 +117,16 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 	supplierOperatorAddr string,
 ) (int64, error) {
 	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight)
 
-	// Fetch the proof window open block hash so that it can be used as part of the
-	// pseudo-random seed for generating the proof distribution offset.
-	// NB: Raw byte slice representations of block hashes don't need to be normalized.
-	proofWindowOpenBlockHash := sqc.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
-
-	// Get the earliest proof commit height for the given supplier.
+	// CONSENSUS HARDENING — do NOT read the proof-window-open block hash here; see the
+	// detailed note in GetEarliestSupplierClaimCommitHeight above. The block-hash arg is
+	// unused (proof distribution seeding disabled), so a gas-metered GetBlockHash read on
+	// this on-chain path adds consensus gas for a discarded value — a latent
+	// nondeterminism surface with no upside. Pass nil.
 	return sharedtypes.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		queryHeight,
-		proofWindowOpenBlockHash,
+		nil,
 		supplierOperatorAddr,
 	), nil
 }
