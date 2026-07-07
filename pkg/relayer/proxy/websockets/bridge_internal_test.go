@@ -13,7 +13,7 @@ import (
 
 // TestGoCancelBridgeOnStop_CancelsOnStopEmit verifies the early-teardown fix: when
 // either connection signals stop (disconnect/error via the stop observable), the
-// bridge context is cancelled immediately instead of lingering until closeHeight.
+// bridge context is canceled immediately instead of lingering until closeHeight.
 // Without this, a disconnected websocket client pins the bridge's Run/messageLoop
 // goroutines, its block subscription and its observers for the rest of the session.
 func TestGoCancelBridgeOnStop_CancelsOnStopEmit(t *testing.T) {
@@ -28,7 +28,7 @@ func TestGoCancelBridgeOnStop_CancelsOnStopEmit(t *testing.T) {
 	}()
 
 	// Emit a stop signal (as connection.handleError would on disconnect/error).
-	// Retry the publish until the context is cancelled: the watcher subscribes
+	// Retry the publish until the context is canceled: the watcher subscribes
 	// inside its own goroutine, so an early single publish could race ahead of the
 	// subscription and be dropped by the (non-replay) observable.
 	require.Eventually(t, func() bool {
@@ -43,7 +43,7 @@ func TestGoCancelBridgeOnStop_CancelsOnStopEmit(t *testing.T) {
 	select {
 	case <-watcherReturned:
 	case <-time.After(2 * time.Second):
-		t.Fatal("watcher goroutine did not return after cancelling the context")
+		t.Fatal("watcher goroutine did not return after canceling the context")
 	}
 }
 
@@ -61,12 +61,12 @@ func TestGoCancelBridgeOnStop_ExitsOnCtxDone(t *testing.T) {
 		close(watcherReturned)
 	}()
 
-	// Simulate Run cancelling the context at closeHeight.
+	// Simulate Run canceling the context at closeHeight.
 	cancel()
 
 	select {
 	case <-watcherReturned:
 	case <-time.After(2 * time.Second):
-		t.Fatal("watcher goroutine leaked: did not return when the context was cancelled")
+		t.Fatal("watcher goroutine leaked: did not return when the context was canceled")
 	}
 }

@@ -279,7 +279,7 @@ func (b *bridge) Run(closeHeight int64) {
 
 // goCancelBridgeOnStop cancels the bridge context as soon as the stop observable
 // emits, which happens when either connection reports a disconnect or error (see
-// connection.handleError). Cancelling the context makes Run's block-sequence
+// connection.handleError). Canceling the context makes Run's block-sequence
 // ForEach return and drives the normal teardown (waitSenders + the single
 // stopChan close), releasing the bridge's goroutines, its CommittedBlocksSequence
 // subscription and its observers immediately rather than at closeHeight.
