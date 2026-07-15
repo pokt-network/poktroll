@@ -9,6 +9,7 @@ import (
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/app/pocket"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
@@ -63,6 +64,35 @@ type appSessionKey struct {
 	sessionId  string
 }
 
+// sessionBudget holds the precomputed budget allocation for a single (application,
+// session) group, used to demote the per-supplier head-split from a hard ceiling to a
+// guaranteed floor (settlement budget redistribution).
+//
+// All amounts are in "stake terms" — the settlement amount plus its per-claim global
+// inflation reimbursement — matching the units ensureClaimAmountLimits compares against
+// the application's stake. Populated in Phase 1.5 of SettlePendingClaims, consumed in
+// Phase 2.
+type sessionBudget struct {
+	// numSuppliers is the actual number of suppliers that submitted a claim for this
+	// (app, session) pair (== the value GetActualSupplierCount returns).
+	numSuppliers int64
+	// floor is the guaranteed per-supplier minimum settlement (B / numSuppliers), where
+	// B is the application's per-session budget (appStake / numPendingSessions, optionally
+	// clamped by per_session_spend_limit). Serving at or below the floor is always paid in
+	// full.
+	floor math.Int
+	// unused is the budget left on the table by suppliers that claimed below their floor:
+	// Σ max(0, floor − claimStake_i). This is what gets redistributed to overservicers.
+	unused math.Int
+	// totalExcess is the total demand above the floor: Σ max(0, claimStake_i − floor).
+	// Used as the denominator when apportioning `unused` in proportion to each
+	// overservicer's excess.
+	totalExcess math.Int
+	// spendLimitExceeded records whether the application's per_session_spend_limit (rather
+	// than its stake) bound B, so Phase 2 can set the flag on EventApplicationOverserviced.
+	spendLimitExceeded bool
+}
+
 // settlementContext maintains a cache of all entities involved in the claim settlement process.
 // This structure optimizes claim processing performance by eliminating redundant KV store operations.
 type settlementContext struct {
@@ -107,6 +137,13 @@ type settlementContext struct {
 	// consumed during settlement to replace the NumSuppliersPerSession governance param
 	// with the actual number of claimants, ensuring fair budget distribution.
 	supplierCountPerAppSession map[appSessionKey]int64
+
+	// budgetPerAppSession holds the precomputed per-(application, session) budget
+	// allocation (floor + redistributable unused budget). Populated in Phase 1.5 of
+	// SettlePendingClaims and consumed in Phase 2 by ensureClaimAmountLimits. Lookup-only
+	// from the consensus path — NEVER range over this map to produce output or state
+	// (map iteration order is non-deterministic).
+	budgetPerAppSession map[appSessionKey]*sessionBudget
 }
 
 // NewSettlementContext creates a new settlement context with all necessary caches initialized.
@@ -150,6 +187,10 @@ func NewSettlementContext(
 		// Initialize the supplier count map. Estimated capacity: each app typically has
 		// 1 session being settled per block, but may have more with multiple services.
 		supplierCountPerAppSession: make(map[appSessionKey]int64, estimatedApplications),
+
+		// Initialize the per-(app, session) budget map with the same capacity estimate:
+		// one settling session per application per settlement block.
+		budgetPerAppSession: make(map[appSessionKey]*sessionBudget, estimatedApplications),
 	}
 }
 
@@ -424,6 +465,142 @@ func (sctx *settlementContext) GetActualSupplierCount(appAddress, sessionId stri
 		return 1
 	}
 	return count
+}
+
+// AccumulateClaimBudget performs the Phase 1.5 budget accounting for a single claim: it
+// derives the claim's stake-terms amount (settlement amount + per-claim global inflation)
+// and folds it into its (application, session) group's floor/unused/excess totals.
+//
+// The claim's caches (service, difficulty, application) MUST already be warm — call
+// ClaimCacheWarmUp first. Returns an error if the claim cannot be priced or the group's
+// budget cannot be initialized; the caller treats such claims exactly as before (left for
+// Phase 2 to discard) so they contribute nothing to the budget math.
+func (sctx *settlementContext) AccumulateClaimBudget(ctx context.Context, claim *prooftypes.Claim) error {
+	sessionHeader := claim.GetSessionHeader()
+	if sessionHeader == nil {
+		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
+	}
+
+	relayMiningDifficulty, err := sctx.GetRelayMiningDifficulty(
+		sessionHeader.GetServiceId(),
+		sessionHeader.GetSessionStartBlockHeight(),
+	)
+	if err != nil {
+		return err
+	}
+
+	claimSettlementCoin, err := claim.GetClaimeduPOKT(sctx.sharedParams, relayMiningDifficulty)
+	if err != nil {
+		return err
+	}
+
+	claimStakeAmt, err := claimStakeTermsAmount(claimSettlementCoin, sctx.tokenomicsParams.GlobalInflationPerClaim)
+	if err != nil {
+		return err
+	}
+
+	sb, err := sctx.getOrInitSessionBudget(
+		ctx,
+		sessionHeader.GetApplicationAddress(),
+		sessionHeader.GetSessionId(),
+		sessionHeader.GetSessionEndBlockHeight(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Commutative integer accumulation — order-independent, hence consensus-safe.
+	if claimStakeAmt.LT(sb.floor) {
+		sb.unused = sb.unused.Add(sb.floor.Sub(claimStakeAmt))
+	} else {
+		sb.totalExcess = sb.totalExcess.Add(claimStakeAmt.Sub(sb.floor))
+	}
+
+	return nil
+}
+
+// getOrInitSessionBudget lazily computes and caches the budget allocation for an
+// (application, session) group. The floor (B / N) is a pure function of the application's
+// initial stake, the per-session concurrency (numPendingSessions at the claim's session-end
+// params epoch), the actual number of claiming suppliers, and the application's optional
+// per-session spend limit — none of which depend on the individual claim — so it is
+// computed once per group and reused.
+//
+// This mirrors the legacy floor computation in ensureClaimAmountLimits exactly, so that
+// overservicing_bonus_multiplier == 1 reproduces the pre-change settlement byte-for-byte.
+func (sctx *settlementContext) getOrInitSessionBudget(
+	ctx context.Context,
+	appAddress, sessionId string,
+	sessionEndBlockHeight int64,
+) (*sessionBudget, error) {
+	key := appSessionKey{appAddress: appAddress, sessionId: sessionId}
+	if sb, ok := sctx.budgetPerAppSession[key]; ok {
+		return sb, nil
+	}
+
+	appStake, err := sctx.GetApplicationInitialStake(appAddress)
+	if err != nil {
+		return nil, err
+	}
+	application, err := sctx.GetApplication(appAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	numSuppliers := sctx.GetActualSupplierCount(appAddress, sessionId)
+
+	// numPendingSessions is read at the params epoch effective for the claim's own session
+	// end height (not live): a num_blocks_per_session change between a session and its
+	// settlement otherwise re-divides the app stake by a different concurrency (#543, F2).
+	budgetParams := sctx.keeper.sharedKeeper.GetParamsAtHeight(ctx, sessionEndBlockHeight)
+	numPendingSessions := sharedtypes.GetNumPendingSessions(&budgetParams)
+
+	// floor = appStake / numPendingSessions / numSuppliers.
+	// Divide sessions first, then suppliers — matches the legacy integer-truncation order.
+	floor := appStake.Amount.
+		Quo(math.NewInt(numPendingSessions)).
+		Quo(math.NewInt(numSuppliers))
+
+	// Apply the application's per-session spend limit, if set: it caps the per-session
+	// budget B (= appStake/numPendingSessions), which is then divided among suppliers.
+	spendLimitExceeded := false
+	if application.PerSessionSpendLimit != nil &&
+		application.PerSessionSpendLimit.Amount.GT(math.ZeroInt()) {
+		if application.PerSessionSpendLimit.Denom != pocket.DenomuPOKT {
+			return nil, tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf(
+				"application %s has per_session_spend_limit with invalid denom %q (expected %q)",
+				appAddress, application.PerSessionSpendLimit.Denom, pocket.DenomuPOKT,
+			)
+		}
+		perSessionBudget := application.PerSessionSpendLimit.Amount
+		stakePerSession := appStake.Amount.Quo(math.NewInt(numPendingSessions))
+		if perSessionBudget.GT(stakePerSession) {
+			perSessionBudget = stakePerSession
+		}
+		spendLimitFloor := perSessionBudget.Quo(math.NewInt(numSuppliers))
+		if spendLimitFloor.LT(floor) {
+			floor = spendLimitFloor
+			spendLimitExceeded = true
+		}
+	}
+
+	sb := &sessionBudget{
+		numSuppliers:       numSuppliers,
+		floor:              floor,
+		unused:             math.ZeroInt(),
+		totalExcess:        math.ZeroInt(),
+		spendLimitExceeded: spendLimitExceeded,
+	}
+	sctx.budgetPerAppSession[key] = sb
+	return sb, nil
+}
+
+// GetSessionBudget returns the precomputed budget allocation for an (application, session)
+// group, or (nil, false) if none was initialized (e.g. every claim in the group failed
+// Phase 1.5 pricing). Lookup-only; callers must not mutate the returned struct.
+func (sctx *settlementContext) GetSessionBudget(appAddress, sessionId string) (*sessionBudget, bool) {
+	sb, ok := sctx.budgetPerAppSession[appSessionKey{appAddress: appAddress, sessionId: sessionId}]
+	return sb, ok
 }
 
 // cacheServiceAndDifficulty ensures the service and its relay mining difficulty are cached in the settlement context.

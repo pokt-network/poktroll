@@ -20,6 +20,8 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 		asTypeIface = &MsgUpdateParam_AsString{AsString: asType}
 	case float64:
 		asTypeIface = &MsgUpdateParam_AsFloat{AsFloat: asType}
+	case uint64:
+		asTypeIface = &MsgUpdateParam_AsUint64{AsUint64: asType}
 	default:
 		return nil, fmt.Errorf("unexpected param value type: %T", asTypeAny)
 	}
@@ -72,6 +74,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateMintRatio(msg.GetAsFloat())
+	case ParamOverservicingBonusMultiplier:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsUint64](msg); err != nil {
+			return err
+		}
+		return ValidateOverservicingBonusMultiplier(msg.GetAsUint64())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

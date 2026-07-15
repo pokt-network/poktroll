@@ -86,6 +86,35 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 	logger.Info(fmt.Sprintf("Phase 1 complete: collected %d claims for settlement", len(collectedClaims)))
 
+	// Phase 1.5: Precompute each (application, session) group's guaranteed floor and the
+	// budget left unused by idle/light suppliers, so Phase 2 can redistribute that unused
+	// budget to suppliers that served above their floor (settlement budget redistribution).
+	//
+	// This requires pricing every claim, which needs warm caches (service, difficulty,
+	// application, params). We warm them here; Phase 2's own ClaimCacheWarmUp then hits the
+	// cache (it is idempotent). A claim that cannot be warmed or priced here is simply left
+	// out of the budget math — Phase 2 discards it deterministically for the same reason,
+	// exactly as before this change. IncrementSupplierCount stays in Phase 1 so the divisor
+	// N reflects the same claim set the pre-change code used.
+	for i := range collectedClaims {
+		claim := &collectedClaims[i]
+		if warmErr := settlementContext.ClaimCacheWarmUp(ctx, claim); warmErr != nil {
+			// Faulty claim; Phase 2 will surface and discard it. Skip budget accounting.
+			continue
+		}
+		if budgetErr := settlementContext.AccumulateClaimBudget(ctx, claim); budgetErr != nil {
+			// Claim could not be priced or its budget initialized; Phase 2 will discard it
+			// for the same reason. Skip budget accounting.
+			logger.Warn(fmt.Sprintf(
+				"Phase 1.5: skipping budget accounting for claim (session %q, supplier %s): %s",
+				claim.SessionHeader.SessionId, claim.SupplierOperatorAddress, budgetErr,
+			))
+			continue
+		}
+	}
+
+	logger.Info(fmt.Sprintf("Phase 1.5 complete: precomputed budgets for %d (app, session) groups", len(settlementContext.budgetPerAppSession)))
+
 	// Phase 2: Settle each collected claim using actual supplier counts.
 	for _, claim := range collectedClaims {
 		// Settle the claim.

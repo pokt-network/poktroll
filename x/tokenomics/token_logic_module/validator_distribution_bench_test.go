@@ -105,3 +105,43 @@ func BenchmarkDistributeValidatorRewards(b *testing.B) {
 		})
 	}
 }
+
+// BenchmarkDistributeValidatorRewards_WithRemainder exercises the Largest Remainder Method
+// path (remainder > 0) that the divisible-reward BenchmarkDistributeValidatorRewards never
+// hits. This is where the double calculateAddressRewards computation lived — the LRM sort
+// used to recompute every stakeholder's base + fractional reward that the base-reward pass
+// had already computed. The reward amount is chosen to NOT divide evenly among stakeholders
+// so LRM runs over the full stakeholder set.
+func BenchmarkDistributeValidatorRewards_WithRemainder(b *testing.B) {
+	cases := []struct {
+		name             string
+		numValidators    int
+		delegatorsPerVal int
+	}{
+		{"mainnet_20val_x_50del", 20, 50},
+		{"heavy_20val_x_500del", 20, 500},
+	}
+
+	// Prime-ish reward that does not divide evenly among the stakeholder set, forcing a
+	// non-zero remainder and thus the LRM distribution path for every case.
+	rewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1_000_000_007))
+	logger := log.NewNopLogger()
+	baseCtx := cosmostypes.Context{}.WithContext(context.Background())
+	opReason := tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION
+
+	for _, c := range cases {
+		b.Run(c.name, func(b *testing.B) {
+			sk := buildBenchStakingKeeper(c.numValidators, c.delegatorsPerVal)
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				ctx := baseCtx.WithEventManager(cosmostypes.NewEventManager())
+				result := &tokenomicstypes.ClaimSettlementResult{}
+				if err := DistributeValidatorRewards(ctx, logger, result, sk, rewardCoin, opReason, 100); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}

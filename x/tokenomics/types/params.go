@@ -50,6 +50,14 @@ var (
 	ParamMintRatio   = "mint_ratio"
 	DefaultMintRatio = float64(1.0) // Default: no deflation (mint equals burn)
 
+	// Settlement budget redistribution: overservicing_bonus_multiplier bounds how far
+	// above its guaranteed floor a supplier's settlement may be raised from unused budget.
+	// 0 or 1 reproduce the legacy head-split cap exactly (no-op); n>1 allows up to n*floor.
+	// The zero value is treated as 1 (legacy), so an unset/clobbered param is always benign.
+	KeyOverservicingBonusMultiplier     = []byte("OverservicingBonusMultiplier")
+	ParamOverservicingBonusMultiplier   = "overservicing_bonus_multiplier"
+	DefaultOverservicingBonusMultiplier = uint64(1)
+
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
 
@@ -65,6 +73,7 @@ func NewParams(
 	globalInflationPerClaim float64,
 	mintEqualsBurnClaimDistribution MintEqualsBurnClaimDistribution,
 	mintRatio float64,
+	overservicingBonusMultiplier uint64,
 ) Params {
 	return Params{
 		DaoRewardAddress:                daoRewardAddress,
@@ -72,6 +81,7 @@ func NewParams(
 		GlobalInflationPerClaim:         globalInflationPerClaim,
 		MintEqualsBurnClaimDistribution: mintEqualsBurnClaimDistribution,
 		MintRatio:                       mintRatio,
+		OverservicingBonusMultiplier:    overservicingBonusMultiplier,
 	}
 }
 
@@ -83,6 +93,7 @@ func DefaultParams() Params {
 		DefaultGlobalInflationPerClaim,
 		DefaultMintEqualsBurnClaimDistribution,
 		DefaultMintRatio,
+		DefaultOverservicingBonusMultiplier,
 	)
 }
 
@@ -114,6 +125,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.MintRatio,
 			ValidateMintRatio,
 		),
+		paramtypes.NewParamSetPair(
+			KeyOverservicingBonusMultiplier,
+			&p.OverservicingBonusMultiplier,
+			ValidateOverservicingBonusMultiplier,
+		),
 	}
 }
 
@@ -139,10 +155,29 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	if err := ValidateOverservicingBonusMultiplier(params.OverservicingBonusMultiplier); err != nil {
+		return err
+	}
+
 	// If MintEqualsBurnClaimDistribution is zero-valued (e.g., because Ignite CLI couldn't parse it),
 	// set it to the default value
 	if params.MintEqualsBurnClaimDistribution.Sum() == 0 {
 		params.MintEqualsBurnClaimDistribution = DefaultMintEqualsBurnClaimDistribution
+	}
+
+	// Anti-collusion invariant (settlement budget redistribution):
+	// A colluding application+supplier burns X from its own application stake and
+	// receives back mint_ratio * supplier_share * X as the supplier. For self-dealing
+	// to be a losing trade, this round-trip factor MUST stay below 1. Today the
+	// per-session head-split cap accidentally bounds collusion throughput; once that
+	// cap is demoted to a floor, this invariant becomes the primary anti-collusion
+	// mechanism, so it is enforced as a hard validation error here.
+	roundTripFactor := params.MintRatio * params.MintEqualsBurnClaimDistribution.Supplier
+	if roundTripFactor >= 1 {
+		return ErrTokenomicsParamInvalid.Wrapf(
+			"anti-collusion invariant violated: mint_ratio (%f) * mint_equals_burn_claim_distribution.supplier (%f) = %f must be < 1",
+			params.MintRatio, params.MintEqualsBurnClaimDistribution.Supplier, roundTripFactor,
+		)
 	}
 
 	return nil
@@ -308,6 +343,19 @@ func ValidateMintRatio(mintRatioAny any) error {
 
 	if mintRatio <= 0 || mintRatio > 1 {
 		return ErrTokenomicsParamInvalid.Wrapf("mint_ratio must be in range (0, 1]: got %f", mintRatio)
+	}
+
+	return nil
+}
+
+// ValidateOverservicingBonusMultiplier validates the OverservicingBonusMultiplier param.
+// Any uint64 is structurally valid:
+//   - 0 or 1 reproduce the legacy head-split cap exactly (no redistribution above the floor);
+//     the zero value is treated as 1 at settlement so an unset/clobbered param stays benign,
+//   - n > 1 bounds a supplier's settlement to n * floor (redistribution from unused budget).
+func ValidateOverservicingBonusMultiplier(overservicingBonusMultiplierAny any) error {
+	if _, ok := overservicingBonusMultiplierAny.(uint64); !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", overservicingBonusMultiplierAny)
 	}
 
 	return nil

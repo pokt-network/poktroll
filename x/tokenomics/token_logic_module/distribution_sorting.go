@@ -57,14 +57,12 @@ func calculateAddressRewards(
 // sortAddressesByFractionDesc sorts addresses by fractional remainder (descending) for LRM.
 // Addresses with largest fractional parts receive remainder tokens first.
 // Uses address as ordering tie-breaker for determinism.
-func sortAddressesByFractionDesc(
-	stakeAmounts map[string]math.Int,
-	totalBondedTokens math.Int,
-	totalRewardAmount math.Int,
-) []string {
-	// Use consolidated calculation to get reward data for all addresses
-	rewardData := calculateAddressRewards(stakeAmounts, totalBondedTokens, totalRewardAmount)
-
+//
+// It consumes the reward data already computed by the caller (see
+// calculateProportionalRewards) rather than recomputing it: calculateAddressRewards is a
+// pure function of its inputs, so recomputing here just repeated ~len(stakeholders) big.Rat
+// operations per settlement for no benefit.
+func sortAddressesByFractionDesc(rewardData []addressRewardData) []string {
 	// Filter addresses with non-zero fractional parts
 	var rewardDataNonZeroFractions []addressRewardData
 	for _, data := range rewardData {

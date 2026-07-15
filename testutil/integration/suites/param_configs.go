@@ -245,12 +245,14 @@ var (
 			GlobalInflationPerClaim:         0.666,
 			MintEqualsBurnClaimDistribution: tokenomicstypes.DefaultMintEqualsBurnClaimDistribution,
 			MintRatio:                       tokenomicstypes.DefaultMintRatio, // PIP-41: deflationary mint mechanism
+			OverservicingBonusMultiplier:    3,                                // distinct from default (1) so the update test observes a change
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeMintAllocationPercentages:       tokenomicstypes.MsgUpdateParam_AsMintAllocationPercentages{},
 			ParamTypeMintEqualsBurnClaimDistribution: tokenomicstypes.MsgUpdateParam_AsMintEqualsBurnClaimDistribution{},
 			ParamTypeString:                          tokenomicstypes.MsgUpdateParam_AsString{},
 			ParamTypeFloat64:                         tokenomicstypes.MsgUpdateParam_AsFloat{},
+			ParamTypeUint64:                          tokenomicstypes.MsgUpdateParam_AsUint64{},
 		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,

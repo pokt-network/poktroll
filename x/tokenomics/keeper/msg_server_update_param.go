@@ -65,6 +65,11 @@ func (k msgServer) UpdateParam(
 		logger = logger.With("param_value", msg.GetAsFloat())
 		params.MintRatio = msg.GetAsFloat()
 
+	// OverservicingBonusMultiplier (settlement budget redistribution)
+	case tokenomicstypes.ParamOverservicingBonusMultiplier:
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.OverservicingBonusMultiplier = msg.GetAsUint64()
+
 	// Default
 	default:
 		return nil, status.Error(
