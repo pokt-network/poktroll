@@ -64,6 +64,24 @@ func NewTestServiceQueryClient(
 		}).
 		AnyTimes()
 
+	// Returns the registered service's cupr for any height, mirroring the on-chain
+	// at-height lookup (which falls back to the current cupr when no change history
+	// exists — the common case in these tests, where cupr is static).
+	serviceQuerier.EXPECT().GetServiceComputeUnitsPerRelayAtHeight(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			serviceId string,
+			_ int64,
+		) (uint64, error) {
+			service, ok := services[serviceId]
+			if !ok {
+				return 0, prooftypes.ErrProofServiceNotFound.Wrapf("service %s not found", serviceId)
+			}
+
+			return service.GetComputeUnitsPerRelay(), nil
+		}).
+		AnyTimes()
+
 	return serviceQuerier
 }
 

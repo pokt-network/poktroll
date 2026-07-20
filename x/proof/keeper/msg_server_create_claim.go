@@ -83,8 +83,11 @@ func (k msgServer) CreateClaim(
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("%v", err).Error())
 	}
 
-	// Get the number of compute units per relay for the service
-	serviceComputeUnitsPerRelay, err := k.getServiceComputeUnitsPerRelay(ctx, claim.SessionHeader.ServiceId)
+	// Get the compute units per relay for the service, pinned to the session-start
+	// height so an in-flight session is validated against the cupr that was live when
+	// its relays were mined (see getServiceComputeUnitsPerRelay).
+	sessionStartHeight := claim.SessionHeader.GetSessionStartBlockHeight()
+	serviceComputeUnitsPerRelay, err := k.getServiceComputeUnitsPerRelay(ctx, claim.SessionHeader.ServiceId, sessionStartHeight)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, types.ErrProofServiceNotFound.Wrapf("%v", err).Error())
 	}
@@ -120,7 +123,7 @@ func (k msgServer) CreateClaim(
 
 	// Get the relay mining difficulty that was effective at the session start height.
 	// This ensures we use the correct difficulty that was active when relays were mined.
-	sessionStartHeight := claim.SessionHeader.GetSessionStartBlockHeight()
+	// sessionStartHeight was computed above for the cupr lookup and is reused here.
 	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionStartHeight)
 	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
 	if !found {

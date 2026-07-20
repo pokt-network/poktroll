@@ -12,6 +12,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "pocket/service/params.proto";
 import "pocket/shared/service.proto";
 import "pocket/service/relay_mining_difficulty.proto";
+import "pocket/service/compute_units.proto";
 
 // Query defines the gRPC querier service.
 service Query {
@@ -49,6 +50,18 @@ service Query {
   // Queries the history of relay mining difficulty changes for a service.
   rpc RelayMiningDifficultyHistory (QueryRelayMiningDifficultyHistoryRequest) returns (QueryRelayMiningDifficultyHistoryResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}/history";
+  }
+
+  // Queries the compute_units_per_relay (cupr) that was effective at a specific
+  // block height for a service. Used by the RelayMiner to stamp the session-start
+  // cupr and by claim validation to verify against that same value.
+  rpc ComputeUnitsPerRelayAtHeight (QueryComputeUnitsPerRelayAtHeightRequest) returns (QueryComputeUnitsPerRelayAtHeightResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/compute_units_per_relay/{serviceId}/at_height/{blockHeight}";
+  }
+
+  // Queries the history of compute_units_per_relay changes for a service.
+  rpc ComputeUnitsPerRelayHistory (QueryComputeUnitsPerRelayHistoryRequest) returns (QueryComputeUnitsPerRelayHistoryResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/compute_units_per_relay/{serviceId}/history";
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -122,5 +135,25 @@ message QueryRelayMiningDifficultyHistoryRequest {
 
 message QueryRelayMiningDifficultyHistoryResponse {
   repeated RelayMiningDifficultyUpdate relayMiningDifficultyHistory = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryComputeUnitsPerRelayAtHeightRequest {
+  string serviceId = 1;
+  int64 blockHeight = 2;
+}
+
+message QueryComputeUnitsPerRelayAtHeightResponse {
+  // The compute_units_per_relay effective at the requested height.
+  uint64 computeUnitsPerRelay = 1;
+}
+
+message QueryComputeUnitsPerRelayHistoryRequest {
+  string serviceId = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message QueryComputeUnitsPerRelayHistoryResponse {
+  repeated ServiceComputeUnitsPerRelayUpdate computeUnitsPerRelayHistory = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

@@ -1,0 +1,29 @@
+syntax = "proto3";
+package pocket.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "gogoproto/gogo.proto";
+
+// ServiceComputeUnitsPerRelayUpdate stores a snapshot of a service's
+// compute_units_per_relay (cupr) along with the height at which it became
+// effective.
+//
+// It enables historical lookups of the cupr that was active when a session's
+// relays were mined, mirroring RelayMiningDifficultyUpdate. This is what lets
+// claim validation pin cupr to the session-start height instead of reading the
+// live (claim-time) value, which previously forfeited in-flight claims with
+// ErrProofComputeUnitsMismatch whenever a service changed its cupr mid-session.
+message ServiceComputeUnitsPerRelayUpdate {
+    // effective_height is the block height at which this cupr became effective.
+    // cupr changes are activated at the next session boundary, not immediately,
+    // so an in-flight session always resolves to the cupr live at its start.
+    int64 effective_height = 1 [(gogoproto.jsontag) = "effective_height"];
+
+    // service_id is the service the cupr applies to.
+    string service_id = 2 [(gogoproto.jsontag) = "service_id"];
+
+    // compute_units_per_relay is the cupr effective at this height.
+    uint64 compute_units_per_relay = 3 [(gogoproto.jsontag) = "compute_units_per_relay"];
+}

@@ -59,11 +59,30 @@ func (k msgServer) AddService(
 		logger.Info(fmt.Sprintf("Updating service: ComputeUnitsPerRelay=%v, HasMetadata=%v",
 			msg.Service.ComputeUnitsPerRelay, msg.Service.Metadata != nil))
 
+		// Capture the previous cupr before overwriting so a change can be snapshotted
+		// for session-start-pinned claim validation.
+		prevComputeUnitsPerRelay := foundService.ComputeUnitsPerRelay
+
 		foundService.Name = msg.Service.Name
 		foundService.ComputeUnitsPerRelay = msg.Service.ComputeUnitsPerRelay
 		foundService.Metadata = msg.Service.Metadata
 
 		k.SetService(ctx, foundService)
+
+		// Record the cupr change in history so claim validation resolves the cupr that
+		// was live at each session's start (in-flight sessions keep their start rate;
+		// the new value takes effect at the next session boundary). Only record an
+		// actual change — name/metadata-only updates leave cupr history untouched.
+		if prevComputeUnitsPerRelay != msg.Service.ComputeUnitsPerRelay {
+			if err := k.SnapshotServiceComputeUnitsPerRelayChange(
+				ctx,
+				msg.Service.Id,
+				prevComputeUnitsPerRelay,
+				msg.Service.ComputeUnitsPerRelay,
+			); err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+		}
 
 		isSuccessful = true
 		return &types.MsgAddServiceResponse{}, nil
@@ -120,6 +139,16 @@ func (k msgServer) AddService(
 
 	logger.Info(fmt.Sprintf("Adding service: %v", msg.Service))
 	k.SetService(ctx, msg.Service)
+
+	// Seed the initial cupr in history so future changes have a baseline and
+	// claim validation can resolve the session-start cupr for this service.
+	if err := k.SnapshotServiceComputeUnitsPerRelayCreate(
+		ctx,
+		msg.Service.Id,
+		msg.Service.ComputeUnitsPerRelay,
+	); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
 	isSuccessful = true
 	return &types.MsgAddServiceResponse{}, nil

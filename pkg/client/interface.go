@@ -321,6 +321,12 @@ type ProofQueryClient interface {
 type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
+	// GetServiceComputeUnitsPerRelayAtHeight queries the chain for the compute units
+	// per relay (cupr) that was effective for a service at a specific block height.
+	// The RelayMiner stamps relays with the cupr at the session-start height so its
+	// weights match what claim validation checks — an in-flight session is never
+	// affected by a mid-session cupr change.
+	GetServiceComputeUnitsPerRelayAtHeight(ctx context.Context, serviceId string, blockHeight int64) (uint64, error)
 	// GetServiceRelayDifficulty queries the chain for the relay difficulty of the service provided
 	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
 	// GetParams queries the chain for the current proof module parameters.
