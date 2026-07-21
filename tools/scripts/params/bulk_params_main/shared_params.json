@@ -13,7 +13,7 @@
           "proof_window_close_offset_blocks": "10",
           "supplier_unbonding_period_sessions": "1429",
           "application_unbonding_period_sessions": "3",
-          "compute_units_to_tokens_multiplier": "127083",
+          "compute_units_to_tokens_multiplier": "128763",
           "gateway_unbonding_period_sessions": "3",
           "compute_unit_cost_granularity": "1000000"
         }
