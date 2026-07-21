@@ -92,6 +92,14 @@ type settlementContext struct {
 	serviceMap               map[string]*sharedtypes.Service
 	relayMiningDifficultyMap map[string]servicetypes.RelayMiningDifficulty
 
+	// Cache of the compute_units_per_relay that was effective at each session-start
+	// height, keyed by "serviceId@sessionStartHeight" (same composite key as
+	// relayMiningDifficultyMap). Pinning cupr to session-start — rather than reading the
+	// live service cupr — prevents a mid-session cupr change from discarding in-flight
+	// claims at settlement (the settlement-side counterpart to the session-start pin
+	// applied at claim creation).
+	computeUnitsPerRelayMap map[string]uint64
+
 	// Cache of parameters used during the settlement process to prevent repeated KV store lookups.
 	sharedParams     sharedtypes.Params
 	tokenomicsParams tokenomicstypes.Params
@@ -139,6 +147,7 @@ func NewSettlementContext(
 
 		serviceMap:               make(map[string]*sharedtypes.Service, estimatedServices),
 		relayMiningDifficultyMap: make(map[string]servicetypes.RelayMiningDifficulty, estimatedServices),
+		computeUnitsPerRelayMap:  make(map[string]uint64, estimatedServices),
 
 		sharedParams:     tokenomicsKeeper.sharedKeeper.GetParams(ctx),
 		tokenomicsParams: tokenomicsKeeper.GetParams(ctx),
@@ -230,6 +239,24 @@ func (sctx *settlementContext) GetRelayMiningDifficulty(serviceId string, sessio
 	sctx.logger.Error(fmt.Sprintf("relay mining difficulty for service with ID %q at session start height %d not found", serviceId, sessionStartHeight))
 	return servicetypes.RelayMiningDifficulty{}, tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf(
 		"relay mining difficulty for service with ID %q at session start height %d not found", serviceId, sessionStartHeight,
+	)
+}
+
+// GetServiceComputeUnitsPerRelay retrieves the cached compute_units_per_relay that was
+// effective at the given session start height for a specific service. This is the
+// session-start-pinned cupr used to validate claims at settlement, mirroring
+// GetRelayMiningDifficulty.
+func (sctx *settlementContext) GetServiceComputeUnitsPerRelay(serviceId string, sessionStartHeight int64) (uint64, error) {
+	// Generate cache key that includes session height
+	cacheKey := fmt.Sprintf("%s@%d", serviceId, sessionStartHeight)
+
+	if computeUnitsPerRelay, ok := sctx.computeUnitsPerRelayMap[cacheKey]; ok {
+		return computeUnitsPerRelay, nil
+	}
+
+	sctx.logger.Error(fmt.Sprintf("compute units per relay for service with ID %q at session start height %d not found", serviceId, sessionStartHeight))
+	return 0, tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf(
+		"compute units per relay for service with ID %q at session start height %d not found", serviceId, sessionStartHeight,
 	)
 }
 
@@ -462,6 +489,14 @@ func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, se
 	}
 	// Store with composite key (serviceId + session height)
 	sctx.relayMiningDifficultyMap[cacheKey] = relayMiningDifficulty
+
+	// Retrieve the compute_units_per_relay that was effective at the session start
+	// height. This mirrors the difficulty lookup above so that settlement validates
+	// claims against the cupr that was live when the session started — not the current
+	// (possibly changed) service cupr. `found` is false only if the service does not
+	// exist, which is already guarded above, so the returned value is authoritative.
+	computeUnitsPerRelay, _ := sctx.keeper.serviceKeeper.GetServiceComputeUnitsPerRelayAtHeight(ctx, serviceId, sessionStartHeight)
+	sctx.computeUnitsPerRelayMap[cacheKey] = computeUnitsPerRelay
 
 	return nil
 }

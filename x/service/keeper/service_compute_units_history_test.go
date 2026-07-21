@@ -148,21 +148,28 @@ func TestSnapshotServiceComputeUnitsPerRelayChange_ExistingHistoryNotReseeded(t 
 }
 
 // TestSnapshotServiceComputeUnitsPerRelayCreate verifies a new service seeds its
-// initial cupr at the next session boundary.
+// initial cupr at the start of the session in which it was created, so that its first
+// (possibly partial) session is pinned rather than resolving via the live-cupr fallback.
 func TestSnapshotServiceComputeUnitsPerRelayCreate(t *testing.T) {
 	k, ctx := keepertest.ServiceKeeper(t)
 	sdkCtx := sdk.UnwrapSDKContext(ctx).WithBlockHeight(100)
 
 	sharedParams := sharedtypes.DefaultParams()
-	nextSessionStart := sharedtypes.GetSessionEndHeight(&sharedParams, 100) + 1
+	currentSessionStart := sharedtypes.GetSessionStartHeight(&sharedParams, 100)
 
 	require.NoError(t, k.SnapshotServiceComputeUnitsPerRelayCreate(sdkCtx, testCuprServiceId, 555))
 
 	history := k.GetServiceComputeUnitsPerRelayHistoryForService(sdkCtx, testCuprServiceId)
 	require.Len(t, history, 1)
-	require.Equal(t, nextSessionStart, history[0].EffectiveHeight)
+	require.Equal(t, currentSessionStart, history[0].EffectiveHeight)
 	require.Equal(t, uint64(555), history[0].ComputeUnitsPerRelay)
 	require.Equal(t, testCuprServiceId, history[0].ServiceId)
+
+	// The created cupr must resolve for a lookup at the creation session start (the
+	// first session), not fall back to the live value.
+	cupr, found := k.GetServiceComputeUnitsPerRelayAtHeight(sdkCtx, testCuprServiceId, currentSessionStart)
+	require.True(t, found)
+	require.Equal(t, uint64(555), cupr)
 }
 
 // TestGetAllServiceComputeUnitsPerRelayHistory verifies cross-service enumeration.

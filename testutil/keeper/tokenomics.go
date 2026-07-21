@@ -360,6 +360,16 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		GetRelayMiningDifficultyAtHeight(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(relayMiningDifficulty, true).
 		AnyTimes()
+	// Settlement pins cupr to the session-start height. Return the configured service's
+	// cupr for any height, mirroring the keeper's fallback-to-current-cupr behavior.
+	mockServiceKeeper.EXPECT().
+		GetServiceComputeUnitsPerRelayAtHeight(gomock.Any(), gomock.Eq(service.Id), gomock.Any()).
+		Return(service.ComputeUnitsPerRelay, true).
+		AnyTimes()
+	mockServiceKeeper.EXPECT().
+		GetServiceComputeUnitsPerRelayAtHeight(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(uint64(0), false).
+		AnyTimes()
 
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 

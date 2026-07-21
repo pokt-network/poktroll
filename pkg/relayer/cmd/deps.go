@@ -115,12 +115,15 @@ func setupRelayerDependencies(
 		//   - Cached value must remain stable until claims are settled
 		//   - Fresh difficulty is applied only after claims are submitted
 		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithClaimSettlementCacheClearFn()), // leaf
-		// ComputeUnitsPerRelayAtHeight cache: the cupr effective at a past height is
-		// immutable, so entries are NEVER cleared (no session/settlement clearing). This
-		// is deliberately independent of the live-service cache clearing that caused the
-		// mid-session mixed-weight-tree forfeits — the value keyed by (serviceId, height)
-		// cannot change.
-		config.NewSupplyKeyValueCacheFn[uint64](), // leaf
+		// ComputeUnitsPerRelayAtHeight cache: keyed by (serviceId, height), where the
+		// cupr effective at a past height is immutable. Clearing is therefore purely a
+		// memory bound, NOT an invalidation: a clear followed by a re-fetch returns the
+		// identical value, so — unlike the live-service cache that caused the mid-session
+		// mixed-weight-tree forfeits — this clear cannot produce a mixed-weight tree.
+		// A new session is a new height (a cache miss regardless), so the per-session
+		// clear sheds now-unreferenced past-height entries at ~zero extra query cost and
+		// prevents unbounded growth over the process lifetime.
+		config.NewSupplyKeyValueCacheFn[uint64](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),               // leaf
 		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),      // leaf
 		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),     // leaf

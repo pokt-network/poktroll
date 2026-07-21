@@ -88,7 +88,12 @@ func (k Keeper) GetServiceComputeUnitsPerRelayAtHeight(
 }
 
 // SnapshotServiceComputeUnitsPerRelayCreate records the initial cupr of a newly
-// created service, effective at the next session boundary.
+// created service, effective from the start of the session in which it was created.
+//
+// Seeding at the current session start (not the next boundary) pins the service's first
+// session: a supplier may serve relays and a claim may be created for the session that is
+// already in flight when the service is created, and that claim's session-start lookup
+// must resolve to this initial cupr instead of falling back to the mutable live value.
 func (k Keeper) SnapshotServiceComputeUnitsPerRelayCreate(
 	ctx context.Context,
 	serviceId string,
@@ -96,7 +101,7 @@ func (k Keeper) SnapshotServiceComputeUnitsPerRelayCreate(
 ) error {
 	return k.SetServiceComputeUnitsPerRelayAtHeight(
 		ctx,
-		k.nextSessionStartHeight(ctx),
+		k.currentSessionStartHeight(ctx),
 		serviceId,
 		computeUnitsPerRelay,
 	)
@@ -187,5 +192,17 @@ func (k Keeper) GetAllServiceComputeUnitsPerRelayHistory(
 func (k Keeper) nextSessionStartHeight(ctx context.Context) int64 {
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
-	return sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight) + 1
+	return sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+}
+
+// currentSessionStartHeight returns the start height of the session containing the
+// current block height, using the live shared params. A newly created service records
+// its initial cupr at this height so that its very first (possibly partial) session is
+// pinned rather than resolving through the mutable live-cupr fallback. No claim can
+// reference a session that started before the service existed, so this cannot pin a
+// value for a pre-creation session.
+func (k Keeper) currentSessionStartHeight(ctx context.Context) int64 {
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	return sharedtypes.GetSessionStartHeight(&sharedParams, currentHeight)
 }
