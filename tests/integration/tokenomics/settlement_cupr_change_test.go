@@ -29,8 +29,9 @@ import (
 // ErrProofComputeUnitsMismatch forfeit, relocated from claim creation to settlement.
 //
 // With the pin, settlement resolves cupr at the session-start height, so the in-flight
-// claim mined under the old cupr still settles after a change. On main (live cupr at
-// settlement) this test fails: numDiscardedFaultyClaims == 1 and numSettled == 0.
+// claim mined under the old cupr still settles after a change. Against the pre-settlement-
+// pin state (claim-creation pin only), where settlement read the live cupr, this test
+// fails: numDiscardedFaultyClaims == 1 and numSettled == 0.
 func TestCuprChange_InFlightClaimStillSettles(t *testing.T) {
 	const (
 		oldComputeUnitsPerRelay uint64 = 100
@@ -155,8 +156,8 @@ func TestCuprChange_InFlightClaimStillSettles(t *testing.T) {
 	require.NoError(t, err)
 
 	// The core regression assertions: the claim mined under the old cupr must SETTLE, not
-	// be discarded, despite the live cupr having changed. On main these invert
-	// (numDiscardedFaultyClaims == 1, settled == 0).
+	// be discarded, despite the live cupr having changed. Without the settlement-side pin
+	// these invert (numDiscardedFaultyClaims == 1, settled == 0).
 	require.Equal(t, uint64(0), numDiscardedFaultyClaims,
 		"claim mined under session-start cupr must not be discarded after a mid-session cupr change")
 	require.Equal(t, 1, int(settledResult.GetNumClaims()), "the in-flight claim must settle")

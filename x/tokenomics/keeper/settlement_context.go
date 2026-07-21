@@ -461,7 +461,10 @@ func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, se
 	cacheKey := fmt.Sprintf("%s@%d", serviceId, sessionStartHeight)
 
 	if _, ok := sctx.relayMiningDifficultyMap[cacheKey]; ok {
-		// Difficulty for this service/session combination is already cached
+		// Difficulty for this service/session combination is already cached.
+		// The difficulty and compute-units-per-relay maps are populated atomically
+		// below (no early return between the two writes), so difficulty presence
+		// implies cupr presence — GetServiceComputeUnitsPerRelay can rely on this.
 		return nil
 	}
 
@@ -494,8 +497,15 @@ func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, se
 	// height. This mirrors the difficulty lookup above so that settlement validates
 	// claims against the cupr that was live when the session started — not the current
 	// (possibly changed) service cupr. `found` is false only if the service does not
-	// exist, which is already guarded above, so the returned value is authoritative.
-	computeUnitsPerRelay, _ := sctx.keeper.serviceKeeper.GetServiceComputeUnitsPerRelayAtHeight(ctx, serviceId, sessionStartHeight)
+	// exist, which is already guarded above; the explicit check keeps that invariant
+	// local so a future refactor cannot silently cache cupr=0 (which would fail the
+	// numRelays*cupr equality check and discard the claim — the exact forfeit this
+	// session-start pin exists to prevent).
+	computeUnitsPerRelay, found := sctx.keeper.serviceKeeper.GetServiceComputeUnitsPerRelayAtHeight(ctx, serviceId, sessionStartHeight)
+	if !found {
+		sctx.logger.Warn(fmt.Sprintf("compute units per relay for service with ID %q not found", serviceId))
+		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("compute units per relay for service with ID %q not found", serviceId)
+	}
 	sctx.computeUnitsPerRelayMap[cacheKey] = computeUnitsPerRelay
 
 	return nil
