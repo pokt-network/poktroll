@@ -43,7 +43,7 @@ require (
 	cosmossdk.io/x/tx v0.14.0
 	github.com/docker/go-units v0.5.0
 	github.com/foxcpp/go-mockdns v1.1.0
-	github.com/go-chi/chi/v5 v5.2.3
+	github.com/go-chi/chi/v5 v5.2.4
 	github.com/hashicorp/go-version v1.8.0
 	github.com/jhump/protoreflect v1.17.0
 	github.com/mitchellh/mapstructure v1.5.0
