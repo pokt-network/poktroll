@@ -218,6 +218,21 @@ func (k Keeper) StakeSupplier(
 
 		// If the supplier has initiated an unstake action, cancel it since they are staking again.
 		if supplier.UnstakeSessionEndHeight != sharedtypes.SupplierNotUnstaking {
+			// Only the owner is allowed to cancel an in-progress unbonding.
+			// The owner controls the staked funds, so cancellation authority is
+			// restricted to the owner. Without this guard, an operator could repeatedly
+			// re-stake (paying only the staking fee, since the stake amount is unchanged)
+			// to cancel an owner-initiated unstake, preventing the owner from ever
+			// reclaiming their escrowed stake.
+			if !msg.IsSigner(supplier.OwnerAddress) {
+				err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+					"signer %q is not allowed to cancel the unbonding of supplier with owner %q; only the owner can cancel an in-progress unstake",
+					msg.Signer, supplier.OwnerAddress,
+				)
+				logger.Info(fmt.Sprintf("ERROR: %s", err))
+				return nil, status.Error(codes.PermissionDenied, err.Error())
+			}
+
 			wasSupplierUnbonding = true
 			supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
 		}
