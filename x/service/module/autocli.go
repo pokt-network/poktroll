@@ -111,6 +111,29 @@ pocketd q service show-service pocket --dehydrated`,
 					Example:        `pocketd q service relay-mining-difficulty-history <service-id>`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}},
 				},
+				{
+					RpcMethod: "ComputeUnitsPerRelayAtHeight",
+					Use:       "compute-units-per-relay-at-height [service-id] [block-height]",
+					Short:     "Show the compute units per relay (cupr) effective for a service at a specific block height",
+					Long: `
+- Shows the compute_units_per_relay that was effective for a specific service at a given block height.
+- This is the value claim validation pins to the session-start height, so it is useful for verifying the cupr used during past sessions.
+`,
+					Example:        `pocketd q service compute-units-per-relay-at-height <service-id> 1000`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}, {ProtoField: "blockHeight"}},
+				},
+				{
+					RpcMethod: "ComputeUnitsPerRelayHistory",
+					Use:       "compute-units-per-relay-history [service-id]",
+					Short:     "List the history of compute units per relay (cupr) changes for a service",
+					Long: `
+- Lists all historical compute_units_per_relay changes for a specific service.
+- Each entry shows when a cupr became effective and its value.
+- Supports pagination via flags if there are many entries.
+`,
+					Example:        `pocketd q service compute-units-per-relay-history <service-id>`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},

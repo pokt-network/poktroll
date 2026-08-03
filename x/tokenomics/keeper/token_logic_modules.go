@@ -132,14 +132,25 @@ func (k Keeper) ProcessTokenLogicModules(
 		return cosmostypes.Coin{}, err
 	}
 
+	// Resolve the compute_units_per_relay that was effective at the session start height,
+	// NOT the current (possibly changed) service cupr. The RelayMiner bakes the
+	// session-start cupr into the append-only SMST at mine time, so validating against a
+	// mid-session cupr change would discard otherwise-valid in-flight claims. This mirrors
+	// the session-start pin applied at claim creation and the difficulty-at-height lookup
+	// above.
+	sessionStartComputeUnitsPerRelay, err := settlementContext.GetServiceComputeUnitsPerRelay(sessionHeader.ServiceId, sessionHeader.SessionStartBlockHeight)
+	if err != nil {
+		return cosmostypes.Coin{}, err
+	}
+
 	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
-	expectedClaimComputeUnits := numRelays * service.ComputeUnitsPerRelay
+	expectedClaimComputeUnits := numRelays * sessionStartComputeUnitsPerRelay
 	if numClaimComputeUnits != expectedClaimComputeUnits {
 		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"mismatch: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d)",
 			numClaimComputeUnits,
 			numRelays,
-			service.ComputeUnitsPerRelay,
+			sessionStartComputeUnitsPerRelay,
 		)
 	}
 
