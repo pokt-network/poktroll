@@ -13,11 +13,18 @@ import (
 
 // handleAsyncConnection handles the asynchronous relay request by creating a
 // websocket bridge between the client and the service endpoint.
+//
+// It returns alreadyResponded=true once the HTTP response writer MUST NOT be
+// written to anymore, i.e. once the websocket upgrader has either hijacked the
+// underlying connection (success) or written its own handshake error response
+// (failure). Callers MUST NOT reply with an error in that case: writing to a
+// hijacked connection returns http.ErrHijacked and makes net/http log
+// "http: response.Write on hijacked connection".
 func (server *relayMinerHTTPServer) handleAsyncConnection(
 	ctx context.Context,
 	writer http.ResponseWriter,
 	request *http.Request,
-) error {
+) (alreadyResponded bool, _ error) {
 	// Determine the service ID and application address from the request headers.
 	serviceId := request.Header.Get("Target-Service-Id")
 	appAddress := request.Header.Get("App-Address")
@@ -32,7 +39,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceId]
 	if !ok {
 		logger.Error().Msg("❌ Service not configured")
-		return ErrRelayerProxyServiceEndpointNotHandled
+		return false, ErrRelayerProxyServiceEndpointNotHandled
 	}
 
 	// Get the websocket service config.
@@ -44,7 +51,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	websocketServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[sharedtypes.RPCType_WEBSOCKET]
 	if !ok {
 		logger.Error().Msg("❌ Service not configured for websocket RPC type")
-		return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+		return false, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
 			"service %q not configured for websocket RPC type",
 			serviceId,
 		)
@@ -62,7 +69,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	session, err := server.sessionQueryClient.GetSession(ctx, appAddress, serviceId, block.Height())
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error getting session from session query client")
-		return ErrRelayerProxyInternalError.Wrap(err.Error())
+		return false, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
 	sessionHeader := session.Header
@@ -80,8 +87,14 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	clientConn, err := upgrader.Upgrade(writer, request, nil)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error upgrading connection to websocket")
-		return ErrRelayerProxyInternalError.Wrap(err.Error())
+		// The upgrader already wrote a handshake error response to writer.
+		return true, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
+
+	// From here on the underlying connection is hijacked by the upgrader: the
+	// HTTP response writer is dead and every error path MUST close clientConn
+	// itself instead of relying on net/http to tear the connection down.
+	alreadyResponded = true
 
 	// TODO_MAINNET(@red0ne): Add unit and e2e tests for the websocket bridge and connection.
 	// Create a new websocket bridge between the gateway and the service endpoint.
@@ -97,7 +110,12 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error creating websocket bridge")
-		return ErrRelayerProxyInternalError.Wrap(err.Error())
+		// The bridge never took ownership of clientConn, so close it here to
+		// avoid leaking the hijacked connection and its file descriptor.
+		if closeErr := clientConn.Close(); closeErr != nil {
+			logger.Warn().Err(closeErr).Msg("failed closing client connection after bridge creation error")
+		}
+		return alreadyResponded, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
 	// Set up the bridge to close before the claim window opens.
@@ -108,7 +126,10 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	sharedParams, err := server.sharedQueryClient.GetParams(ctx)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error getting shared params from shared query client")
-		return ErrRelayerProxyInternalError.Wrap(err.Error())
+		if closeErr := clientConn.Close(); closeErr != nil {
+			logger.Warn().Err(closeErr).Msg("failed closing client connection after shared params query error")
+		}
+		return alreadyResponded, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 	sessionEndHeight := sessionHeader.SessionEndBlockHeight
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
@@ -119,5 +140,5 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 
 	logger.Info().Msg("🔗 WebSocket connection established with client")
 
-	return nil
+	return alreadyResponded, nil
 }
