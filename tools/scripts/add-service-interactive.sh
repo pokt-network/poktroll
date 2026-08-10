@@ -382,7 +382,7 @@ execute_services() {
 
         # Add metadata flag if present
         if [[ -n "$metadata_file" ]]; then
-            cmd="$cmd --experimental-metadata-file \"$metadata_file\""
+            cmd="$cmd --card-file \"$metadata_file\""
         fi
 
         cmd="$cmd --gas auto --gas-adjustment 1.5 --from $address --network=$network --yes"

@@ -50,29 +50,57 @@ func WithSessionCountCacheClearFn(numSessionsToClearCache uint) func(context.Con
 			return err
 		}
 
+		// Per-handler state. channel.ForEach delivers notifications sequentially on a
+		// single goroutine per observer, so this needs no synchronization.
+		var (
+			paramsTracker            sharedParamsTracker
+			lastClearedSessionNumber int64
+			haveObservedBlock        bool
+		)
+
 		channel.ForEach(
 			ctx,
 			blockClient.CommittedBlocksSequence(ctx),
 			func(ctx context.Context, block client.Block) {
-				sharedParams, shouldClearCache := shouldClearCache(sharedParamsCache)
-				if !shouldClearCache {
-					logger.Debug().Msg("ℹ️ Shared params not found in cache. Skipping cache altogether")
+				sharedParams, haveSharedParams := paramsTracker.observe(sharedParamsCache)
+				if !haveSharedParams {
+					logger.Debug().Msg("ℹ️ Shared params never observed. Skipping cache clear")
 					return
 				}
 
 				currentHeight := block.Height()
-				currentSessionStartHeight := sharedtypes.GetSessionStartHeight(sharedParams, currentHeight)
 				currentSessionNumber := sharedtypes.GetSessionNumber(sharedParams, currentHeight)
 
-				isAtSessionStart := currentHeight == currentSessionStartHeight
-				isCacheClearableSession := currentSessionNumber%int64(numSessionsToClearCache) == 0
-				if isAtSessionStart && isCacheClearableSession {
-					logger.Debug().Msgf(
-						"🧹 Clearing cache at session number %d (start height: %d)",
-						currentSessionNumber, currentSessionStartHeight,
-					)
-					cache.Clear()
+				// Adopt the in-progress session on the first block observed: the cache was
+				// only just constructed, so there is nothing stale in it to clear yet.
+				if !haveObservedBlock {
+					haveObservedBlock = true
+					lastClearedSessionNumber = currentSessionNumber
+					return
 				}
+
+				// Clear once per clearable session, on the first block observed within it.
+				//
+				// Comparing session NUMBERS rather than matching the session start height
+				// exactly means a session start block that arrives late, or is never
+				// delivered at all, still produces exactly one clear for that session. The
+				// previous `currentHeight == currentSessionStartHeight` test silently
+				// skipped the whole session whenever its first block was missed.
+				if currentSessionNumber <= lastClearedSessionNumber {
+					return
+				}
+				if currentSessionNumber%int64(numSessionsToClearCache) != 0 {
+					return
+				}
+
+				logger.Debug().Msgf(
+					"🧹 Clearing cache at session number %d (start height: %d, current height: %d)",
+					currentSessionNumber,
+					sharedtypes.GetSessionStartHeight(sharedParams, currentHeight),
+					currentHeight,
+				)
+				cache.Clear()
+				lastClearedSessionNumber = currentSessionNumber
 			},
 		)
 
@@ -100,18 +128,27 @@ func WithClaimSettlementCacheClearFn() func(context.Context, depinject.Config, C
 			return err
 		}
 
+		// Per-handler state; see the note in WithSessionCountCacheClearFn.
+		var paramsTracker sharedParamsTracker
+
 		// Open a channel to observe committed blocks and clear the cache at the right time
 		channel.ForEach(
 			ctx,
 			blockClient.CommittedBlocksSequence(ctx),
 			func(ctx context.Context, block client.Block) {
-				sharedParams, shouldClearCache := shouldClearCache(sharedParamsCache)
-				if !shouldClearCache {
-					logger.Debug().Msg("ℹ️ Shared params not found in cache. Skipping cache altogether")
+				sharedParams, haveSharedParams := paramsTracker.observe(sharedParamsCache)
+				if !haveSharedParams {
+					logger.Debug().Msg("ℹ️ Shared params never observed. Skipping cache clear")
 					return
 				}
 
 				// Calculate the height at which claims for the current session will be settled
+				//
+				// TODO_TECHDEBT: this is still an exact-height test, so a settlement block
+				// that is never delivered skips that cycle's clear. Unlike the session-start
+				// clear, missing it is the SAFE direction (difficulty stays stable for
+				// longer, which is what this clear timing exists to guarantee), so it is
+				// left as-is rather than made monotonic.
 				currentHeight := block.Height()
 				if isAtClaimSettlementHeight(sharedParams, currentHeight) {
 					logger.Debug().Msgf("🧹 Clearing cache at claim settlement height: %d", currentHeight)
@@ -141,18 +178,39 @@ func isAtClaimSettlementHeight(sharedParams *sharedtypes.Params, currentHeight i
 	return sharedtypes.IsSessionEndHeight(sharedParams, settledSessionEndHeight)
 }
 
-// shouldClearCache is used bye the helpers in this file to:
-// 1. Determine if the cache should be cleared.
-// 2. Return the shared params if they are in the cache.
+// sharedParamsTracker holds a clear handler's own copy of the most recently
+// observed shared params.
 //
-// Why do we use the presence of shared params in the cache to determine if the cache should be cleared?
-// - SharedParams are a critical signal for when to clear the cache.
-// - It helps workaround cyclical dependencies between shared params querier and cache clearing.
-// - Most caching operations are dependent on shared params.
-func shouldClearCache(sharedParamsCache client.ParamsCache[sharedtypes.Params]) (*sharedtypes.Params, bool) {
-	sharedParams, found := sharedParamsCache.Get()
-	if !found {
-		return nil, false
+// The shared params cache MUST NOT be read directly at decision time. It is itself
+// registered for session-based clearing (see pkg/relayer/cmd/deps.go), so its handler
+// empties it before the other handlers subscribed to the same committed-blocks
+// observable get a chance to read it. Every handler that lost that race then observed
+// an empty cache and skipped its own clear, and nothing repopulates the shared params
+// during the fan-out because reading the cache never triggers a query.
+//
+// The effect was worst for the service cache: it is keyed by serviceId, so its key is
+// stable while its value changes whenever a service owner updates
+// compute_units_per_relay. A missed clear left the RelayMiner weighting relays with a
+// stale cupr until the process restarted, and every claim it built was rejected.
+//
+// Keeping a local copy makes each handler's decision independent of the fan-out order.
+// Shared params only change by governance, so a copy at most one block old is
+// equivalent in practice, and it is strictly better than skipping the clear outright.
+//
+// Reading the cache (rather than querying) still avoids the cyclical dependency between
+// the shared params querier and cache clearing that motivated the original gate.
+type sharedParamsTracker struct {
+	lastKnownSharedParams *sharedtypes.Params
+}
+
+// observe refreshes the tracker from the shared params cache and returns the most
+// recent params it has seen, along with whether it has ever seen any.
+func (t *sharedParamsTracker) observe(
+	sharedParamsCache client.ParamsCache[sharedtypes.Params],
+) (*sharedtypes.Params, bool) {
+	if sharedParams, found := sharedParamsCache.Get(); found {
+		t.lastKnownSharedParams = &sharedParams
 	}
-	return &sharedParams, true
+
+	return t.lastKnownSharedParams, t.lastKnownSharedParams != nil
 }

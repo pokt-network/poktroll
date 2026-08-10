@@ -295,3 +295,41 @@ func TestParams_ValidateGatewayUnbondingPeriodSessions(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateNumPendingSessionsIsPositive(t *testing.T) {
+	// zeroWindowParams starts from the defaults and zeroes every claim/proof window
+	// offset. Each offset is individually valid at zero, so only the cumulative check
+	// rejects this combination.
+	zeroWindowParams := DefaultParams()
+	zeroWindowParams.ClaimWindowOpenOffsetBlocks = 0
+	zeroWindowParams.ClaimWindowCloseOffsetBlocks = 0
+	zeroWindowParams.ProofWindowOpenOffsetBlocks = 0
+	zeroWindowParams.ProofWindowCloseOffsetBlocks = 0
+	zeroWindowParams.GracePeriodEndOffsetBlocks = 0
+
+	// Sanity check: without the guard, settlement would divide by this.
+	require.Zero(t, GetNumPendingSessions(&zeroWindowParams),
+		"test fixture must actually produce zero pending sessions",
+	)
+
+	t.Run("all-zero window offsets are rejected", func(t *testing.T) {
+		err := zeroWindowParams.ValidateBasic()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "must be greater than 0")
+	})
+
+	t.Run("a single non-zero window offset is enough", func(t *testing.T) {
+		params := zeroWindowParams
+		params.ProofWindowCloseOffsetBlocks = 1
+
+		require.Positive(t, GetNumPendingSessions(&params))
+		require.NoError(t, params.ValidateBasic())
+	})
+
+	t.Run("defaults are unaffected", func(t *testing.T) {
+		params := DefaultParams()
+
+		require.Positive(t, GetNumPendingSessions(&params))
+		require.NoError(t, params.ValidateBasic())
+	})
+}

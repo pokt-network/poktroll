@@ -512,23 +512,25 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// All attempts should have failed and zero successful attempts.
-	require.Equal(t, 4, callStatus.errorCount)
-	require.Equal(t, 0, callStatus.successCount)
+	successCount, errorCount := callStatus.counts()
+	require.Equal(t, 4, errorCount)
+	require.Equal(t, 0, successCount)
 
 	// Instruct the tx client to return a successful response when submitting the transaction
-	callStatus.errorToReturn = nil
+	callStatus.setErrorToReturn(nil)
 
 	// Wait for 5 seconds
 	// - Allows the retry strategy to perform a last retry after 4 seconds of waiting time
 	time.Sleep(5 * time.Second)
 
 	// The error count should remain the same but the success count should be 1
-	require.Equal(t, 4, callStatus.errorCount)
-	require.Equal(t, 1, callStatus.successCount)
+	successCount, errorCount = callStatus.counts()
+	require.Equal(t, 4, errorCount)
+	require.Equal(t, 1, successCount)
 
 	// Instruct the tx client to return a non-retryable error when submitting the transaction.
 	// This will cause the transaction client to stop retrying and return the error.
-	callStatus.errorToReturn = sdkerrors.ErrTxTimeoutHeight.Wrap(fmt.Errorf("test error").Error())
+	callStatus.setErrorToReturn(sdkerrors.ErrTxTimeoutHeight.Wrap(fmt.Errorf("test error").Error()))
 
 	// Sign and broadcast the message.
 	go txClient.SignAndBroadcast(ctx, appStakeMsg)
@@ -537,8 +539,9 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// There should be only one non-retryable error.
-	require.Equal(t, 5, callStatus.errorCount)
-	require.Equal(t, 1, callStatus.successCount)
+	successCount, errorCount = callStatus.counts()
+	require.Equal(t, 5, errorCount)
+	require.Equal(t, 1, successCount)
 }
 
 // TODO_TECHDEBT: add coverage for sending multiple messages simultaneously
@@ -782,11 +785,9 @@ func newTxContext(
 
 	txCtxMock.EXPECT().BroadcastTx(gomock.Any()).DoAndReturn(
 		func(txBytes []byte) (*cosmostypes.TxResponse, error) {
-			if callStatus.errorToReturn != nil {
-				callStatus.errorCount++
-				return nil, callStatus.errorToReturn
+			if err := callStatus.recordCall(); err != nil {
+				return nil, err
 			}
-			callStatus.successCount++
 			return &cosmostypes.TxResponse{}, nil
 		},
 	).AnyTimes()
@@ -797,8 +798,50 @@ func newTxContext(
 // callStatus is a struct that instruments the TxContext mock to track whether
 // the BroadcastTx method was called successfully or not.
 // It tracks the number of successful and failed calls to the BroadcastTx method.
+//
+// The mock's BroadcastTx runs on whichever goroutine called SignAndBroadcast (and,
+// for a still-pending tx, on a re-broadcast worker), while the test reads the
+// counters and swaps errorToReturn from the test goroutine. Every field is
+// therefore mutex-guarded and MUST only be touched through the accessors below.
 type callStatus struct {
+	mu            sync.Mutex
 	successCount  int
 	errorCount    int
 	errorToReturn error
+}
+
+// recordCall records a single BroadcastTx invocation and returns the error the
+// mock should return for it: the currently configured error (counted as a
+// failure), or nil (counted as a success).
+//
+// The read of errorToReturn and the matching increment happen under one lock, so
+// a concurrent setErrorToReturn can never split them and mis-attribute a call.
+func (cs *callStatus) recordCall() error {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+
+	if cs.errorToReturn != nil {
+		cs.errorCount++
+		return cs.errorToReturn
+	}
+
+	cs.successCount++
+	return nil
+}
+
+// setErrorToReturn sets the error that subsequent BroadcastTx calls return.
+// Passing nil makes them succeed.
+func (cs *callStatus) setErrorToReturn(err error) {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+
+	cs.errorToReturn = err
+}
+
+// counts returns the number of successful and failed BroadcastTx calls so far.
+func (cs *callStatus) counts() (successCount, errorCount int) {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+
+	return cs.successCount, cs.errorCount
 }

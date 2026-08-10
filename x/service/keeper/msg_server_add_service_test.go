@@ -240,3 +240,78 @@ func TestMsgServer_AddService(t *testing.T) {
 		})
 	}
 }
+
+// TestMsgServer_AddService_UpdatePreservesMetadata asserts that an update which does
+// not carry metadata leaves the stored metadata intact.
+//
+// MsgAddService is the only update path for an existing service and always carries a
+// full Service{}, so a message that only intends to change compute_units_per_relay
+// arrives with a nil Metadata. Treating that as "clear the metadata" silently destroys
+// onchain state for any client that does not re-send it.
+func TestMsgServer_AddService_UpdatePreservesMetadata(t *testing.T) {
+	k, ctx := keepertest.ServiceKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	serviceOwnerAddr := sample.AccAddressBech32()
+	keepertest.AddAccToAccMapCoins(t, serviceOwnerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee)
+
+	originalMetadata := &sharedtypes.Metadata{
+		Card: []byte(`{"openrpc":"1.2.6"}`),
+	}
+
+	// Create the service with metadata.
+	_, err := srv.AddService(ctx, &types.MsgAddService{
+		OwnerAddress: serviceOwnerAddr,
+		Service: sharedtypes.Service{
+			Id:                   "svc-meta",
+			Name:                 "service with metadata",
+			ComputeUnitsPerRelay: 1,
+			OwnerAddress:         serviceOwnerAddr,
+			Metadata:             originalMetadata,
+		},
+	})
+	require.NoError(t, err)
+
+	serviceFound, found := k.GetService(ctx, "svc-meta")
+	require.True(t, found)
+	require.Equal(t, originalMetadata, serviceFound.Metadata)
+
+	// Update ONLY compute_units_per_relay, omitting metadata (what the `edit-service`
+	// CLI and any client using NewMsgAddService submits).
+	_, err = srv.AddService(ctx, &types.MsgAddService{
+		OwnerAddress: serviceOwnerAddr,
+		Service: sharedtypes.Service{
+			Id:                   "svc-meta",
+			Name:                 "service with metadata",
+			ComputeUnitsPerRelay: 42,
+			OwnerAddress:         serviceOwnerAddr,
+			// Metadata intentionally omitted.
+		},
+	})
+	require.NoError(t, err)
+
+	serviceFound, found = k.GetService(ctx, "svc-meta")
+	require.True(t, found)
+	require.Equal(t, uint64(42), serviceFound.ComputeUnitsPerRelay, "cupr update must still apply")
+	require.Equal(t, originalMetadata, serviceFound.Metadata, "metadata must survive a metadata-less update")
+
+	// An update that DOES carry metadata must still replace it.
+	replacementMetadata := &sharedtypes.Metadata{
+		Card: []byte(`{"openapi":"3.1.0"}`),
+	}
+	_, err = srv.AddService(ctx, &types.MsgAddService{
+		OwnerAddress: serviceOwnerAddr,
+		Service: sharedtypes.Service{
+			Id:                   "svc-meta",
+			Name:                 "service with metadata",
+			ComputeUnitsPerRelay: 42,
+			OwnerAddress:         serviceOwnerAddr,
+			Metadata:             replacementMetadata,
+		},
+	})
+	require.NoError(t, err)
+
+	serviceFound, found = k.GetService(ctx, "svc-meta")
+	require.True(t, found)
+	require.Equal(t, replacementMetadata, serviceFound.Metadata, "explicit metadata must replace the stored value")
+}

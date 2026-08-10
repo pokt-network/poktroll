@@ -86,6 +86,26 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_ServiceQuerier_RelayMiningDiffic
 	require.Equal(s.T(), 1, s.rpcCallCount.difficulty)
 }
 
+func (s *QueryCacheTestSuite) TestKeyValueCache_ServiceQuerier_ComputeUnitsPerRelayAtHeight() {
+	ctx := context.Background()
+
+	// Assert that the server has not been reached yet.
+	require.Equal(s.T(), 0, s.rpcCallCount.computeUnitsPerRelay)
+
+	// Repeated calls for the same (serviceId, height) hit the immutable cache: the
+	// server is reached only once.
+	for range numCalls {
+		_, err := s.queryClients.service.GetServiceComputeUnitsPerRelayAtHeight(ctx, "serviceId", 1)
+		require.NoError(s.T(), err)
+	}
+	require.Equal(s.T(), 1, s.rpcCallCount.computeUnitsPerRelay)
+
+	// A different height is a distinct cache key and reaches the server once more.
+	_, err := s.queryClients.service.GetServiceComputeUnitsPerRelayAtHeight(ctx, "serviceId", 2)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), 2, s.rpcCallCount.computeUnitsPerRelay)
+}
+
 func (s *QueryCacheTestSuite) TestKeyValueCache_ApplicationQuerier_Applications() {
 	ctx := context.Background()
 	appAddress := sample.AccAddressBech32()
@@ -212,22 +232,27 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 	supplierAddr := sample.AccAddressBech32()
 
 	// Call the GetEarliestSupplierClaimCommitHeight method numCalls times and assert that
-	// the CometRPC server is reached only once.
+	// the CometRPC block endpoint is NEVER reached.
+	//
+	// These two methods used to fetch the claim/proof window-open block hash to seed a
+	// distribution offset. That seeding is disabled — sharedtypes.GetEarliestSupplier*
+	// CommitHeight ignores the block-hash argument — so the fetch was removed and nil is
+	// passed instead. Asserting 0 here is what keeps the RPC from creeping back in for a
+	// value nobody reads.
 	for range numCalls {
 		_, err := s.queryClients.shared.GetEarliestSupplierClaimCommitHeight(ctx, 1, supplierAddr)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
-	require.Equal(s.T(), 1, s.rpcCallCount.blocks)
+	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
-	// Call the GetEarliestSupplierProofCommitHeight method numCalls times and assert that
-	// the CometRPC server is reached once again for a different block height
+	// Same for GetEarliestSupplierProofCommitHeight: params stay cached, no block fetch.
 	for range numCalls {
 		_, err := s.queryClients.shared.GetEarliestSupplierProofCommitHeight(ctx, 1, supplierAddr)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
-	require.Equal(s.T(), 2, s.rpcCallCount.blocks)
+	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 }
 
 func (s *QueryCacheTestSuite) TestKeyValueCache_ProofQuerier_Params() {
@@ -417,6 +442,8 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 				s.rpcCallCount.services++
 			case "/pocket.service.Query/RelayMiningDifficulty":
 				s.rpcCallCount.difficulty++
+			case "/pocket.service.Query/ComputeUnitsPerRelayAtHeight":
+				s.rpcCallCount.computeUnitsPerRelay++
 			case "/pocket.supplier.Query/Supplier":
 				s.rpcCallCount.suppliers++
 			case "/pocket.application.Query/Application":
@@ -437,11 +464,12 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 // rpcCallCount is a struct that keeps track of the number of times each RPC method is called.
 type rpcCallCount struct {
 	// pocket key value calls
-	services   int
-	difficulty int
-	apps       int
-	suppliers  int
-	sessions   int
+	services             int
+	difficulty           int
+	computeUnitsPerRelay int
+	apps                 int
+	suppliers            int
+	sessions             int
 
 	// pocket params calls
 	appParams     int
@@ -477,6 +505,9 @@ func supplyCacheDeps(t *testing.T) depinject.Config {
 	require.NoError(t, err)
 
 	difficultyCache, err := memory.NewKeyValueCache[servicetypes.RelayMiningDifficulty](opts)
+	require.NoError(t, err)
+
+	computeUnitsPerRelayCache, err := memory.NewKeyValueCache[uint64](opts)
 	require.NoError(t, err)
 
 	appCache, err := memory.NewKeyValueCache[apptypes.Application](opts)
@@ -521,6 +552,7 @@ func supplyCacheDeps(t *testing.T) depinject.Config {
 	return depinject.Supply(
 		serviceCache,
 		difficultyCache,
+		computeUnitsPerRelayCache,
 		appCache,
 		supplierCache,
 		sessionCache,

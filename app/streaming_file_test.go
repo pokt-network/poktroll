@@ -216,21 +216,89 @@ func TestFileStreamer_PrefixApplied(t *testing.T) {
 
 // ── completion-marker semantics ───────────────────────────────────────────
 
-func TestFileStreamer_MetaIsCompletionMarker(t *testing.T) {
-	// On a successful block, data must be renamed to its final name BEFORE
-	// meta is. We verify by inspecting that meta exists last in modtime order.
+// DEV_NOTE: these tests previously asserted the rename ordering by comparing the
+// two files' MODTIMES. That could never work: POSIX rename() does not touch a
+// file's mtime (it updates the containing directory's mtime and the inode's
+// ctime), and the streamer writes meta's CONTENT before data's — so meta's mtime
+// is always the older of the two, regardless of rename order. The assertion only
+// passed on filesystems whose mtime granularity was coarse enough to collapse both
+// timestamps to the same value, and failed on APFS. It verified nothing.
+//
+// The contract is instead asserted through its observable consequences below.
+
+// TestFileStreamer_SuccessfulBlockLeavesOnlyFinals asserts the success-path
+// contract: both final files are present and no `.partial` is left behind.
+func TestFileStreamer_SuccessfulBlockLeavesOnlyFinals(t *testing.T) {
 	dir := t.TempDir()
 	s := newTestStreamer(t, dir, true, nil)
 	ctx := context.Background()
 	require.NoError(t, s.ListenFinalizeBlock(ctx, abci.RequestFinalizeBlock{Height: 50}, abci.ResponseFinalizeBlock{}))
 	require.NoError(t, s.ListenCommit(ctx, abci.ResponseCommit{}, nil))
 
-	metaInfo, err := os.Stat(filepath.Join(dir, "block-50-meta"))
-	require.NoError(t, err)
-	dataInfo, err := os.Stat(filepath.Join(dir, "block-50-data"))
-	require.NoError(t, err)
-	require.False(t, metaInfo.ModTime().Before(dataInfo.ModTime()),
-		"meta must be created after data (completion marker)")
+	requireFileExists(t, filepath.Join(dir, "block-50-meta"))
+	requireFileExists(t, filepath.Join(dir, "block-50-data"))
+	requireNotExist(t, filepath.Join(dir, "block-50-meta.partial"))
+	requireNotExist(t, filepath.Join(dir, "block-50-data.partial"))
+}
+
+// TestFileStreamer_MetaIsCompletionMarker asserts the invariant that makes meta a
+// completion marker: a consumer that sees a final meta file can rely on the
+// matching data file being present and complete — meta MUST NOT exist without data.
+//
+// It is verified by forcing the meta rename (step 4) to fail while letting the data
+// rename (step 3) succeed. Pre-creating a DIRECTORY at meta's final path makes
+// rename() fail with EISDIR on both Linux and Darwin, so this needs no syscall
+// interception. The resulting state is what proves the ordering: because data was
+// renamed FIRST and meta had not been, the streamer is able to roll the data file
+// back, leaving neither final behind. Had meta been renamed first, a final meta
+// would exist here with no data next to it — exactly the state downstream consumers
+// must never observe.
+func TestFileStreamer_MetaIsCompletionMarker(t *testing.T) {
+	dir := t.TempDir()
+
+	// Force step 4 (rename meta) to fail; step 3 (rename data) still succeeds.
+	metaFinal := filepath.Join(dir, "block-50-meta")
+	require.NoError(t, os.Mkdir(metaFinal, 0o755))
+
+	s := newTestStreamer(t, dir, true, nil)
+	ctx := context.Background()
+
+	// FinalizeBlock writes meta.partial, a different path, so it still succeeds.
+	require.NoError(t, s.ListenFinalizeBlock(ctx, abci.RequestFinalizeBlock{Height: 50}, abci.ResponseFinalizeBlock{}))
+
+	err := s.ListenCommit(ctx, abci.ResponseCommit{}, nil)
+	require.Error(t, err, "meta rename must fail when its final path is a directory")
+
+	// The completion-marker invariant: no orphaned final data file is left without
+	// a meta beside it. This only holds if data was renamed before meta.
+	requireNotExist(t, filepath.Join(dir, "block-50-data"))
+
+	// And no partials survive the rollback.
+	requireNotExist(t, filepath.Join(dir, "block-50-meta.partial"))
+	requireNotExist(t, filepath.Join(dir, "block-50-data.partial"))
+}
+
+// TestFileStreamer_DataRenameFailureLeavesNoFinals asserts the mirror case: when
+// the data rename (step 3) fails, the block is abandoned before meta is ever
+// promoted, so neither final file appears and no partial is left behind.
+func TestFileStreamer_DataRenameFailureLeavesNoFinals(t *testing.T) {
+	dir := t.TempDir()
+
+	// Force step 3 (rename data) to fail.
+	dataFinal := filepath.Join(dir, "block-51-data")
+	require.NoError(t, os.Mkdir(dataFinal, 0o755))
+
+	s := newTestStreamer(t, dir, true, nil)
+	ctx := context.Background()
+	require.NoError(t, s.ListenFinalizeBlock(ctx, abci.RequestFinalizeBlock{Height: 51}, abci.ResponseFinalizeBlock{}))
+
+	err := s.ListenCommit(ctx, abci.ResponseCommit{}, nil)
+	require.Error(t, err, "data rename must fail when its final path is a directory")
+
+	// Meta must never be promoted when the data it marks as complete never landed.
+	requireNotExist(t, filepath.Join(dir, "block-51-meta"))
+	requireNotExist(t, filepath.Join(dir, "block-51-meta.partial"))
+	requireNotExist(t, filepath.Join(dir, "block-51-data.partial"))
 }
 
 // ── sad paths ─────────────────────────────────────────────────────────────

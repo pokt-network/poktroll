@@ -168,7 +168,7 @@ To attach an API specification from a file:
 ```bash
 pocketd tx service add-service \
     ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
-    --experimental-metadata-file ./openapi.json \
+    --card-file ./openapi.json \
     --fees 300upokt --from ${SERVICE_OWNER} --network=beta
 ```
 
@@ -177,7 +177,7 @@ For example, to create a service for the Pocket network with its OpenAPI specifi
 ```bash
 pocketd tx service add-service \
    "pocket" "Pocket Network RPC" 1 \
-    --experimental-metadata-file ./docs/static/openapi.json \
+    --card-file ./docs/static/openapi.json \
     --fees 300upokt --from $USER \
    --network=beta
 ```
@@ -189,7 +189,7 @@ Alternatively, you can provide the API specification as base64-encoded data:
 ```bash
 pocketd tx service add-service \
     ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
-    --experimental-metadata-base64 $(base64 -w0 ./openapi.json) \
+    --card-base64 $(base64 -w0 ./openapi.json) \
     --fees 300upokt --from ${SERVICE_OWNER} --network=beta
 ```
 
@@ -200,14 +200,14 @@ To update the metadata of an existing service, use the same `add-service` comman
 ```bash
 pocketd tx service add-service \
    "pocket" "Pocket Network RPC" 1 \
-    --experimental-metadata-file ./docs/static/openapi-v2.json \
+    --card-file ./docs/static/openapi-v2.json \
     --fees 300upokt --from $USER \
    --network=beta
 ```
 
 ### Important Notes
 
-- The `--experimental-metadata-file` and `--experimental-metadata-base64` flags are mutually exclusive.
+- The `--card-file` and `--card-base64` flags are mutually exclusive.
 - The decoded payload must be 256 KiB or less.
 - The metadata is stored on-chain as raw bytes and base64-encoded in JSON representations.
 - Only the service owner can update the service metadata.

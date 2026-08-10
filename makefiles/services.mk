@@ -46,7 +46,7 @@ service_pocket_update_metadata_file: ## Update the pocket service metadata with 
 service_add_with_metadata_file:
 	pocketd --home=$(POCKETD_HOME) tx service add-service \
 		$(SERVICE_ID) "$(SERVICE_NAME)" $(COMPUTE_UNITS) \
-		--experimental-metadata-file $(METADATA_FILE) \
+		--card-file $(METADATA_FILE) \
 		--from $(SERVICE_OWNER) --keyring-backend test --node $(POCKET_NODE) -y
 
 .PHONY: service_add_with_metadata_base64
@@ -54,5 +54,5 @@ service_add_with_metadata_file:
 service_add_with_metadata_base64:
 	pocketd --home=$(POCKETD_HOME) tx service add-service \
 		$(SERVICE_ID) "$(SERVICE_NAME)" $(COMPUTE_UNITS) \
-		--experimental-metadata-base64 $(METADATA_BASE64) \
+		--card-base64 $(METADATA_BASE64) \
 		--from $(SERVICE_OWNER) --keyring-backend test --node $(POCKET_NODE) -y

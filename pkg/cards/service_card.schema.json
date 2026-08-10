@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pocket.network/schemas/pocket-service-card/v1.json",
+  "title": "Pocket Service Card v1",
+  "description": "Descriptor stored on-chain in Service.metadata.card. Two audiences: consumers deciding how to call a service, and node runners deciding what to run. The chain enforces size only; every field here is an owner assertion.",
+  "type": "object",
+  "required": ["schema"],
+  "additionalProperties": true,
+  "$defs": {
+    "rpcTypeName": {
+      "type": "string",
+      "description": "On-chain RPCType enum name. Lowercase it to get the RelayMiner rpc_type_service_configs key.",
+      "enum": ["GRPC", "WEBSOCKET", "JSON_RPC", "REST", "COMET_BFT"]
+    }
+  },
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "pocket-service-card/v1"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2048
+    },
+    "rpc_types": {
+      "type": "array",
+      "description": "Transports. Consumers read what exists; node runners read what the owner expects them to stand up.",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "additionalProperties": true,
+        "properties": {
+          "required": {
+            "$comment": "Deliberate exception to the ignore-unknown-keys rule. `required` is not an unknown future key, it is a known-wrong one: it implies an enforcement layer that does not exist. Use `intent` instead.",
+            "not": {}
+          },
+          "type": { "$ref": "#/$defs/rpcTypeName" },
+          "intent": {
+            "type": "string",
+            "description": "The service owner's INTENTION for this transport, enforceable by nothing. Not checked at stake time, not checked at relay time, and consumers may ignore it: a supplier serving only a subset is valid and paid normally, and a gateway may decline to route a transport. Open vocabulary; unknown values mean unspecified, never invalid.",
+            "examples": ["expected", "optional", "deprecated"]
+          },
+          "backend_hint": { "type": "string", "maxLength": 256 },
+          "notes": { "type": "string", "maxLength": 512 }
+        }
+      }
+    },
+    "apis": {
+      "type": "array",
+      "description": "Higher-level API contract names. Deliberately unregistered.",
+      "items": { "type": "string", "maxLength": 128 },
+      "uniqueItems": true,
+      "maxItems": 32
+    },
+    "specs": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["url"],
+        "additionalProperties": true,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "Open vocabulary. Known values: openrpc, openapi, asyncapi.",
+            "examples": ["openrpc", "openapi", "asyncapi"]
+          },
+          "url": { "type": "string", "format": "uri", "maxLength": 2048 },
+          "sha256": {
+            "type": "string",
+            "description": "Presence is a statement: the owner pins this exact document and consumers MUST reject non-matching content. Absence declares a living document with no integrity claim.",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "access": {
+      "type": "string",
+      "description": "Open vocabulary. Known values: public, gated.",
+      "examples": ["public", "gated"]
+    },
+    "results": {
+      "type": "string",
+      "description": "Are two suppliers interchangeable for the same request? 'deterministic' means any supplier returns the same bytes, so a consumer can retry across suppliers, cache, and cross-check. 'variable' means suppliers legitimately differ (e.g. each brings its own model). Open vocabulary; unknown values mean unspecified, never invalid.",
+      "examples": ["deterministic", "variable"]
+    },
+    "trust": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["standard"],
+        "additionalProperties": true,
+        "properties": {
+          "standard": { "type": "string", "maxLength": 128 },
+          "registry": {
+            "type": "string",
+            "description": "Resolvable pointer, e.g. a CAIP-10 style address.",
+            "maxLength": 512
+          }
+        }
+      }
+    },
+    "serving": {
+      "type": "object",
+      "description": "Everything a node runner needs to stand up a backend for this service.",
+      "additionalProperties": true,
+      "properties": {
+        "backend": {
+          "type": "string",
+          "description": "What data node or service this proxies to.",
+          "maxLength": 1024
+        },
+        "implementations": {
+          "type": "array",
+          "description": "Known-good backend implementations and minimum versions.",
+          "items": { "type": "string", "maxLength": 128 },
+          "maxItems": 16
+        },
+        "sync": {
+          "type": "string",
+          "description": "Open vocabulary. Known values: archive, full, pruned.",
+          "examples": ["archive", "full", "pruned"]
+        },
+        "min_disk_gb": { "type": "integer", "minimum": 0 },
+        "min_ram_gb": { "type": "integer", "minimum": 0 },
+        "healthcheck": {
+          "type": "array",
+          "description": "Self-test a backend before staking. Also the natural probe for a QoS layer.",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "required": ["rpc_type", "request"],
+            "additionalProperties": true,
+            "properties": {
+              "rpc_type": { "$ref": "#/$defs/rpcTypeName" },
+              "request": {
+                "description": "Transport-shaped probe: a JSON-RPC envelope, or {path, method} for REST.",
+                "type": "object"
+              },
+              "expect": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "json_path": { "type": "string", "maxLength": 256 },
+                  "matches": { "type": "string", "maxLength": 256 }
+                }
+              }
+            }
+          }
+        },
+        "notes": { "type": "string", "maxLength": 2048 }
+      }
+    },
+    "docs": { "type": "string", "format": "uri", "maxLength": 2048 },
+    "updated": { "type": "string", "format": "date" }
+  }
+}

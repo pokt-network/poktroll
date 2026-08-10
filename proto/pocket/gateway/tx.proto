@@ -12,6 +12,7 @@ import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "pocket/gateway/params.proto";
 import "pocket/gateway/types.proto";
+import "pocket/shared/service.proto";
 
 // Msg defines the Msg service.
 service Msg {
@@ -23,6 +24,9 @@ service Msg {
   rpc StakeGateway   (MsgStakeGateway  ) returns (MsgStakeGatewayResponse  );
   rpc UnstakeGateway (MsgUnstakeGateway) returns (MsgUnstakeGatewayResponse);
   rpc UpdateParam    (MsgUpdateParam   ) returns (MsgUpdateParamResponse   );
+
+  // UpdateGatewayMetadata sets a gateway's card WITHOUT touching its stake.
+  rpc UpdateGatewayMetadata (MsgUpdateGatewayMetadata) returns (MsgUpdateGatewayMetadataResponse);
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -83,4 +87,25 @@ message MsgUpdateParamResponse {
   // Params params = 1;
   reserved 1;
 }
+
+// MsgUpdateGatewayMetadata sets a staked gateway's card.
+//
+// Deliberately separate from MsgStakeGateway, which enforces a strictly-positive stake
+// delta on every call -- folding metadata into it would mean escrowing real POKT to fix
+// a typo. A freshly staked gateway starts with no card and becomes descriptor-complete
+// via a follow-up call.
+//
+// Full replace: the supplied metadata replaces whatever is stored. Omitting it (nil)
+// leaves the stored card untouched, matching MsgAddService's behaviour for services.
+message MsgUpdateGatewayMetadata {
+  option (cosmos.msg.v1.signer) = "address";
+
+  // The Bech32 address of the gateway. Must already be staked.
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The gateway's card. Nil leaves the stored card unchanged.
+  pocket.shared.Metadata metadata = 2;
+}
+
+message MsgUpdateGatewayMetadataResponse {}
 

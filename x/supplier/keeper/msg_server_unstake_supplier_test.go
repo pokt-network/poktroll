@@ -286,6 +286,62 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.False(t, foundSupplier.IsUnbonding())
 }
 
+// TestMsgServer_UnstakeSupplier_OnlyOwnerCanCancelUnbonding verifies that once an
+// unstake has been initiated, only the owner may cancel the unbonding by re-staking.
+// Cancellation authority is restricted to the owner because the owner controls the
+// staked funds. Without this guard, the operator could re-stake (paying only the
+// staking fee) to cancel an owner-initiated unstake, preventing the owner from
+// reclaiming their escrowed stake.
+func TestMsgServer_UnstakeSupplier_OnlyOwnerCanCancelUnbonding(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	// Generate distinct owner and operator addresses.
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
+
+	// Stake the supplier (operator signs the initial stake since it carries services).
+	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake, serviceID)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Owner initiates the unstake.
+	unstakeMsg := &suppliertypes.MsgUnstakeSupplier{
+		Signer:          ownerAddr,
+		OperatorAddress: operatorAddr,
+	}
+	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
+	require.NoError(t, err)
+
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.True(t, foundSupplier.IsUnbonding())
+
+	// Operator attempts to cancel the unbonding by re-staking. This MUST fail.
+	operatorRestakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake)
+	setStakeMsgSigner(operatorRestakeMsg, operatorAddr)
+	_, err = srv.StakeSupplier(ctx, operatorRestakeMsg)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "only the owner can cancel an in-progress unstake")
+
+	// The supplier MUST still be unbonding after the operator's failed attempt.
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.True(t, foundSupplier.IsUnbonding())
+
+	// Owner re-stakes to cancel the unbonding. This MUST succeed.
+	ownerRestakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake)
+	setStakeMsgSigner(ownerRestakeMsg, ownerAddr)
+	_, err = srv.StakeSupplier(ctx, ownerRestakeMsg)
+	require.NoError(t, err)
+
+	// The supplier MUST no longer be unbonding.
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.False(t, foundSupplier.IsUnbonding())
+}
+
 func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)

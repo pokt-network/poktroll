@@ -68,6 +68,11 @@ type ServiceKeeper interface {
 	// effective at the given height for a specific service. This is used for historical
 	// difficulty lookups during claim/proof validation.
 	GetRelayMiningDifficultyAtHeight(ctx context.Context, serviceID string, height int64) (servicetypes.RelayMiningDifficulty, bool)
+	// GetServiceComputeUnitsPerRelayAtHeight returns the compute_units_per_relay that
+	// was effective at the given height for a service. Claim validation pins this to the
+	// session-start height so an in-flight session is validated against the cupr live
+	// when its relays were mined, not the live (claim-time) value.
+	GetServiceComputeUnitsPerRelayAtHeight(ctx context.Context, serviceID string, height int64) (uint64, bool)
 	// Only used for testing & simulation
 	SetService(ctx context.Context, service sharedtypes.Service)
 	SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficulty servicetypes.RelayMiningDifficulty)

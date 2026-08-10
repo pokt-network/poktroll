@@ -48,3 +48,19 @@ message EventGatewayUnbondingCanceled {
   // The end height of the session in which the unbonding was canceled.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }
+
+// EventGatewayMetadataUpdated is emitted when a gateway's card is set or replaced.
+//
+// DEV_NOTE: This event deliberately carries PRIMITIVES ONLY, unlike the gateway events
+// above which embed the whole Gateway. Gateway.metadata can hold up to 256 KiB, so
+// embedding the gateway here would write the entire card into the event log on every
+// card update -- exactly the disk-utilization problem check_proto_event_fields exists to
+// catch. Consumers that need the card should read it from state.
+message EventGatewayMetadataUpdated {
+  // The Bech32 address of the gateway whose card was updated.
+  string gateway_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "gateway_address"];
+  // The end height of the session in which the card was updated.
+  int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
+  // Size in bytes of the card now stored, so indexers can see the change without the payload.
+  uint64 card_size_bytes = 3 [(gogoproto.jsontag) = "card_size_bytes"];
+}

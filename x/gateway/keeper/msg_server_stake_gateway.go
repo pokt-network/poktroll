@@ -110,14 +110,14 @@ func (k msgServer) StakeGateway(
 	// If gateway unbonding was canceled, emit the corresponding event.
 	if wasGatewayUnbonding {
 		events = append(events, &types.EventGatewayUnbondingCanceled{
-			Gateway:          &gateway,
+			Gateway:          gateway.DehydratedForEvent(),
 			SessionEndHeight: sessionEndHeight,
 		})
 	}
 
 	// ALWAYS emit a gateway staked event.
 	events = append(events, &types.EventGatewayStaked{
-		Gateway:          &gateway,
+		Gateway:          gateway.DehydratedForEvent(),
 		SessionEndHeight: sessionEndHeight,
 	})
 

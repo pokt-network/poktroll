@@ -2,14 +2,11 @@ package query
 
 import (
 	"context"
-	"strconv"
 	"sync"
 
 	"cosmossdk.io/depinject"
-	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/gogoproto/grpc"
 
-	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
@@ -24,13 +21,7 @@ var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 type sharedQuerier struct {
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
-	blockQuerier  client.BlockQueryClient
 	logger        polylog.Logger
-
-	// blockHashCache caches blockQuerier.Block requests
-	blockHashCache cache.KeyValueCache[BlockHash]
-	// blockHashMutex to protect cache access patterns for block hashes
-	blockHashMutex sync.Mutex
 
 	// paramsCache caches sharedQueryClient.Params requests
 	paramsCache client.ParamsCache[sharedtypes.Params]
@@ -43,7 +34,8 @@ type sharedQuerier struct {
 //
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
-// - client.BlockQueryClient
+// - polylog.Logger
+// - client.ParamsCache[sharedtypes.Params]
 func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 	querier := &sharedQuerier{}
 
@@ -51,8 +43,6 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 		deps,
 		&querier.clientConn,
 		&querier.logger,
-		&querier.blockQuerier,
-		&querier.blockHashCache,
 		&querier.paramsCache,
 	); err != nil {
 		return nil, err
@@ -206,55 +196,25 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 // TODO_MAINNET_MIGRATION(@red-0ne, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
-	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierClaimCommitHeight")
-
 	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
 	if err != nil {
 		return 0, err
 	}
 
-	// Fetch the block at the proof window open height. Its hash is used as part
-	// of the seed to the pseudo-random number generator.
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight)
-
-	// Check if the block hash is already in the cache.
-	blockHashCacheKey := getBlockHashCacheKey(claimWindowOpenHeight)
-	claimWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
-
-	if !found {
-		// Use mutex for cache miss pattern
-		sq.blockHashMutex.Lock()
-		defer sq.blockHashMutex.Unlock()
-
-		// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
-		claimWindowOpenBlockHash, found = sq.blockHashCache.Get(blockHashCacheKey)
-		if found {
-			logger.Debug().Msgf("cache HIT for blockHeight after lock: %s", blockHashCacheKey)
-		} else {
-			logger.Debug().Msgf("cache MISS for blockHeight: %s", blockHashCacheKey)
-
-			claimWindowOpenBlock, err := retry.Call(ctx, func() (*cometrpctypes.ResultBlock, error) {
-				queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
-				defer cancelQueryCtx()
-				return sq.blockQuerier.Block(queryCtx, &claimWindowOpenHeight)
-			}, retry.GetStrategy(ctx), logger)
-			if err != nil {
-				return 0, err
-			}
-
-			// Cache the block hash for future use.
-			// NB: Byte slice representation of block hashes don't need to be normalized.
-			claimWindowOpenBlockHash = claimWindowOpenBlock.BlockID.Hash.Bytes()
-			sq.blockHashCache.Set(blockHashCacheKey, claimWindowOpenBlockHash)
-		}
-	} else {
-		logger.Debug().Msgf("cache HIT for blockHeight: %s", blockHashCacheKey)
-	}
-
+	// Do NOT fetch the claim-window-open block hash. The claimWindowOpenBlockHash arg
+	// to sharedtypes.GetEarliestSupplierClaimCommitHeight is unused (claim distribution
+	// seeding is disabled), so the value is discarded. This mirrors the same removal on
+	// the on-chain twin, x/proof/types/shared_query_client.go (#1976) — see the
+	// CONSENSUS HARDENING note there.
+	//
+	// Off-chain the stakes are availability rather than consensus: fetching it cost a
+	// full blockQuerier.Block RPC per claim/proof window, and — worse — turned any RPC
+	// failure (pruned node, transient error) into an error return from this method for
+	// a value nobody reads. Passing nil removes both.
 	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		sharedParams,
 		queryHeight,
-		claimWindowOpenBlockHash,
+		nil,
 		supplierOperatorAddr,
 	), nil
 }
@@ -268,58 +228,19 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 // TODO_MAINNET(@red-0ne, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
-	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierProofCommitHeight")
-
 	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
 	if err != nil {
 		return 0, err
 	}
 
-	// Fetch the block at the proof window open height. Its hash is used as part
-	// of the seed to the pseudo-random number generator.
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
-
-	blockHashCacheKey := getBlockHashCacheKey(proofWindowOpenHeight)
-	proofWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
-
-	if !found {
-		// Use mutex for cache miss pattern
-		sq.blockHashMutex.Lock()
-		defer sq.blockHashMutex.Unlock()
-
-		// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
-		proofWindowOpenBlockHash, found = sq.blockHashCache.Get(blockHashCacheKey)
-		if found {
-			logger.Debug().Msgf("cache HIT for blockHeight after lock: %s", blockHashCacheKey)
-		} else {
-			logger.Debug().Msgf("cache MISS for blockHeight: %s", blockHashCacheKey)
-
-			proofWindowOpenBlock, err := retry.Call(ctx, func() (*cometrpctypes.ResultBlock, error) {
-				queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
-				defer cancelQueryCtx()
-				return sq.blockQuerier.Block(queryCtx, &proofWindowOpenHeight)
-			}, retry.GetStrategy(ctx), logger)
-			if err != nil {
-				return 0, err
-			}
-
-			// Cache the block hash for future use.
-			proofWindowOpenBlockHash = proofWindowOpenBlock.BlockID.Hash.Bytes()
-			sq.blockHashCache.Set(blockHashCacheKey, proofWindowOpenBlockHash)
-		}
-	} else {
-		logger.Debug().Msgf("cache HIT for blockHeight: %s", blockHashCacheKey)
-	}
-
+	// Do NOT fetch the proof-window-open block hash; see the detailed note in
+	// GetEarliestSupplierClaimCommitHeight above. The block-hash arg is unused (proof
+	// distribution seeding is disabled), so pass nil rather than paying an RPC — and
+	// risking an error return — for a discarded value.
 	return sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		queryHeight,
-		proofWindowOpenBlockHash,
+		nil,
 		supplierOperatorAddr,
 	), nil
-}
-
-// getBlockHashCacheKey constructs the cache key for a block hash by string formatting the block height.
-func getBlockHashCacheKey(height int64) string {
-	return strconv.FormatInt(height, 10)
 }

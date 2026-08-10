@@ -2,10 +2,17 @@ package types
 
 import (
 	"math"
+	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+
+	"github.com/pokt-network/poktroll/pkg/encoding"
 )
+
+// bigRatOne is the anti-collusion invariant's comparison bound (see Params.ValidateBasic).
+// Package-level so the round-trip check does not allocate a new big.Rat per validation.
+var bigRatOne = big.NewRat(1, 1)
 
 var (
 	// DAO TLM Params
@@ -50,8 +57,28 @@ var (
 	ParamMintRatio   = "mint_ratio"
 	DefaultMintRatio = float64(1.0) // Default: no deflation (mint equals burn)
 
+	// Settlement budget redistribution: overservicing_bonus_multiplier bounds how far
+	// above its guaranteed floor a supplier's settlement may be raised from unused budget.
+	// 0 or 1 reproduce the legacy head-split cap exactly (no-op); n>1 allows up to n*floor.
+	// The zero value is treated as 1 (legacy), so an unset/clobbered param is always benign.
+	KeyOverservicingBonusMultiplier     = []byte("OverservicingBonusMultiplier")
+	ParamOverservicingBonusMultiplier   = "overservicing_bonus_multiplier"
+	DefaultOverservicingBonusMultiplier = uint64(1)
+
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
+
+// MaxOverservicingBonusMultiplier is the largest accepted overservicing_bonus_multiplier.
+//
+// Values at or above num_suppliers_per_session are already equivalent to "cap removed"
+// — the application's committed per-session budget B (= numSuppliers * floor) binds
+// before m does. So anything past that point buys nothing, while an accidental extra
+// digit or a mis-encoded uint64 is indistinguishable from a deliberate choice. Bounding
+// the param makes a fat-finger a loud validation error instead of a silent no-op.
+//
+// 1000 is ~an order of magnitude above any plausible num_suppliers_per_session, so it
+// constrains nothing governance would legitimately want.
+const MaxOverservicingBonusMultiplier = uint64(1000)
 
 // ParamKeyTable the param key table for launch module
 func ParamKeyTable() paramtypes.KeyTable {
@@ -65,6 +92,7 @@ func NewParams(
 	globalInflationPerClaim float64,
 	mintEqualsBurnClaimDistribution MintEqualsBurnClaimDistribution,
 	mintRatio float64,
+	overservicingBonusMultiplier uint64,
 ) Params {
 	return Params{
 		DaoRewardAddress:                daoRewardAddress,
@@ -72,6 +100,7 @@ func NewParams(
 		GlobalInflationPerClaim:         globalInflationPerClaim,
 		MintEqualsBurnClaimDistribution: mintEqualsBurnClaimDistribution,
 		MintRatio:                       mintRatio,
+		OverservicingBonusMultiplier:    overservicingBonusMultiplier,
 	}
 }
 
@@ -83,6 +112,7 @@ func DefaultParams() Params {
 		DefaultGlobalInflationPerClaim,
 		DefaultMintEqualsBurnClaimDistribution,
 		DefaultMintRatio,
+		DefaultOverservicingBonusMultiplier,
 	)
 }
 
@@ -114,6 +144,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.MintRatio,
 			ValidateMintRatio,
 		),
+		paramtypes.NewParamSetPair(
+			KeyOverservicingBonusMultiplier,
+			&p.OverservicingBonusMultiplier,
+			ValidateOverservicingBonusMultiplier,
+		),
 	}
 }
 
@@ -139,10 +174,46 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	if err := ValidateOverservicingBonusMultiplier(params.OverservicingBonusMultiplier); err != nil {
+		return err
+	}
+
 	// If MintEqualsBurnClaimDistribution is zero-valued (e.g., because Ignite CLI couldn't parse it),
 	// set it to the default value
 	if params.MintEqualsBurnClaimDistribution.Sum() == 0 {
 		params.MintEqualsBurnClaimDistribution = DefaultMintEqualsBurnClaimDistribution
+	}
+
+	// Anti-collusion invariant (settlement budget redistribution):
+	// A colluding application+supplier burns X from its own application stake and
+	// receives back mint_ratio * supplier_share * X as the supplier. For self-dealing
+	// to be a losing trade, this round-trip factor MUST stay below 1. Today the
+	// per-session head-split cap accidentally bounds collusion throughput; once that
+	// cap is demoted to a floor, this invariant becomes the primary anti-collusion
+	// mechanism, so it is enforced as a hard validation error here.
+	//
+	// Computed over big.Rat, NOT float64. A lone IEEE-754 multiply happens to be
+	// bit-identical across platforms, but this is a consensus gate (it runs in the
+	// v0.1.35 upgrade handler and on every MsgUpdateParam(s)), and the repo rule is
+	// that float64 params are converted with encoding.Float64ToRat before any
+	// arithmetic. Float64ToRat also goes through the decimal string, so 0.975 is
+	// exactly 39/40 rather than the nearest binary double — the comparison against 1
+	// is then exact instead of resting on the rounding of a product.
+	mintRatioRat, err := encoding.Float64ToRat(params.MintRatio)
+	if err != nil {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid mint_ratio: %s", err)
+	}
+	supplierShareRat, err := encoding.Float64ToRat(params.MintEqualsBurnClaimDistribution.Supplier)
+	if err != nil {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid mint_equals_burn_claim_distribution.supplier: %s", err)
+	}
+
+	roundTripFactor := new(big.Rat).Mul(mintRatioRat, supplierShareRat)
+	if roundTripFactor.Cmp(bigRatOne) >= 0 {
+		return ErrTokenomicsParamInvalid.Wrapf(
+			"anti-collusion invariant violated: mint_ratio (%s) * mint_equals_burn_claim_distribution.supplier (%s) = %s must be < 1",
+			mintRatioRat.RatString(), supplierShareRat.RatString(), roundTripFactor.RatString(),
+		)
 	}
 
 	return nil
@@ -308,6 +379,33 @@ func ValidateMintRatio(mintRatioAny any) error {
 
 	if mintRatio <= 0 || mintRatio > 1 {
 		return ErrTokenomicsParamInvalid.Wrapf("mint_ratio must be in range (0, 1]: got %f", mintRatio)
+	}
+
+	return nil
+}
+
+// ValidateOverservicingBonusMultiplier validates the OverservicingBonusMultiplier param.
+//
+//   - 0 or 1 reproduce the legacy head-split cap exactly (no redistribution above the floor);
+//     the zero value is treated as 1 at settlement so an unset/clobbered param stays benign,
+//   - n > 1 bounds a supplier's settlement to n * floor (redistribution from unused budget),
+//   - n > MaxOverservicingBonusMultiplier is REJECTED: it is economically identical to a
+//     value at num_suppliers_per_session (the application budget B binds first), so such a
+//     value is far more likely a typo than an intent. See MaxOverservicingBonusMultiplier.
+func ValidateOverservicingBonusMultiplier(overservicingBonusMultiplierAny any) error {
+	overservicingBonusMultiplier, ok := overservicingBonusMultiplierAny.(uint64)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", overservicingBonusMultiplierAny)
+	}
+
+	if overservicingBonusMultiplier > MaxOverservicingBonusMultiplier {
+		return ErrTokenomicsParamInvalid.Wrapf(
+			"overservicing_bonus_multiplier (%d) must be <= %d; values at or above "+
+				"num_suppliers_per_session already remove the cap in practice (the application's "+
+				"per-session budget binds first), so a larger value has no effect and is most "+
+				"likely a mistake",
+			overservicingBonusMultiplier, MaxOverservicingBonusMultiplier,
+		)
 	}
 
 	return nil

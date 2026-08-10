@@ -52,7 +52,7 @@ func (k Keeper) EndBlockerUnbondGateways(ctx context.Context) (numUnbondedGatewa
 
 		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		unbondingEndEvent := &gatewaytypes.EventGatewayUnbondingEnd{
-			Gateway:            &gateway,
+			Gateway:            gateway.DehydratedForEvent(),
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
 		}

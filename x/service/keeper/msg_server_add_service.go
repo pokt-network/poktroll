@@ -59,11 +59,48 @@ func (k msgServer) AddService(
 		logger.Info(fmt.Sprintf("Updating service: ComputeUnitsPerRelay=%v, HasMetadata=%v",
 			msg.Service.ComputeUnitsPerRelay, msg.Service.Metadata != nil))
 
+		// Capture the previous cupr before overwriting so a change can be snapshotted
+		// for session-start-pinned claim validation.
+		prevComputeUnitsPerRelay := foundService.ComputeUnitsPerRelay
+
 		foundService.Name = msg.Service.Name
 		foundService.ComputeUnitsPerRelay = msg.Service.ComputeUnitsPerRelay
-		foundService.Metadata = msg.Service.Metadata
+
+		// Only overwrite metadata when the message actually carries it.
+		//
+		// MsgAddService is the ONLY update path for an existing service and always
+		// carries a full Service{}, so a message that only intends to change
+		// compute_units_per_relay still arrives with a nil Metadata. Assigning it
+		// unconditionally would silently destroy the stored metadata of every service
+		// updated by a client that does not re-send it (e.g. the `edit-service` CLI,
+		// which builds its message via NewMsgAddService and never sets Metadata).
+		//
+		// TODO_TECHDEBT: An owner can ERASE metadata by submitting a minimal payload
+		// (e.g. `{}`), which overwrites the stored blob, but cannot set the field back to
+		// nil: Metadata.ValidateBasic rejects a zero-length card payload, so a
+		// non-nil Metadata always remains. Consumers must therefore treat a non-nil
+		// Metadata as "may be empty", not "has content". Add a dedicated clear mechanism
+		// if/when the metadata fields are reworked.
+		if msg.Service.Metadata != nil {
+			foundService.Metadata = msg.Service.Metadata
+		}
 
 		k.SetService(ctx, foundService)
+
+		// Record the cupr change in history so claim validation resolves the cupr that
+		// was live at each session's start (in-flight sessions keep their start rate;
+		// the new value takes effect at the next session boundary). Only record an
+		// actual change — name/metadata-only updates leave cupr history untouched.
+		if prevComputeUnitsPerRelay != msg.Service.ComputeUnitsPerRelay {
+			if err := k.SnapshotServiceComputeUnitsPerRelayChange(
+				ctx,
+				msg.Service.Id,
+				prevComputeUnitsPerRelay,
+				msg.Service.ComputeUnitsPerRelay,
+			); err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+		}
 
 		isSuccessful = true
 		return &types.MsgAddServiceResponse{}, nil
@@ -120,6 +157,16 @@ func (k msgServer) AddService(
 
 	logger.Info(fmt.Sprintf("Adding service: %v", msg.Service))
 	k.SetService(ctx, msg.Service)
+
+	// Seed the initial cupr in history so future changes have a baseline and
+	// claim validation can resolve the session-start cupr for this service.
+	if err := k.SnapshotServiceComputeUnitsPerRelayCreate(
+		ctx,
+		msg.Service.Id,
+		msg.Service.ComputeUnitsPerRelay,
+	); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
 	isSuccessful = true
 	return &types.MsgAddServiceResponse{}, nil

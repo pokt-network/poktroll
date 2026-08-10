@@ -45,6 +45,11 @@ message QueryParamsResponse {
 
 message QueryGetGatewayRequest {
   string address = 1;
+
+  // If true, strip Gateway.metadata (the card) from the response to reduce payload size.
+  // Defaults to false, i.e. the card IS included -- proto3 bools cannot default to true.
+  // Mirrors the same flag on the service queries.
+  bool dehydrated = 2;
 }
 
 message QueryGetGatewayResponse {
@@ -53,6 +58,16 @@ message QueryGetGatewayResponse {
 
 message QueryAllGatewaysRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
+
+  // If true, strip Gateway.metadata (the card) from every entry in the response.
+  // Defaults to false, i.e. cards ARE included -- proto3 bools cannot default to true.
+  //
+  // Enumerating gateways is where an included card hurts most: a card can be up to
+  // MaxServiceMetadataSizeBytes (256 KiB), so a default page of 100 carried cards would be
+  // ~25 MB and blow the 4 MB default gRPC message limit. Use this flag (or `pocketd query
+  // gateway list-gateway --dehydrated`, which sets it) for bulk enumeration, and read an
+  // individual card with `pocketd query gateway card <address>`.
+  bool dehydrated = 2;
 }
 
 message QueryAllGatewaysResponse {

@@ -182,6 +182,17 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.34 - upgrade to:
 	// - Deduplicate supplier rev share addresses
 	upgrades.Upgrade_0_1_34,
+
+	// v0.1.35 - upgrade to:
+	// - Settlement budget redistribution: the per-supplier head-split cap becomes a
+	//   guaranteed floor (ships as a no-op; new overservicing_bonus_multiplier param = 1)
+	// - Enforce the anti-collusion invariant in tokenomics params validation
+	// - Pin compute_units_per_relay to the session-start height for claim validation
+	//   and settlement (stops mid-session cupr changes forfeiting in-flight claims)
+	// - Only the supplier owner can cancel an in-progress unstake (PR #1980)
+	// - Remove dead block-hash reads from the claim/proof commit-height calc (#1976),
+	//   which changes gas on MsgCreateClaim / MsgSubmitProof
+	upgrades.Upgrade_0_1_35,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

@@ -26,9 +26,8 @@ const (
 	// TODO_TECHDEBT: Rename "service name" to "service description"
 	maxServiceNameLength = 169
 
-	// MaxServiceMetadataSizeBytes is the maximum allowed size for the experimental metadata payload.
-	// This cap is enforced onchain to prevent excessively large API specifications from bloating state.
-	// The experimental metadata bytes cannot exceed this limit.
+	// MaxServiceMetadataSizeBytes is the maximum allowed size for the metadata card payload.
+	// This cap is enforced onchain to prevent excessively large payloads from bloating state.
 	// TODO_POST_MAINNET: Consider making this a governance parameter for flexibility.
 	MaxServiceMetadataSizeBytes = 256 * 1_024 // 262_144 bytes (256 KiB)
 
@@ -74,23 +73,24 @@ func (s *Service) ValidateBasic() error {
 
 // ValidateBasic performs basic validation of the metadata. Nil metadata is allowed.
 //
-// DEV_NOTE: This validation intentionally does NOT verify the content format (e.g., valid JSON, OpenAPI, etc.)
-// because the metadata is explicitly marked as "experimental" and may contain any serialized API spec format.
-// Future versions may add format-specific validation when dedicated fields are introduced.
-// TODO_IMPROVE: See comments on openapi/openrpc next steps in service.proto.
+// DEV_NOTE: This validation intentionally does NOT verify the content of the card (e.g. that it
+// is valid JSON, or conforms to the card schema). The card is versioned in-band via its `schema`
+// key precisely so it can evolve without a consensus change; validating its shape onchain would
+// re-freeze what the document format exists to keep fluid.
+// See docs/pocket_service_card.md.
 func (metadata *Metadata) ValidateBasic() error {
 	if metadata == nil {
 		return nil
 	}
 
-	if len(metadata.ExperimentalApiSpecs) == 0 {
-		return ErrSharedInvalidServiceMetadata.Wrap("metadata experimental_api_specs must not be empty")
+	if len(metadata.Card) == 0 {
+		return ErrSharedInvalidServiceMetadata.Wrap("metadata card must not be empty")
 	}
 
-	if len(metadata.ExperimentalApiSpecs) > MaxServiceMetadataSizeBytes {
+	if len(metadata.Card) > MaxServiceMetadataSizeBytes {
 		return ErrSharedInvalidServiceMetadata.Wrapf(
-			"metadata experimental_api_specs exceeds maximum size: got %d bytes, max %d bytes",
-			len(metadata.ExperimentalApiSpecs), MaxServiceMetadataSizeBytes,
+			"metadata card exceeds maximum size: got %d bytes, max %d bytes",
+			len(metadata.Card), MaxServiceMetadataSizeBytes,
 		)
 	}
 

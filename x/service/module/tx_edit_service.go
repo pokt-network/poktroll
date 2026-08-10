@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
@@ -10,8 +11,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/pkg/cards"
 	"github.com/pokt-network/poktroll/x/service/config"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const FlagDisableBatchMsgs = "disable-batch-msgs"
@@ -27,7 +30,11 @@ func CmdEditService() *cobra.Command {
 		Short: "Batch-update existing services from a YAML config file",
 		Long: `Update one or more existing services on the network from a YAML config file.
 
-Each service entry in the config must specify service_id and compute_units_per_relay.
+Each service entry must specify service_id and compute_units_per_relay, and may optionally
+name a card_file: a Pocket Service Card to publish for that service
+(see docs/pocket_service_card.md). Cards are validated against the schema before anything
+is broadcast; --skip-card-validation opts out.
+
 The service_name field is optional and ignored (the chain does not support updating
 service names for existing services).
 
@@ -35,7 +42,11 @@ The command queries the chain to verify:
   - Each service exists on-chain
   - The transaction signer is the service owner
 
-Services whose on-chain compute_units_per_relay already matches are skipped.
+A service is skipped only when BOTH its compute_units_per_relay and its card already match
+what is on-chain. An entry that names no card_file leaves the stored card untouched.
+
+Card comparison is byte-exact against what is stored, so reformatting a card file counts
+as a change even when the JSON is semantically identical.
 
 By default, all updates are submitted as a single batched transaction. Use
 --disable-batch-msgs to send individual transactions instead.`,
@@ -50,7 +61,8 @@ By default, all updates are submitted as a single batched transaction. Use
   #   - service_id: svc1
   #     compute_units_per_relay: 15
   #   - service_id: svc2
-  #     compute_units_per_relay: 25`,
+  #     compute_units_per_relay: 25
+  #     card_file: ./cards/svc2.json`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			configFile, err := cmd.Flags().GetString("config")
@@ -97,17 +109,29 @@ By default, all updates are submitted as a single batched transaction. Use
 					)
 				}
 
-				// Skip if on-chain compute_units_per_relay already matches the config.
-				// NOTE: The chain's AddService keeper only updates ComputeUnitsPerRelay
-				// and Metadata for existing services (not Name), so we only compare that field.
-				// Ref: x/service/keeper/msg_server_add_service.go:55-65
-				if onChainSvc.ComputeUnitsPerRelay == svcEntry.ComputeUnitsPerRelay {
+				// Load the card for this entry, if the config names one.
+				desiredCard, cardErr := loadEntryCard(cmd, svcEntry)
+				if cardErr != nil {
+					return cardErr
+				}
+
+				// Decide what actually needs to change.
+				//
+				// DEV_NOTE: This MUST consider the card as well as cupr. Comparing cupr alone
+				// -- as this command originally did -- silently drops card-only edits: the
+				// entry looks "already up to date" and is skipped, so the new card is never
+				// published and the command reports success.
+				cuprChanged := onChainSvc.ComputeUnitsPerRelay != svcEntry.ComputeUnitsPerRelay
+				cardChanged := desiredCard != nil && !bytes.Equal(onChainSvc.GetMetadata().GetCard(), desiredCard)
+
+				if !cuprChanged && !cardChanged {
 					fmt.Fprintf(cmd.OutOrStdout(), "Skipping service %q: already up to date\n", svcEntry.ServiceId)
 					continue
 				}
 
-				// Use on-chain name since the chain does not update names for existing services.
-				// If the config provides a name, ignore it silently.
+				// Re-send the on-chain name so this command never renames a service as a side
+				// effect. The keeper DOES overwrite Name on update, so omitting it here would
+				// blank it out. If the config provides a name, ignore it silently.
 				serviceName := onChainSvc.Name
 
 				msg := types.NewMsgAddService(
@@ -116,9 +140,20 @@ By default, all updates are submitted as a single batched transaction. Use
 					serviceName,
 					svcEntry.ComputeUnitsPerRelay,
 				)
+
+				// Attach the card ONLY when the config named one. Leaving Metadata nil means
+				// the keeper preserves whatever is already stored, so a cupr-only edit never
+				// disturbs an existing card.
+				if desiredCard != nil {
+					msg.Service.Metadata = &sharedtypes.Metadata{Card: desiredCard}
+				}
+
 				if validateErr := msg.ValidateBasic(); validateErr != nil {
 					return fmt.Errorf("invalid message for service %q: %w", svcEntry.ServiceId, validateErr)
 				}
+
+				fmt.Fprintf(cmd.OutOrStdout(), "Updating service %q: %s\n",
+					svcEntry.ServiceId, describeChanges(cuprChanged, cardChanged))
 
 				msgs = append(msgs, msg)
 			}
@@ -162,8 +197,55 @@ By default, all updates are submitted as a single batched transaction. Use
 	cmd.Flags().String("config", "", "Path to the YAML config file with service definitions (required)")
 	_ = cmd.MarkFlagRequired("config")
 	cmd.Flags().Bool(FlagDisableBatchMsgs, false, "Send individual transactions instead of a single batch")
+	cmd.Flags().Bool(
+		FlagSkipCardValidation,
+		false,
+		"Publish cards without validating them against the Pocket Service Card schema",
+	)
 
 	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd
+}
+
+// loadEntryCard reads and validates the card named by a config entry, if any.
+// It returns nil when the entry names no card, which the caller treats as
+// "leave the stored card alone".
+func loadEntryCard(cmd *cobra.Command, svcEntry *config.YAMLServiceEntry) ([]byte, error) {
+	if svcEntry.CardFile == "" {
+		return nil, nil
+	}
+
+	card, err := os.ReadFile(svcEntry.CardFile)
+	if err != nil {
+		return nil, fmt.Errorf("service %q: failed to read card_file %q: %w",
+			svcEntry.ServiceId, svcEntry.CardFile, err)
+	}
+
+	skipValidation, err := cmd.Flags().GetBool(FlagSkipCardValidation)
+	if err != nil {
+		return nil, err
+	}
+
+	if !skipValidation {
+		if validateErr := cards.Validate(cards.KindService, card); validateErr != nil {
+			return nil, fmt.Errorf("service %q: %w\n\nRe-run with --%s to publish it anyway",
+				svcEntry.ServiceId, validateErr, FlagSkipCardValidation)
+		}
+	}
+
+	return card, nil
+}
+
+// describeChanges renders which fields an update is actually changing, so a batch run says
+// what it did rather than just how many messages it sent.
+func describeChanges(cuprChanged, cardChanged bool) string {
+	switch {
+	case cuprChanged && cardChanged:
+		return "compute_units_per_relay and card"
+	case cuprChanged:
+		return "compute_units_per_relay"
+	default:
+		return "card"
+	}
 }

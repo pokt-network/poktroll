@@ -27,7 +27,7 @@ func (s *suite) TheUserCreatesAServiceWithNameAndComputeUnitsFromAccountWithMeta
 		serviceId,
 		serviceName,
 		computeUnits,
-		"--experimental-metadata-base64", metadataBase64,
+		"--card-base64", metadataBase64,
 		"--from", accName,
 		keyRingFlag,
 		chainIdFlag,
@@ -60,7 +60,7 @@ func (s *suite) TheUserUpdatesServiceWithMetadataFromFileFromAccount(
 		serviceId,
 		service.Name,
 		fmt.Sprintf("%d", service.ComputeUnitsPerRelay),
-		"--experimental-metadata-base64", metadataBase64,
+		"--card-base64", metadataBase64,
 		"--from", accName,
 		keyRingFlag,
 		chainIdFlag,
@@ -100,11 +100,11 @@ func (s *suite) TheServiceShouldExistWithMetadata(serviceId string) {
 	service := s.getService(serviceId)
 	require.NotNil(s, service, "service %s does not exist", serviceId)
 	require.NotNil(s, service.Metadata, "service %s has no metadata", serviceId)
-	require.NotEmpty(s, service.Metadata.ExperimentalApiSpecs, "service %s metadata is empty", serviceId)
+	require.NotEmpty(s, service.Metadata.Card, "service %s metadata is empty", serviceId)
 
 	// Verify the metadata size is reasonable
-	require.LessOrEqual(s, len(service.Metadata.ExperimentalApiSpecs), 262144,
+	require.LessOrEqual(s, len(service.Metadata.Card), 262144,
 		"service %s metadata exceeds 256 KiB limit", serviceId)
 
-	s.Logf("Service %s exists with %d bytes of metadata", serviceId, len(service.Metadata.ExperimentalApiSpecs))
+	s.Logf("Service %s exists with %d bytes of metadata", serviceId, len(service.Metadata.Card))
 }

@@ -11,6 +11,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
 			Service: servicetypes.Query_serviceDesc.ServiceName,
+			// REQUIRED: the module provides its own GetQueryCmd (for `card`), and without
+			// this flag autocli uses that custom command INSTEAD of the generated ones --
+			// silently deleting show-service, all-services, compute-units-per-relay-* and
+			// relay-mining-difficulty-* from the CLI.
+			// Ref: cosmossdk.io/client/v2/autocli enhanceCustomCmd.
+			EnhanceCustomCommand: true,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
 					RpcMethod: "Params",
@@ -109,6 +115,29 @@ pocketd q service show-service pocket --dehydrated`,
 - Supports pagination via flags if there are many entries.
 `,
 					Example:        `pocketd q service relay-mining-difficulty-history <service-id>`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}},
+				},
+				{
+					RpcMethod: "ComputeUnitsPerRelayAtHeight",
+					Use:       "compute-units-per-relay-at-height [service-id] [block-height]",
+					Short:     "Show the compute units per relay (cupr) effective for a service at a specific block height",
+					Long: `
+- Shows the compute_units_per_relay that was effective for a specific service at a given block height.
+- This is the value claim validation pins to the session-start height, so it is useful for verifying the cupr used during past sessions.
+`,
+					Example:        `pocketd q service compute-units-per-relay-at-height <service-id> 1000`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}, {ProtoField: "blockHeight"}},
+				},
+				{
+					RpcMethod: "ComputeUnitsPerRelayHistory",
+					Use:       "compute-units-per-relay-history [service-id]",
+					Short:     "List the history of compute units per relay (cupr) changes for a service",
+					Long: `
+- Lists all historical compute_units_per_relay changes for a specific service.
+- Each entry shows when a cupr became effective and its value.
+- Supports pagination via flags if there are many entries.
+`,
+					Example:        `pocketd q service compute-units-per-relay-history <service-id>`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}},
 				},
 				// this line is used by ignite scaffolding # autocli/query

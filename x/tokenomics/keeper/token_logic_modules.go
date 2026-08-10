@@ -12,7 +12,6 @@ import (
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	"github.com/pokt-network/poktroll/pkg/encoding"
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -127,19 +126,25 @@ func (k Keeper) ProcessTokenLogicModules(
 		return cosmostypes.Coin{}, err
 	}
 
-	applicationInitialStake, err := settlementContext.GetApplicationInitialStake(sessionHeader.ApplicationAddress)
+	// Resolve the compute_units_per_relay that was effective at the session start height,
+	// NOT the current (possibly changed) service cupr. The RelayMiner bakes the
+	// session-start cupr into the append-only SMST at mine time, so validating against a
+	// mid-session cupr change would discard otherwise-valid in-flight claims. This mirrors
+	// the session-start pin applied at claim creation and the difficulty-at-height lookup
+	// above.
+	sessionStartComputeUnitsPerRelay, err := settlementContext.GetServiceComputeUnitsPerRelay(sessionHeader.ServiceId, sessionHeader.SessionStartBlockHeight)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}
 
 	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
-	expectedClaimComputeUnits := numRelays * service.ComputeUnitsPerRelay
+	expectedClaimComputeUnits := numRelays * sessionStartComputeUnitsPerRelay
 	if numClaimComputeUnits != expectedClaimComputeUnits {
 		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"mismatch: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d)",
 			numClaimComputeUnits,
 			numRelays,
-			service.ComputeUnitsPerRelay,
+			sessionStartComputeUnitsPerRelay,
 		)
 	}
 
@@ -162,19 +167,38 @@ func (k Keeper) ProcessTokenLogicModules(
 		"application", application.Address,
 	)
 
-	// Get the actual number of suppliers that submitted claims for this (app, session) pair.
-	// This replaces the NumSuppliersPerSession governance param to ensure fair budget
-	// distribution based on actual participation rather than the theoretical maximum.
-	actualNumSuppliers := settlementContext.GetActualSupplierCount(
+	// Look up the per-(app, session) budget allocation used to demote the head-split cap to
+	// a redistributable floor. Phase 1.5 of SettlePendingClaims precomputes this for every
+	// group before Phase 2 runs, so in the normal settlement flow this is always a cache hit
+	// carrying the full unused/excess aggregates needed for redistribution.
+	//
+	// getOrInitSessionBudget falls back to computing a floor-only budget (unused = 0,
+	// totalExcess = 0 ⇒ no bonus ⇒ the legacy head-split cap) if the group was not
+	// precomputed. This can only happen when ProcessTokenLogicModules is invoked outside the
+	// two-phase flow (e.g. isolated unit tests); it is provably conservative (a supplier is
+	// paid at most its floor, so the application can never be overpaid) and deterministic.
+	sessionBudget, err := settlementContext.getOrInitSessionBudget(
+		ctx,
 		sessionHeader.ApplicationAddress,
 		sessionHeader.SessionId,
+		sessionHeader.SessionEndBlockHeight,
 	)
+	if err != nil {
+		return cosmostypes.Coin{}, err
+	}
+
+	// global_inflation_per_claim as a big.Rat, converted once per settlement block rather
+	// than per claim (it is the same constant for every claim in the block).
+	globalInflationPerClaimRat, err := settlementContext.getGlobalInflationPerClaimRat()
+	if err != nil {
+		return cosmostypes.Coin{}, err
+	}
 
 	// Ensure the claim amount is within the limits set by RelayMining.
 	// If not, update the settlement amount and emit relevant events.
 	// TODO_IMPROVE: Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake, actualNumSuppliers, sessionHeader.ServiceId, sessionHeader.SessionEndBlockHeight)
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &tokenomicsParams, application, supplier, claimSettlementCoin, sessionBudget, globalInflationPerClaimRat, sessionHeader.ServiceId, sessionHeader.SessionEndBlockHeight)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}
@@ -277,27 +301,32 @@ func (k Keeper) ProcessTokenLogicModules(
 	return actualSettlementCoin, nil
 }
 
-// ensureClaimAmountLimits checks and handles overserviced applications.
+// ensureClaimAmountLimits caps a supplier's settlement to the budget the application
+// committed for the session (settlement budget redistribution).
 //
-// Per Algorithm #1 in the Relay Mining paper, the maximum amount that a single
-// supplier can claim in a session is AppStake/ActualNumSuppliers, where
-// ActualNumSuppliers is the number of suppliers that submitted claims for
-// this (app, session) pair. This replaces the previous NumSuppliersPerSession
-// governance param to ensure fair budget distribution based on actual participation.
+// The per-supplier head-split B/N (where B is the application's per-session budget and N
+// the actual number of claiming suppliers) is a GUARANTEED FLOOR, not a hard ceiling:
+//   - Serving at or below the floor is always paid in full.
+//   - Serving above the floor may additionally be paid from the budget that idle/light
+//     suppliers left unused, in proportion to this claim's excess over the floor, bounded
+//     by the application's total committed budget B and by overservicing_bonus_multiplier.
+//
+// The floor and the unused/excess aggregates are precomputed once per (app, session) group
+// in Phase 1.5 (see settlementContext.getOrInitSessionBudget); this function only reads
+// them, computes THIS claim's bonus, and applies the multiplier cap.
+//
+// With overservicing_bonus_multiplier == 1 this reproduces the legacy head-split cap
+// (AppStake / numPendingSessions / actualNumSuppliers) exactly.
 // Ref: https://arxiv.org/pdf/2305.10672
-//
-// If this is not the case, then the supplier essentially did "free work" and the
-// actual claim amount is less than what was claimed.
 func (k Keeper) ensureClaimAmountLimits(
 	ctx context.Context,
 	logger log.Logger,
-	sharedParams *sharedtypes.Params,
 	tokenomicsParams *tokenomicstypes.Params,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
 	claimSettlementCoin cosmostypes.Coin,
-	initialApplicationStake cosmostypes.Coin,
-	actualNumSuppliers int64,
+	sessionBudget *sessionBudget,
+	globalInflationPerClaimRat *big.Rat,
 	serviceId string,
 	sessionEndBlockHeight int64,
 ) (
@@ -306,75 +335,53 @@ func (k Keeper) ensureClaimAmountLimits(
 ) {
 	logger = logger.With("helper", "ensureClaimAmountLimits")
 
-	// Note that this also incorporates MintP	erClaimGlobalInflation since applications
-	// are being overcharged by that amount and the funds are sent to the DAO/PNF
-	// before being reimbursed to the application in the future.
-	appStake := initialApplicationStake
-
-	// The application should have enough stake to cover for the global mint reimbursement.
-	// This amount is deducted from the maximum claimable amount.
-	globalInflationPerClaim := tokenomicsParams.GlobalInflationPerClaim
-	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
-	if err != nil {
-		logger.Error(fmt.Sprintf("error calculating claim amount limits due to: %v", err))
-		return actualSettlementCoins, err
-	}
-
-	globalInflationCoin := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin, globalInflationPerClaimRat)
-	globalInflationAmt := globalInflationCoin.Amount
-	minRequiredAppStakeAmt := claimSettlementCoin.Amount.Add(globalInflationAmt)
+	// minRequiredAppStakeAmt is the claim expressed in "stake terms": the settlement amount
+	// plus its per-claim global-inflation reimbursement. This is the same unit the floor and
+	// the redistribution aggregates are computed in.
+	// Note that this also incorporates MintPerClaimGlobalInflation since applications are
+	// being overcharged by that amount and the funds are sent to the DAO/PNF before being
+	// reimbursed to the application in the future.
+	//
+	// globalInflationPerClaimRat is converted once per settlement block by the caller
+	// (settlementContext.getGlobalInflationPerClaimRat) rather than per claim here.
+	minRequiredAppStakeAmt := claimStakeTermsAmount(claimSettlementCoin, globalInflationPerClaimRat)
 	totalClaimedCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, minRequiredAppStakeAmt)
 
-	// Get the number of pending sessions that share the application stake for THIS claim's
-	// session. The divisor must reflect the session length (num_blocks_per_session) that was
-	// effective for the claim's own session, not the live params: a num_blocks_per_session
-	// change between a session and its settlement otherwise re-divides the app stake by a
-	// different concurrency, under- or over-paying the entire transition batch (#543, F2).
-	budgetParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndBlockHeight)
-	numPendingSessions := sharedtypes.GetNumPendingSessions(&budgetParams)
+	// The guaranteed floor (B / N) and the spend-limit flag were precomputed in Phase 1.5.
+	floor := sessionBudget.floor
+	spendLimitExceeded := sessionBudget.spendLimitExceeded
 
-	// The maximum any single supplier can claim is a fraction of the app's total stake
-	// divided by the actual number of suppliers that submitted claims for this session.
-	// Using actual count instead of the NumSuppliersPerSession governance param ensures
-	// fair budget distribution: if only 20 of 50 assigned suppliers claim, each gets
-	// appStake/20 instead of appStake/50, eliminating wasted budget from no-shows.
-	// Divide sessions first, then suppliers — matches the spend-limit path's
-	// conceptual order and avoids different integer truncation results.
-	maxClaimableAmt := appStake.Amount.
-		Quo(math.NewInt(numPendingSessions)).
-		Quo(math.NewInt(actualNumSuppliers))
-
-	// Apply per-session spend limit if set on the application.
-	// The spend limit caps the per-session budget, which is then divided among suppliers.
-	spendLimitExceeded := false
-	if application.PerSessionSpendLimit != nil &&
-		application.PerSessionSpendLimit.Amount.GT(math.ZeroInt()) {
-		// Validate the spend limit denom matches the native token.
-		if application.PerSessionSpendLimit.Denom != pocket.DenomuPOKT {
-			return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf(
-				"application %s has per_session_spend_limit with invalid denom %q (expected %q)",
-				application.GetAddress(), application.PerSessionSpendLimit.Denom, pocket.DenomuPOKT,
-			)
-		}
-		// Per-session budget is min(spend_limit, appStake/numPendingSessions)
-		perSessionBudget := application.PerSessionSpendLimit.Amount
-		stakePerSession := appStake.Amount.Quo(math.NewInt(numPendingSessions))
-		if perSessionBudget.GT(stakePerSession) {
-			logger.Warn(fmt.Sprintf(
-				"application %s per_session_spend_limit %s exceeds stake-based budget %s per session; clamping to stake-based budget",
-				application.GetAddress(), perSessionBudget, stakePerSession,
-			))
-			perSessionBudget = stakePerSession
-		}
-		// Per-supplier cap from the spend limit
-		spendLimitMaxClaimable := perSessionBudget.Quo(math.NewInt(actualNumSuppliers))
-		if spendLimitMaxClaimable.LT(maxClaimableAmt) {
-			maxClaimableAmt = spendLimitMaxClaimable
-			spendLimitExceeded = true
-		}
+	// Demote the floor from a hard ceiling to a guaranteed minimum: redistribute the budget
+	// left unused by suppliers that claimed below their floor to those that claimed above it,
+	// proportional to each overservicer's excess over the floor.
+	//   bonus_i = unused * excess_i / totalExcess     (floor division ⇒ Σ bonus ≤ unused)
+	// Since Σ floor + Σ bonus ≤ N*floor = B, the total settled across the group never exceeds
+	// the application's committed budget, so its stake cannot go negative.
+	maxClaimableAmt := floor
+	claimExcess := minRequiredAppStakeAmt.Sub(floor)
+	if sessionBudget.totalExcess.IsPositive() && claimExcess.IsPositive() {
+		bonus := sessionBudget.unused.Mul(claimExcess).Quo(sessionBudget.totalExcess)
+		maxClaimableAmt = floor.Add(bonus)
 	}
 
-	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt, globalInflationPerClaim)
+	// overservicing_bonus_multiplier bounds the settlement to m * floor.
+	//   m == 0 or 1 => cap at the floor exactly (legacy head-split behaviour; no redistribution).
+	//   m >  1      => allow up to m * floor from the unused budget.
+	// A ZERO value is deliberately treated as 1 (the legacy cap), NOT as "unlimited": the
+	// param's zero-value — whether from a fresh proto3 decode, an un-run upgrade handler, or a
+	// clobbered write — must be BENIGN and never silently enable redistribution. To lift the
+	// cap in practice, governance sets m high enough that the application's committed budget B
+	// (= numSuppliers * floor) binds first (any m >= numSuppliers is equivalent to "only B").
+	effectiveMultiplier := tokenomicsParams.OverservicingBonusMultiplier
+	if effectiveMultiplier < 1 {
+		effectiveMultiplier = 1
+	}
+	multiplierCap := floor.Mul(math.NewIntFromUint64(effectiveMultiplier))
+	if maxClaimableAmt.GT(multiplierCap) {
+		maxClaimableAmt = multiplierCap
+	}
+
+	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt, globalInflationPerClaimRat)
 
 	// Check if the claimable amount is capped by the max claimable amount.
 	// As per the Relay Mining paper, the Supplier claim MUST NOT exceed the application's
@@ -385,7 +392,7 @@ func (k Keeper) ensureClaimAmountLimits(
 			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableAmt, claimSettlementCoin.Amount))
 
 		minRequiredAppStakeAmt = maxClaimableAmt
-		maxClaimSettlementAmt = supplierAppStakeToMaxSettlementAmount(minRequiredAppStakeAmt, globalInflationPerClaim)
+		maxClaimSettlementAmt = supplierAppStakeToMaxSettlementAmount(minRequiredAppStakeAmt, globalInflationPerClaimRat)
 	}
 
 	// Nominal case: The claimable amount is within the limits set by Relay Mining.
@@ -420,6 +427,23 @@ func (k Keeper) ensureClaimAmountLimits(
 	return maxClaimableCoin, nil
 }
 
+// claimStakeTermsAmount converts a claim's settlement amount into "stake terms" — the
+// amount that must be available in the application's stake to honor the claim, i.e. the
+// settlement amount plus its per-claim global-inflation reimbursement.
+//
+// This is the unit in which the per-session budget, floor, and redistribution are all
+// computed, so the Phase 1.5 budget accounting (settlement_context.go) and the Phase 2
+// per-claim cap (ensureClaimAmountLimits) MUST derive it identically — hence the shared
+// helper.
+//
+// Takes the already-converted big.Rat rather than the float64 param: the conversion is
+// identical for every claim in a block, so it is done once per settlement block by
+// settlementContext.getGlobalInflationPerClaimRat. The Rat is read-only here.
+func claimStakeTermsAmount(claimSettlementCoin cosmostypes.Coin, globalInflationPerClaimRat *big.Rat) math.Int {
+	globalInflationCoin := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin, globalInflationPerClaimRat)
+	return claimSettlementCoin.Amount.Add(globalInflationCoin.Amount)
+}
+
 // supplierAppStakeToMaxSettlementAmount calculates the max amount of uPOKT the supplier
 // can claim based on the stake allocated to the supplier and the global inflation
 // allocation percentage.
@@ -428,14 +452,12 @@ func (k Keeper) ensureClaimAmountLimits(
 // stake = maxSettlementAmt + (maxSettlementAmt * GlobalInflationPerClaim)
 // stake = maxSettlementAmt * (1 + GlobalInflationPerClaim)
 // maxSettlementAmt = stake / (1 + GlobalInflationPerClaim)
-func supplierAppStakeToMaxSettlementAmount(stakeAmount math.Int, globalInflationPerClaim float64) math.Int {
-	inflationRat, err := encoding.Float64ToRat(globalInflationPerClaim)
-	if err != nil {
-		// If conversion fails, fall back to treating inflation as 0 (conservative: full stake claimable).
-		return stakeAmount
-	}
+//
+// Takes the already-converted big.Rat (see claimStakeTermsAmount) so the per-block
+// float64->Rat conversion is not repeated for every claim. The Rat is read-only here.
+func supplierAppStakeToMaxSettlementAmount(stakeAmount math.Int, globalInflationPerClaimRat *big.Rat) math.Int {
 	// divisor = 1 + globalInflationPerClaim
-	divisor := new(big.Rat).Add(new(big.Rat).SetInt64(1), inflationRat)
+	divisor := new(big.Rat).Add(new(big.Rat).SetInt64(1), globalInflationPerClaimRat)
 	stakeRat := new(big.Rat).SetInt(stakeAmount.BigInt())
 	resultRat := new(big.Rat).Quo(stakeRat, divisor)
 	// Truncate (floor) to get the integer settlement amount.

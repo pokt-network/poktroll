@@ -83,7 +83,9 @@ func NewOneTimeErrTxTimeoutTxContext(
 		&expectedTx,
 	)
 
-	// intercept #BroadcastTx() call to mock response and prevent actual broadcast
+	// intercept #BroadcastTx() call to mock response and prevent actual broadcast.
+	// MinTimes(1): the initial broadcast plus any in-window re-broadcasts the tx
+	// client issues for an un-included (timing-out) tx (see rebroadcastDuePendingTxs).
 	txCtxMock.EXPECT().BroadcastTx(gomock.Any()).
 		DoAndReturn(
 			func(txBytes []byte) (*cosmostypes.TxResponse, error) {
@@ -93,7 +95,7 @@ func NewOneTimeErrTxTimeoutTxContext(
 					TxHash: expectedTxHash.String(),
 				}, nil
 			},
-		).Times(1)
+		).MinTimes(1)
 
 	txCtxMock.EXPECT().GetSimulatedTxGas(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(uint64(1), nil).
