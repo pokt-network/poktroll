@@ -186,6 +186,20 @@ func (k msgServer) recordParamsHistory(ctx context.Context, newParams types.Para
 	// legacy behavior of taking effect on live params immediately, but keep the CURRENT epoch's
 	// grid anchor in live (the EndBlocker advances the anchor at the boundary) so boundary math
 	// stays on the unchanged grid in the meantime.
+	//
+	// CONSEQUENCE — live and history disagree for these fields until the boundary. The history
+	// entry written above says the change is effective at nextSessionStartHeight, while the live
+	// write below applies it NOW. So for the remainder of the current session, live carries the
+	// new value but GetParamsAtHeight(h) for any h in that session still resolves to the old
+	// one. Two params epochs are observable at once, and which one a caller sees depends on
+	// which accessor it uses.
+	//
+	// This is why every consumer that PRICES a claim reads at-height rather than live:
+	// compute_units_to_tokens_multiplier and compute_unit_cost_granularity must be resolved at
+	// the claim's session start so the claim settles at the rate it was created and proof-gated
+	// under. See x/proof (create_claim, submit_proof, ProofRequirementForClaim),
+	// x/tokenomics settlementContext.GetSharedParamsAtSessionStart, and pkg/relayer/session.
+	// Reading live for pricing reintroduces the mid-flight rate change those pins exist to stop.
 	liveParams := k.GetParams(ctx)
 	if !sessionTimingParamsChanged(&liveParams, &newParams) {
 		immediateParams := newParams

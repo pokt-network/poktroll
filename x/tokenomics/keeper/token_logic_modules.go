@@ -103,7 +103,17 @@ func (k Keeper) ProcessTokenLogicModules(
 		Modifying this on a per request basis has been deemed too complex and not a mainnet blocker.
 	*/
 
+	// DEV_NOTE: two distinct shared params epochs are in play here, and they are NOT
+	// interchangeable:
+	//
+	//   - sharedParams (LIVE) is used further below to project FUTURE heights from the
+	//     CURRENT block (session end height, application unbonding height). Those must use
+	//     the session grid in effect now; resolving them at session start would schedule
+	//     unbonding against a stale num_blocks_per_session.
+	//   - pricingParams (at session start) converts claimed work to uPOKT. It must match
+	//     the epoch x/proof priced and proof-gated the claim under.
 	sharedParams := settlementContext.GetSharedParams()
+	pricingParams := settlementContext.GetSharedParamsAtSessionStart(ctx, sessionHeader.GetSessionStartBlockHeight())
 	tokenomicsParams := settlementContext.GetTokenomicsParams()
 
 	service, err := settlementContext.GetService(sessionHeader.ServiceId)
@@ -151,7 +161,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
 	// in the session.
-	claimSettlementCoin, err = pendingResult.Claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	claimSettlementCoin, err = pendingResult.Claim.GetClaimeduPOKT(pricingParams, relayMiningDifficulty)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}

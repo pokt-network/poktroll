@@ -517,7 +517,11 @@ func (rs *relayerSessionsManager) getClaimRewardCoin(
 		return sdktypes.Coin{}, err
 	}
 
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	// Price the claim under the shared params epoch effective at the session's start, which
+	// is the epoch the chain uses in x/proof (claim creation, proof validation) and, as of
+	// the settlement-side pin, in x/tokenomics. Reading live params here would make the
+	// miner's reward estimate drift from the onchain amount after a CUTTM change.
+	sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionHeader.GetSessionStartBlockHeight())
 	if err != nil {
 		return sdktypes.Coin{}, err
 	}

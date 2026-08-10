@@ -348,7 +348,12 @@ func (rs *relayerSessionsManager) isProofRequired(
 		return false, err
 	}
 
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	// Resolve the pricing params at the session's start height — the same epoch
+	// ProofRequirementForClaim uses onchain. If the miner evaluated this threshold under
+	// live params while the chain used session-start params, a CUTTM change mid-flight could
+	// make the miner skip a proof the chain still requires, which surfaces as PROOF_MISSING
+	// and slashes the supplier.
+	sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, claim.GetSessionHeader().GetSessionStartBlockHeight())
 	if err != nil {
 		return false, err
 	}

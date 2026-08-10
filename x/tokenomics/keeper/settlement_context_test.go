@@ -34,6 +34,7 @@ import (
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
@@ -1448,6 +1449,98 @@ func (s *TestSuite) TestSettlePendingClaims_NoClaims_NoPanic() {
 	events := sdkCtx.EventManager().Events()
 	settlementEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events)
 	require.Equal(t, 0, len(settlementEvents))
+}
+
+// TestSettlePendingClaims_CuttmChangeMidFlight_PaysAtSessionStartRate pins that a claim is
+// settled using the compute_units_to_tokens_multiplier that was effective at its SESSION
+// START, not the live value at the settlement block.
+//
+// Regression: settlement used to read live shared params for pricing, while x/proof priced
+// the same claim (and decided whether a proof was required) at the session start height. A
+// governance CUTTM change landing between a session's start and its settlement therefore
+// paid the supplier at a rate the claim was never priced or proof-gated under. The
+// divergence was visible inside settleClaim itself, which derived claimeduPOKT from live
+// params and then called ProofRequirementForClaim, which re-derived it at session start.
+//
+// Without the session-start pin this test fails with claimed_upokt at 2x the expected value.
+func (s *TestSuite) TestSettlePendingClaims_CuttmChangeMidFlight_PaysAtSessionStartRate() {
+	t := s.T()
+	ctx := s.ctx
+
+	// Genesis params — the epoch every claim from SetupTest was created under (session
+	// start height 1). s.claimedUpokt was computed with this CUTTM.
+	genesisParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	claim := s.claims[0]
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
+
+	// Set the proof params so this claim does NOT require a proof, using the OLD rate:
+	// ProofRequirementForClaim resolves CUTTM at session start, so the threshold must be
+	// compared against the session-start price to keep this test about pricing only.
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(genesisParams, relayMiningDifficulty)
+	require.NoError(t, err)
+	proofRequirementThreshold = proofRequirementThreshold.Add(uPOKTCoin(1))
+
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	require.NoError(t, s.keepers.ProofKeeper.SetParams(ctx, proofParams))
+
+	// Record the genesis epoch in params history at height 1, mirroring what
+	// recordParamsHistory seeds on the first-ever shared param update. This is what makes
+	// GetParamsAtHeight(sessionStartHeight=1) resolve to the OLD CUTTM.
+	historicalParams := genesisParams
+	historicalParams.SessionGridAnchorHeight = 1
+	historicalParams.SessionNumberAtAnchor = 1
+	// SetParamsAtHeight is on the concrete shared keeper; the tokenomics SharedKeeper
+	// interface intentionally exposes reads only.
+	concreteSharedKeeper, ok := s.keepers.SharedKeeper.(*sharedkeeper.Keeper)
+	require.True(t, ok, "expected the test harness to hold a concrete *sharedkeeper.Keeper")
+	require.NoError(t, concreteSharedKeeper.SetParamsAtHeight(ctx, 1, historicalParams))
+
+	// Now double the LIVE CUTTM, simulating a governance change promoted after the session
+	// started but before it settles. Only the multiplier changes — no session-timing param
+	// is touched, so the session grid (and therefore the settlement height below) is
+	// unaffected and this test isolates pricing.
+	liveParams := genesisParams
+	liveParams.ComputeUnitsToTokensMultiplier = genesisParams.ComputeUnitsToTokensMultiplier * 2
+	require.NoError(t, s.keepers.SharedKeeper.SetParams(ctx, liveParams))
+
+	// Sanity check: live and session-start params must actually disagree, otherwise this
+	// test would pass trivially even with the bug present.
+	require.NotEqual(t,
+		s.keepers.SharedKeeper.GetParams(ctx).ComputeUnitsToTokensMultiplier,
+		s.keepers.SharedKeeper.GetParamsAtHeight(ctx, 1).ComputeUnitsToTokensMultiplier,
+		"live and session-start CUTTM must differ for this regression to be meaningful",
+	)
+
+	s.keepers.UpsertClaim(ctx, claim)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	s.keepers.ValidateSubmittedProofs(sdkCtx)
+
+	// Settle after the proof window closes. Timing params are unchanged between the two
+	// epochs, so either one yields the same close height.
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&genesisParams, sessionEndHeight)
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+
+	settledResults, expiredResults, numDiscardedFaultyClaims, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), settledResults.GetNumClaims())
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims())
+	require.Equal(t, uint64(0), numDiscardedFaultyClaims)
+
+	// The settled amount must match the session-start rate, NOT the doubled live rate.
+	events := sdkCtx.EventManager().Events()
+	settlementEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events)
+	require.Equal(t, 1, len(settlementEvents))
+
+	settlementEvent := settlementEvents[0]
+	require.Equal(t, int32(prooftypes.ProofRequirementReason_NOT_REQUIRED), settlementEvent.GetProofRequirementInt())
+	require.Equal(t, s.claimedUpokt.String(), settlementEvent.GetClaimedUpokt(),
+		"claim must settle at the session-start CUTTM, not the live (doubled) one",
+	)
 }
 
 func (s *TestSuite) createTestActors(

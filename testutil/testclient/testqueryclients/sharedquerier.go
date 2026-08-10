@@ -25,6 +25,15 @@ func NewTestSharedQueryClient(
 		Return(&params, nil).
 		AnyTimes()
 
+	// The mock has a single params epoch, so params-at-height resolves to the same default
+	// params as the live lookup. Callers that price a claim (claim reward estimation, proof
+	// requirement) use this path so they agree with the chain, which resolves pricing params
+	// at the claim's session start height.
+	sharedQuerier.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		Return(&params, nil).
+		AnyTimes()
+
 	sharedQuerier.EXPECT().
 		GetClaimWindowOpenHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(

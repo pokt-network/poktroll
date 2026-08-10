@@ -935,9 +935,12 @@ func (k Keeper) settleClaim(
 		return nil, err
 	}
 
-	// Retrieve the shared module params.
-	// It contains network wide governance params required to convert claims to POKT (e.g. CUTTM).
-	sharedParams := settlementContext.GetSharedParams()
+	// Retrieve the shared module params required to convert claimed work to POKT (e.g. CUTTM),
+	// resolved at this claim's session start height rather than live. This is the same epoch
+	// x/proof used to price the claim at creation and to decide whether a proof was required,
+	// including in the ProofRequirementForClaim call below — reading live params here made
+	// those two disagree whenever CUTTM changed mid-flight.
+	sharedParams := settlementContext.GetSharedParamsAtSessionStart(ctx, sessionStartHeight)
 
 	// numEstimatedComputeUnits is the probabilistic estimation of the offchain
 	// work done by the relay miner in this session.
