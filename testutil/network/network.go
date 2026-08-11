@@ -1,6 +1,7 @@
 package network
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,6 +18,7 @@ import (
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
@@ -355,8 +357,14 @@ func ProofModuleGenesisStateWithClaims(t *testing.T, claims []prooftypes.Claim) 
 // TODO_CLEANUP: Consolidate all of the helpers below to use shared business
 // logic and move into its own helpers file.
 
+// maxBlocksToWaitForAccountOnChain bounds how long WaitForAccountOnChain polls before
+// failing the test. Generous relative to the single block the funding tx normally needs,
+// so a slow or contended test network does not turn into a spurious failure.
+const maxBlocksToWaitForAccountOnChain = 5
+
 // InitAccount initializes an Account by sending it some funds from the validator
-// in the network to the address provided
+// in the network to the address provided, and blocks until that account is readable
+// onchain.
 func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	t.Helper()
 	val := net.Validators[0]
@@ -376,6 +384,42 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
+
+	WaitForAccountOnChain(t, net, addr)
+}
+
+// WaitForAccountOnChain blocks until addr is readable from the auth module, or fails the
+// test after maxBlocksToWaitForAccountOnChain blocks.
+//
+// BroadcastSync only confirms that the funding tx passed CheckTx and entered the mempool;
+// the account does not exist onchain until that tx is included in a committed block. A
+// caller that immediately builds another tx from this address queries for its account
+// number and sequence, and loses the race with:
+//
+//	rpc error: code = NotFound desc = account pokt1... not found: key not found
+//
+// Waiting a fixed single block is not enough — whether the funding tx makes the very next
+// block depends on proposer timing, so the wait must be on the account actually appearing.
+func WaitForAccountOnChain(t *testing.T, net *Network, addr sdk.AccAddress) {
+	t.Helper()
+
+	ctx := net.Validators[0].ClientCtx
+	authQueryClient := authtypes.NewQueryClient(ctx)
+	req := &authtypes.QueryAccountRequest{Address: addr.String()}
+
+	for range maxBlocksToWaitForAccountOnChain {
+		if _, err := authQueryClient.Account(context.Background(), req); err == nil {
+			return
+		}
+		require.NoError(t, net.WaitForNextBlock())
+	}
+
+	// Final attempt after the last block wait, so the bound is inclusive.
+	_, err := authQueryClient.Account(context.Background(), req)
+	require.NoErrorf(t, err,
+		"account %s never appeared onchain within %d blocks of being funded",
+		addr, maxBlocksToWaitForAccountOnChain,
+	)
 }
 
 // InitAccountWithSequence initializes an Account by sending it some funds from
