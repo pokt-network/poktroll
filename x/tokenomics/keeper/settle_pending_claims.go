@@ -75,6 +75,38 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				logger.Error(claimErr.Error())
 				continue
 			}
+			// Ripeness gate: only settle a claim once its proof window has actually
+			// closed, judged by the params effective at the claim's OWN sessionEndHeight.
+			//
+			// candidateSessionEndHeights is a deliberate SUPERSET: each params epoch
+			// contributes the height it would settle at this block, with no check that
+			// the epoch actually governs that height. When governance SHRINKS the sum of
+			// the window offsets, the live epoch's candidate reaches back into the
+			// previous epoch and yields a real session-end height whose claims are NOT
+			// yet ripe -- their proof window, resolved at-height, is still open. Settling
+			// them here marks every not-yet-submitted proof PROOF_MISSING, slashes the
+			// supplier, and removes the claim, so a later MsgSubmitProof cannot recover
+			// it. Nothing downstream re-checks this.
+			//
+			// Deferring is safe and cannot orphan the claim: at the block where it IS
+			// ripe, the epoch that owns its sessionEndHeight yields exactly that height
+			// as a candidate again (the history walk never early-stops), so the claim is
+			// collected then. Filtering here rather than when generating candidates keeps
+			// the superset intact -- narrowing candidate generation risks the opposite
+			// and far worse failure, a claim no epoch ever proposes again.
+			claimSessionEndHeight := claim.SessionHeader.GetSessionEndBlockHeight()
+			claimParams := settlementContext.GetSharedParamsAtHeight(ctx, claimSessionEndHeight)
+			claimProofWindowCloseHeight := claimSessionEndHeight +
+				int64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(&claimParams))
+			if blockHeight <= claimProofWindowCloseHeight {
+				logger.Info(fmt.Sprintf(
+					"skipping claim (session %q, supplier %s): proof window closes at %d, not yet reached at %d",
+					claim.SessionHeader.SessionId, claim.SupplierOperatorAddress,
+					claimProofWindowCloseHeight, blockHeight,
+				))
+				continue
+			}
+
 			collectedClaims = append(collectedClaims, claim)
 			settlementContext.IncrementSupplierCount(
 				claim.SessionHeader.ApplicationAddress,
