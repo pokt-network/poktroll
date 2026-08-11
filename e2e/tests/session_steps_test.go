@@ -43,6 +43,9 @@ const (
 	// reports, so the diagnostic stays readable on a busy chain.
 	maxObservedEventTypesLogged = 40
 
+	// queryRetryDelay is how long queryWithRetry waits between attempts.
+	queryRetryDelay = 2 * time.Second
+
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
 	eventsReplayClientBufferSize = 100
@@ -159,17 +162,50 @@ func (s *suite) TheUserShouldWaitForTheClaimsettledEventClaimingUpoktToBeBroadca
 	s.buildSupplierMap()
 }
 
+// queryWithRetry runs a query-client call, retrying transient transport failures.
+//
+// Steps which shell out go through RunCommandOnHostWithRetry, but calls made directly
+// through a query client had no retry at all, so a single transient failure failed the
+// whole scenario. The failure actually observed is:
+//
+//	post failed: Post "http://localhost:26657": EOF
+//
+// i.e. the node closed an idle keep-alive connection and the client then reused that same
+// connection. That is a race inherent to HTTP connection reuse — not a chain defect and not
+// something the assertion under test is meant to cover.
+func queryWithRetry[T any](s *suite, queryFn func(context.Context) (T, error)) T {
+	s.Helper()
+
+	var (
+		result T
+		err    error
+	)
+
+	for attempt := 1; attempt <= int(numQueryRetries)+1; attempt++ {
+		result, err = queryFn(context.Background())
+		if err == nil {
+			return result
+		}
+
+		s.Logf("query attempt %d/%d failed (%s); retrying...", attempt, int(numQueryRetries)+1, err)
+		time.Sleep(queryRetryDelay)
+	}
+
+	require.NoErrorf(s, err, "query failed after %d attempts", int(numQueryRetries)+1)
+
+	return result
+}
+
 // TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
 // was modified to using an event replay client, instead of a query, to eliminate the flakiness.
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierOperatorName, serviceId, appName string) {
-	ctx := context.Background()
-
-	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
-		Filter: &prooftypes.QueryAllClaimsRequest_SupplierOperatorAddress{
-			SupplierOperatorAddress: accNameToAddrMap[supplierOperatorName],
-		},
+	allClaimsRes := queryWithRetry(s, func(ctx context.Context) (*prooftypes.QueryAllClaimsResponse, error) {
+		return s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
+			Filter: &prooftypes.QueryAllClaimsRequest_SupplierOperatorAddress{
+				SupplierOperatorAddress: accNameToAddrMap[supplierOperatorName],
+			},
+		})
 	})
-	require.NoError(s, err)
 	require.NotNil(s, allClaimsRes)
 
 	// Assert that the number of claims has increased by one.
@@ -194,16 +230,15 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 }
 
 func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(supplierOperatorName, numRelaysStr, serviceId, appName string) {
-	ctx := context.Background()
-
 	numRelays, err := strconv.Atoi(numRelaysStr)
 	require.NoError(s, err)
 
 	// Wait for the claims to be 0 before proceeding since claims from a previous
 	// test may still be settling, skewing the results.
 	for {
-		allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
-		require.NoError(s, err)
+		allClaimsRes := queryWithRetry(s, func(ctx context.Context) (*prooftypes.QueryAllClaimsResponse, error) {
+			return s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
+		})
 		s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claims
 		if len(allClaimsRes.Claims) == 0 {
 			break
@@ -214,8 +249,9 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 
 	// Query for any existing proofs so that we can compare against them in
 	// future assertions about changes in onchain proofs.
-	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
-	require.NoError(s, err)
+	allProofsRes := queryWithRetry(s, func(ctx context.Context) (*prooftypes.QueryAllProofsResponse, error) {
+		return s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
+	})
 	s.scenarioState[preExistingProofsKey] = allProofsRes.Proofs
 
 	// Send relays for the session.
