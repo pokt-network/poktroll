@@ -149,7 +149,13 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 		return false
 	}
 
-	service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
+	// cupr resolves at the session START, the same epoch as sharedParams above. Both are
+	// factors of the same product, so a live cupr reintroduces exactly the drift the
+	// params pin removes: a service owner lowering cupr mid-session makes the meter
+	// under-price every relay, and the excess is served unpaid.
+	computeUnitsPerRelay, err := rmtr.serviceQuerier.GetServiceComputeUnitsPerRelayAtHeight(
+		ctx, reqMeta.SessionHeader.ServiceId, reqMeta.GetSessionHeader().GetSessionStartBlockHeight(),
+	)
 	if err != nil {
 		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
 			"[Non critical] Unable to set up relay meter. Relay will continue without rate limiting",
@@ -158,7 +164,7 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 	}
 
 	// Get the cost of the relay based on the service and shared parameters.
-	relayCostCoin, err := getSingleRelayCostCoin(sharedParams, &service)
+	relayCostCoin, err := getSingleRelayCostCoin(sharedParams, computeUnitsPerRelay)
 	if err != nil {
 		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
 			"[Non critical] Unable to calculate relay cost. Relay will continue without rate limiting",
@@ -218,7 +224,11 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 		return
 	}
 
-	service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
+	// cupr resolves at the session START, matching sharedParams above. See the sibling
+	// call in IsOverServicing.
+	computeUnitsPerRelay, err := rmtr.serviceQuerier.GetServiceComputeUnitsPerRelayAtHeight(
+		ctx, reqMeta.SessionHeader.ServiceId, reqMeta.GetSessionHeader().GetSessionStartBlockHeight(),
+	)
 	if err != nil {
 		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
 			"[Non critical] Unable to set up relay meter. Relay will continue without rate limiting",
@@ -227,7 +237,7 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 	}
 
 	// Get the cost of the relay based on the service and shared parameters.
-	relayCost, err := getSingleRelayCostCoin(sharedParams, &service)
+	relayCost, err := getSingleRelayCostCoin(sharedParams, computeUnitsPerRelay)
 	if err != nil {
 		logger.Warn().Str("session_id", sessionId).Err(err).Msg(
 			"[Non critical] Unable to calculate relay cost. Application may be rate limited more than intended",
@@ -419,9 +429,13 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 //	100 (compute units per relay)
 //	42_000_000 (compute unit cost in pPOKT) /
 //	1000000 (convert pPOKT to uPOKT)
+//
+// Takes compute_units_per_relay directly rather than a *Service so a caller cannot pass a
+// LIVE service record: claimeduPOKT is a product of cupr AND the pricing params, and both
+// factors must resolve at the same (session-start) epoch.
 func getSingleRelayCostCoin(
 	sharedParams *sharedtypes.Params,
-	service *sharedtypes.Service,
+	computeUnitsPerRelay uint64,
 ) (cosmostypes.Coin, error) {
 	// Get the cost of a single compute unit in fractional uPOKT.
 	computeUnitCostUpokt := new(big.Rat).SetFrac64(
@@ -429,7 +443,7 @@ func getSingleRelayCostCoin(
 		int64(sharedParams.GetComputeUnitCostGranularity()),
 	)
 	// Get the cost of a single relay in fractional uPOKT.
-	relayCostRat := new(big.Rat).Mul(new(big.Rat).SetUint64(service.ComputeUnitsPerRelay), computeUnitCostUpokt)
+	relayCostRat := new(big.Rat).Mul(new(big.Rat).SetUint64(computeUnitsPerRelay), computeUnitCostUpokt)
 
 	// Get the estimated cost of the relay if it gets mined in uPOKT.
 	estimatedRelayCost := big.NewInt(0).Quo(relayCostRat.Num(), relayCostRat.Denom())
