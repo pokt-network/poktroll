@@ -227,6 +227,9 @@ This is a **pre-existing bug** (introduced in #1031, present in v0.1.34 and live
 
 - `pocketd-install.sh` now verifies the downloaded tarball against the published `release_checksum` (SHA256) and aborts on mismatch; documents how to review the script before piping it to a shell, and that it installs only the CLI.
 - `golang.org/x/crypto` → v0.54.0 (+ `net`, `text`, `sync`, `sys`, `term`, `mod`, `tools`) in both modules.
+- `google.golang.org/grpc` → v1.82.1, closing **GHSA-hrxh-6v49-42gf** (HIGH). Of the three issues in that advisory, the two xDS RBAC ones do not apply (no xDS), but the third does: an **HTTP/2 Rapid Reset mitigation bypass** allowing high-CPU denial of service via client-initiated stream resets. `govulncheck` reached it through the validator's gRPC server and the RelayMiner's HTTP server (`pkg/relayer/proxy/http_server.go` → `transport.http2Server.HandleStreams`), so it was live on both. Carried over from v0.1.34, not introduced here.
+
+> **Known outstanding, no fix available:** `govulncheck` still reports `golang.org/x/crypto/openpgp` (GO-2026-5932) — an "unmaintained and unsafe by design" deprecation rather than a patchable CVE, reached via cosmos-sdk's keyring armor; the v0.54.0 bump does **not** clear it. Also two 2023 `x/crisis` advisories against cosmos-sdk v0.53.7 (GO-2023-1881, GO-2023-1821) with no fixed version on that line. All three predate this release.
 - Docusaurus `baseUrl` fixed so the docs site loads.
 
 ## Consensus-Breaking Changes
