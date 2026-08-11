@@ -32,3 +32,28 @@ func GetGatewayUnbondingHeight(
 func (s *Gateway) IsActive(queryHeight int64) bool {
 	return !s.IsUnbonding() || uint64(queryHeight) <= s.GetUnstakeSessionEndHeight()
 }
+
+// IsUnbonding mirrors Gateway.IsUnbonding for the decode-only projection.
+func (l *GatewayLifecycle) IsUnbonding() bool {
+	return l.UnstakeSessionEndHeight != GatewayNotUnstaking
+}
+
+// IsActive mirrors Gateway.IsActive for the decode-only projection.
+func (l *GatewayLifecycle) IsActive(queryHeight int64) bool {
+	return !l.IsUnbonding() || uint64(queryHeight) <= l.GetUnstakeSessionEndHeight()
+}
+
+// ToGateway inflates a decode-only GatewayLifecycle into a Gateway carrying a nil card.
+//
+// Callers that only need lifecycle state (unbonding checks, unbonding height, address)
+// use this to reuse the Gateway helpers above without ever materializing a card. The
+// result MUST NOT be written back to state: doing so would erase the gateway's stored
+// card. Every current caller either only reads it, or passes it to UnbondGateway, which
+// removes the record rather than re-storing it.
+func (l *GatewayLifecycle) ToGateway() Gateway {
+	return Gateway{
+		Address:                 l.Address,
+		Stake:                   l.Stake,
+		UnstakeSessionEndHeight: l.UnstakeSessionEndHeight,
+	}
+}

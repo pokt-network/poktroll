@@ -64,11 +64,15 @@ func (k Keeper) getInactiveUnbondingGateways(ctx cosmostypes.Context) []*gateway
 	currentBlockHeight := ctx.BlockHeight()
 	// TODO_IMPROVE: Add a GetAllUnbondingGatewaysIterator method to the gateway keeper
 	// to avoid fetching all gateways.
-	gateways := k.gatewayKeeper.GetAllGateways(ctx)
+	//
+	// This runs EVERY block, so it decodes gateways WITHOUT their cards: only the address
+	// is used downstream, and a card can be 256 KiB. See GetAllGatewayLifecycles.
+	gateways := k.gatewayKeeper.GetAllGatewayLifecycles(ctx)
 
 	unbondingGateways := make([]*gatewaytypes.Gateway, 0)
-	for _, gateway := range gateways {
-		if !gateway.IsActive(currentBlockHeight) {
+	for _, gatewayLifecycle := range gateways {
+		if !gatewayLifecycle.IsActive(currentBlockHeight) {
+			gateway := gatewayLifecycle.ToGateway()
 			unbondingGateways = append(unbondingGateways, &gateway)
 		}
 	}

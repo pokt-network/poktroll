@@ -93,6 +93,21 @@ func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, contex
 			return gateways
 		},
 	).AnyTimes()
+	// The per-block auto-undelegate scan decodes gateways WITHOUT their cards.
+	mockGatewayKeeper.EXPECT().GetAllGatewayLifecycles(gomock.Any()).DoAndReturn(
+		func(_ context.Context) []gatewaytypes.GatewayLifecycle {
+			gateways := make([]gatewaytypes.GatewayLifecycle, 0, len(stakedGatewayToUnstakeSessionEndHeightMap))
+			for addr, unstakeSessionEndHeight := range stakedGatewayToUnstakeSessionEndHeightMap {
+				stake := sdk.NewCoin("upokt", math.NewInt(10000))
+				gateways = append(gateways, gatewaytypes.GatewayLifecycle{
+					Address:                 addr,
+					Stake:                   &stake,
+					UnstakeSessionEndHeight: unstakeSessionEndHeight,
+				})
+			}
+			return gateways
+		},
+	).AnyTimes()
 
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).

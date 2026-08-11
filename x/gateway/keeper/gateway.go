@@ -51,6 +51,39 @@ func (k Keeper) RemoveGateway(
 }
 
 // GetAllGateways returns all gateway
+// GetAllGatewayLifecycles returns every gateway in state decoded WITHOUT its card.
+//
+// Prefer this over GetAllGateways on any path that only needs lifecycle state. A card
+// can be up to MaxServiceMetadataSizeBytes (256 KiB), and the two EndBlockers that scan
+// every gateway -- x/application's EndBlockerAutoUndelegateFromUnbondingGateways (EVERY
+// block) and x/gateway's EndBlockerUnbondGateways (every session end) -- never read one.
+// Decoding full records there would have every validator allocate
+// (carded gateways x card size) per block for data it discards, and that work is not
+// gas-metered, so nothing throttles it: staking gateways with maxed cards (a refundable
+// one-time cost) would impose an unbounded recurring cost on the whole network.
+//
+// GatewayLifecycle mirrors Gateway's leading field numbers, so the stored bytes decode
+// directly; the card (field 4) is skipped by the generated unmarshaller's index
+// arithmetic and never copied. This reads the same bytes from the store as
+// GetAllGateways, so gas is identical -- only the decode is cheaper.
+func (k Keeper) GetAllGatewayLifecycles(ctx context.Context) (gateways []types.GatewayLifecycle) {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))
+	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
+
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var gateway types.GatewayLifecycle
+		k.cdc.MustUnmarshal(iterator.Value(), &gateway)
+		gateways = append(gateways, gateway)
+	}
+
+	return
+}
+
+// GetAllGateways returns every gateway in state, fully hydrated (cards included).
+// On hot iteration paths that do not need the card, use GetAllGatewayLifecycles.
 func (k Keeper) GetAllGateways(ctx context.Context) (gateways []types.Gateway) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))

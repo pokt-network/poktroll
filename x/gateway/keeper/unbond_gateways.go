@@ -26,11 +26,14 @@ func (k Keeper) EndBlockerUnbondGateways(ctx context.Context) (numUnbondedGatewa
 	// Iterate over all gateways and unbond the ones that have finished the unbonding period.
 	// TODO_POST_MAINNET: Use an index to iterate over the gateways that have initiated
 	// the unbonding action instead of iterating over all of them.
-	for _, gateway := range k.GetAllGateways(ctx) {
+	// Decode WITHOUT cards: this scan only needs lifecycle state, and a card can be
+	// 256 KiB. See GetAllGatewayLifecycles.
+	for _, gatewayLifecycle := range k.GetAllGatewayLifecycles(ctx) {
 		// Skip over gateways that have not initiated the unbonding action since it's a no-op.
-		if !gateway.IsUnbonding() {
+		if !gatewayLifecycle.IsUnbonding() {
 			continue
 		}
+		gateway := gatewayLifecycle.ToGateway()
 
 		// Compute the unbonding end height using the shared params effective when the gateway
 		// began unbonding (its unstake session end height), NOT the live params, so a later
