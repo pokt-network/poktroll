@@ -78,7 +78,7 @@ func TestSettlementRipeness_ShrunkOffsetsDoNotSettleOldEpochClaimsEarly(t *testi
 
 	// Sanity: resolved at its own session-end height, this claim's proof window is
 	// still open at blockHeight -- it is genuinely not ripe.
-	paramsAtSessionEnd := keepers.SharedKeeper.GetParamsAtHeight(sdkCtx, prematureSessionEndHeight)
+	paramsAtSessionEnd := keepers.GetParamsAtHeight(sdkCtx, prematureSessionEndHeight)
 	proofWindowCloseHeight := prematureSessionEndHeight +
 		int64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(&paramsAtSessionEnd))
 	require.GreaterOrEqual(t, proofWindowCloseHeight, blockHeight,
