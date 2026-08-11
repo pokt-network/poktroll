@@ -65,8 +65,6 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 	case tokenomicstypes.ModuleName:
 		var tokenomicsParamsRes tokenomicstypes.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &tokenomicsParamsRes)
-		fmt.Println("OLSH1", tokenomicsParamsRes.GetParams())
-		fmt.Println("OLSH2", tokenomicstypes.DefaultParams())
 		require.Equal(s, tokenomicstypes.DefaultParams(), tokenomicsParamsRes.GetParams())
 
 	case prooftypes.ModuleName:

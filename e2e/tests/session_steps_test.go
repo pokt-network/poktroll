@@ -251,6 +251,33 @@ func (suite *suite) TheModuleParametersAreSetAsFollows(moduleName string, params
 	suite.TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams("pnf", moduleName, params)
 }
 
+// TheModuleParameterUpdateIsRejectedWithTheError asserts that a governance param update
+// for the given module is REJECTED by the chain with an error containing expectedErrSubstr.
+//
+// It exists to pin the param validations whose whole purpose is to be unreachable through
+// governance (e.g. a shared param set that would divide by zero in the settlement
+// EndBlocker & therefore halt the chain).
+func (s *suite) TheModuleParameterUpdateIsRejectedWithTheError(
+	moduleName string,
+	expectedErrSubstr string,
+	params gocuke.DataTable,
+) {
+	s.AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
+		"gov",
+		"module",
+		pnfKeyName,
+		"user",
+		fmt.Sprintf("/pocket.%s.MsgUpdateParams", moduleName),
+	)
+
+	// DEV_NOTE: Intentionally NOT stored on s#expectedModuleParams: the update is expected
+	// to be rejected, so these values must never become an expectation for later assertions.
+	rejectedModuleParams := moduleParamsMap{moduleName: s.parseParamsTable(params)}
+	txJSONFile := s.newTempUpdateParamsTxJSONFile(rejectedModuleParams)
+
+	s.sendAuthzExecTxExpectingError(pnfKeyName, txJSONFile.Name(), expectedErrSubstr)
+}
+
 func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName string, testWsServiceId string) {
 	// Retrieve the application from the map using the app name
 	app, ok := accNameToAppMap[appName]
