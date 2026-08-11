@@ -367,13 +367,6 @@ func (k Keeper) ensureClaimAmountLimits(
 	//   bonus_i = unused * excess_i / totalExcess     (floor division ⇒ Σ bonus ≤ unused)
 	// Since Σ floor + Σ bonus ≤ N*floor = B, the total settled across the group never exceeds
 	// the application's committed budget, so its stake cannot go negative.
-	maxClaimableAmt := floor
-	claimExcess := minRequiredAppStakeAmt.Sub(floor)
-	if sessionBudget.totalExcess.IsPositive() && claimExcess.IsPositive() {
-		bonus := sessionBudget.unused.Mul(claimExcess).Quo(sessionBudget.totalExcess)
-		maxClaimableAmt = floor.Add(bonus)
-	}
-
 	// overservicing_bonus_multiplier bounds the settlement to m * floor.
 	//   m == 0 or 1 => cap at the floor exactly (legacy head-split behaviour; no redistribution).
 	//   m >  1      => allow up to m * floor from the unused budget.
@@ -386,6 +379,26 @@ func (k Keeper) ensureClaimAmountLimits(
 	if effectiveMultiplier < 1 {
 		effectiveMultiplier = 1
 	}
+
+	maxClaimableAmt := floor
+
+	// Skip the bonus entirely when m == 1. The cap below is exactly `floor` in that case,
+	// so any bonus computed here would be discarded — the arithmetic is pure waste, and
+	// it is not free: `unused.Mul(claimExcess)` is the only place settlement multiplies
+	// two claim-scale, state-derived quantities, and math.Int.Mul PANICS on overflow
+	// (conservatively, above ~256 bits of product). claimExcess is not bounded by the
+	// application's stake — it is the raw claim value, whose difficulty multiplier is
+	// bounded only by the target hash. Reaching that bound reqires absurd values, but
+	// skipping the multiply at m == 1 removes the panic surface entirely for the
+	// configuration this release actually ships with.
+	if effectiveMultiplier > 1 {
+		claimExcess := minRequiredAppStakeAmt.Sub(floor)
+		if sessionBudget.totalExcess.IsPositive() && claimExcess.IsPositive() {
+			bonus := sessionBudget.unused.Mul(claimExcess).Quo(sessionBudget.totalExcess)
+			maxClaimableAmt = floor.Add(bonus)
+		}
+	}
+
 	multiplierCap := floor.Mul(math.NewIntFromUint64(effectiveMultiplier))
 	if maxClaimableAmt.GT(multiplierCap) {
 		maxClaimableAmt = multiplierCap

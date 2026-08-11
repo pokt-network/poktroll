@@ -211,6 +211,18 @@ func (k Keeper) StakeSupplier(
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
+		// Capture the STORED owner before updateSupplier overwrites it with
+		// msg.OwnerAddress. The unstake-cancel authorization below must be judged
+		// against the owner of record, not against an address the message supplied.
+		//
+		// Today the two are necessarily equal: the guard above rejects any signer that
+		// is neither the stored owner nor the operator, and rejects an owner-address
+		// change not signed by the stored owner. But that makes this authorization check
+		// depend on an unrelated guard 40 lines away -- relax that one to allow, say, an
+		// operator-initiated owner handoff, and an operator could cancel the owner's
+		// unstake simply by setting msg.OwnerAddress to itself.
+		storedOwnerAddress := supplier.OwnerAddress
+
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
 			logger.Info(fmt.Sprintf("ERROR: could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
 			return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -224,10 +236,10 @@ func (k Keeper) StakeSupplier(
 			// re-stake (paying only the staking fee, since the stake amount is unchanged)
 			// to cancel an owner-initiated unstake, preventing the owner from ever
 			// reclaiming their escrowed stake.
-			if !msg.IsSigner(supplier.OwnerAddress) {
+			if !msg.IsSigner(storedOwnerAddress) {
 				err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
 					"signer %q is not allowed to cancel the unbonding of supplier with owner %q; only the owner can cancel an in-progress unstake",
-					msg.Signer, supplier.OwnerAddress,
+					msg.Signer, storedOwnerAddress,
 				)
 				logger.Info(fmt.Sprintf("ERROR: %s", err))
 				return nil, status.Error(codes.PermissionDenied, err.Error())
