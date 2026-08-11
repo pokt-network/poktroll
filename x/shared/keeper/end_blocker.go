@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 )
@@ -45,6 +46,26 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 	newParams, found := k.GetParamsHistoryEntry(ctx, currentHeight)
 	if !found {
 		// Common path: no params epoch becomes effective at this height → no-op.
+		return nil
+	}
+
+	// Validate before promoting. SetParams marshals and writes with NO validation, so
+	// promotion is the one path that can install a live param set the MsgUpdateParam(s)
+	// handlers would have rejected -- including one whose four claim/proof window offsets
+	// are all zero, which makes GetNumPendingSessions() zero and divides by zero in the
+	// settlement EndBlocker. Governance cannot get such an entry into history (that path
+	// validates), so this guards the remaining writer: an upgrade handler calling
+	// SetParamsAtHeight directly.
+	//
+	// Log and skip rather than return the error: this runs in the EndBlocker, so returning
+	// it would halt the chain at the promotion height -- exactly the outcome the guard
+	// exists to prevent. Declining to promote leaves the previous live params in place,
+	// which are known-valid and keep the chain running on the old epoch.
+	if err := newParams.ValidateBasic(); err != nil {
+		k.logger.Error(fmt.Sprintf(
+			"REFUSING to promote invalid params epoch at effective_height=%d: %s; keeping the previous live params",
+			currentHeight, err,
+		))
 		return nil
 	}
 
