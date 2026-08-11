@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -37,6 +38,10 @@ const (
 	testServiceId = "anvil"
 	// defaultJSONPRCPath is the default path used for sending JSON-RPC relay requests.
 	defaultJSONPRCPath = ""
+
+	// maxObservedEventTypesLogged bounds how many distinct event types a timed-out wait
+	// reports, so the diagnostic stays readable on a busy chain.
+	maxObservedEventTypesLogged = 40
 
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
@@ -509,14 +514,48 @@ func (s *suite) forEachTxResult(
 	txResultFn func(_ context.Context, txResult *abci.TxResult),
 ) {
 
+	// DIAGNOSTIC: record what this wait actually observes.
+	//
+	// A bare "timed out waiting for tx result" cannot distinguish the two failures which
+	// look identical from the outside:
+	//   - the event stream delivered NOTHING (a wedged/dead subscription), versus
+	//   - it delivered tx results but the matcher never fired (wrong event type, or the
+	//     tx genuinely lacks the event).
+	// Reporting the observed count & the distinct event types makes the next timeout
+	// self-diagnosing instead of requiring another full-suite reproduction.
+	var (
+		observedMu         sync.Mutex
+		numObservedResults int
+		observedEventTypes []string
+	)
+
 	channel.ForEach[*abci.TxResult](ctx,
 		s.txResultReplayClient.EventsSequence(ctx),
-		txResultFn,
+		func(fnCtx context.Context, txResult *abci.TxResult) {
+			observedMu.Lock()
+			numObservedResults++
+			if txResult != nil {
+				for _, event := range txResult.Result.Events {
+					if len(observedEventTypes) < maxObservedEventTypesLogged &&
+						!slices.Contains(observedEventTypes, event.Type) {
+						observedEventTypes = append(observedEventTypes, event.Type)
+					}
+				}
+			}
+			observedMu.Unlock()
+
+			txResultFn(fnCtx, txResult)
+		},
 	)
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for tx result")
+		observedMu.Lock()
+		defer observedMu.Unlock()
+		s.Fatalf(
+			"ERROR: timed out waiting for tx result after observing %d tx result(s); distinct event types seen: %v",
+			numObservedResults, observedEventTypes,
+		)
 	case <-ctx.Done():
 		s.Log("Success; tx result detected before timeout.")
 	}
