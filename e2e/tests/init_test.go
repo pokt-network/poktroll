@@ -252,6 +252,18 @@ func (s *suite) TheUserRunsTheCommand(cmd string) {
 	s.pocketd.result = res
 }
 
+// TheUserRunsTheQuery runs a query subcommand against the node under test.
+//
+// Unlike TheUserRunsTheCommand it targets the network (it appends --node), which is what
+// makes it usable as a smoke test for query endpoints & their autocli registration —
+// wiring that no unit or integration test exercises.
+func (s *suite) TheUserRunsTheQuery(cmd string) {
+	args := append(strings.Split(cmd, " "), fmt.Sprintf("--%s=json", cometcli.OutputFlag))
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error running query %s due to: %v", cmd, err)
+	s.pocketd.result = res
+}
+
 func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
 	require.Containsf(s, s.pocketd.result.Stdout, arg1, s.pocketd.result.Stderr)
 }

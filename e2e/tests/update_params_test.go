@@ -380,6 +380,12 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.MintRatio = mintRatio.value.(float64)
 		}
 
+		// Settlement budget redistribution (v0.1.35).
+		overservicingBonusMultiplier, ok := paramsMap[tokenomicstypes.ParamOverservicingBonusMultiplier]
+		if ok {
+			params.OverservicingBonusMultiplier = overservicingBonusMultiplier.value.(uint64)
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&tokenomicstypes.QueryParamsResponse{

@@ -280,15 +280,21 @@ Feature: Tokenomics Namespace
             | proof_submission_fee         | 1000000 | coin  |
         And all "proof" module params should be updated
 
-        # Record balances BEFORE servicing
-        And the user remembers the balance of "supplier1" as "supplier1_initial_balance"
-        And the user remembers the balance of the DAO as "dao_initial_balance"
-
         # Start servicing relays
         When the supplier "supplier1" has serviced a session with "10" relays for service "anvil" for application "app1"
 
         # Wait for the Claim lifecycle (no proof required)
         And the user should wait for the "proof" module "CreateClaim" Message to be submitted
+
+        # Record balances AFTER the claim has been created.
+        # DEV_NOTE: The relayminer pays TX fees out of supplier1's account in LocalNet, so a
+        # balance snapshot taken BEFORE servicing makes the delta absorb the CreateClaim fee.
+        # That fee is gas-dependent, which made this scenario flake by +/-1 uPOKT (36833 vs
+        # 36834) even though the settlement itself is deterministic. Same rule as the
+        # MintEqualsBurn scenario above: snapshot AFTER the last relayminer TX.
+        And the user remembers the balance of "supplier1" as "supplier1_initial_balance"
+        And the user remembers the balance of the DAO as "dao_initial_balance"
+
         And the user should wait for the ClaimSettled event with "NOT_REQUIRED" proof requirement to be broadcast
 
         # Validate PIP-41 deflation results
@@ -301,11 +307,14 @@ Feature: Tokenomics Namespace
         # - Supplier allocation 90%: 36855 uPOKT (floor of 40950 * 0.9)
         # - DAO allocation 10%:       4095 uPOKT (remainder: 40950 - 36855)
         #
-        # Note: Supplier receives 36833 after shareholder revenue share distribution
-        # (22 uPOKT goes to other shareholders based on LocalNet supplier config)
+        # DEV_NOTE: supplier1's rev share is 100% to itself in LocalNet, so the whole
+        # supplier allocation lands in its account. An earlier revision expected 36833 here
+        # and attributed the 22 uPOKT gap to "other shareholders"; there are none. The gap
+        # was the relayminer's CreateClaim TX fee, which the balance snapshot above now
+        # excludes.
 
-        # The supplier should receive 90% of the MINTED amount minus shareholder distribution
-        Then the account balance of "supplier1" should be "36833" uPOKT "more" than "supplier1_initial_balance"
+        # The supplier should receive 90% of the MINTED amount
+        Then the account balance of "supplier1" should be "36855" uPOKT "more" than "supplier1_initial_balance"
 
         # The DAO receives its 10% allocation (40950 - 36855 = 4095)
         # Note: The 22 uPOKT difference goes to other supplier shareholders, not DAO

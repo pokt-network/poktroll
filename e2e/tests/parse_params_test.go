@@ -180,6 +180,8 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsAnyMap) cosmostypes.Ms
 			msgUpdateParams.Params.MintEqualsBurnClaimDistribution = paramValue.value.(tokenomicstypes.MintEqualsBurnClaimDistribution)
 		case tokenomicstypes.ParamMintRatio:
 			msgUpdateParams.Params.MintRatio = paramValue.value.(float64)
+		case tokenomicstypes.ParamOverservicingBonusMultiplier:
+			msgUpdateParams.Params.OverservicingBonusMultiplier = paramValue.value.(uint64)
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -367,6 +369,14 @@ func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (m
 			Name:      param.name,
 			AsType: &tokenomicstypes.MsgUpdateParam_AsFloat{
 				AsFloat: param.value.(float64),
+			},
+		})
+	case "uint64":
+		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
+			Authority: authority,
+			Name:      param.name,
+			AsType: &tokenomicstypes.MsgUpdateParam_AsUint64{
+				AsUint64: param.value.(uint64),
 			},
 		})
 	default:

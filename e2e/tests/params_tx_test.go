@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"text/template"
 	"time"
@@ -116,6 +117,45 @@ func (s *suite) broadcastAndWaitForAuthzExecTx(signingKeyName, txJSONFilePath st
 	time.Sleep(txDelaySeconds * time.Second)
 
 	return s.queryCommittedTx(broadcastTxRes.TxHash)
+}
+
+// broadcastTxAndRequireCommitted runs a `pocketd tx ...` command against the node under
+// test, blocks until the resulting tx is committed & asserts that it succeeded.
+//
+// DEV_NOTE: Prefer this over waiting on a tx-result EVENT when a step may run more than
+// once in a scenario. The events replay client also serves previously observed events, so
+// a second identical tx matches the first one's event & the assertion which follows reads
+// stale state. Confirming the returned tx hash cannot alias like that.
+func (s *suite) broadcastTxAndRequireCommitted(args ...string) cliTxResponse {
+	s.Helper()
+
+	// The response must be parseable, so the output flag is appended here rather than left
+	// to each call site: without it the CLI emits YAML & every caller would have to
+	// remember to opt in.
+	if !slices.ContainsFunc(args, func(arg string) bool {
+		return strings.HasPrefix(arg, fmt.Sprintf("--%s", cli.OutputFlag))
+	}) {
+		args = append(args, fmt.Sprintf("--%s=json", cli.OutputFlag))
+	}
+
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err)
+
+	broadcastTxRes := s.parseCLITxResponse(res.Stdout)
+	require.Equalf(s, txCodeOK, broadcastTxRes.Code,
+		"tx failed to broadcast with code %d: %s", broadcastTxRes.Code, broadcastTxRes.RawLog,
+	)
+
+	// Give the tx a block to land. queryCommittedTx retries on its own, but its first
+	// attempt would otherwise always miss & print a "tx not found" retry banner.
+	time.Sleep(txDelaySeconds * time.Second)
+
+	committedTxRes := s.queryCommittedTx(broadcastTxRes.TxHash)
+	require.Equalf(s, txCodeOK, committedTxRes.Code,
+		"tx %s was rejected with code %d: %s", committedTxRes.TxHash, committedTxRes.Code, committedTxRes.RawLog,
+	)
+
+	return committedTxRes
 }
 
 // queryCommittedTx queries the tx with the given hash & returns its committed result.

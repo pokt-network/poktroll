@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -127,6 +128,32 @@ func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBe
 	s.buildSupplierMap()
 }
 
+// TheUserShouldWaitForTheClaimsettledEventClaimingUpoktToBeBroadcast waits for a
+// ClaimSettled end block event which settled exactly expectedClaimedUpokt.
+//
+// DEV_NOTE: Prefer this over matching on the proof requirement alone whenever the scenario
+// asserts on an AMOUNT afterwards. The new block events replay client also serves events it
+// observed earlier, so a proof-requirement-only match can bind to a claim from a previous
+// feature. That is not theoretical: a leftover 1-relay claim settling for 4200upokt one
+// block before this scenario's session started matched the generic wait, and the balance
+// assertion which followed then read the wrong settlement entirely.
+//
+// Matching on the settled amount also makes the wait itself load-bearing: a claim priced
+// against the wrong parameters never produces this event & the step times out.
+func (s *suite) TheUserShouldWaitForTheClaimsettledEventClaimingUpoktToBeBroadcast(expectedClaimedUpokt string) {
+	s.waitForNewBlockEvent(
+		combineEventMatchFns(
+			newEventTypeMatchFn("tokenomics", "ClaimSettled"),
+			newEventModeMatchFn("EndBlock"),
+			newEventAttributeUnquotedMatchFn("claimed_upokt", fmt.Sprintf("%supokt", expectedClaimedUpokt)),
+		),
+	)
+
+	// Update the actor maps after end block events have been emitted.
+	s.buildAppMap()
+	s.buildSupplierMap()
+}
+
 // TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
 // was modified to using an event replay client, instead of a query, to eliminate the flakiness.
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierOperatorName, serviceId, appName string) {
@@ -237,6 +264,22 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 	}
 
 	s.waitForNewBlockEvent(isValidClaimSettledEvent)
+}
+
+// TheUserWaitsForTheNextSessionToStart blocks until the next session begins.
+//
+// Use it before serving relays in a scenario whose assertions depend on ALL of those relays
+// landing in ONE session. Without it the relays are sent wherever the session grid happens
+// to be: if a boundary falls mid-loop the relays split across two sessions, two claims are
+// created, and a step which waits for a single ClaimSettled event then asserts against a
+// partial settlement. That failure is invisible when a feature is run on its own, because
+// the grid alignment depends on everything that ran before it.
+func (s *suite) TheUserWaitsForTheNextSessionToStart() {
+	sharedParams := s.getSharedParams()
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.getCurrentBlockHeight())
+
+	s.Logf("waiting for the next session to start at height %d", nextSessionStartHeight)
+	s.waitForBlockHeight(nextSessionStartHeight)
 }
 
 func (suite *suite) TheModuleParametersAreSetAsFollows(moduleName string, params gocuke.DataTable) {
@@ -526,6 +569,24 @@ func newEventAttributeMatchFn(key, value string) func(event *abci.Event) bool {
 
 		for _, attribute := range event.Attributes {
 			if attribute.Key == key && attribute.Value == value {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// newEventAttributeUnquotedMatchFn is newEventAttributeMatchFn for attributes whose values
+// are proto-JSON encoded, i.e. wrapped in double quotes (every string-typed event field).
+// It compares against the unquoted value so callers do not have to encode the quoting.
+func newEventAttributeUnquotedMatchFn(key, value string) func(event *abci.Event) bool {
+	return func(event *abci.Event) bool {
+		if event == nil {
+			return false
+		}
+
+		for _, attribute := range event.Attributes {
+			if attribute.Key == key && strings.Trim(attribute.Value, `"`) == value {
 				return true
 			}
 		}
