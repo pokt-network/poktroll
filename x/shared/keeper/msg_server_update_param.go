@@ -18,15 +18,27 @@ import (
 //
 // KNOWN LIMITATION — cross-param loss in same session (audit pass 3 MED2):
 // Each call's base is the LIVE params snapshot (line below). For session-timing
-// changes, live is NOT updated until the next-boundary EndBlocker. If governance
-// submits TWO MsgUpdateParam txs in the same in-flight session, each targeting a
-// DIFFERENT session-timing param, both writes use the same (stale) live base and
-// SetParamsAtHeight at the same effective_height — the second write overwrites
-// the first, dropping the first param's change.
+// changes, live is NOT updated until the next-boundary EndBlocker. So once a
+// session-timing change is pending, ANY subsequent MsgUpdateParam in the same
+// session rebuilds the params struct from a live snapshot that does not contain
+// it, and overwrites the history entry at the same effective_height — silently
+// reverting the pending change.
 //
-// Workaround: governance proposals that change MULTIPLE session-timing params in
-// one go MUST use the bulk MsgUpdateParams (which takes a full Params struct in
-// one shot) rather than chained MsgUpdateParam calls. The bulk handler is in
+// The second message does NOT have to target a session-timing param. A routine
+// non-timing update (e.g. compute_units_to_tokens_multiplier) reverts a pending
+// num_blocks_per_session change just as effectively, and looks harmless because
+// it takes effect on live immediately. The failure is order-dependent:
+//
+//   - timing THEN anything: the timing change is LOST.
+//   - non-timing THEN timing: both survive, because the non-timing write already
+//     landed in live before the timing call read it.
+//
+// Both orderings are pinned in
+// tests/integration/tokenomics/two_param_changes_same_session_test.go.
+//
+// Workaround: governance proposals that change MULTIPLE shared params in one go
+// MUST use the bulk MsgUpdateParams (which takes a full Params struct in one
+// shot) rather than chained MsgUpdateParam calls. The bulk handler is in
 // msg_update_params.go and writes the union atomically. Same-param sequential
 // updates work correctly (the second call writes the same effective_height key
 // with the final value — the last-write-wins semantic the SDK consumers expect;
