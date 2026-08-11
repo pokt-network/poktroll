@@ -191,6 +191,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 
 	// Assert that the server has not been reached yet.
 	require.Equal(s.T(), 0, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 0, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
 	// Call the GetParams method numCalls times and assert that the server
@@ -200,24 +201,32 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 0, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
-	// Call the GetClaimWindowOpenHeight method numCalls times and assert that the server
-	// is not reached again.
+	// Call the GetClaimWindowOpenHeight method numCalls times.
+	//
+	// Window timing is resolved from params HISTORY, never from live params: live is only
+	// guaranteed to describe the currently-effective epoch for session-timing fields, and
+	// even then only after the boundary promotion. So this reaches the params-at-height
+	// endpoint — exactly once, because the memo is keyed by height and every call here
+	// uses the same one.
 	for range numCalls {
 		_, err := s.queryClients.shared.GetClaimWindowOpenHeight(ctx, 1)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 1, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
 	// Call the GetProofWindowOpenHeight method numCalls times and assert that the server
-	// is not reached again.
+	// is not reached again — same height, so the params-at-height memo already holds it.
 	for range numCalls {
 		_, err := s.queryClients.shared.GetProofWindowOpenHeight(ctx, 1)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 1, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
 	// Call the GetSessionGracePeriodEndHeight method numCalls times and assert that the server
@@ -227,6 +236,17 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 1, s.rpcCallCount.sharedParamsAtHeight)
+	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
+
+	// A DIFFERENT height is a different params epoch as far as the querier knows, so it
+	// must not be served from the entry memoized above.
+	for range numCalls {
+		_, err := s.queryClients.shared.GetClaimWindowOpenHeight(ctx, 2)
+		require.NoError(s.T(), err)
+	}
+	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 2, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
 	supplierAddr := sample.AccAddressBech32()
@@ -244,6 +264,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 2, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
 	// Same for GetEarliestSupplierProofCommitHeight: params stay cached, no block fetch.
@@ -252,6 +273,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 2, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 }
 
@@ -396,6 +418,27 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 			response.Params = params
 		}).AnyTimes()
 
+	// Mock the params-at-height endpoint.
+	//
+	// Every shared-querier method that resolves a specific session (window timing, claim
+	// pricing) reads through GetParamsAtHeight, which always consults params history
+	// rather than assuming live params describe the queried height. It is memoized per
+	// height, so the assertions below count one call per DISTINCT height.
+	grpcClientConn.EXPECT().Invoke(
+		gomock.Any(), // ctx
+		"/pocket.shared.Query/ParamsAtHeight",
+		gomock.Any(),
+		gomock.Any(),
+	).
+		Do(func(_ context.Context, _ string, _ any, reply any, _ ...any) {
+			s.rpcCallCount.sharedParamsAtHeight++
+
+			response, ok := reply.(*sharedtypes.QueryParamsAtHeightResponse)
+			require.True(s.T(), ok)
+
+			response.Params = sharedtypes.DefaultParams()
+		}).AnyTimes()
+
 	// Mock the Invoke method of the GRPCClientConn.
 	// This method needs to return a valid codec.Any response that will be unmarshalled
 	// into an account by the account querier.
@@ -472,10 +515,11 @@ type rpcCallCount struct {
 	sessions             int
 
 	// pocket params calls
-	appParams     int
-	sessionParams int
-	sharedParams  int
-	proofParams   int
+	appParams            int
+	sessionParams        int
+	sharedParams         int
+	sharedParamsAtHeight int
+	proofParams          int
 
 	// cosmos-sdk calls
 	blocks   int

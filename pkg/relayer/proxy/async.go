@@ -123,7 +123,12 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	// right after the session ends, but it is technically possible to delay it
 	// until the claim window opening height to maximize profit for the supplier
 	// and delay reconnecting the upstream client as much as possible.
-	sharedParams, err := server.sharedQueryClient.GetParams(ctx)
+	// Resolve the window under the params epoch effective at THIS session's end height,
+	// matching x/proof validateClaimWindow. A live lookup measures a session that started
+	// under older window offsets on the wrong grid, so the bridge is torn down early
+	// (relays lost) or late (relays served past the reward cutoff).
+	sessionEndHeight := sessionHeader.SessionEndBlockHeight
+	sharedParams, err := server.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error getting shared params from shared query client")
 		if closeErr := clientConn.Close(); closeErr != nil {
@@ -131,7 +136,6 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 		}
 		return alreadyResponded, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
-	sessionEndHeight := sessionHeader.SessionEndBlockHeight
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
 
 	// Run the websockets bridge.

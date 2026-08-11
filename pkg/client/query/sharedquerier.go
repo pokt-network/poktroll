@@ -15,6 +15,13 @@ import (
 
 var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 
+// maxParamsAtHeightCacheEntries bounds the params-at-height memo. The RelayMiner only
+// ever asks about the handful of session heights currently in flight, so this is far
+// above steady-state need; it exists purely so a long-lived process cannot grow the map
+// without limit. On overflow the whole map is dropped rather than evicted entry-by-entry:
+// entries are cheap to re-fetch and dropping avoids tracking per-entry recency.
+const maxParamsAtHeightCacheEntries = 256
+
 // sharedQuerier is a wrapper around the sharedtypes.QueryClient that enables the
 // querying of onchain shared information through a single exposed method
 // which returns an sharedtypes.Session struct
@@ -27,6 +34,18 @@ type sharedQuerier struct {
 	paramsCache client.ParamsCache[sharedtypes.Params]
 	// paramsMutex to protect cache access patterns for params
 	paramsMutex sync.Mutex
+
+	// paramsAtHeightCache memoizes ParamsAtHeight responses, keyed by query height.
+	//
+	// Safe to memoize indefinitely because a params-history entry is only ever recorded
+	// with an effective height in the FUTURE (recordParamsHistory writes at the next
+	// session start), so for any height that has already been committed the set of
+	// entries at-or-below it is frozen. Callers MUST therefore only pass past or current
+	// heights — every caller today passes a session start/end height of a session that
+	// has already begun.
+	paramsAtHeightCache map[int64]sharedtypes.Params
+	// paramsAtHeightMutex guards paramsAtHeightCache.
+	paramsAtHeightMutex sync.Mutex
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
@@ -49,6 +68,7 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 	}
 
 	querier.sharedQuerier = sharedtypes.NewQueryClient(querier.clientConn)
+	querier.paramsAtHeightCache = make(map[int64]sharedtypes.Params)
 
 	return querier, nil
 }
@@ -96,27 +116,44 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 
 // GetParamsAtHeight queries & returns the shared params that were effective at queryHeight.
 //
-// Window-timing computations must evaluate a session with the num_blocks_per_session that
-// was in effect when that session started, not the live value. After a session-length
-// change (#543 anchored grid), an old-epoch session computed with live (new-epoch) params
-// would resolve to the wrong session grid and the RelayMiner would submit its claim/proof at
-// the wrong window. queryHeight <= 0 falls back to the live params.
+// Every consumer that must agree with the chain about a specific session reads through
+// here rather than through GetParams:
+//
+//   - PRICING (compute_units_to_tokens_multiplier, compute_unit_cost_granularity) at the
+//     session START height, matching x/proof (create_claim, submit_proof,
+//     ProofRequirementForClaim) and x/tokenomics settlement. Pricing under live params
+//     while the chain prices at session start makes the RelayMiner skip a proof the chain
+//     still requires, which surfaces as PROOF_MISSING and slashes the supplier.
+//   - WINDOW TIMING (num_blocks_per_session and the claim/proof window offsets) at the
+//     session END height, matching x/proof validateClaimWindow / validateProofWindow. An
+//     old-epoch session measured on the live grid resolves to the wrong window and the
+//     claim or proof is submitted outside it.
+//
+// queryHeight <= 0 falls back to the live params.
+//
+// DEV_NOTE — there is deliberately NO "live params already describe this height" fast path.
+// A previous implementation served live params whenever
+// session_grid_anchor_height <= queryHeight, on the theory that live always describes the
+// currently-effective epoch (#543 Option B). That invariant is narrower than it looks:
+//
+//   - The anchor advances ONLY when num_blocks_per_session changes
+//     (x/shared/keeper/msg_server_update_param.go), so a CUTTM or window-offset change
+//     leaves it untouched and the guard admits every height.
+//   - Non-timing params (the pricing pair, unbonding periods) are written to LIVE
+//     immediately while their history entry is effective only at the next session
+//     boundary, so live and at-height legitimately disagree for the rest of the session.
+//
+// Net effect: the guard passed for essentially every real query (mainnet anchor 831001 vs.
+// session starts in the 870k range) and silently degraded this method to GetParams. The
+// memo below replaces it — it costs one RPC per distinct session height instead of one per
+// call, without assuming anything about which epoch live belongs to.
 func (sq *sharedQuerier) GetParamsAtHeight(ctx context.Context, queryHeight int64) (*sharedtypes.Params, error) {
 	if queryHeight <= 0 {
 		return sq.GetParams(ctx)
 	}
 
-	// Fast path: if queryHeight falls within the current (live) params epoch, the live
-	// params ARE the params effective at queryHeight — serve them from the existing cache
-	// without an extra RPC. Under the narrow Option B invariant (#543) live params always
-	// describe the currently-effective epoch, and the relayer only asks about past/current
-	// session heights, so anchor <= queryHeight means queryHeight belongs to the live epoch.
-	// Only an older-epoch height (queryHeight < anchor, i.e. after a recent N change) needs
-	// the historical lookup.
-	if liveParams, err := sq.GetParams(ctx); err == nil {
-		if int64(liveParams.GetSessionGridAnchorHeight()) <= queryHeight {
-			return liveParams, nil
-		}
+	if params, found := sq.getCachedParamsAtHeight(queryHeight); found {
+		return params, nil
 	}
 
 	logger := sq.logger.With("query_client", "shared", "method", "GetParamsAtHeight")
@@ -131,7 +168,39 @@ func (sq *sharedQuerier) GetParamsAtHeight(ctx context.Context, queryHeight int6
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}
 
+	sq.setCachedParamsAtHeight(queryHeight, res.Params)
+
 	return &res.Params, nil
+}
+
+// getCachedParamsAtHeight returns a copy of the memoized params for queryHeight, if any.
+// A copy (not a pointer into the map) is returned so a caller mutating the result cannot
+// corrupt the memo for every other caller.
+func (sq *sharedQuerier) getCachedParamsAtHeight(queryHeight int64) (*sharedtypes.Params, bool) {
+	sq.paramsAtHeightMutex.Lock()
+	defer sq.paramsAtHeightMutex.Unlock()
+
+	params, found := sq.paramsAtHeightCache[queryHeight]
+	if !found {
+		return nil, false
+	}
+
+	return &params, true
+}
+
+// setCachedParamsAtHeight memoizes params for queryHeight, dropping the whole memo first
+// if it has grown past maxParamsAtHeightCacheEntries.
+func (sq *sharedQuerier) setCachedParamsAtHeight(queryHeight int64, params sharedtypes.Params) {
+	sq.paramsAtHeightMutex.Lock()
+	defer sq.paramsAtHeightMutex.Unlock()
+
+	// The nil check also covers a sharedQuerier built without NewSharedQuerier (e.g. a
+	// struct literal in a test), which would otherwise panic writing to a nil map.
+	if sq.paramsAtHeightCache == nil || len(sq.paramsAtHeightCache) >= maxParamsAtHeightCacheEntries {
+		sq.paramsAtHeightCache = make(map[int64]sharedtypes.Params)
+	}
+
+	sq.paramsAtHeightCache[queryHeight] = params
 }
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of

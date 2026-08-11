@@ -110,15 +110,17 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 		currentBlock.Hash(),
 	)
 
-	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
+	// Resolve the window under the params epoch effective at THIS session's end height,
+	// matching x/proof validateClaimWindow. Measuring an old-epoch session against live
+	// window offsets rejects relays the chain would still have rewarded (or accepts relays
+	// past the real cutoff, which are then unpaid).
+	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
+	sharedParams, err := ra.sharedQuerier.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		return err
 	}
 
-	sessionClaimOpenHeight := sharedtypes.GetClaimWindowOpenHeight(
-		sharedParams,
-		relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight(),
-	)
+	sessionClaimOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
 
 	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
 		"⏳ Checking relay reward eligibility - relay must be processed before claim window opens at height %d",
