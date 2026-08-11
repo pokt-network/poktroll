@@ -168,7 +168,13 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 	)
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
-	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
+	// grace_period_end_offset_blocks is session TIMING, so it resolves at the session
+	// END height, mirroring the chain (x/session's session hydrator and x/proof both
+	// resolve it at-height). CheckRelayRewardEligibility in this same file was already
+	// converted; this path was missed. Reading live params here would reject relays the
+	// chain still counts in the session after governance shortens the grace period, and
+	// accept relays past the chain's real cutoff -- served unpaid -- after it lengthens.
+	sharedParams, err := ra.sharedQuerier.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		return 0, err
 	}

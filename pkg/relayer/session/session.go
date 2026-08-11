@@ -394,12 +394,6 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 		// They will be emitted last, after all the late sessions have been emitted.
 		var onTimeSessions []relayer.SessionTree
 
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
-		if err != nil {
-			rs.logger.Error().Err(err).Msg("❌️ Failed to query shared module parameters. ❗Check node connectivity and sync status. ❗Cannot process session claims without network parameters.")
-			return
-		}
-
 		// Get the sessions trees for the supplier matching the sessionsSupplier.
 		supplierSessionTress := rs.sessionsTrees[sessionsSupplier]
 
@@ -413,6 +407,18 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			// Group them by their end block height and emit each group separately
 			// before emitting the on-time sessions.
 			var lateSessions []relayer.SessionTree
+
+			// Window TIMING resolves at each session's OWN end height, mirroring the
+			// chain. This map spans sessions that may belong to different params epochs,
+			// so a single hoisted read would mis-time every session but one after a
+			// window-offset change, emitting claims outside the window the chain
+			// enforces. The querier memoizes per height, so this is not a per-session
+			// round trip.
+			sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
+			if err != nil {
+				rs.logger.Error().Err(err).Msgf("❌️ Failed to query shared module parameters at session end height %d. ❗Check node connectivity and sync status. ❗Skipping this session's claims this block.", sessionEndHeight)
+				continue
+			}
 
 			claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
 
@@ -642,12 +648,6 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 			With("method", "RSM.deleteExpiredSessionTreesFn").
 			With("supplier_operator_address", supplierOperatorAddress)
 
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
-		if err != nil {
-			logger.Error().Err(err).Msg("❌️ Failed to query shared module parameters for session expiry check. ❗Check node connectivity and sync status. ❗Cannot determine session expiration timing.")
-			return
-		}
-
 		// Lock mutex to safely read from the sessionsTrees map
 		rs.sessionsTreesMu.Lock()
 
@@ -668,6 +668,20 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 			for sessionId, sessionTree := range sessionTrees {
 				sessionHeader := sessionTree.GetSessionHeader()
 				sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+				// Window TIMING resolves at each session's OWN end height, mirroring the
+				// chain. This decides when the session tree is DELETED: resolving it from
+				// live params after a window-offset shrink would destroy the evidence
+				// before the chain's real proof window closes, making the proof
+				// unsubmittable -> PROOF_MISSING -> the supplier is slashed. Per-session
+				// because the map spans sessions from different params epochs; the
+				// querier memoizes per height, so this is not a per-session round trip.
+				sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
+				if err != nil {
+					// Keep the tree: deleting on a failed lookup risks destroying evidence
+					// for a session whose proof window is still open.
+					logger.Error().Err(err).Msgf("❌️ Failed to query shared module parameters at session end height %d for session expiry check. ❗Keeping the session tree. ❗Check node connectivity and sync status.", sessionEndHeight)
+					continue
+				}
 				proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
 				currentHeight := currentHeight.Height()
 				// If the session is already past its proof window close height,

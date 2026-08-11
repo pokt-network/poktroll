@@ -130,9 +130,13 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 	// to get the most recently (asynchronously) observed (and cached) value.
-	// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
-	// we should be using the value that the params had for the session which includes queryHeight.
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	// Window TIMING resolves at the session END height, mirroring the chain
+	// (x/proof/keeper/session.go validateClaimWindow). Reading live params here would
+	// compute a different claim window than the one the chain enforces the moment
+	// governance changes a window offset or num_blocks_per_session: the miner would
+	// broadcast MsgCreateClaim outside the real window and the claim would be rejected
+	// with ErrProofClaimOutsideOfWindow, losing the session's revenue.
+	sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Unable to calculate claim timing, which may prevent rewards.")
 		failedCreateClaimsSessionsCh <- sessionTrees
@@ -289,7 +293,11 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		// TODO_REFACTOR(@red-0ne): Pass a richer type to the function instead of []SessionTrees to:
 		// - Avoid making assumptions about shared properties
 		// - Eliminate constant queries for sharedParams
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		// Window TIMING resolves at the session END height, mirroring the chain. This
+		// value becomes the claim tx's timeout height, so resolving it from live params
+		// after a window-offset change would set a deadline the chain does not agree
+		// with.
+		sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
 			logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. Check node connectivity.")

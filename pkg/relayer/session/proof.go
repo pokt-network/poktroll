@@ -100,9 +100,12 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 	// to get the most recently (asynchronously) observed (and cached) value.
-	// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
-	// we should be using the value that the params had for the session which includes queryHeight.
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	// Window TIMING resolves at the session END height, mirroring the chain
+	// (x/proof/keeper/session.go validateProofWindow). Reading live params here would
+	// open the proof window at a different height than the chain enforces after any
+	// window-offset or num_blocks_per_session change, submitting the proof outside the
+	// real window -> PROOF_MISSING -> the supplier is slashed.
+	sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Unable to calculate proof timing, which may prevent rewards and cause slashing.")
 		failedSubmitProofsSessionsCh <- sessionTrees
@@ -217,7 +220,9 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// - Avoid making assumptions about shared properties
 		// - Eliminate constant queries for sharedParams
 		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		// Window TIMING resolves at the session END height, mirroring the chain. This
+		// value becomes the proof tx's timeout height.
+		sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 		if err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
 			rs.logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Rewards may not be secured and supplier may be slashed.")
