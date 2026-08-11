@@ -204,6 +204,8 @@ The rename is invisible to consensus but **not** to genesis JSON. `reserved "exp
 
 This does not affect the in-place upgrade — only export/import paths: a re-genesis or hard-fork restart, `genesis validate`, and LocalNet or devnets seeded from a mainnet export. Rewrite the key (`experimental_api_specs` → `card`) in any pre-v0.1.35 export before feeding it to a v0.1.35 binary.
 
+The reverse direction is also now incompatible: `service` genesis gained a `compute_units_per_relay_history` field (so the cupr history survives an export/import round trip instead of silently reverting every past session to the live cupr), and a v0.1.34 binary rejects it as unknown. This is likewise invisible to a running chain — `InitGenesis` does not run at an upgrade height, `x/service`'s consensus version is unchanged, and `GenesisState` is never stored in the KVStore — but it does mean **a v0.1.35 export cannot be replayed into a v0.1.34 binary**.
+
 :::
 
 CLI flags follow: `--card-base64` / `--card-file`. The old `--experimental-metadata-base64` / `--experimental-metadata-file` remain as **deprecated aliases**, so existing scripts keep working; passing both a flag and its alias is an error rather than a silent precedence rule.
