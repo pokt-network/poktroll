@@ -940,7 +940,11 @@ func (k Keeper) settleClaim(
 	// x/proof used to price the claim at creation and to decide whether a proof was required,
 	// including in the ProofRequirementForClaim call below — reading live params here made
 	// those two disagree whenever CUTTM changed mid-flight.
-	sharedParams := settlementContext.GetSharedParamsAtSessionStart(ctx, sessionStartHeight)
+	//
+	// Named pricingParams (not sharedParams) on purpose: this snapshot carries an OLD
+	// epoch's session grid and MUST NOT be used for timing math. Anything projecting a
+	// future height from the current block reads settlementContext.GetSharedParams().
+	pricingParams := settlementContext.GetSharedParamsAtHeight(ctx, sessionStartHeight)
 
 	// numEstimatedComputeUnits is the probabilistic estimation of the offchain
 	// work done by the relay miner in this session.
@@ -968,7 +972,7 @@ func (k Keeper) settleClaim(
 	// - The service's configured CUPR
 	// - The service's onchain current relay mining difficulty
 	// - Global network parameters (e.g. CUTTM)
-	claimeduPOKT, err = claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	claimeduPOKT, err = claim.GetClaimeduPOKT(pricingParams, relayMiningDifficulty)
 	if err != nil {
 		return nil, err
 	}

@@ -113,7 +113,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	//   - pricingParams (at session start) converts claimed work to uPOKT. It must match
 	//     the epoch x/proof priced and proof-gated the claim under.
 	sharedParams := settlementContext.GetSharedParams()
-	pricingParams := settlementContext.GetSharedParamsAtSessionStart(ctx, sessionHeader.GetSessionStartBlockHeight())
+	pricingParams := settlementContext.GetSharedParamsAtHeight(ctx, sessionHeader.GetSessionStartBlockHeight())
 	tokenomicsParams := settlementContext.GetTokenomicsParams()
 
 	service, err := settlementContext.GetService(sessionHeader.ServiceId)

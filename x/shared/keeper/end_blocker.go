@@ -29,7 +29,7 @@ import (
 //   - Anything PRICING a claim must read GetParamsAtHeight at the claim's session start, so
 //     it follows the boundary semantics that history actually records. x/proof does this in
 //     all three of its sites, x/tokenomics settlement does it via
-//     settlementContext.GetSharedParamsAtSessionStart, and the RelayMiner mirrors both.
+//     settlementContext.GetSharedParamsAtHeight(sessionStart), and the RelayMiner mirrors both.
 //
 // CRITICAL ORDERING (app/app_config.go endBlockers): the shared module MUST run AFTER every
 // module that reads live shared params (service, session, proof, tokenomics, gateway,

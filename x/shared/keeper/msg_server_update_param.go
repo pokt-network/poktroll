@@ -198,7 +198,7 @@ func (k msgServer) recordParamsHistory(ctx context.Context, newParams types.Para
 	// compute_units_to_tokens_multiplier and compute_unit_cost_granularity must be resolved at
 	// the claim's session start so the claim settles at the rate it was created and proof-gated
 	// under. See x/proof (create_claim, submit_proof, ProofRequirementForClaim),
-	// x/tokenomics settlementContext.GetSharedParamsAtSessionStart, and pkg/relayer/session.
+	// x/tokenomics settlementContext.GetSharedParamsAtHeight(sessionStart), and pkg/relayer/session.
 	// Reading live for pricing reintroduces the mid-flight rate change those pins exist to stop.
 	liveParams := k.GetParams(ctx)
 	if !sessionTimingParamsChanged(&liveParams, &newParams) {

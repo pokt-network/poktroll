@@ -137,17 +137,17 @@ type settlementContext struct {
 	// DEV_NOTE: sharedParams is the LIVE params snapshot. It is correct for computing
 	// FUTURE heights from the CURRENT block (supplier unbonding, application unbonding),
 	// which must use the session grid in effect now. It is NOT correct for pricing a
-	// claim — use GetSharedParamsAtSessionStart for that. See that method's godoc.
+	// claim — use GetSharedParamsAtHeight for that. See that method's godoc.
 	sharedParams     sharedtypes.Params
 	tokenomicsParams tokenomicstypes.Params
 
-	// sharedParamsAtSessionStartMap caches the shared params epoch that was effective at
-	// each session-start height encountered during settlement, keyed by that height.
-	// Claims sharing a session-start height (the common case — a settlement block drains
-	// many claims from the same session) resolve to a single params-history lookup.
+	// sharedParamsAtHeightMap caches the shared params epoch that was effective at each
+	// height read during settlement, keyed by that height. Claims sharing a height (the
+	// common case — a settlement block drains many claims from the same session) resolve
+	// to a single params-history lookup.
 	//
-	// Populated lazily by GetSharedParamsAtSessionStart.
-	sharedParamsAtSessionStartMap map[int64]sharedtypes.Params
+	// Populated lazily by GetSharedParamsAtHeight.
+	sharedParamsAtHeightMap map[int64]sharedtypes.Params
 
 	// globalInflationPerClaimRat memoizes tokenomicsParams.GlobalInflationPerClaim as a
 	// big.Rat. The conversion (strconv.FormatFloat + big.Rat.SetString) is identical for
@@ -215,10 +215,10 @@ func NewSettlementContext(
 		sharedParams:     tokenomicsKeeper.sharedKeeper.GetParams(ctx),
 		tokenomicsParams: tokenomicsKeeper.GetParams(ctx),
 
-		// Capacity estimate: one distinct session-start height per settlement block in
+		// Capacity estimate: one session's start + end height per settlement block in
 		// steady state (claims settle in session-aligned batches); more only while a
 		// window-offset change has claims from several epochs expiring together.
-		sharedParamsAtSessionStartMap: make(map[int64]sharedtypes.Params, 1),
+		sharedParamsAtHeightMap: make(map[int64]sharedtypes.Params, 2),
 
 		// Initialize the validator reward accumulator with capacity for the 2 known TLM op reasons
 		// (TLM_RELAY_BURN_EQUALS_MINT and TLM_GLOBAL_MINT).
@@ -332,37 +332,48 @@ func (sctx *settlementContext) GetServiceComputeUnitsPerRelay(serviceId string, 
 	)
 }
 
-// GetSharedParamsAtSessionStart returns the shared params epoch that was effective at the
-// given session start height, memoized per height for the life of this settlement context.
+// GetSharedParamsAtHeight returns the shared params epoch that was effective at the given
+// height, memoized per height for the life of this settlement context.
 //
-// Use this — NOT GetSharedParams — for anything that prices a claim.
+// Use this — NOT GetSharedParams — for anything that must agree with the epoch a claim was
+// created under. Which height to pass depends on the quantity:
 //
-// Why: compute_units_to_tokens_multiplier (CUTTM) and compute_unit_cost_granularity are the
-// two shared params that convert claimed work into uPOKT. x/proof already resolves them at
-// the session start height in all three of its consumers: claim creation
-// (msg_server_create_claim.go), proof validation and ProofRequirementForClaim
-// (msg_server_submit_proof.go). Settlement previously read them LIVE, so a governance CUTTM
-// change landing between a session's start and its settlement made settlement pay at a rate
-// the claim was never priced or proof-gated under. That divergence was observable inside a
-// single function: settleClaim computed claimeduPOKT from live params and then called
-// ProofRequirementForClaim, which re-derived it at session start — two rates, one claim.
+//   - PRICING (compute_units_to_tokens_multiplier, compute_unit_cost_granularity) →
+//     the claim's SESSION START height. x/proof resolves the pricing pair at session start
+//     in all three of its consumers: claim creation (msg_server_create_claim.go), proof
+//     validation and ProofRequirementForClaim (msg_server_submit_proof.go). Settlement
+//     previously read them LIVE, so a governance CUTTM change landing between a session's
+//     start and its settlement paid at a rate the claim was never priced or proof-gated
+//     under. That divergence was observable inside a single function: settleClaim computed
+//     claimeduPOKT from live params and then called ProofRequirementForClaim, which
+//     re-derived it at session start — two rates, one claim. Session start (not end) is
+//     what makes settlement agree with x/proof; any other height merely relocates the
+//     divergence.
+//   - BUDGET DIVISOR (num_pending_sessions, from num_blocks_per_session and the window
+//     offsets) → the claim's SESSION END height, matching x/proof's window validation
+//     (#543, F2). See getOrInitSessionBudget.
 //
-// Pinning to session START (not session end) is what makes settlement agree with x/proof;
-// pinning to any other height would merely relocate the divergence.
+// The height is NOT validated against either convention — it cannot be, since a session
+// start and a session end are both just heights. The call site is responsible for passing
+// the right one and for saying which it means.
+//
+// Anything projecting a FUTURE height from the CURRENT block (supplier/application
+// unbonding, session end height) must keep using GetSharedParams instead: those need the
+// grid in effect now, not the one the claim was created under.
 //
 // DEV_NOTE: the memo map is per-settlement-context, i.e. block-scoped. It MUST NOT be
 // hoisted onto the Keeper — a cache that outlives the block diverges across nodes and
 // causes an AppHash mismatch.
-func (sctx *settlementContext) GetSharedParamsAtSessionStart(
+func (sctx *settlementContext) GetSharedParamsAtHeight(
 	ctx context.Context,
-	sessionStartHeight int64,
+	height int64,
 ) sharedtypes.Params {
-	if params, ok := sctx.sharedParamsAtSessionStartMap[sessionStartHeight]; ok {
+	if params, ok := sctx.sharedParamsAtHeightMap[height]; ok {
 		return params
 	}
 
-	params := sctx.keeper.sharedKeeper.GetParamsAtHeight(ctx, sessionStartHeight)
-	sctx.sharedParamsAtSessionStartMap[sessionStartHeight] = params
+	params := sctx.keeper.sharedKeeper.GetParamsAtHeight(ctx, height)
+	sctx.sharedParamsAtHeightMap[height] = params
 
 	return params
 }
@@ -601,9 +612,9 @@ func (sctx *settlementContext) AccumulateClaimBudget(ctx context.Context, claim 
 	}
 
 	// Price the claim under the shared params epoch effective at its own session start,
-	// matching x/proof and Phase 2 (see GetSharedParamsAtSessionStart). Reading live params
+	// matching x/proof and Phase 2 (see GetSharedParamsAtHeight). Reading live params
 	// here would size the budget off a different CUTTM than the payout uses.
-	pricingParams := sctx.GetSharedParamsAtSessionStart(ctx, sessionHeader.GetSessionStartBlockHeight())
+	pricingParams := sctx.GetSharedParamsAtHeight(ctx, sessionHeader.GetSessionStartBlockHeight())
 
 	claimSettlementCoin, err := claim.GetClaimeduPOKT(pricingParams, relayMiningDifficulty)
 	if err != nil {
@@ -669,7 +680,8 @@ func (sctx *settlementContext) getOrInitSessionBudget(
 	// numPendingSessions is read at the params epoch effective for the claim's own session
 	// end height (not live): a num_blocks_per_session change between a session and its
 	// settlement otherwise re-divides the app stake by a different concurrency (#543, F2).
-	budgetParams := sctx.keeper.sharedKeeper.GetParamsAtHeight(ctx, sessionEndBlockHeight)
+	// Memoized per height, so groups sharing a session end height share one lookup.
+	budgetParams := sctx.GetSharedParamsAtHeight(ctx, sessionEndBlockHeight)
 	numPendingSessions := sharedtypes.GetNumPendingSessions(&budgetParams)
 
 	// floor = appStake / numPendingSessions / numSuppliers.
