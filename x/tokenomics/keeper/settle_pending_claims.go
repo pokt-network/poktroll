@@ -134,6 +134,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			// Faulty claim; Phase 2 will surface and discard it. Skip budget accounting.
 			continue
 		}
+
 		if budgetErr := settlementContext.AccumulateClaimBudget(ctx, claim); budgetErr != nil {
 			// Claim could not be priced or its budget initialized; Phase 2 will discard it
 			// for the same reason. Skip budget accounting.
@@ -583,6 +584,33 @@ func (k Keeper) GetExpiringClaimsSessionEndHeights(
 	blockHeight int64,
 ) []int64 {
 	return k.candidateSessionEndHeightsForLiveParams(ctx, k.sharedKeeper.GetParams(ctx), blockHeight)
+}
+
+// claimWillSettle reports whether settleClaim will SETTLE this claim rather than
+// expire it, so Phase 1.5 can keep claims that pay nothing out of the budget math.
+//
+// This MUST mirror settleClaim's expiration branch exactly: a claim expires when a
+// proof is required and its recorded validation status is anything other than
+// VALIDATED. If the two ever disagree, the budget is sized against a different claim
+// set than the one that gets paid.
+//
+// Safe to evaluate here: proof validation runs in the x/proof EndBlocker, which is
+// ordered BEFORE tokenomics, so every claim's ProofValidationStatus is already final by
+// the time settlement runs. ProofRequirementForClaim is a pure read over the claim and
+// params (both resolved at the claim's session start), so calling it in both phases
+// within the same block yields the same answer -- no cached value is threaded between
+// them, precisely so the phases cannot drift apart.
+func (k Keeper) claimWillSettle(ctx context.Context, claim *prooftypes.Claim) (bool, error) {
+	proofRequirement, err := k.proofKeeper.ProofRequirementForClaim(ctx, claim)
+	if err != nil {
+		return false, err
+	}
+
+	if proofRequirement == prooftypes.ProofRequirementReason_NOT_REQUIRED {
+		return true, nil
+	}
+
+	return claim.ProofValidationStatus == prooftypes.ClaimProofStatus_VALIDATED, nil
 }
 
 // candidateSessionEndHeightsForLiveParams returns the deduplicated set of

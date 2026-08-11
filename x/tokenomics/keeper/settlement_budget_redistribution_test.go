@@ -33,6 +33,12 @@ type budgetRedistributionFixture struct {
 
 	floor  int64 // per-supplier guaranteed floor B/N (== appStake/numPendingSessions/N)
 	budget int64 // B == appStake/numPendingSessions == N*floor
+
+	// claimProofStatusOverride sets a non-default ProofValidationStatus on the claim at
+	// the given supplier index. Claims default to VALIDATED (they model settling claims);
+	// override to PENDING_VALIDATION or INVALID to model a claim that Phase 2 expires,
+	// which the budget accumulator must exclude.
+	claimProofStatusOverride map[int]prooftypes.ClaimProofStatus
 }
 
 // newBudgetRedistributionFixture builds an application with a stake sized so that the
@@ -150,6 +156,9 @@ func (f *budgetRedistributionFixture) run(t testing.TB, m uint64, order []int) [
 	claims := make([]prooftypes.Claim, len(f.suppliers))
 	for _, i := range order {
 		claims[i] = prepareTestClaim(f.relays[i], f.service, &f.app, &f.suppliers[i])
+		if status, ok := f.claimProofStatusOverride[i]; ok {
+			claims[i].ProofValidationStatus = status
+		}
 		require.NoError(t, sctx.ClaimCacheWarmUp(f.ctx, &claims[i]))
 		sctx.IncrementSupplierCount(claims[i].SessionHeader.ApplicationAddress, claims[i].SessionHeader.SessionId)
 	}
@@ -162,6 +171,14 @@ func (f *budgetRedistributionFixture) run(t testing.TB, m uint64, order []int) [
 	// Phase 2: settle each claim against the precomputed budget.
 	settled := make([]int64, len(f.suppliers))
 	for _, i := range order {
+		// A claim that Phase 2 expires never reaches the TLMs in production: settleClaim
+		// returns down the expiry branch instead. Mirror that here, otherwise the fixture
+		// would pay a claim the chain refuses to pay and the budget assertions would be
+		// measuring a scenario that cannot happen.
+		if status, ok := f.claimProofStatusOverride[i]; ok && status != prooftypes.ClaimProofStatus_VALIDATED {
+			continue
+		}
+
 		result := tlm.NewClaimSettlementResult(claims[i])
 		coin, err := f.keepers.ProcessTokenLogicModules(f.ctx, sctx, result)
 		require.NoError(t, err)
@@ -262,6 +279,73 @@ func TestBudgetRedistribution_SingleSupplier(t *testing.T) {
 	over := newBudgetRedistributionFixture(t, floor, []uint64{1500})
 	require.Equal(t, []int64{1000}, over.run(t, 100, nil),
 		"a lone supplier is bounded by B even with a high multiplier")
+}
+
+// TestBudgetRedistribution_UnprovenClaimCannotDenyBonuses pins the fix for the
+// bonus-denial griefing vector.
+//
+// bonus_i = unused * excess_i / totalExcess. If a claim that will EXPIRE still lands in
+// totalExcess, a supplier in the session can submit a deliberately enormous claim, never
+// prove it, and dominate the denominator -- floor-dividing every honest overservicer's
+// bonus to ~0 and stranding the whole unused budget. It costs the attacker one
+// proof_missing_penalty regardless of how much it denied.
+//
+// Solvency was never at risk (the effect errs conservative), and the vector is inert at
+// m == 1 because no bonus exists. It arms the moment governance raises the multiplier,
+// which is exactly when nobody is looking at it.
+//
+// Asserted differentially rather than against hardcoded amounts: adding an unproven
+// attacker to the session MUST NOT change what the honest suppliers are paid.
+func TestBudgetRedistribution_UnprovenClaimCannotDenyBonuses(t *testing.T) {
+	const floor = int64(1000)
+	const multiplier = uint64(100) // well above 1, so redistribution is live
+
+	// Baseline: one heavy overservicer funded by two idle suppliers, no attacker.
+	baseline := newBudgetRedistributionFixture(t, floor, []uint64{2000, 100, 100})
+	baselineSettled := baseline.run(t, multiplier, nil)
+
+	// Same session, plus a fourth supplier claiming a massive amount it never proves.
+	withAttacker := newBudgetRedistributionFixture(t, floor, []uint64{2000, 100, 100, 1_000_000})
+
+	// The vector only exists for claims that REQUIRE a proof: without one, an unproven
+	// claim settles normally and belongs in the budget. In this fixture claimed uPOKT
+	// equals the relay count, so a threshold between the honest claims and the attacker's
+	// makes a proof mandatory for the attacker alone.
+	requireProofAboveThreshold(t, withAttacker, 500_000)
+
+	// The attacker's claim requires a proof (it is enormous) and has none: PENDING_VALIDATION
+	// is what an unsubmitted proof looks like at settlement, so this claim expires.
+	withAttacker.claimProofStatusOverride = map[int]prooftypes.ClaimProofStatus{
+		3: prooftypes.ClaimProofStatus_PENDING_VALIDATION,
+	}
+	attackerSettled := withAttacker.run(t, multiplier, nil)
+
+	require.Equal(t, baselineSettled[0], attackerSettled[0],
+		"an unproven claim must not dilute the honest overservicer's bonus")
+	require.Equal(t, baselineSettled[1], attackerSettled[1])
+	require.Equal(t, baselineSettled[2], attackerSettled[2])
+
+	// Self-check: prove the assertions above are sensitive rather than trivially true.
+	// The SAME oversized claim, marked VALIDATED, is a legitimate overservicer and DOES
+	// enter the denominator -- so the honest supplier's payout must change. If this did
+	// not change, the test could not detect the vector it exists to pin.
+	proven := newBudgetRedistributionFixture(t, floor, []uint64{2000, 100, 100, 1_000_000})
+	requireProofAboveThreshold(t, proven, 500_000)
+	provenSettled := proven.run(t, multiplier, nil)
+	require.NotEqual(t, baselineSettled[0], provenSettled[0],
+		"test would be vacuous: a VALIDATED oversized claim must dilute the honest supplier's bonus")
+}
+
+// requireProofAboveThreshold configures the proof module so that a claim worth more than
+// thresholdUPOKT requires a proof, and nothing is sampled probabilistically.
+func requireProofAboveThreshold(t *testing.T, f *budgetRedistributionFixture, thresholdUPOKT int64) {
+	t.Helper()
+
+	threshold := cosmostypes.NewCoin(pocket.DenomuPOKT, cosmosmath.NewInt(thresholdUPOKT))
+	proofParams := f.keepers.ProofKeeper.GetParams(f.ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &threshold
+	require.NoError(t, f.keepers.ProofKeeper.SetParams(f.ctx, proofParams))
 }
 
 func sum(xs []int64) int64 {

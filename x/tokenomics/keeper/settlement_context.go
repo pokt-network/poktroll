@@ -603,6 +603,39 @@ func (sctx *settlementContext) AccumulateClaimBudget(ctx context.Context, claim 
 		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
 	}
 
+	// Only claims that will actually SETTLE may shape the budget.
+	//
+	// A claim that Phase 2 expires pays nothing, yet if counted here it still lands in
+	// `totalExcess`, the denominator of every overservicer's bonus
+	// (bonus_i = unused * excess_i / totalExcess). That is a griefing vector once
+	// governance raises overservicing_bonus_multiplier above 1: a supplier in the session
+	// submits a deliberately enormous claim and never proves it, its excess dominates the
+	// denominator, and every honest overservicer's bonus floor-divides to ~0 -- the whole
+	// unused budget goes unpaid for that (application, session) group. The attacker pays
+	// one proof_missing_penalty no matter how much it denied. Solvency was never at risk
+	// (this errs conservative), but the denial is real and it is inert ONLY at m == 1.
+	//
+	// Excluded from BOTH sides of the accounting, deliberately. Crediting an expiring
+	// supplier's whole floor to `unused` is also defensible -- it consumes none of its
+	// budget -- but that INCREASES payouts relative to today, which is an economic policy
+	// decision rather than a bug fix. Excluding outright stays conservative:
+	//   sum(under) + |over|*floor + sum(bonus) <= (|under| + |over|)*floor <= N*floor = B
+	// so the application's stake still cannot be overdrawn.
+	//
+	// N (the divisor behind `floor`) deliberately still counts every claim, matching the
+	// pre-change supplier count.
+	//
+	// This lives HERE rather than in the Phase 1.5 loop so that every caller is covered:
+	// the accumulator is the single place the budget is shaped, and a caller that skipped
+	// the check would silently reintroduce the vector.
+	willSettle, err := sctx.keeper.claimWillSettle(ctx, claim)
+	if err != nil {
+		return err
+	}
+	if !willSettle {
+		return nil
+	}
+
 	relayMiningDifficulty, err := sctx.GetRelayMiningDifficulty(
 		sessionHeader.GetServiceId(),
 		sessionHeader.GetSessionStartBlockHeight(),
