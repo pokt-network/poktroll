@@ -423,7 +423,13 @@ func WaitForAccountOnChain(t *testing.T, net *Network, addr sdk.AccAddress) {
 }
 
 // InitAccountWithSequence initializes an Account by sending it some funds from
-// the validator in the network to the address provided
+// the validator in the network to the address provided, and blocks until that
+// account is readable onchain.
+//
+// The explicit sequence exists so a caller can fund several accounts back to back
+// without re-querying the validator's sequence between sends. Blocking on each
+// account does not invalidate those pre-assigned sequences — committing the sends
+// one at a time, in order, is exactly what they describe.
 func InitAccountWithSequence(
 	t *testing.T,
 	net *Network,
@@ -451,6 +457,8 @@ func InitAccountWithSequence(
 	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
+
+	WaitForAccountOnChain(t, net, addr)
 }
 
 // DelegateAppToGateway delegates the provided application to the provided gateway
