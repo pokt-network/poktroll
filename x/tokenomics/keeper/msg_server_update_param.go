@@ -82,6 +82,10 @@ func (k msgServer) UpdateParam(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	// Surface (but do NOT reject) a param set which makes application/supplier
+	// self-dealing break-even or better. See Params.CheckAntiCollusionInvariant.
+	params.LogAntiCollusionInvariantViolation(logger)
+
 	if err := k.SetParams(ctx, params); err != nil {
 		err = fmt.Errorf("unable to set params: %w", err)
 		logger.Error(err.Error())

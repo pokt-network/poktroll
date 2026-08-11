@@ -4,13 +4,14 @@ import (
 	"math"
 	"math/big"
 
+	cosmoslog "cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/pokt-network/poktroll/pkg/encoding"
 )
 
-// bigRatOne is the anti-collusion invariant's comparison bound (see Params.ValidateBasic).
+// bigRatOne is the anti-collusion invariant's comparison bound (see Params.CheckAntiCollusionInvariant).
 // Package-level so the round-trip check does not allocate a new big.Rat per validation.
 var bigRatOne = big.NewRat(1, 1)
 
@@ -184,21 +185,68 @@ func (params *Params) ValidateBasic() error {
 		params.MintEqualsBurnClaimDistribution = DefaultMintEqualsBurnClaimDistribution
 	}
 
-	// Anti-collusion invariant (settlement budget redistribution):
-	// A colluding application+supplier burns X from its own application stake and
-	// receives back mint_ratio * supplier_share * X as the supplier. For self-dealing
-	// to be a losing trade, this round-trip factor MUST stay below 1. Today the
-	// per-session head-split cap accidentally bounds collusion throughput; once that
-	// cap is demoted to a floor, this invariant becomes the primary anti-collusion
-	// mechanism, so it is enforced as a hard validation error here.
-	//
-	// Computed over big.Rat, NOT float64. A lone IEEE-754 multiply happens to be
-	// bit-identical across platforms, but this is a consensus gate (it runs in the
-	// v0.1.35 upgrade handler and on every MsgUpdateParam(s)), and the repo rule is
-	// that float64 params are converted with encoding.Float64ToRat before any
-	// arithmetic. Float64ToRat also goes through the decimal string, so 0.975 is
-	// exactly 39/40 rather than the nearest binary double — the comparison against 1
-	// is then exact instead of resting on the rounding of a product.
+	// DEV_NOTE: The anti-collusion invariant is deliberately NOT enforced here.
+	// See CheckAntiCollusionInvariant for the rationale; callers which represent a
+	// governance decision (the MsgUpdateParam(s) handlers, upgrade handlers) surface
+	// a violation as a WARNING rather than rejecting the param set.
+
+	return nil
+}
+
+// CheckAntiCollusionInvariant reports whether the params satisfy the anti-collusion
+// invariant `mint_ratio * mint_equals_burn_claim_distribution.supplier < 1`, returning
+// a descriptive error when they do not.
+//
+// Rationale for the invariant:
+// A colluding application+supplier burns X from its own application stake and receives
+// back mint_ratio * supplier_share * X as the supplier. For self-dealing to be a losing
+// trade, this round-trip factor must stay below 1. Today the per-session head-split cap
+// incidentally bounds collusion throughput; once that cap is demoted to a floor, this
+// round-trip factor becomes the primary anti-collusion mechanism.
+//
+// Rationale for reporting instead of rejecting:
+//
+//   - It can only ever bind at a single point. mint_ratio is constrained to (0, 1] and
+//     the distribution shares must sum to 1, so the product is <= 1 by construction and
+//     the violation is reachable ONLY at mint_ratio == 1 && supplier == 1. Collusion can
+//     never be made *profitable* by any legal param set — only break-even.
+//
+//     ⚠️ THIS REASONING EXPIRES IF ValidateMintRatio'S UPPER BOUND IS EVER RAISED.
+//     The network has already run three emission regimes — net-inflationary, neutral
+//     (mint == burn, mint_ratio == 1), and today's deflationary mint_ratio == 0.975 from
+//     PIP-41 — so a swing back is precedent, not speculation. Which lever swings matters:
+//
+//     global_inflation_per_claim (today's inflationary lever) CANNOT break this bound:
+//     the application is charged settlement * (1 + I) while the colluding supplier
+//     recaptures at most mint_ratio * supplier + I * mint_allocation_percentages.supplier,
+//     so the round trip is (mint_ratio*supplier + I*As) / (1 + I) < 1 whenever
+//     mint_ratio * supplier < 1 (As <= 1). The colluder funds its own inflation.
+//
+//     Raising mint_ratio ABOVE 1 does break it: the extra mint is NOT charged to the
+//     application. The product becomes reachable with an ordinary distribution
+//     (e.g. 1.3 * 0.79 = 1.027) and self-dealing turns genuinely profitable rather than
+//     break-even. At that point this check MUST be re-escalated to a hard rejection —
+//     but ONLY on the MsgUpdateParam(s) path, where a rejection costs a failed governance
+//     tx. It must stay out of ValidateBasic, which genesis validation and upgrade
+//     handlers also run, where an error halts the chain.
+//
+//   - There is no economic cliff at the boundary. supplier == 0.9999 is permitted and is
+//     indistinguishable in practice from 1.0, so hard-failing exactly at 1.0 draws a line
+//     where the economics are continuous.
+//
+//   - The blast radius of a hard failure is disproportionate. Params.ValidateBasic is
+//     reached from genesis validation and from upgrade handlers, where returning an error
+//     runs inside consensus and HALTS THE CHAIN at the upgrade height — a catastrophic
+//     failure mode traded against a break-even corner case on a DAO-governed policy knob.
+//
+//   - The distribution is governance-controlled. The DAO setting a 100%-to-supplier
+//     distribution is a policy choice with a review process behind it, not corrupt state.
+//
+// Computed over big.Rat, NOT float64, per the repo rule that float64 params are converted
+// with encoding.Float64ToRat before any arithmetic. Float64ToRat goes through the decimal
+// string, so 0.975 is exactly 39/40 rather than the nearest binary double — the comparison
+// against 1 is then exact instead of resting on the rounding of a product.
+func (params *Params) CheckAntiCollusionInvariant() error {
 	mintRatioRat, err := encoding.Float64ToRat(params.MintRatio)
 	if err != nil {
 		return ErrTokenomicsParamInvalid.Wrapf("invalid mint_ratio: %s", err)
@@ -211,12 +259,28 @@ func (params *Params) ValidateBasic() error {
 	roundTripFactor := new(big.Rat).Mul(mintRatioRat, supplierShareRat)
 	if roundTripFactor.Cmp(bigRatOne) >= 0 {
 		return ErrTokenomicsParamInvalid.Wrapf(
-			"anti-collusion invariant violated: mint_ratio (%s) * mint_equals_burn_claim_distribution.supplier (%s) = %s must be < 1",
+			"anti-collusion invariant violated: mint_ratio (%s) * mint_equals_burn_claim_distribution.supplier (%s) = %s must be < 1; "+
+				"application/supplier self-dealing is break-even or better at these values",
 			mintRatioRat.RatString(), supplierShareRat.RatString(), roundTripFactor.RatString(),
 		)
 	}
 
 	return nil
+}
+
+// LogAntiCollusionInvariantViolation checks the anti-collusion invariant & logs a warning
+// if it is violated. It is intended for callers which apply a governance decision to the
+// live params (the MsgUpdateParam(s) handlers & upgrade handlers): the param set is still
+// applied, but the violation is made loud rather than silent.
+func (params *Params) LogAntiCollusionInvariantViolation(logger cosmoslog.Logger) {
+	if err := params.CheckAntiCollusionInvariant(); err != nil {
+		logger.Warn(
+			"tokenomics params violate the anti-collusion invariant; applying them anyway",
+			"warning", err.Error(),
+			"mint_ratio", params.MintRatio,
+			"mint_equals_burn_claim_distribution.supplier", params.MintEqualsBurnClaimDistribution.Supplier,
+		)
+	}
 }
 
 // ValidateMintAllocationDao validates the MintAllocationDao param.
@@ -377,6 +441,13 @@ func ValidateMintRatio(mintRatioAny any) error {
 		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", mintRatioAny)
 	}
 
+	// DEV_NOTE: The upper bound of 1 is LOAD-BEARING beyond its own semantics.
+	// CheckAntiCollusionInvariant is only a reporting-level check (a warning, not a
+	// rejection) precisely because this bound plus the "shares sum to 1" rule make
+	// mint_ratio * supplier <= 1 for every legal param set, so self-dealing can at worst
+	// be break-even. Raising this bound to support a net-inflationary regime makes
+	// collusion genuinely profitable and REQUIRES re-escalating that check to a hard
+	// rejection on the MsgUpdateParam(s) path. See Params.CheckAntiCollusionInvariant.
 	if mintRatio <= 0 || mintRatio > 1 {
 		return ErrTokenomicsParamInvalid.Wrapf("mint_ratio must be in range (0, 1]: got %f", mintRatio)
 	}

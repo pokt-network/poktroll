@@ -100,6 +100,15 @@ Feature: Tokenomics Namespace
         And all "proof" module params should be updated
 
         # Configure tokenomics parameters for distributed settlement
+        #
+        # DEV_NOTE: mint_ratio (1.0, the default) * mint_equals_burn_claim_distribution.supplier
+        # (1.0 below) == 1, which VIOLATES the anti-collusion invariant. This scenario doubles as
+        # the regression guard for that invariant being REPORTED (logged) rather than enforced:
+        # if it ever becomes a hard validation error again, this param update is silently
+        # rejected onchain and the settlement assertions below break. Enforcing it would also
+        # put a DAO-governed policy value on a code path (Params.ValidateBasic) that upgrade
+        # handlers run inside consensus, where an error halts the chain.
+        # See tokenomicstypes.Params.CheckAntiCollusionInvariant.
         And the "tokenomics" module parameters are set as follows
             | name                                             | value | type  |
             | dao_reward_address                               | pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw | string |

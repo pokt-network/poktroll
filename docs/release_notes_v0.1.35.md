@@ -171,12 +171,13 @@ This is a **pre-existing bug** (introduced in #1031, present in v0.1.34 and live
 
 No KVStore migrations. One deterministic step:
 
-1. **Seed** `overservicing_bonus_multiplier = 1` if unset, then `ValidateBasic()` the resulting params (which also asserts the anti-collusion invariant) before writing them.
+1. **Seed** `overservicing_bonus_multiplier = 1` if unset, then `ValidateBasic()` the resulting params before writing them.
 
-> ⚠️ The handler **fails the upgrade** if the live params violate `mint_ratio × supplier < 1`. Verify against the target chain before submitting the upgrade plan:
-> ```
-> pocketd q tokenomics params --node <rpc>
-> ```
+The handler also logs a **warning** if the live params violate the anti-collusion invariant `mint_ratio × mint_equals_burn_claim_distribution.supplier < 1`. It is a warning, not a validation error, on purpose: the handler runs inside consensus, so failing there would halt the chain at the upgrade height over a DAO-governed policy value. Because `mint_ratio ≤ 1` and the distribution shares sum to 1, the product is `≤ 1` for every legal param set — the worst case makes self-dealing break-even, never profitable. To check a chain's current margin:
+
+```
+pocketd q tokenomics params --node <rpc>
+```
 
 ## Operator & Governance Notes
 

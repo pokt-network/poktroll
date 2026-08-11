@@ -186,7 +186,7 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.35 - upgrade to:
 	// - Settlement budget redistribution: the per-supplier head-split cap becomes a
 	//   guaranteed floor (ships as a no-op; new overservicing_bonus_multiplier param = 1)
-	// - Enforce the anti-collusion invariant in tokenomics params validation
+	// - Report (log, never reject) the anti-collusion invariant on tokenomics param updates
 	// - Pin compute_units_per_relay to the session-start height for claim validation
 	//   and settlement (stops mid-session cupr changes forfeiting in-flight claims)
 	// - Only the supplier owner can cancel an in-progress unstake (PR #1980)

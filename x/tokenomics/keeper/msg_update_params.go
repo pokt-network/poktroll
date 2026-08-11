@@ -33,6 +33,10 @@ func (k msgServer) UpdateParams(
 
 	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params))
 
+	// Surface (but do NOT reject) a param set which makes application/supplier
+	// self-dealing break-even or better. See Params.CheckAntiCollusionInvariant.
+	msg.Params.LogAntiCollusionInvariantViolation(logger)
+
 	if err := k.SetParams(ctx, msg.Params); err != nil {
 		err = fmt.Errorf("unable to set params: %w", err)
 		logger.Error(err.Error())

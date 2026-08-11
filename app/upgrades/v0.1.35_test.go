@@ -101,20 +101,25 @@ func TestUpgrade_0_1_35_SeedDoesNotClobberGovernanceValue(t *testing.T) {
 		"tokenomics params must be unchanged across a repeated seed")
 }
 
-// TestUpgrade_0_1_35_EnforcesAntiCollusionInvariant asserts that the params validation the
-// handler runs actually rejects a violating parameter set.
+// TestUpgrade_0_1_35_ReportsAntiCollusionInvariant asserts that the anti-collusion
+// round-trip factor is REPORTED but never fails the upgrade handler.
 //
 // The per-supplier head-split cap was incidentally bounding collusion throughput. Once
 // v0.1.35 demotes it to a floor, `mint_ratio * mint_equals_burn_claim_distribution.supplier
-// < 1` becomes the primary guard against an application and supplier round-tripping stake
-// back to themselves at a profit. If ValidateBasic ever stops enforcing it, the upgrade
-// would happily seed a chain into that state.
-func TestUpgrade_0_1_35_EnforcesAntiCollusionInvariant(t *testing.T) {
+// < 1` becomes the primary signal for an application and supplier round-tripping stake back
+// to themselves.
+//
+// It MUST stay a signal and not a validation error: the handler runs inside consensus, so a
+// returned error halts the chain at the upgrade height. The distribution is DAO-governed,
+// and since mint_ratio <= 1 and the shares sum to 1, the product can never exceed 1 — the
+// worst legal param set makes self-dealing break-even, not profitable. Halting a chain over
+// that is the more expensive failure by far.
+func TestUpgrade_0_1_35_ReportsAntiCollusionInvariant(t *testing.T) {
 	k, ctx := testkeeper.TokenomicsKeeper(t)
 
 	params := k.GetParams(ctx)
 	params.OverservicingBonusMultiplier = tokenomicstypes.DefaultOverservicingBonusMultiplier
-	require.NoError(t, params.ValidateBasic(), "default params must satisfy the invariant")
+	require.NoError(t, params.CheckAntiCollusionInvariant(), "default params must satisfy the invariant")
 
 	// Drive the round-trip factor to exactly 1.0: everything burned comes straight back to
 	// the colluding supplier, making self-dealing free.
@@ -126,7 +131,15 @@ func TestUpgrade_0_1_35_EnforcesAntiCollusionInvariant(t *testing.T) {
 		SourceOwner: 0,
 		Application: 0,
 	}
-	err := params.ValidateBasic()
-	require.Error(t, err, "params whose round-trip factor reaches 1 must be rejected")
+
+	// The handler validates params before writing them; that validation MUST NOT trip on
+	// the invariant, otherwise the upgrade halts the chain.
+	require.NoError(t, params.ValidateBasic(),
+		"the anti-collusion invariant must never fail params validation (it would halt the chain at the upgrade height)")
+	require.NoError(t, k.SetParams(ctx, params),
+		"a violating param set must still be writable by the upgrade handler")
+
+	err := params.CheckAntiCollusionInvariant()
+	require.Error(t, err, "params whose round-trip factor reaches 1 must be reported")
 	require.ErrorContains(t, err, "anti-collusion invariant violated")
 }

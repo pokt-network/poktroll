@@ -165,13 +165,15 @@ const (
 // clobbered param can never silently enable redistribution. Governance opens
 // redistribution afterwards by raising the multiplier — no second upgrade required.
 //
-// Also enforces the anti-collusion invariant
-// `mint_ratio * mint_equals_burn_claim_distribution.supplier < 1` in params validation.
-// The head-split cap was incidentally bounding collusion throughput; once it is demoted
-// to a floor, this invariant becomes the primary guard against application/supplier
-// self-dealing round-trips. NOTE: this validation runs in the handler below, so an
-// upgrade on a chain whose LIVE params violate the invariant will FAIL. Verify with
-// `pocketd q tokenomics params --node <rpc>` before submitting the upgrade plan.
+// Also introduces the anti-collusion invariant
+// `mint_ratio * mint_equals_burn_claim_distribution.supplier < 1`, REPORTED as a warning
+// rather than enforced. The head-split cap was incidentally bounding collusion throughput;
+// once it is demoted to a floor, this round-trip factor becomes the primary signal for
+// application/supplier self-dealing. It is not a hard validation error because the
+// distribution is DAO-governed, the product is <= 1 for every legal param set (so
+// collusion can never be profitable, only break-even), and failing here would run inside
+// consensus and halt the chain at the upgrade height. See
+// Params.CheckAntiCollusionInvariant.
 //
 // CONSENSUS-BREAKING (gas: dead block-hash reads removed, #1976):
 // GetEarliestSupplierClaimCommitHeight / GetEarliestSupplierProofCommitHeight ignore
@@ -221,11 +223,17 @@ var Upgrade_0_1_35 = Upgrade{
 				logger.Info("Setting default overservicing_bonus_multiplier to 1 (no-op; governance can enable redistribution)")
 			}
 
-			// Ensure the new parameter set is valid (also checks the anti-collusion invariant).
+			// Ensure the new parameter set is valid.
 			if err = tokenomicsParams.ValidateBasic(); err != nil {
 				logger.Error("Failed to validate tokenomics params", "error", err)
 				return err
 			}
+
+			// Report — but do NOT fail on — an anti-collusion invariant violation.
+			// Returning an error here runs inside consensus and would halt the chain at
+			// the upgrade height over a DAO-governed policy value that can, at worst,
+			// make self-dealing break-even. See Params.CheckAntiCollusionInvariant.
+			tokenomicsParams.LogAntiCollusionInvariantViolation(logger)
 
 			if err = keepers.TokenomicsKeeper.SetParams(ctx, tokenomicsParams); err != nil {
 				logger.Error("Failed to set tokenomics params", "error", err)

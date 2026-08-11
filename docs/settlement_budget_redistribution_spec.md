@@ -596,11 +596,20 @@ A colluding app+supplier burns `X` from its own application stake and receives
 `0.975 × 0.79 = 0.770 × X` back as the supplier. **A 23% loss per round-trip**, not 2.5%.
 (Even capturing the source-owner share too, it's `0.975 × 0.815 = 0.795` — still a 20% loss.)
 
-> **Invariant to encode in param validation:**
+> **Invariant to surface on param updates:**
 > `mint_ratio × mint_equals_burn_claim_distribution.supplier < 1`
 > Currently **0.770** — an enormous margin. This, not the head-split cap, is the real
-> anti-collusion mechanism. Add it as a hard validation error on `MsgUpdateParams` so no
-> future governance action can silently make self-dealing profitable.
+> anti-collusion mechanism. Shipped in v0.1.35 as a **logged warning** on `MsgUpdateParam(s)`
+> and in the upgrade handler, so a future governance action cannot *silently* erode the
+> margin.
+>
+> Deliberately NOT a hard validation error: `mint_ratio ≤ 1` and the distribution shares sum
+> to 1, so the product is `≤ 1` for every legal param set — self-dealing can be driven to
+> break-even (`mint_ratio = 1`, `supplier = 1.0`) but never to a profit. Rejecting that
+> single corner would put a DAO-governed policy value on a path (`Params.ValidateBasic`)
+> that genesis validation and upgrade handlers also run, where an error halts the chain.
+> There is also no economic cliff at the bound: `supplier = 0.9999` is indistinguishable
+> from `1.0` and would pass either way.
 
 ### 4.2b Fabricated claims — already guarded by the proof threshold
 
