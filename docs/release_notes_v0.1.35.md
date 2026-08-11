@@ -104,6 +104,14 @@ Also corrects the `x/shared` EndBlocker docstring, which asserted `live params =
 
 `MsgStakeSupplier` no longer cancels an in-progress unbonding when sent by the **operator**. Previously an operator could repeatedly re-stake (paying only the staking fee) to cancel an owner-initiated unstake, locking the owner's escrowed stake in a supplier they had chosen to exit. Takes effect atomically at the upgrade height; no state migration.
 
+**Practical consequence: the owner's cancel needs `--stake-only`.** Nothing about the CLI changed here — a `MsgStakeSupplier` carrying service configs has been rejected for any non-operator signer since #1524, and `stake-supplier` has always refused a services-less config without `--stake-only`. What changes is who has to care: the operator used to cancel with an ordinary re-stake, services and all, so that rule never bound on the cancel path. Now that only the owner can cancel, it does, leaving one working invocation:
+
+```bash
+pocketd tx supplier stake-supplier --config <config-without-services> --stake-only --from <owner>
+```
+
+Reusing the supplier's existing stake config (which has services in it) instead fails with `only the operator account is authorized to update the service configurations` — a misleading error for what is meant to be a cancel.
+
 ### 🧹 Dead block-hash reads removed from the claim/proof path (consensus-breaking: gas)
 
 `GetEarliestSupplierClaimCommitHeight` / `GetEarliestSupplierProofCommitHeight` ignore their block-hash argument (distribution seeding is disabled), yet the on-chain callers were still issuing a gas-metered `GetBlockHash` store read for the discarded value. A discarded read that still consumes consensus gas is a latent nondeterminism surface — if it ever returned a different byte length across nodes, `gas_used` would diverge and `LastResultsHash` would split while `AppHash` stayed identical. That is the signature of the beta-lego block-432943 halt (suspected carrier, not a proven root cause). These reads now pass `nil`.
@@ -253,7 +261,7 @@ pocketd q tokenomics params --node <rpc>
 - ⚠️ **Avoid pricing-param changes during the rollout too.** Hold `compute_units_to_tokens_multiplier`, `compute_unit_cost_granularity` and the claim/proof window offsets steady from the upgrade height until the fleet is upgraded, for the same reason as the cupr freeze.
 - ⚠️ **Bulk tokenomics params updates must include every field.** `MsgUpdateParams` (plural) replaces the whole struct — omitting `overservicing_bonus_multiplier` decodes it to `0`, which is coerced to `1`, silently reverting redistribution to OFF. The `bulk_params_main` and `bulk_params_beta` files are backfilled from live chain state and guarded by a test; **`bulk_params_alpha` is NOT verified** (its RPC/gRPC endpoint no longer resolves) — re-derive it from the chain before ever using it.
 - **Redistribution stays OFF until governance raises the multiplier.** Enabling it is a treasury decision (absorb the additional settlement, or cut `compute_units_to_tokens_multiplier` for budget neutrality). To lift the cap in practice, set `m ≥ num_suppliers_per_session`, at which point the application budget `B` binds first.
-- **Suppliers:** an operator can no longer re-stake to cancel an owner-initiated unstake; that `MsgStakeSupplier` now fails with `PermissionDenied`.
+- **Suppliers:** an operator can no longer re-stake to cancel an owner-initiated unstake; that `MsgStakeSupplier` now fails with `PermissionDenied`. The owner cancels with `stake-supplier --config <config-without-services> --stake-only --from <owner>` — the services-less requirement is pre-existing, but it only starts binding on the cancel path now that the operator cannot cancel.
 - **Indexers:** new `service/ComputeUnitsPerRelayAtHeight` and `service/ComputeUnitsPerRelayHistory` queries; new `ServiceComputeUnitsPerRelayUpdate` state. `EventApplicationOverserviced` semantics are unchanged at `m = 1`.
 
 ---
