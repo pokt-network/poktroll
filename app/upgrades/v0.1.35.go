@@ -21,13 +21,19 @@ const (
 //
 // This upgrade carries EIGHT consensus-breaking changes, all detailed below:
 //  1. Settlement budget redistribution (head-split cap -> floor); ships as a no-op
-//  2. Anti-collusion invariant enforced in tokenomics params validation
+//  2. Claim PRICING params pinned to the session-start height, so settlement agrees
+//     with x/proof on the same claim (compute_units_to_tokens_multiplier and
+//     compute_unit_cost_granularity)
 //  3. compute_units_per_relay pinned to the session-start height
 //  4. Only the supplier owner can cancel an in-progress unstake (PR #1980)
 //  5. Dead block-hash reads removed from the claim/proof commit-height calc (#1976)
 //  6. Shared params validation rejects an all-zero claim/proof window offset set
 //  7. AddService preserves stored service metadata when an update omits it
 //  8. Gateway gains a metadata card, set via the new MsgUpdateGatewayMetadata
+//
+// NOT in the list, deliberately: the anti-collusion invariant. It is REPORTED as a
+// warning and never rejects, so it changes no state transition and is not
+// consensus-breaking. See Params.CheckAntiCollusionInvariant and the section below.
 //
 // CONSENSUS-BREAKING (shared params: zero-pending-sessions guard):
 // x/shared Params.ValidateBasic now rejects a param set whose four claim/proof window

@@ -91,7 +91,7 @@ Settlement priced claims with **live** shared params while `x/proof` priced the 
 
 The divergence was observable inside a single function: `settleClaim` derived `claimeduPOKT` from live params, then called `ProofRequirementForClaim`, which re-derived it at session start — two rates for one claim.
 
-- New `settlementContext.GetSharedParamsAtSessionStart`, memoized per height on the **block-scoped** settlement context (never on the Keeper, where a cache outliving the block would diverge across nodes). The three pricing sites now route through it: the Phase 1.5 budget, `settleClaim`, and the TLM payout.
+- New `settlementContext.GetSharedParamsAtHeight`, memoized per height on the **block-scoped** settlement context (never on the Keeper, where a cache outliving the block would diverge across nodes). The three pricing sites now route through it: the Phase 1.5 budget, `settleClaim`, and the TLM payout.
 - **`GetSharedParams` stays live for its remaining callers, deliberately.** Those project *future* heights from the *current* block — supplier unbonding, application unbonding, session end height — and must use the grid in effect now; resolving them at session start would schedule unbonding against a stale `num_blocks_per_session`. `ProcessTokenLogicModules` holds both epochs side by side for exactly this reason.
 - Extends the session-start pin already applied to relay mining difficulty and to `compute_units_per_relay`. **Everything that prices a claim now resolves at the claim's session start.**
 - Adds a params-history read (gas) to `FinalizeBlock`.
@@ -117,6 +117,8 @@ Reusing the supplier's existing stake config (which has services in it) instead 
 `GetEarliestSupplierClaimCommitHeight` / `GetEarliestSupplierProofCommitHeight` ignore their block-hash argument (distribution seeding is disabled), yet the on-chain callers were still issuing a gas-metered `GetBlockHash` store read for the discarded value. A discarded read that still consumes consensus gas is a latent nondeterminism surface — if it ever returned a different byte length across nodes, `gas_used` would diverge and `LastResultsHash` would split while `AppHash` stayed identical. That is the signature of the beta-lego block-432943 halt (suspected carrier, not a proven root cause). These reads now pass `nil`.
 
 **This changes gas on the `MsgCreateClaim` and `MsgSubmitProof` paths.** The proof-requirement seed itself is unchanged.
+
+It is not the only gas change in this release: the `compute_units_per_relay` pin also moves `MsgCreateClaim`, where a single `GetService` read became a history-store seek plus a possible fallback. Both take effect atomically at the upgrade height and need no migration, but the consequence is the same and worth stating once for operators: **a node still running an older binary past the upgrade height diverges on `gas_used` — and therefore `LastResultsHash` — even though its `AppHash` matches.**
 
 The RelayMiner's off-chain twin (`pkg/client/query/sharedquerier.go`) did the same thing over RPC — a full `blockQuerier.Block` call per claim/proof window for a discarded hash, which also turned any RPC hiccup into an error return. That fetch is gone too, along with its now-unused block-hash cache.
 
@@ -196,6 +198,14 @@ What does change is the **JSON key** returned by `Service(id)` and `AllServices`
 
 Any off-chain consumer parsing that key must be updated. Done now because exactly one mainnet service currently sets the field, so this is the cheapest it will ever be.
 
+:::warning Genesis exported by a v0.1.34 binary will not import into v0.1.35
+
+The rename is invisible to consensus but **not** to genesis JSON. `reserved "experimental_api_specs"` frees the old name; it does not create an alias, and cosmos-sdk decodes genesis with `AllowUnknownFields` disabled. A v0.1.34 export containing a service with metadata therefore fails to load on a v0.1.35 binary with `unknown field "experimental_api_specs"`.
+
+This does not affect the in-place upgrade — only export/import paths: a re-genesis or hard-fork restart, `genesis validate`, and LocalNet or devnets seeded from a mainnet export. Rewrite the key (`experimental_api_specs` → `card`) in any pre-v0.1.35 export before feeding it to a v0.1.35 binary.
+
+:::
+
 CLI flags follow: `--card-base64` / `--card-file`. The old `--experimental-metadata-base64` / `--experimental-metadata-file` remain as **deprecated aliases**, so existing scripts keep working; passing both a flag and its alias is an error rather than a silent precedence rule.
 
 The field now carries a **service card** — a small, self-describing JSON document. See `docs/pocket_service_card.md` for the schema and `docs/pocket_service_card.schema.json` to validate against.
@@ -222,6 +232,15 @@ This is a **pre-existing bug** (introduced in #1031, present in v0.1.34 and live
 
 - Aggregation maps keyed by struct instead of `fmt.Sprintf` — removes ~181K string allocations per mainnet settlement block. Sort order is preserved exactly.
 - Validator reward data computed once instead of twice per distribution (`calculateAddressRewards` was re-run inside the Largest Remainder Method path).
+
+### 🛡️ Additional hardening
+
+- **Settlement no longer settles a claim before its proof window closes.** The candidate session-end scan is a deliberate superset, and when governance *shrinks* the window offsets the live epoch's candidate reaches back into the previous epoch and names heights whose claims are not yet ripe. Nothing downstream re-checked, so those claims settled early: every not-yet-submitted proof recorded `PROOF_MISSING`, the supplier slashed, the claim removed. Ripeness is now gated per claim against the params at that claim's own session-end height; a not-yet-ripe claim is **deferred**, not dropped.
+- **A corrupt `compute_units_per_relay` history entry can no longer halt the chain.** That getter is reached from the settlement EndBlocker and used `MustUnmarshal`, while every sibling history reader had already been hardened to log and fall back to live.
+- **Gateway cards no longer inflate the per-block EndBlocker scans.** Two EndBlockers — one running *every block* — decoded every full gateway record. With a 256 KiB card per gateway that is unbounded, un-gas-metered work for data those paths never read. They now decode a card-less projection; the same bytes are read from the store, so gas is unchanged.
+- **The RelayMiner resolves claim/proof window timing at height**, matching the chain. Pricing was pinned in this release but the window-timing reads were left live, so any window-offset or `num_blocks_per_session` change mis-timed the session in flight — including deleting a session tree before the chain's real proof window closed.
+- The supplier unstake-cancel guard now checks the **stored** owner rather than the message-supplied one (not exploitable before, but it depended on an unrelated guard 40 lines away).
+- The redistribution bonus is skipped entirely at `m == 1`, where it was computed and then discarded by the cap.
 
 ### 🔐 Supply-chain & docs
 
