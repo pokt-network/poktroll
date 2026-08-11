@@ -1,11 +1,12 @@
 package app
 
 import (
+	"os"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/pokt-network/poktroll/app/upgrades"
 )
 
 // This file is deliberately an INTERNAL test (package app, not app_test): allUpgrades is
@@ -22,12 +23,81 @@ import (
 //
 // Before this test existed, Upgrade_NEXT was referenced only from within its own file and
 // nothing caught it.
+// The expected plan name is DERIVED from the newest app/upgrades/v*.go file rather than
+// hardcoded. A hardcoded name has to be hand-edited by the author of the next release --
+// the same manual step this test exists to backstop -- so it would silently stop guarding
+// the moment someone forgot. Deriving it means adding vX.Y.Z.go is enough to arm the check.
 func TestAllUpgrades_RegistersCurrentUpgrade(t *testing.T) {
-	require.Contains(t, planNames(t), upgrades.Upgrade_0_1_35_PlanName,
-		"Upgrade_0_1_35 is defined but NOT listed in allUpgrades; submitting a %q plan "+
+	expectedPlanName := newestUpgradePlanName(t)
+
+	require.Contains(t, planNames(t), expectedPlanName,
+		"%s is defined in app/upgrades/ but NOT listed in allUpgrades; submitting a %q plan "+
 			"would halt the chain at the upgrade height instead of upgrading it. "+
 			"Append it to the allUpgrades slice in app/upgrades.go.",
-		upgrades.Upgrade_0_1_35_PlanName)
+		expectedPlanName+".go", expectedPlanName)
+}
+
+// newestUpgradePlanName returns the plan name of the highest-versioned upgrade file in
+// app/upgrades/ (e.g. "v0.1.35" for v0.1.35.go).
+//
+// vNEXT.go and vNEXT_Template.go are excluded on purpose: they are working templates and
+// are deliberately never registered.
+func newestUpgradePlanName(t *testing.T) string {
+	t.Helper()
+
+	entries, err := os.ReadDir("upgrades")
+	require.NoError(t, err, "unable to read app/upgrades/")
+
+	var newest string
+	for _, entry := range entries {
+		name := entry.Name()
+		if !strings.HasPrefix(name, "v") ||
+			!strings.HasSuffix(name, ".go") ||
+			strings.HasSuffix(name, "_test.go") ||
+			strings.HasPrefix(name, "vNEXT") {
+			continue
+		}
+
+		version := strings.TrimSuffix(name, ".go")
+		if newest == "" || compareUpgradeVersions(version, newest) > 0 {
+			newest = version
+		}
+	}
+
+	require.NotEmpty(t, newest,
+		"found no vX.Y.Z.go upgrade files in app/upgrades/; this test cannot guard registration")
+	return newest
+}
+
+// compareUpgradeVersions orders two "vX.Y.Z" plan names, returning >0 if a is newer than b.
+// A pre-release suffix (e.g. "v0.1.31-beta-2") sorts BELOW the plain release it qualifies.
+func compareUpgradeVersions(a, b string) int {
+	aBase, aPre, _ := strings.Cut(strings.TrimPrefix(a, "v"), "-")
+	bBase, bPre, _ := strings.Cut(strings.TrimPrefix(b, "v"), "-")
+
+	aParts, bParts := strings.Split(aBase, "."), strings.Split(bBase, ".")
+	for i := 0; i < len(aParts) || i < len(bParts); i++ {
+		var aNum, bNum int
+		if i < len(aParts) {
+			aNum, _ = strconv.Atoi(aParts[i])
+		}
+		if i < len(bParts) {
+			bNum, _ = strconv.Atoi(bParts[i])
+		}
+		if aNum != bNum {
+			return aNum - bNum
+		}
+	}
+
+	// Same numeric version: a plain release outranks a pre-release of it.
+	switch {
+	case aPre == "" && bPre != "":
+		return 1
+	case aPre != "" && bPre == "":
+		return -1
+	default:
+		return strings.Compare(aPre, bPre)
+	}
 }
 
 // TestAllUpgrades_HaveWiredHandlers asserts every registered upgrade is actually usable:
