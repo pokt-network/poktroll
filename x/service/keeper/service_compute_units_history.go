@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -70,8 +71,31 @@ func (k Keeper) GetServiceComputeUnitsPerRelayAtHeight(
 
 	if iterator.Valid() {
 		var update types.ServiceComputeUnitsPerRelayUpdate
-		k.cdc.MustUnmarshal(iterator.Value(), &update)
-		return update.ComputeUnitsPerRelay, true
+		// Defensive: a corrupted history entry (e.g. partial write, downgrade from a
+		// newer schema, on-disk bit rot) must not halt the chain via MustUnmarshal.
+		// This getter is reached from the settlement EndBlocker
+		// (settlementContext.cacheServiceAndDifficulty), where a panic halts the chain
+		// rather than failing a transaction. Log + fall through to the live cupr, which
+		// is the same behaviour as a missing entry and is already tolerated downstream.
+		// Mirrors x/shared's GetParamsAtHeight.
+		//
+		// A zero cupr decoded from a truncated entry is also treated as corrupt: it
+		// would otherwise flow into the numRelays*cupr equality check as a silently
+		// wrong value. Settlement guards this too (settlementContext), but resolving it
+		// here keeps every caller on the deterministic live value.
+		if err := k.cdc.Unmarshal(iterator.Value(), &update); err != nil {
+			k.Logger().Error(fmt.Sprintf(
+				"GetServiceComputeUnitsPerRelayAtHeight: failed to unmarshal cupr history entry for service %q at queryHeight=%d: %v; falling back to live cupr",
+				serviceId, queryHeight, err,
+			))
+		} else if update.ComputeUnitsPerRelay > 0 {
+			return update.ComputeUnitsPerRelay, true
+		} else {
+			k.Logger().Error(fmt.Sprintf(
+				"GetServiceComputeUnitsPerRelayAtHeight: cupr history entry for service %q at queryHeight=%d decoded to zero; falling back to live cupr",
+				serviceId, queryHeight,
+			))
+		}
 	}
 
 	// Fallback to the current cupr (deterministic consensus state). Reached only for
