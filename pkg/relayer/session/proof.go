@@ -363,9 +363,18 @@ func (rs *relayerSessionsManager) isProofRequired(
 		return false, err
 	}
 
-	// Retrieving the relay mining difficulty for the service at hand
+	// Relay mining difficulty resolves at the session START height, the same as the
+	// pricing params above and the same as every onchain consumer
+	// (msg_server_create_claim, msg_server_submit_proof, ProofRequirementForClaim and
+	// settlement all use GetRelayMiningDifficultyAtHeight(sessionStartHeight)).
+	// claimeduPOKT is a product of difficulty AND the pricing params, so pinning only the
+	// latter left this factor free: with live difficulty the miner's claimeduPOKT can fall
+	// below proof_requirement_threshold while the chain's lands above it, so the miner
+	// skips a proof the chain requires -> PROOF_MISSING -> slash.
 	serviceId := claim.GetSessionHeader().GetServiceId()
-	relayMiningDifficulty, err := rs.serviceQueryClient.GetServiceRelayDifficulty(ctx, serviceId)
+	relayMiningDifficulty, err := rs.serviceQueryClient.GetServiceRelayDifficultyAtHeight(
+		ctx, serviceId, claim.GetSessionHeader().GetSessionStartBlockHeight(),
+	)
 	if err != nil {
 		return false, err
 	}

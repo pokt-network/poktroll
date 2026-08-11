@@ -64,6 +64,24 @@ func NewTestServiceQueryClient(
 		}).
 		AnyTimes()
 
+	// Returns the registered service's relay mining difficulty for any height, mirroring
+	// the on-chain at-height lookup. Difficulty is static in these tests, so every height
+	// resolves to the same value.
+	serviceQuerier.EXPECT().GetServiceRelayDifficultyAtHeight(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			serviceId string,
+			_ int64,
+		) (servicetypes.RelayMiningDifficulty, error) {
+			relayDifficulty, ok := relayDifficultyTargets[serviceId]
+			if !ok {
+				return servicetypes.RelayMiningDifficulty{}, servicetypes.ErrServiceMissingRelayMiningDifficulty.Wrapf("retrieving the relay mining difficulty for service %s", serviceId)
+			}
+
+			return *relayDifficulty, nil
+		}).
+		AnyTimes()
+
 	// Returns the registered service's cupr for any height, mirroring the on-chain
 	// at-height lookup (which falls back to the current cupr when no change history
 	// exists — the common case in these tests, where cupr is static).

@@ -520,7 +520,12 @@ func (rs *relayerSessionsManager) getClaimRewardCoin(
 	// Create a claim object to calculate the claim reward.
 	claim := claimFromSessionTree(sessionTree)
 
-	relayMiningDifficulty, err := rs.serviceQueryClient.GetServiceRelayDifficulty(ctx, serviceId)
+	// Difficulty resolves at the session START height, matching the pricing params below
+	// and every onchain consumer. claimeduPOKT is a product of both, so leaving difficulty
+	// live would make this reward estimate drift from the amount the chain settles.
+	relayMiningDifficulty, err := rs.serviceQueryClient.GetServiceRelayDifficultyAtHeight(
+		ctx, serviceId, sessionHeader.GetSessionStartBlockHeight(),
+	)
 	if err != nil {
 		return sdktypes.Coin{}, err
 	}

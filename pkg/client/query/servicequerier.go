@@ -217,6 +217,72 @@ func (servq *serviceQuerier) GetServiceComputeUnitsPerRelayAtHeight(
 	return res.ComputeUnitsPerRelay, nil
 }
 
+// GetServiceRelayDifficultyAtHeight queries the onchain relay mining difficulty that was
+// effective for a service at the given block height.
+//
+// The RelayMiner calls this with a session's START height because every onchain consumer
+// resolves difficulty the same way — claim creation, proof submission,
+// ProofRequirementForClaim, and settlement all use
+// GetRelayMiningDifficultyAtHeight(sessionStartHeight). Since
+//
+//	claimeduPOKT = numEstimatedComputeUnits(difficulty) * CUTTM / granularity
+//
+// pinning only CUTTM would leave the other factor of the same product unpinned: the miner
+// would compare a differently-derived claimeduPOKT against proof_requirement_threshold
+// than the chain does, and could skip a proof the chain requires — PROOF_MISSING, and the
+// supplier is slashed.
+//
+// Difficulty at a past height never changes, so the result is cached permanently under a
+// "serviceId:height" key. That key shape cannot collide with the plain serviceId keys used
+// by GetServiceRelayDifficulty.
+func (servq *serviceQuerier) GetServiceRelayDifficultyAtHeight(
+	ctx context.Context,
+	serviceId string,
+	blockHeight int64,
+) (servicetypes.RelayMiningDifficulty, error) {
+	logger := servq.logger.With("query_client", "service", "method", "GetServiceRelayDifficultyAtHeight")
+
+	cacheKey := fmt.Sprintf("%s:%d", serviceId, blockHeight)
+
+	// Check if the relay mining difficulty is present in the cache.
+	if relayMiningDifficulty, found := servq.relayMiningDifficultyCache.Get(cacheKey); found {
+		logger.Debug().Msgf("relay mining difficulty cache hit for key: %s", cacheKey)
+		return relayMiningDifficulty, nil
+	}
+
+	// Use mutex to prevent multiple concurrent cache updates.
+	servq.servicesMutex.Lock()
+	defer servq.servicesMutex.Unlock()
+
+	// Double-check cache after acquiring lock (standard double-checked locking pattern).
+	if relayMiningDifficulty, found := servq.relayMiningDifficultyCache.Get(cacheKey); found {
+		logger.Debug().Msgf("relay mining difficulty cache hit for key after lock: %s", cacheKey)
+		return relayMiningDifficulty, nil
+	}
+
+	logger.Debug().Msgf("relay mining difficulty cache miss for key: %s", cacheKey)
+
+	req := &servicetypes.QueryGetRelayMiningDifficultyAtHeightRequest{
+		ServiceId:   serviceId,
+		BlockHeight: blockHeight,
+	}
+	res, err := retry.Call(ctx, func() (*servicetypes.QueryGetRelayMiningDifficultyAtHeightResponse, error) {
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return servq.serviceQuerier.RelayMiningDifficultyAtHeight(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
+	if err != nil {
+		return servicetypes.RelayMiningDifficulty{}, ErrQueryRetrieveService.Wrapf(
+			"serviceId: %s; height: %d; error: [%v]",
+			serviceId, blockHeight, err,
+		)
+	}
+
+	// Cache the difficulty for future use (immutable for a past height).
+	servq.relayMiningDifficultyCache.Set(cacheKey, res.RelayMiningDifficulty)
+	return res.RelayMiningDifficulty, nil
+}
+
 // GetParams returns the service module parameters.
 func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Params, error) {
 	logger := servq.logger.With("query_client", "service", "method", "GetParams")

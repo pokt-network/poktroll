@@ -327,6 +327,13 @@ type ServiceQueryClient interface {
 	// weights match what claim validation checks — an in-flight session is never
 	// affected by a mid-session cupr change.
 	GetServiceComputeUnitsPerRelayAtHeight(ctx context.Context, serviceId string, blockHeight int64) (uint64, error)
+	// GetServiceRelayDifficultyAtHeight queries the chain for the relay mining difficulty
+	// that was effective for the service at the given block height. Callers deciding
+	// whether a proof is required MUST use this at the session START height: every onchain
+	// consumer resolves difficulty there, and claimeduPOKT is a product of difficulty AND
+	// the pricing params, so pinning only the latter still lets the miner and the chain
+	// disagree about whether a proof was required.
+	GetServiceRelayDifficultyAtHeight(ctx context.Context, serviceId string, blockHeight int64) (servicetypes.RelayMiningDifficulty, error)
 	// GetServiceRelayDifficulty queries the chain for the relay difficulty of the service provided
 	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
 	// GetParams queries the chain for the current proof module parameters.
