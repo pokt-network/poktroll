@@ -184,7 +184,7 @@ func TestNewTestMorseStateExport(t *testing.T) {
 				case testmigration.MorseSupplierActor:
 					expectedShannonTotalSupplierStake += testmigration.GenMorseSupplierStakeAmount(uint64(i))
 				default:
-					t.Fatalf("unknown morse account stake state: %q", morseAccountType)
+					t.Fatalf("unknown morse account stake state: %d", morseAccountType)
 				}
 			}
 

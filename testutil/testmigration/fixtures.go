@@ -173,7 +173,7 @@ func NewMorseStateExportAndAccountState(
 				GenMorseValidator(uint64(i)),
 			)
 		default:
-			panic(fmt.Sprintf("unknown morse account stake state %q", morseAccountType))
+			panic(fmt.Sprintf("unknown morse account stake state %d", morseAccountType))
 		}
 
 		// Add an account (regardless of whether it is staked or not).
@@ -321,7 +321,7 @@ func GenMorseClaimableAccount(
 	case MorseSupplierActor:
 		supplierStakeAmount = GenMorseSupplierStakeAmount(index)
 	default:
-		return nil, fmt.Errorf("unknown morse account stake state %q", morseAccountActorType)
+		return nil, fmt.Errorf("unknown morse account stake state %d", morseAccountActorType)
 	}
 
 	// All MorseClaimableAccount fixtures get an unstaked balance.

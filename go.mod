@@ -19,7 +19,7 @@ module github.com/pokt-network/poktroll
 //module github.com/pokt-network/pocket
 //replace github.com/pokt-network/poktroll => .
 
-go 1.25.8
+go 1.26.5
 
 // DEVELOPER_TIP: Uncomment to use local copies of various libraries
 // replace github.com/pokt-network/shannon-sdk => ../shannon-sdk
@@ -48,7 +48,7 @@ require (
 	github.com/jhump/protoreflect v1.17.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pokt-network/go-dleq v0.0.0-20250925202155-488f42ad642a
-	github.com/pokt-network/ring-go v0.1.1-0.20250925213458-782cc69bc1ec
+	github.com/pokt-network/ring-go v0.2.0
 	// TODO_TECHDEBT: Whenever we update a protobuf in the `pocket` repo, we need to:
 	// 1. Merge in the update PR (and it's generated outputs) into `pocket` main.
 	// 2. Update the `pocket` sha in the `shannon-sdk` to reflect the new dependency.
@@ -56,7 +56,7 @@ require (
 	// This is creating a circular dependency whereby exporting the protobufs into a separate
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20260526202458-211262afb9f7
+	github.com/pokt-network/shannon-sdk v0.0.0-20260812141256-a508808fbbe0
 	go.uber.org/mock v0.6.0
 	golang.org/x/term v0.45.0
 )
@@ -89,7 +89,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/hashicorp/go-metrics v0.5.4
 	github.com/pokt-network/smt v0.14.1
 	github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188
@@ -147,7 +147,7 @@ require (
 	connectrpc.com/otelconnect v0.8.0 // indirect
 	cosmossdk.io/collections v1.3.1 // indirect
 	cosmossdk.io/schema v1.1.0 // indirect
-	filippo.io/edwards25519 v1.1.1 // indirect
+	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/4meepo/tagalign v1.4.2 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
@@ -252,7 +252,7 @@ require (
 	github.com/daixiang0/gci v0.13.5 // indirect
 	github.com/danieljoos/wincred v1.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/denis-tingaikin/go-header v0.5.0 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/badger/v4 v4.2.0 // indirect
@@ -268,7 +268,7 @@ require (
 	github.com/emicklei/dot v1.6.2 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.37.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.3.3 // indirect
-	github.com/ethereum/go-ethereum v1.16.9 // indirect
+	github.com/ethereum/go-ethereum v1.17.4 // indirect
 	github.com/ettle/strcase v0.2.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect

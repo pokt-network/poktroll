@@ -61,7 +61,7 @@ func SafeReadBody(
 
 	if maxSize <= 0 {
 		return nil, nil, config.ErrRelayMinerConfigInvalidMaxBodySize.Wrapf(
-			"invalid max body size %q",
+			"invalid max body size %d",
 			maxSize,
 		)
 	}

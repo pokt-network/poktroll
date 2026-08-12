@@ -600,23 +600,54 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 	// with persisted but unclaimed/unproven ("late") sessions, where a "late" session is one
 	// which is unclaimed and whose earliest claim commit height has already elapsed.
 	if committedBlocksObs.GetReplayBufferSize() < int(minNumReplayBlocks) {
-		blockResult, err := rs.blockQueryClient.Block(ctx, &targetHeight)
-		if err != nil {
-			rs.logger.Error().Err(err).Msgf("❌️ Failed to query block at height %d. ❗Check node connectivity and sync status. ❗Session timing calculations may be affected.", targetHeight)
-			return nil
-		}
-
-		block := blocktypes.CometBlockResult(*blockResult)
-		return &block
+		return rs.queryBlockByHeight(ctx, targetHeight)
 	}
 
 	for block := range committedBlocksObserver.Ch() {
-		if block.Height() >= targetHeight {
+		if block.Height() == targetHeight {
 			return block
+		}
+
+		// Overshot the target: it was never delivered to this subscriber, because the
+		// replay buffer had already scrolled past it or this goroutine subscribed late.
+		//
+		// MUST NOT substitute the later block. Callers use the returned hash as the proof
+		// path seed (see waitForEarliestSubmitProofsHeightAndGenerateProofs), and the chain
+		// independently derives that seed from the block at
+		// earliestSupplierProofCommitHeight-1. Seeding from any other block yields a path
+		// the chain rejects: ErrProofInvalidProof -> the claim expires PROOF_INVALID ->
+		// the supplier is SLASHED and loses the whole session, with no diagnostic beyond
+		// an opaque path mismatch.
+		//
+		// Observed on LocalNet: a miner seeded from block 787 for a session whose real
+		// seed was 785, and the claim was slashed. The exposure is worst when
+		// proof_window_open_offset_blocks is small, since the seed block sits immediately
+		// at the window opening and leaves no slack to observe it.
+		if block.Height() > targetHeight {
+			rs.logger.Warn().Msgf(
+				"⚠️ Missed target block %d (observed %d); querying it directly. "+
+					"Substituting a later block would corrupt the proof path seed and get the supplier slashed.",
+				targetHeight, block.Height(),
+			)
+			return rs.queryBlockByHeight(ctx, targetHeight)
 		}
 	}
 
 	return nil
+}
+
+// queryBlockByHeight fetches an exact block by height over RPC, for when the committed
+// blocks observable cannot supply it. Returns nil (and logs) on failure, matching
+// waitForBlock's contract.
+func (rs *relayerSessionsManager) queryBlockByHeight(ctx context.Context, targetHeight int64) client.Block {
+	blockResult, err := rs.blockQueryClient.Block(ctx, &targetHeight)
+	if err != nil {
+		rs.logger.Error().Err(err).Msgf("❌️ Failed to query block at height %d. ❗Check node connectivity and sync status. ❗Session timing calculations may be affected.", targetHeight)
+		return nil
+	}
+
+	block := blocktypes.CometBlockResult(*blockResult)
+	return &block
 }
 
 // mapAddMinedRelayToSessionTree is intended to be used as a MapFn. It adds the relay

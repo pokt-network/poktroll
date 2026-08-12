@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Poktroll is a Cosmos SDK-based blockchain implementing Pocket Network's Shannon upgrade - a decentralized API layer for Web3. Built with Go 1.25.8, Cosmos SDK v0.53.7, and CometBFT consensus (via the `pokt-network/cometbft` fork, pinned by a `replace` directive in `go.mod` - upstream `cometbft/cometbft` is never used directly).
+Poktroll is a Cosmos SDK-based blockchain implementing Pocket Network's Shannon upgrade - a decentralized API layer for Web3. Built with Go 1.26.5, Cosmos SDK v0.53.7, and CometBFT consensus (via the `pokt-network/cometbft` fork, pinned by a `replace` directive in `go.mod` - upstream `cometbft/cometbft` is never used directly).
 
 The binary is `pocketd`.
 
