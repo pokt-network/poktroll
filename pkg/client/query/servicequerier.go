@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
@@ -38,6 +39,14 @@ type serviceQuerier struct {
 	computeUnitsPerRelayCache cache.KeyValueCache[uint64]
 	// servicesMutex to protect cache access patterns for services and relay mining difficulties
 	servicesMutex sync.Mutex
+
+	// cuprAtHeightUnsupported latches once the node has answered codes.Unimplemented for
+	// ComputeUnitsPerRelayAtHeight (i.e. it predates v0.1.35). Without the latch every
+	// relay pays a full failed gRPC round trip -- under servicesMutex -- plus a warning
+	// log, in exactly the configuration the fallback exists to keep usable.
+	cuprAtHeightUnsupported atomic.Bool
+	// cuprUnsupportedWarnOnce keeps the degrade notice to one line, not one per relay.
+	cuprUnsupportedWarnOnce sync.Once
 
 	// paramsCache caches serviceQueryClient.Params query requests
 	paramsCache client.ParamsCache[servicetypes.Params]
@@ -186,6 +195,54 @@ func (servq *serviceQuerier) GetServiceComputeUnitsPerRelayAtHeight(
 		return computeUnitsPerRelay, nil
 	}
 
+	// ComputeUnitsPerRelayAtHeight is NEW in v0.1.35, and a node still running v0.1.34
+	// answers codes.Unimplemented -- not a transient code, so retry.Call gives up on the
+	// first attempt. Once that has been observed, skip the doomed round trip entirely.
+	//
+	// This check MUST come before servicesMutex is taken: the live path calls GetService,
+	// which takes that SAME non-reentrant mutex.
+	if servq.cuprAtHeightUnsupported.Load() {
+		return servq.liveComputeUnitsPerRelay(ctx, serviceId)
+	}
+
+	cupr, unsupported, err := servq.queryComputeUnitsPerRelayAtHeight(ctx, serviceId, blockHeight, cacheKey, logger)
+	switch {
+	case unsupported:
+		// Degrade to the live cupr, which is exactly what this call site read before
+		// v0.1.35, so behaviour matches the old binary until the node catches up.
+		//
+		// Reached only AFTER queryComputeUnitsPerRelayAtHeight has returned and released
+		// servicesMutex. Calling GetService while still holding it deadlocks the goroutine
+		// against itself, and because the lock is held every other service, difficulty and
+		// cupr lookup blocks behind it forever -- a total hang of serving AND mining,
+		// strictly worse than the outage this fallback exists to prevent.
+		servq.cuprAtHeightUnsupported.Store(true)
+		servq.cuprUnsupportedWarnOnce.Do(func() {
+			logger.Warn().Msg(
+				"node does not implement ComputeUnitsPerRelayAtHeight (pre-v0.1.35); " +
+					"falling back to the LIVE compute units per relay. Session-start cupr " +
+					"pricing is INACTIVE until the full node is upgraded to v0.1.35.",
+			)
+		})
+		return servq.liveComputeUnitsPerRelay(ctx, serviceId)
+	case err != nil:
+		return 0, err
+	}
+
+	return cupr, nil
+}
+
+// queryComputeUnitsPerRelayAtHeight performs the cache-guarded at-height query.
+//
+// It reports unsupported=true rather than handling the pre-v0.1.35 fallback itself,
+// because that fallback needs GetService, which contends on the mutex held here.
+func (servq *serviceQuerier) queryComputeUnitsPerRelayAtHeight(
+	ctx context.Context,
+	serviceId string,
+	blockHeight int64,
+	cacheKey string,
+	logger polylog.Logger,
+) (cupr uint64, unsupported bool, err error) {
 	// Use mutex to prevent multiple concurrent cache updates.
 	servq.servicesMutex.Lock()
 	defer servq.servicesMutex.Unlock()
@@ -193,7 +250,7 @@ func (servq *serviceQuerier) GetServiceComputeUnitsPerRelayAtHeight(
 	// Double-check cache after acquiring lock (standard double-checked locking pattern).
 	if computeUnitsPerRelay, found := servq.computeUnitsPerRelayCache.Get(cacheKey); found {
 		logger.Debug().Msgf("compute units per relay cache hit for key after lock: %s", cacheKey)
-		return computeUnitsPerRelay, nil
+		return computeUnitsPerRelay, false, nil
 	}
 
 	logger.Debug().Msgf("compute units per relay cache miss for key: %s", cacheKey)
@@ -208,31 +265,11 @@ func (servq *serviceQuerier) GetServiceComputeUnitsPerRelayAtHeight(
 		return servq.serviceQuerier.ComputeUnitsPerRelayAtHeight(queryCtx, req)
 	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
-		// ComputeUnitsPerRelayAtHeight is NEW in v0.1.35. A full node still running
-		// v0.1.34 answers codes.Unimplemented, which is not a transient code and so is
-		// not retried. Without this fallback, a RelayMiner upgraded before its node --
-		// the normal cosmovisor ordering -- fails getServiceComputeUnitsPerRelay, which
-		// drops EVERY relay from the session tree: a total, silent mining outage.
-		//
-		// Degrade to the live cupr, which is exactly what this call site read before
-		// v0.1.35, so behaviour matches the old binary until the node catches up. The
-		// result is deliberately NOT cached: it is the live value, not the value at
-		// blockHeight, and must not be served once the node is upgraded.
 		if status.Code(err) == codes.Unimplemented {
-			logger.Warn().Msgf(
-				"node does not implement ComputeUnitsPerRelayAtHeight (pre-v0.1.35); "+
-					"falling back to the LIVE compute units per relay for service %s. "+
-					"Upgrade the full node to v0.1.35 to restore session-start pricing.",
-				serviceId,
-			)
-			service, serviceErr := servq.GetService(ctx, serviceId)
-			if serviceErr != nil {
-				return 0, serviceErr
-			}
-			return service.ComputeUnitsPerRelay, nil
+			return 0, true, nil
 		}
 
-		return 0, ErrQueryRetrieveService.Wrapf(
+		return 0, false, ErrQueryRetrieveService.Wrapf(
 			"serviceId: %s; height: %d; error: [%v]",
 			serviceId, blockHeight, err,
 		)
@@ -240,7 +277,18 @@ func (servq *serviceQuerier) GetServiceComputeUnitsPerRelayAtHeight(
 
 	// Cache the cupr for future use (immutable for a past height).
 	servq.computeUnitsPerRelayCache.Set(cacheKey, res.ComputeUnitsPerRelay)
-	return res.ComputeUnitsPerRelay, nil
+	return res.ComputeUnitsPerRelay, false, nil
+}
+
+// liveComputeUnitsPerRelay reads the service's CURRENT compute units per relay.
+//
+// MUST NOT be called while holding servicesMutex -- GetService takes it.
+func (servq *serviceQuerier) liveComputeUnitsPerRelay(ctx context.Context, serviceId string) (uint64, error) {
+	service, err := servq.GetService(ctx, serviceId)
+	if err != nil {
+		return 0, err
+	}
+	return service.ComputeUnitsPerRelay, nil
 }
 
 // GetServiceRelayDifficultyAtHeight queries the onchain relay mining difficulty that was
