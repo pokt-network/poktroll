@@ -3,12 +3,15 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"slices"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/app/pocket"
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
@@ -63,6 +66,35 @@ type appSessionKey struct {
 	sessionId  string
 }
 
+// sessionBudget holds the precomputed budget allocation for a single (application,
+// session) group, used to demote the per-supplier head-split from a hard ceiling to a
+// guaranteed floor (settlement budget redistribution).
+//
+// All amounts are in "stake terms" — the settlement amount plus its per-claim global
+// inflation reimbursement — matching the units ensureClaimAmountLimits compares against
+// the application's stake. Populated in Phase 1.5 of SettlePendingClaims, consumed in
+// Phase 2.
+type sessionBudget struct {
+	// numSuppliers is the actual number of suppliers that submitted a claim for this
+	// (app, session) pair (== the value GetActualSupplierCount returns).
+	numSuppliers int64
+	// floor is the guaranteed per-supplier minimum settlement (B / numSuppliers), where
+	// B is the application's per-session budget (appStake / numPendingSessions, optionally
+	// clamped by per_session_spend_limit). Serving at or below the floor is always paid in
+	// full.
+	floor math.Int
+	// unused is the budget left on the table by suppliers that claimed below their floor:
+	// Σ max(0, floor − claimStake_i). This is what gets redistributed to overservicers.
+	unused math.Int
+	// totalExcess is the total demand above the floor: Σ max(0, claimStake_i − floor).
+	// Used as the denominator when apportioning `unused` in proportion to each
+	// overservicer's excess.
+	totalExcess math.Int
+	// spendLimitExceeded records whether the application's per_session_spend_limit (rather
+	// than its stake) bound B, so Phase 2 can set the flag on EventApplicationOverserviced.
+	spendLimitExceeded bool
+}
+
 // settlementContext maintains a cache of all entities involved in the claim settlement process.
 // This structure optimizes claim processing performance by eliminating redundant KV store operations.
 type settlementContext struct {
@@ -92,9 +124,41 @@ type settlementContext struct {
 	serviceMap               map[string]*sharedtypes.Service
 	relayMiningDifficultyMap map[string]servicetypes.RelayMiningDifficulty
 
+	// Cache of the compute_units_per_relay that was effective at each session-start
+	// height, keyed by "serviceId@sessionStartHeight" (same composite key as
+	// relayMiningDifficultyMap). Pinning cupr to session-start — rather than reading the
+	// live service cupr — prevents a mid-session cupr change from discarding in-flight
+	// claims at settlement (the settlement-side counterpart to the session-start pin
+	// applied at claim creation).
+	computeUnitsPerRelayMap map[string]uint64
+
 	// Cache of parameters used during the settlement process to prevent repeated KV store lookups.
+	//
+	// DEV_NOTE: sharedParams is the LIVE params snapshot. It is correct for computing
+	// FUTURE heights from the CURRENT block (supplier unbonding, application unbonding),
+	// which must use the session grid in effect now. It is NOT correct for pricing a
+	// claim — use GetSharedParamsAtHeight for that. See that method's godoc.
 	sharedParams     sharedtypes.Params
 	tokenomicsParams tokenomicstypes.Params
+
+	// sharedParamsAtHeightMap caches the shared params epoch that was effective at each
+	// height read during settlement, keyed by that height. Claims sharing a height (the
+	// common case — a settlement block drains many claims from the same session) resolve
+	// to a single params-history lookup.
+	//
+	// Populated lazily by GetSharedParamsAtHeight.
+	sharedParamsAtHeightMap map[int64]sharedtypes.Params
+
+	// globalInflationPerClaimRat memoizes tokenomicsParams.GlobalInflationPerClaim as a
+	// big.Rat. The conversion (strconv.FormatFloat + big.Rat.SetString) is identical for
+	// every claim in a block, but was previously redone up to 4x per claim (once in Phase
+	// 1.5, plus once in claimStakeTermsAmount and twice in supplierAppStakeToMaxSettlementAmount
+	// during Phase 2) — tens of thousands of redundant conversions per mainnet settlement
+	// block. Populated lazily by getGlobalInflationPerClaimRat.
+	//
+	// READ-ONLY once set: it is handed to callers by pointer, and every consumer builds
+	// results with new(big.Rat), so it is never mutated in place.
+	globalInflationPerClaimRat *big.Rat
 
 	// validatorRewardAccumulator collects per-TLM proposer amounts across all claims
 	// during a settlement batch. Keyed by SettlementOpReason. After all claims are
@@ -107,6 +171,13 @@ type settlementContext struct {
 	// consumed during settlement to replace the NumSuppliersPerSession governance param
 	// with the actual number of claimants, ensuring fair budget distribution.
 	supplierCountPerAppSession map[appSessionKey]int64
+
+	// budgetPerAppSession holds the precomputed per-(application, session) budget
+	// allocation (floor + redistributable unused budget). Populated in Phase 1.5 of
+	// SettlePendingClaims and consumed in Phase 2 by ensureClaimAmountLimits. Lookup-only
+	// from the consensus path — NEVER range over this map to produce output or state
+	// (map iteration order is non-deterministic).
+	budgetPerAppSession map[appSessionKey]*sessionBudget
 }
 
 // NewSettlementContext creates a new settlement context with all necessary caches initialized.
@@ -139,9 +210,15 @@ func NewSettlementContext(
 
 		serviceMap:               make(map[string]*sharedtypes.Service, estimatedServices),
 		relayMiningDifficultyMap: make(map[string]servicetypes.RelayMiningDifficulty, estimatedServices),
+		computeUnitsPerRelayMap:  make(map[string]uint64, estimatedServices),
 
 		sharedParams:     tokenomicsKeeper.sharedKeeper.GetParams(ctx),
 		tokenomicsParams: tokenomicsKeeper.GetParams(ctx),
+
+		// Capacity estimate: one session's start + end height per settlement block in
+		// steady state (claims settle in session-aligned batches); more only while a
+		// window-offset change has claims from several epochs expiring together.
+		sharedParamsAtHeightMap: make(map[int64]sharedtypes.Params, 2),
 
 		// Initialize the validator reward accumulator with capacity for the 2 known TLM op reasons
 		// (TLM_RELAY_BURN_EQUALS_MINT and TLM_GLOBAL_MINT).
@@ -150,6 +227,10 @@ func NewSettlementContext(
 		// Initialize the supplier count map. Estimated capacity: each app typically has
 		// 1 session being settled per block, but may have more with multiple services.
 		supplierCountPerAppSession: make(map[appSessionKey]int64, estimatedApplications),
+
+		// Initialize the per-(app, session) budget map with the same capacity estimate:
+		// one settling session per application per settlement block.
+		budgetPerAppSession: make(map[appSessionKey]*sessionBudget, estimatedApplications),
 	}
 }
 
@@ -231,6 +312,88 @@ func (sctx *settlementContext) GetRelayMiningDifficulty(serviceId string, sessio
 	return servicetypes.RelayMiningDifficulty{}, tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf(
 		"relay mining difficulty for service with ID %q at session start height %d not found", serviceId, sessionStartHeight,
 	)
+}
+
+// GetServiceComputeUnitsPerRelay retrieves the cached compute_units_per_relay that was
+// effective at the given session start height for a specific service. This is the
+// session-start-pinned cupr used to validate claims at settlement, mirroring
+// GetRelayMiningDifficulty.
+func (sctx *settlementContext) GetServiceComputeUnitsPerRelay(serviceId string, sessionStartHeight int64) (uint64, error) {
+	// Generate cache key that includes session height
+	cacheKey := fmt.Sprintf("%s@%d", serviceId, sessionStartHeight)
+
+	if computeUnitsPerRelay, ok := sctx.computeUnitsPerRelayMap[cacheKey]; ok {
+		return computeUnitsPerRelay, nil
+	}
+
+	sctx.logger.Error(fmt.Sprintf("compute units per relay for service with ID %q at session start height %d not found", serviceId, sessionStartHeight))
+	return 0, tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf(
+		"compute units per relay for service with ID %q at session start height %d not found", serviceId, sessionStartHeight,
+	)
+}
+
+// GetSharedParamsAtHeight returns the shared params epoch that was effective at the given
+// height, memoized per height for the life of this settlement context.
+//
+// Use this — NOT GetSharedParams — for anything that must agree with the epoch a claim was
+// created under. Which height to pass depends on the quantity:
+//
+//   - PRICING (compute_units_to_tokens_multiplier, compute_unit_cost_granularity) →
+//     the claim's SESSION START height. x/proof resolves the pricing pair at session start
+//     in all three of its consumers: claim creation (msg_server_create_claim.go), proof
+//     validation and ProofRequirementForClaim (msg_server_submit_proof.go). Settlement
+//     previously read them LIVE, so a governance CUTTM change landing between a session's
+//     start and its settlement paid at a rate the claim was never priced or proof-gated
+//     under. That divergence was observable inside a single function: settleClaim computed
+//     claimeduPOKT from live params and then called ProofRequirementForClaim, which
+//     re-derived it at session start — two rates, one claim. Session start (not end) is
+//     what makes settlement agree with x/proof; any other height merely relocates the
+//     divergence.
+//   - BUDGET DIVISOR (num_pending_sessions, from num_blocks_per_session and the window
+//     offsets) → the claim's SESSION END height, matching x/proof's window validation
+//     (#543, F2). See getOrInitSessionBudget.
+//
+// The height is NOT validated against either convention — it cannot be, since a session
+// start and a session end are both just heights. The call site is responsible for passing
+// the right one and for saying which it means.
+//
+// Anything projecting a FUTURE height from the CURRENT block (supplier/application
+// unbonding, session end height) must keep using GetSharedParams instead: those need the
+// grid in effect now, not the one the claim was created under.
+//
+// DEV_NOTE: the memo map is per-settlement-context, i.e. block-scoped. It MUST NOT be
+// hoisted onto the Keeper — a cache that outlives the block diverges across nodes and
+// causes an AppHash mismatch.
+func (sctx *settlementContext) GetSharedParamsAtHeight(
+	ctx context.Context,
+	height int64,
+) sharedtypes.Params {
+	if params, ok := sctx.sharedParamsAtHeightMap[height]; ok {
+		return params
+	}
+
+	params := sctx.keeper.sharedKeeper.GetParamsAtHeight(ctx, height)
+	sctx.sharedParamsAtHeightMap[height] = params
+
+	return params
+}
+
+// getGlobalInflationPerClaimRat returns the settlement block's global_inflation_per_claim
+// as a big.Rat, performing the float64->Rat conversion at most once per settlement block.
+//
+// The returned pointer is shared by every caller and MUST NOT be mutated.
+func (sctx *settlementContext) getGlobalInflationPerClaimRat() (*big.Rat, error) {
+	if sctx.globalInflationPerClaimRat != nil {
+		return sctx.globalInflationPerClaimRat, nil
+	}
+
+	globalInflationPerClaimRat, err := encoding.Float64ToRat(sctx.tokenomicsParams.GlobalInflationPerClaim)
+	if err != nil {
+		return nil, err
+	}
+	sctx.globalInflationPerClaimRat = globalInflationPerClaimRat
+
+	return globalInflationPerClaimRat, nil
 }
 
 // GetService retrieves a cached service by its ID.
@@ -426,6 +589,174 @@ func (sctx *settlementContext) GetActualSupplierCount(appAddress, sessionId stri
 	return count
 }
 
+// AccumulateClaimBudget performs the Phase 1.5 budget accounting for a single claim: it
+// derives the claim's stake-terms amount (settlement amount + per-claim global inflation)
+// and folds it into its (application, session) group's floor/unused/excess totals.
+//
+// The claim's caches (service, difficulty, application) MUST already be warm — call
+// ClaimCacheWarmUp first. Returns an error if the claim cannot be priced or the group's
+// budget cannot be initialized; the caller treats such claims exactly as before (left for
+// Phase 2 to discard) so they contribute nothing to the budget math.
+func (sctx *settlementContext) AccumulateClaimBudget(ctx context.Context, claim *prooftypes.Claim) error {
+	sessionHeader := claim.GetSessionHeader()
+	if sessionHeader == nil {
+		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
+	}
+
+	// Only claims that will actually SETTLE may shape the budget.
+	//
+	// A claim that Phase 2 expires pays nothing, yet if counted here it still lands in
+	// `totalExcess`, the denominator of every overservicer's bonus
+	// (bonus_i = unused * excess_i / totalExcess). That is a griefing vector once
+	// governance raises overservicing_bonus_multiplier above 1: a supplier in the session
+	// submits a deliberately enormous claim and never proves it, its excess dominates the
+	// denominator, and every honest overservicer's bonus floor-divides to ~0 -- the whole
+	// unused budget goes unpaid for that (application, session) group. The attacker pays
+	// one proof_missing_penalty no matter how much it denied. Solvency was never at risk
+	// (this errs conservative), but the denial is real and it is inert ONLY at m == 1.
+	//
+	// Excluded from BOTH sides of the accounting, deliberately. Crediting an expiring
+	// supplier's whole floor to `unused` is also defensible -- it consumes none of its
+	// budget -- but that INCREASES payouts relative to today, which is an economic policy
+	// decision rather than a bug fix. Excluding outright stays conservative:
+	//   sum(under) + |over|*floor + sum(bonus) <= (|under| + |over|)*floor <= N*floor = B
+	// so the application's stake still cannot be overdrawn.
+	//
+	// N (the divisor behind `floor`) deliberately still counts every claim, matching the
+	// pre-change supplier count.
+	//
+	// This lives HERE rather than in the Phase 1.5 loop so that every caller is covered:
+	// the accumulator is the single place the budget is shaped, and a caller that skipped
+	// the check would silently reintroduce the vector.
+	willSettle, err := sctx.keeper.claimWillSettle(ctx, claim)
+	if err != nil {
+		return err
+	}
+	if !willSettle {
+		return nil
+	}
+
+	relayMiningDifficulty, err := sctx.GetRelayMiningDifficulty(
+		sessionHeader.GetServiceId(),
+		sessionHeader.GetSessionStartBlockHeight(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Price the claim under the shared params epoch effective at its own session start,
+	// matching x/proof and Phase 2 (see GetSharedParamsAtHeight). Reading live params
+	// here would size the budget off a different CUTTM than the payout uses.
+	pricingParams := sctx.GetSharedParamsAtHeight(ctx, sessionHeader.GetSessionStartBlockHeight())
+
+	claimSettlementCoin, err := claim.GetClaimeduPOKT(pricingParams, relayMiningDifficulty)
+	if err != nil {
+		return err
+	}
+
+	globalInflationPerClaimRat, err := sctx.getGlobalInflationPerClaimRat()
+	if err != nil {
+		return err
+	}
+	claimStakeAmt := claimStakeTermsAmount(claimSettlementCoin, globalInflationPerClaimRat)
+
+	sb, err := sctx.getOrInitSessionBudget(
+		ctx,
+		sessionHeader.GetApplicationAddress(),
+		sessionHeader.GetSessionId(),
+		sessionHeader.GetSessionEndBlockHeight(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Commutative integer accumulation — order-independent, hence consensus-safe.
+	if claimStakeAmt.LT(sb.floor) {
+		sb.unused = sb.unused.Add(sb.floor.Sub(claimStakeAmt))
+	} else {
+		sb.totalExcess = sb.totalExcess.Add(claimStakeAmt.Sub(sb.floor))
+	}
+
+	return nil
+}
+
+// getOrInitSessionBudget lazily computes and caches the budget allocation for an
+// (application, session) group. The floor (B / N) is a pure function of the application's
+// initial stake, the per-session concurrency (numPendingSessions at the claim's session-end
+// params epoch), the actual number of claiming suppliers, and the application's optional
+// per-session spend limit — none of which depend on the individual claim — so it is
+// computed once per group and reused.
+//
+// This mirrors the legacy floor computation in ensureClaimAmountLimits exactly, so that
+// overservicing_bonus_multiplier == 1 reproduces the pre-change settlement byte-for-byte.
+func (sctx *settlementContext) getOrInitSessionBudget(
+	ctx context.Context,
+	appAddress, sessionId string,
+	sessionEndBlockHeight int64,
+) (*sessionBudget, error) {
+	key := appSessionKey{appAddress: appAddress, sessionId: sessionId}
+	if sb, ok := sctx.budgetPerAppSession[key]; ok {
+		return sb, nil
+	}
+
+	appStake, err := sctx.GetApplicationInitialStake(appAddress)
+	if err != nil {
+		return nil, err
+	}
+	application, err := sctx.GetApplication(appAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	numSuppliers := sctx.GetActualSupplierCount(appAddress, sessionId)
+
+	// numPendingSessions is read at the params epoch effective for the claim's own session
+	// end height (not live): a num_blocks_per_session change between a session and its
+	// settlement otherwise re-divides the app stake by a different concurrency (#543, F2).
+	// Memoized per height, so groups sharing a session end height share one lookup.
+	budgetParams := sctx.GetSharedParamsAtHeight(ctx, sessionEndBlockHeight)
+	numPendingSessions := sharedtypes.GetNumPendingSessions(&budgetParams)
+
+	// floor = appStake / numPendingSessions / numSuppliers.
+	// Divide sessions first, then suppliers — matches the legacy integer-truncation order.
+	floor := appStake.Amount.
+		Quo(math.NewInt(numPendingSessions)).
+		Quo(math.NewInt(numSuppliers))
+
+	// Apply the application's per-session spend limit, if set: it caps the per-session
+	// budget B (= appStake/numPendingSessions), which is then divided among suppliers.
+	spendLimitExceeded := false
+	if application.PerSessionSpendLimit != nil &&
+		application.PerSessionSpendLimit.Amount.GT(math.ZeroInt()) {
+		if application.PerSessionSpendLimit.Denom != pocket.DenomuPOKT {
+			return nil, tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf(
+				"application %s has per_session_spend_limit with invalid denom %q (expected %q)",
+				appAddress, application.PerSessionSpendLimit.Denom, pocket.DenomuPOKT,
+			)
+		}
+		perSessionBudget := application.PerSessionSpendLimit.Amount
+		stakePerSession := appStake.Amount.Quo(math.NewInt(numPendingSessions))
+		if perSessionBudget.GT(stakePerSession) {
+			perSessionBudget = stakePerSession
+		}
+		spendLimitFloor := perSessionBudget.Quo(math.NewInt(numSuppliers))
+		if spendLimitFloor.LT(floor) {
+			floor = spendLimitFloor
+			spendLimitExceeded = true
+		}
+	}
+
+	sb := &sessionBudget{
+		numSuppliers:       numSuppliers,
+		floor:              floor,
+		unused:             math.ZeroInt(),
+		totalExcess:        math.ZeroInt(),
+		spendLimitExceeded: spendLimitExceeded,
+	}
+	sctx.budgetPerAppSession[key] = sb
+	return sb, nil
+}
+
 // cacheServiceAndDifficulty ensures the service and its relay mining difficulty are cached in the settlement context.
 //
 // This prevents repeated KV store lookups across multiple claims targeting the same service at the same session height.
@@ -434,7 +765,10 @@ func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, se
 	cacheKey := fmt.Sprintf("%s@%d", serviceId, sessionStartHeight)
 
 	if _, ok := sctx.relayMiningDifficultyMap[cacheKey]; ok {
-		// Difficulty for this service/session combination is already cached
+		// Difficulty for this service/session combination is already cached.
+		// The difficulty and compute-units-per-relay maps are written together at the
+		// very end of this function, after every fallible step, so difficulty presence
+		// implies cupr presence — GetServiceComputeUnitsPerRelay relies on this.
 		return nil
 	}
 
@@ -460,8 +794,44 @@ func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, se
 			targetNumRelays,
 		)
 	}
-	// Store with composite key (serviceId + session height)
+	// Retrieve the compute_units_per_relay that was effective at the session start
+	// height. This mirrors the difficulty lookup above so that settlement validates
+	// claims against the cupr that was live when the session started — not the current
+	// (possibly changed) service cupr. `found` is false only if the service does not
+	// exist, which is already guarded above; the explicit check keeps that invariant
+	// local so a future refactor cannot silently cache cupr=0 (which would fail the
+	// numRelays*cupr equality check and discard the claim — the exact forfeit this
+	// session-start pin exists to prevent).
+	//
+	// DEV_NOTE: resolved BEFORE the difficulty is cached so that the two maps are only
+	// ever written together. The early return at the top of this function keys off the
+	// difficulty map alone, so writing difficulty first and then failing here would leave
+	// the caches inconsistent AND make the next (idempotent) warm-up return nil with cupr
+	// still missing — surfacing later as an opaque settlement error.
+	computeUnitsPerRelay, found := sctx.keeper.serviceKeeper.GetServiceComputeUnitsPerRelayAtHeight(ctx, serviceId, sessionStartHeight)
+	if !found {
+		sctx.logger.Warn(fmt.Sprintf("compute units per relay for service with ID %q not found", serviceId))
+		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("compute units per relay for service with ID %q not found", serviceId)
+	}
+
+	// A cupr of 0 can never be legitimate: MsgAddService validation requires >= 1, so a
+	// zero here means a corrupt or orphaned history entry (MustUnmarshal on a nil/!ok
+	// value yields a zero-valued struct rather than panicking with gogoproto). Caching it
+	// would fail the numRelays*cupr equality check and silently discard every claim for
+	// the service. Fail loudly instead.
+	if computeUnitsPerRelay == 0 {
+		sctx.logger.Error(fmt.Sprintf("compute units per relay for service with ID %q at session start height %d is zero", serviceId, sessionStartHeight))
+		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf(
+			"compute units per relay for service with ID %q at session start height %d is zero (corrupt history entry)",
+			serviceId, sessionStartHeight,
+		)
+	}
+
+	// Store both with the composite key (serviceId + session height). Written together,
+	// with no early return in between, so difficulty presence implies cupr presence —
+	// which is what GetServiceComputeUnitsPerRelay and the early return above rely on.
 	sctx.relayMiningDifficultyMap[cacheKey] = relayMiningDifficulty
+	sctx.computeUnitsPerRelayMap[cacheKey] = computeUnitsPerRelay
 
 	return nil
 }

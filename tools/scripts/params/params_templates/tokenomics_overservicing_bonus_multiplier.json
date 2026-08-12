@@ -1,0 +1,12 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.tokenomics.MsgUpdateParam",
+        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "name": "overservicing_bonus_multiplier",
+        "as_uint64": "1"
+      }
+    ]
+  }
+}

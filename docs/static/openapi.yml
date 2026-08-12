@@ -195,6 +195,37 @@ paths:
           description: An unexpected error response.
           schema:
             $ref: '#/definitions/google.rpc.Status'
+  /pocket.gateway.Msg/UpdateGatewayMetadata:
+    post:
+      tags:
+        - Msg
+      summary: UpdateGatewayMetadata sets a gateway's card WITHOUT touching its stake.
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateGatewayMetadata
+      parameters:
+        - description: |-
+            MsgUpdateGatewayMetadata sets a staked gateway's card.
+
+            Deliberately separate from MsgStakeGateway, which enforces a strictly-positive stake
+            delta on every call -- folding metadata into it would mean escrowing real POKT to fix
+            a typo. A freshly staked gateway starts with no card and becomes descriptor-complete
+            via a follow-up call.
+
+            Full replace: the supplied metadata replaces whatever is stored. Omitting it (nil)
+            leaves the stored card untouched, matching MsgAddService's behaviour for services.
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/pocket.gateway.MsgUpdateGatewayMetadata'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/pocket.gateway.MsgUpdateGatewayMetadataResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
   /pocket.gateway.Msg/UpdateParam:
     post:
       tags:
@@ -236,6 +267,41 @@ paths:
           description: A successful response.
           schema:
             $ref: '#/definitions/pocket.gateway.MsgUpdateParamsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /pocket.migration.Msg/AdminRecoverMorseAccount:
+    post:
+      tags:
+        - Msg
+      operationId: GithubCompoktNetworkpoktrollMsg_AdminRecoverMorseAccount
+      parameters:
+        - description: |-
+            MsgAdminRecoverMorseAccount allows the authority to recover Morse accounts
+            WITHOUT checking the allowlist. This enables faster recovery for legitimate
+            requests that have been validated off-chain.
+
+            SECURITY: This message can ONLY be called by the module authority.
+            SAFETY: Still checks that the account exists and hasn't been claimed already.
+            USE CASE: When the allowlist is outdated and the upgrade cycle is too slow.
+
+            Key differences from MsgRecoverMorseAccount:
+            - SKIPS allowlist validation (IsMorseAddressRecoverable check)
+            - KEEPS all other safety checks (exists, not claimed, authority)
+            - Emits a distinct event for audit trail
+
+            Next free index: 4
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/pocket.migration.MsgAdminRecoverMorseAccount'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/pocket.migration.MsgAdminRecoverMorseAccountResponse'
         default:
           description: An unexpected error response.
           schema:
@@ -517,11 +583,34 @@ paths:
           description: An unexpected error response.
           schema:
             $ref: '#/definitions/google.rpc.Status'
+  /pocket.service.Msg/TransferService:
+    post:
+      tags:
+        - Msg
+      operationId: GithubCompoktNetworkpoktrollMsg_TransferService
+      parameters:
+        - description: |-
+            MsgTransferService transfers ownership of a service to a new address.
+            Only the current owner can initiate the transfer.
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/pocket.service.MsgTransferService'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/pocket.service.MsgTransferServiceResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
   /pocket.service.Msg/UpdateParam:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin31
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin32
       parameters:
         - description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
           name: body
@@ -545,7 +634,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin31
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin32
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -566,7 +655,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin35
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin36
       parameters:
         - name: body
           in: body
@@ -589,7 +678,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin35
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin36
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -610,7 +699,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin42
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin43
       parameters:
         - description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
           name: body
@@ -634,7 +723,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin42
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin43
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -695,7 +784,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin47
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin48
       parameters:
         - description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
           name: body
@@ -719,7 +808,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin47
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin48
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -740,7 +829,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin52
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin53
       parameters:
         - description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
           name: body
@@ -764,7 +853,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin52
+      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin53
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
           name: body
@@ -913,6 +1002,18 @@ paths:
           description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
+        - type: boolean
+          description: |-
+            If true, strip Gateway.metadata (the card) from every entry in the response.
+            Defaults to false, i.e. cards ARE included -- proto3 bools cannot default to true.
+
+            Enumerating gateways is where an included card hurts most: a card can be up to
+            MaxServiceMetadataSizeBytes (256 KiB), so a default page of 100 carried cards would be
+            ~25 MB and blow the 4 MB default gRPC message limit. Use this flag (or `pocketd query
+            gateway list-gateway --dehydrated`, which sets it) for bulk enumeration, and read an
+            individual card with `pocketd query gateway card <address>`.
+          name: dehydrated
+          in: query
       responses:
         "200":
           description: A successful response.
@@ -933,6 +1034,13 @@ paths:
           name: address
           in: path
           required: true
+        - type: boolean
+          description: |-
+            If true, strip Gateway.metadata (the card) from the response to reduce payload size.
+            Defaults to false, i.e. the card IS included -- proto3 bools cannot default to true.
+            Mirrors the same flag on the service queries.
+          name: dehydrated
+          in: query
       responses:
         "200":
           description: A successful response.
@@ -1225,12 +1333,95 @@ paths:
           description: An unexpected error response.
           schema:
             $ref: '#/definitions/google.rpc.Status'
+  /pokt-network/poktroll/service/compute_units_per_relay/{serviceId}/at_height/{blockHeight}:
+    get:
+      tags:
+        - Query
+      summary: |-
+        Queries the compute_units_per_relay (cupr) that was effective at a specific
+        block height for a service. Used by the RelayMiner to stamp the session-start
+        cupr and by claim validation to verify against that same value.
+      operationId: GithubCompoktNetworkpoktrollQuery_ComputeUnitsPerRelayAtHeight
+      parameters:
+        - type: string
+          name: serviceId
+          in: path
+          required: true
+        - type: string
+          format: int64
+          name: blockHeight
+          in: path
+          required: true
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/pocket.service.QueryComputeUnitsPerRelayAtHeightResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /pokt-network/poktroll/service/compute_units_per_relay/{serviceId}/history:
+    get:
+      tags:
+        - Query
+      summary: Queries the history of compute_units_per_relay changes for a service.
+      operationId: GithubCompoktNetworkpoktrollQuery_ComputeUnitsPerRelayHistory
+      parameters:
+        - type: string
+          name: serviceId
+          in: path
+          required: true
+        - type: string
+          format: byte
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          name: pagination.key
+          in: query
+        - type: string
+          format: uint64
+          description: |-
+            offset is a numeric offset that can be used when key is unavailable.
+            It is less efficient than using key. Only one of offset or key should
+            be set.
+          name: pagination.offset
+          in: query
+        - type: string
+          format: uint64
+          description: |-
+            limit is the total number of results to be returned in the result page.
+            If left empty it will default to a value to be set by each app.
+          name: pagination.limit
+          in: query
+        - type: boolean
+          description: |-
+            count_total is set to true  to indicate that the result set should include
+            a count of the total number of items available for pagination in UIs.
+            count_total is only respected when offset is used. It is ignored when key
+            is set.
+          name: pagination.count_total
+          in: query
+        - type: boolean
+          description: reverse is set to true if results are to be returned in the descending order.
+          name: pagination.reverse
+          in: query
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/pocket.service.QueryComputeUnitsPerRelayHistoryResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
   /pokt-network/poktroll/service/params:
     get:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin28
+      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin29
       responses:
         "200":
           description: A successful response.
@@ -1310,6 +1501,86 @@ paths:
           description: An unexpected error response.
           schema:
             $ref: '#/definitions/google.rpc.Status'
+  /pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}/at_height/{blockHeight}:
+    get:
+      tags:
+        - Query
+      summary: Queries the relay mining difficulty that was effective at a specific block height for a service.
+      operationId: GithubCompoktNetworkpoktrollQuery_RelayMiningDifficultyAtHeight
+      parameters:
+        - type: string
+          name: serviceId
+          in: path
+          required: true
+        - type: string
+          format: int64
+          name: blockHeight
+          in: path
+          required: true
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/pocket.service.QueryGetRelayMiningDifficultyAtHeightResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}/history:
+    get:
+      tags:
+        - Query
+      summary: Queries the history of relay mining difficulty changes for a service.
+      operationId: GithubCompoktNetworkpoktrollQuery_RelayMiningDifficultyHistory
+      parameters:
+        - type: string
+          name: serviceId
+          in: path
+          required: true
+        - type: string
+          format: byte
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          name: pagination.key
+          in: query
+        - type: string
+          format: uint64
+          description: |-
+            offset is a numeric offset that can be used when key is unavailable.
+            It is less efficient than using key. Only one of offset or key should
+            be set.
+          name: pagination.offset
+          in: query
+        - type: string
+          format: uint64
+          description: |-
+            limit is the total number of results to be returned in the result page.
+            If left empty it will default to a value to be set by each app.
+          name: pagination.limit
+          in: query
+        - type: boolean
+          description: |-
+            count_total is set to true  to indicate that the result set should include
+            a count of the total number of items available for pagination in UIs.
+            count_total is only respected when offset is used. It is ignored when key
+            is set.
+          name: pagination.count_total
+          in: query
+        - type: boolean
+          description: reverse is set to true if results are to be returned in the descending order.
+          name: pagination.reverse
+          in: query
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/pocket.service.QueryRelayMiningDifficultyHistoryResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
   /pokt-network/poktroll/service/service:
     get:
       tags:
@@ -1351,6 +1622,13 @@ paths:
           description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
+        - type: boolean
+          description: |-
+            if false, include full service data including metadata.
+            if true (default behavior), exclude metadata to reduce payload size.
+            For backwards compatibility and performance, the default is true.
+          name: dehydrated
+          in: query
       responses:
         "200":
           description: A successful response.
@@ -1372,6 +1650,13 @@ paths:
           name: id
           in: path
           required: true
+        - type: boolean
+          description: |-
+            if false (default), include full service data including metadata.
+            if true, exclude metadata to reduce payload size.
+            For backwards compatibility and typical use cases, the default is false.
+          name: dehydrated
+          in: query
       responses:
         "200":
           description: A successful response.
@@ -1415,7 +1700,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin34
+      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin35
       responses:
         "200":
           description: A successful response.
@@ -1430,7 +1715,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin39
+      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin40
       responses:
         "200":
           description: A successful response.
@@ -1440,12 +1725,38 @@ paths:
           description: An unexpected error response.
           schema:
             $ref: '#/definitions/google.rpc.Status'
+  /pokt-network/poktroll/shared/params/{height}:
+    get:
+      tags:
+        - Query
+      summary: |-
+        ParamsAtHeight queries the shared parameters that were effective at a given block
+        height. Used by off-chain clients (e.g. the RelayMiner) to compute a session's
+        claim/proof windows using the num_blocks_per_session that was in effect when that
+        session started, rather than the live value — see the anchored session grid (#543).
+      operationId: GithubCompoktNetworkpoktrollQuery_ParamsAtHeight
+      parameters:
+        - type: string
+          format: int64
+          description: height is the block height at which to look up the effective shared params.
+          name: height
+          in: path
+          required: true
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/pocket.shared.QueryParamsAtHeightResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
   /pokt-network/poktroll/supplier/params:
     get:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin46
+      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin47
       responses:
         "200":
           description: A successful response.
@@ -1560,7 +1871,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin51
+      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin52
       responses:
         "200":
           description: A successful response.
@@ -1696,6 +2007,28 @@ definitions:
         type: object
         additionalProperties:
           $ref: '#/definitions/pocket.application.UndelegatingGatewayList'
+      per_session_spend_limit:
+        description: |-
+          Optional per-session spend limit in uPOKT. When set, caps the maximum
+          amount of stake consumed per session. Nil = no limit (default).
+        $ref: '#/definitions/cosmos.base.v1beta1.Coin'
+      service_config_history:
+        description: |-
+          List of historical service configuration updates, tracking the application's
+          service config changes and their corresponding activation heights.
+
+          Mirrors the supplier `service_config_history` pattern to support
+          deterministic historical session queries (GetSession at a past height must
+          return the service config that was active at that height, not the latest).
+
+          This history is NOT pruned: applications are orders of magnitude fewer than
+          supplier service rows, so the storage cost is negligible, and keeping it
+          forever avoids the pruning-induced historical-query non-determinism observed
+          on the supplier side (see session_mutation_analysis).
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/pocket.application.ApplicationServiceConfigUpdate'
       service_configs:
         type: array
         title: |-
@@ -1715,6 +2048,29 @@ definitions:
         type: string
         format: uint64
         title: Session end height when application initiated unstaking (0 if not unstaking)
+  pocket.application.ApplicationServiceConfigUpdate:
+    description: |-
+      ApplicationServiceConfigUpdate tracks a change in an application's service
+      configuration at a specific block height, enabling deterministic
+      reconstruction of which service an application was staked for at any height.
+    type: object
+    properties:
+      activation_height:
+        type: string
+        format: int64
+        title: Block height at which this service configuration became active in the network
+      application_address:
+        type: string
+        title: Address of the application corresponding to the service configuration change
+      deactivation_height:
+        description: |-
+          Block height at which this service configuration was deactivated (0 if still active).
+          For configs scheduled for deactivation, this stores the height when deactivation occurs.
+        type: string
+        format: int64
+      service:
+        title: The specific service configuration that was added or scheduled for removal
+        $ref: '#/definitions/pocket.shared.ApplicationServiceConfig'
   pocket.application.MsgDelegateToGateway:
     type: object
     properties:
@@ -1732,6 +2088,11 @@ definitions:
       address:
         description: The Bech32 address of the application.
         type: string
+      per_session_spend_limit:
+        description: |-
+          Optional per-session spend limit in uPOKT.
+          Three-way semantics: nil/omitted = preserve existing limit, zero = clear limit, positive = set new limit.
+        $ref: '#/definitions/cosmos.base.v1beta1.Coin'
       services:
         type: array
         title: The list of services this application is staked to request service for
@@ -1865,6 +2226,18 @@ definitions:
       address:
         type: string
         title: The Bech32 address of the gateway
+      metadata:
+        description: |-
+          Optional metadata carrying the gateway's card: a small, self-describing JSON
+          document, the same shape and container Service uses. See docs/pocket_service_card.md.
+
+          Set ONLY via MsgUpdateGatewayMetadata, never via MsgStakeGateway, so describing a
+          gateway never requires escrowing additional POKT (MsgStakeGateway enforces a
+          strictly-positive stake delta on every call).
+
+          As with Service, the chain enforces size only -- it does not parse, schema-check, or
+          attest to anything the card claims.
+        $ref: '#/definitions/pocket.shared.Metadata'
       stake:
         title: The total amount of uPOKT the gateway has staked
         $ref: '#/definitions/cosmos.base.v1beta1.Coin'
@@ -1890,6 +2263,27 @@ definitions:
         type: string
         title: The Bech32 address of the gateway
   pocket.gateway.MsgUnstakeGatewayResponse:
+    type: object
+  pocket.gateway.MsgUpdateGatewayMetadata:
+    description: |-
+      MsgUpdateGatewayMetadata sets a staked gateway's card.
+
+      Deliberately separate from MsgStakeGateway, which enforces a strictly-positive stake
+      delta on every call -- folding metadata into it would mean escrowing real POKT to fix
+      a typo. A freshly staked gateway starts with no card and becomes descriptor-complete
+      via a follow-up call.
+
+      Full replace: the supplied metadata replaces whatever is stored. Omitting it (nil)
+      leaves the stored card untouched, matching MsgAddService's behaviour for services.
+    type: object
+    properties:
+      address:
+        description: The Bech32 address of the gateway. Must already be staked.
+        type: string
+      metadata:
+        description: The gateway's card. Nil leaves the stored card unchanged.
+        $ref: '#/definitions/pocket.shared.Metadata'
+  pocket.gateway.MsgUpdateGatewayMetadataResponse:
     type: object
   pocket.gateway.MsgUpdateParam:
     description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
@@ -2024,6 +2418,45 @@ definitions:
           It reflects the "unbonding completion time" of the Morse node/supplier, but is called "unstaking time" to comply with necessary Morse data structures.
         type: string
         format: date-time
+  pocket.migration.MsgAdminRecoverMorseAccount:
+    description: |-
+      MsgAdminRecoverMorseAccount allows the authority to recover Morse accounts
+      WITHOUT checking the allowlist. This enables faster recovery for legitimate
+      requests that have been validated off-chain.
+
+      SECURITY: This message can ONLY be called by the module authority.
+      SAFETY: Still checks that the account exists and hasn't been claimed already.
+      USE CASE: When the allowlist is outdated and the upgrade cycle is too slow.
+
+      Key differences from MsgRecoverMorseAccount:
+      - SKIPS allowlist validation (IsMorseAddressRecoverable check)
+      - KEEPS all other safety checks (exists, not claimed, authority)
+      - Emits a distinct event for audit trail
+
+      Next free index: 4
+    type: object
+    properties:
+      authority:
+        description: |-
+          The bech32-encoded address of the migration module authority account.
+          ONLY the authority MAY call this admin recovery function.
+        type: string
+      morse_src_address:
+        description: |-
+          The hex-encoded address of the Morse account to recover.
+          NOTE: This address is NOT checked against the allowlist.
+          The authority is trusted to validate recovery requests off-chain.
+        type: string
+      shannon_dest_address:
+        description: The bech32-encoded address of the Shannon account to receive recovered tokens.
+        type: string
+  pocket.migration.MsgAdminRecoverMorseAccountResponse:
+    description: |-
+      MsgAdminRecoverMorseAccountResponse is returned from MsgAdminRecoverMorseAccount.
+
+      Next free index: 1
+       Empty response - check events for recovery details
+    type: object
   pocket.migration.MsgClaimMorseAccount:
     description: |-
       - Execute a claim (one-time minting of tokens on Shannon)
@@ -2553,6 +2986,24 @@ definitions:
         $ref: '#/definitions/pocket.shared.Service'
   pocket.service.MsgAddServiceResponse:
     type: object
+  pocket.service.MsgTransferService:
+    description: |-
+      MsgTransferService transfers ownership of a service to a new address.
+      Only the current owner can initiate the transfer.
+    type: object
+    properties:
+      new_owner_address:
+        description: The Bech32 address of the new service owner.
+        type: string
+      owner_address:
+        description: The Bech32 address of the current service owner (signer).
+        type: string
+      service_id:
+        description: The unique identifier of the service to transfer.
+        type: string
+  pocket.service.MsgTransferServiceResponse:
+    description: MsgTransferServiceResponse is the response to a MsgTransferService message.
+    type: object
   pocket.service.MsgUpdateParam:
     description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
     type: object
@@ -2628,6 +3079,28 @@ definitions:
         items:
           type: object
           $ref: '#/definitions/pocket.shared.Service'
+  pocket.service.QueryComputeUnitsPerRelayAtHeightResponse:
+    type: object
+    properties:
+      computeUnitsPerRelay:
+        description: The compute_units_per_relay effective at the requested height.
+        type: string
+        format: uint64
+  pocket.service.QueryComputeUnitsPerRelayHistoryResponse:
+    type: object
+    properties:
+      computeUnitsPerRelayHistory:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/pocket.service.ServiceComputeUnitsPerRelayUpdate'
+      pagination:
+        $ref: '#/definitions/cosmos.base.query.v1beta1.PageResponse'
+  pocket.service.QueryGetRelayMiningDifficultyAtHeightResponse:
+    type: object
+    properties:
+      relayMiningDifficulty:
+        $ref: '#/definitions/pocket.service.RelayMiningDifficulty'
   pocket.service.QueryGetRelayMiningDifficultyResponse:
     type: object
     properties:
@@ -2645,6 +3118,16 @@ definitions:
       params:
         description: params holds all the parameters of this module.
         $ref: '#/definitions/pocket.service.Params'
+  pocket.service.QueryRelayMiningDifficultyHistoryResponse:
+    type: object
+    properties:
+      pagination:
+        $ref: '#/definitions/cosmos.base.query.v1beta1.PageResponse'
+      relayMiningDifficultyHistory:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/pocket.service.RelayMiningDifficultyUpdate'
   pocket.service.RelayMiningDifficulty:
     description: |-
       RelayMiningDifficulty is a message used to store the onchain Relay Mining
@@ -2674,6 +3157,49 @@ definitions:
           0b0000111... (until 32 bytes are filled up).
         type: string
         format: byte
+  pocket.service.RelayMiningDifficultyUpdate:
+    description: |-
+      RelayMiningDifficultyUpdate stores a snapshot of relay mining difficulty
+      along with the height at which it became effective.
+      This enables historical lookups of difficulty that was active during a session.
+    type: object
+    properties:
+      difficulty:
+        description: difficulty is the snapshot of relay mining difficulty effective at this height.
+        $ref: '#/definitions/pocket.service.RelayMiningDifficulty'
+      effective_height:
+        description: |-
+          effective_height is the block height at which this difficulty became effective.
+          Difficulty changes are activated at session boundaries, not immediately.
+        type: string
+        format: int64
+  pocket.service.ServiceComputeUnitsPerRelayUpdate:
+    description: |-
+      ServiceComputeUnitsPerRelayUpdate stores a snapshot of a service's
+      compute_units_per_relay (cupr) along with the height at which it became
+      effective.
+
+      It enables historical lookups of the cupr that was active when a session's
+      relays were mined, mirroring RelayMiningDifficultyUpdate. This is what lets
+      claim validation pin cupr to the session-start height instead of reading the
+      live (claim-time) value, which previously forfeited in-flight claims with
+      ErrProofComputeUnitsMismatch whenever a service changed its cupr mid-session.
+    type: object
+    properties:
+      compute_units_per_relay:
+        description: compute_units_per_relay is the cupr effective at this height.
+        type: string
+        format: uint64
+      effective_height:
+        description: |-
+          effective_height is the block height at which this cupr became effective.
+          cupr changes are activated at the next session boundary, not immediately,
+          so an in-flight session always resolves to the cupr live at its start.
+        type: string
+        format: int64
+      service_id:
+        description: service_id is the service the cupr applies to.
+        type: string
   pocket.session.MsgUpdateParam:
     type: object
     properties:
@@ -2816,14 +3342,27 @@ definitions:
       - TIMEOUT
   pocket.shared.Metadata:
     description: |-
-      Metadata message to hold additional metadata for a service.
-      The raw bytes are stored on-chain and will be base64 encoded in JSON representations.
+      Metadata is a generic container for an onchain actor's descriptor, or "card".
+      The raw bytes are stored onchain and will be base64 encoded in JSON representations.
+
+      Next free index: 2
     type: object
     properties:
-      experimental_api_specs:
+      card:
         description: |-
-          EXPERIMENTAL: Serialized API spec limited to 100 KiB when decoded.
-          TODO(@future): support dedicated openapi_ / openrpc_ fields once formats stabilize.
+          A card: a small, self-describing JSON document.
+          Limited to 256 KiB when decoded. See docs/pocket_service_card.md for the schema.
+
+          The chain deliberately does NOT validate the content of this payload beyond its
+          size. The card schema is versioned in-band (via its `schema` key) so it can evolve
+          without a consensus change; typed proto fields would freeze it at v1.
+
+          A full method-level API specification does NOT belong here -- those routinely
+          exceed this cap by an order of magnitude. Point at one via the card's `specs[]`.
+
+          TODO_FUTURE: promote settled card fields to dedicated proto fields once the schema
+          has stabilized AND something consumes it at runtime (e.g. QoS validating supplier
+          responses against the declared contract).
         type: string
         format: byte
   pocket.shared.MsgUpdateParam:
@@ -2952,6 +3491,24 @@ definitions:
           close height, at which the proof window opens.
         type: string
         format: uint64
+      session_grid_anchor_height:
+        description: |-
+          session_grid_anchor_height is the block height at which this params epoch's session
+          grid begins. Boundary math is computed relative to this anchor instead of block 1, so
+          that changing num_blocks_per_session does not misalign in-flight sessions (#543).
+          DERIVED metadata, NOT governable: set by the param-update handler to the next session
+          boundary; any value supplied via governance is ignored/overwritten. A zero value falls
+          back to the genesis block-1 grid (legacy behavior).
+        type: string
+        format: uint64
+      session_number_at_anchor:
+        description: |-
+          session_number_at_anchor is the session number of the session starting at
+          session_grid_anchor_height. Used to keep GetSessionNumber monotonic across epochs
+          (epoch-relative numbering would otherwise reset at each change).
+          DERIVED metadata, NOT governable.
+        type: string
+        format: uint64
       supplier_unbonding_period_sessions:
         description: |-
           supplier_unbonding_period_sessions is the number of sessions that a supplier must wait after
@@ -2960,6 +3517,13 @@ definitions:
           period will exceed the end of any active claim & proof lifecycles.
         type: string
         format: uint64
+  pocket.shared.QueryParamsAtHeightResponse:
+    description: QueryParamsAtHeightResponse is response type for the Query/ParamsAtHeight RPC method.
+    type: object
+    properties:
+      params:
+        description: params holds the shared parameters that were effective at the requested height.
+        $ref: '#/definitions/pocket.shared.Params'
   pocket.shared.QueryParamsResponse:
     description: QueryParamsResponse is response type for the Query/Params RPC method.
     type: object
@@ -2986,6 +3550,7 @@ definitions:
       - REST
       - COMET_BFT
   pocket.shared.Service:
+    description: 'Next free index: 6'
     type: object
     title: Service message to encapsulate unique and semantic identifiers for a service on the network
     properties:
@@ -3003,8 +3568,8 @@ definitions:
         title: For example, what if we want to request a session for a certain service but with some additional configs that identify it?
       metadata:
         description: |-
-          Optional metadata containing an experimental API specification for the service.
-          When exposed via JSON, this field is base64 encoded and MUST be <= 100 KiB when decoded.
+          Optional metadata carrying the service's card (see docs/pocket_service_card.md).
+          When exposed via JSON, the card is base64 encoded and MUST be <= 256 KiB when decoded.
         $ref: '#/definitions/pocket.shared.Metadata'
       name:
         description: (Optional) Human readable description of the service
@@ -3298,6 +3863,9 @@ definitions:
         $ref: '#/definitions/pocket.tokenomics.MintEqualsBurnClaimDistribution'
       as_string:
         type: string
+      as_uint64:
+        type: string
+        format: uint64
       authority:
         description: authority is the address that controls the module (defaults to x/gov unless overwritten).
         type: string
@@ -3347,6 +3915,32 @@ definitions:
           when global inflation is disabled (global_inflation_per_claim = 0).
           MintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement.
         $ref: '#/definitions/pocket.tokenomics.MintEqualsBurnClaimDistribution'
+      mint_ratio:
+        type: number
+        format: double
+        title: |-
+          mint_ratio is the proportion of burned tokens to mint (0.0 < mint_ratio <= 1.0).
+          PIP-41: A value of 0.975 means 97.5% of burned tokens are minted, 2.5% permanently removed.
+          MintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement.
+          Default: 1.0 (no deflation - mint equals burn for backward compatibility)
+      overservicing_bonus_multiplier:
+        description: |-
+          overservicing_bonus_multiplier bounds how far above its guaranteed floor
+          (per-session budget / actual number of claiming suppliers) a single supplier's
+          settlement may be raised by redistributing budget unused by idle/light suppliers.
+            settled_i <= overservicing_bonus_multiplier * floor_i
+          Semantics:
+            0 or 1 => reproduces the legacy head-split cap exactly (no redistribution above floor).
+            n > 1  => a supplier may be paid up to n * floor from unused budget (still bounded by B).
+          The ZERO value is treated as 1 (legacy cap), NOT "unlimited", so an unset/clobbered value
+          is always benign and can never silently enable redistribution. To lift the cap in practice
+          set n >= num_suppliers_per_session, at which point the application budget B binds first.
+          This is a rollout valve, NOT an economic safeguard (self-dealing and fabrication are
+          guarded independently by the reward split and the proof threshold). Ships at 1 (no-op),
+          then opened by governance.
+          TokenLogicModules: Only used during claim settlement (ensureClaimAmountLimits).
+        type: string
+        format: uint64
   pocket.tokenomics.QueryParamsResponse:
     description: QueryParamsResponse is response type for the Query/Params RPC method.
     type: object

@@ -182,6 +182,27 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.34 - upgrade to:
 	// - Deduplicate supplier rev share addresses
 	upgrades.Upgrade_0_1_34,
+
+	// v0.1.35 - upgrade to:
+	// - Settlement budget redistribution: the per-supplier head-split cap becomes a
+	//   guaranteed floor (ships as a no-op; new overservicing_bonus_multiplier param = 1)
+	// - Report (log, never reject) the anti-collusion invariant on tokenomics param updates
+	// - Pin compute_units_per_relay to the session-start height for claim validation
+	//   and settlement (stops mid-session cupr changes forfeiting in-flight claims).
+	//   This also changes gas on MsgCreateClaim: a GetService read became a history seek
+	// - Pin claim PRICING (compute_units_to_tokens_multiplier, compute_unit_cost_granularity)
+	//   to the session-start height, so settlement agrees with x/proof on the same claim
+	// - Only the supplier owner can cancel an in-progress unstake (PR #1980)
+	// - Remove dead block-hash reads from the claim/proof commit-height calc (#1976),
+	//   which changes gas on MsgCreateClaim / MsgSubmitProof
+	// - Reject an all-zero claim/proof window offset set in shared params validation
+	//   (the offsets' sum is a settlement divisor; zero would halt the chain)
+	// - AddService preserves stored service metadata when an update omits it
+	// - Gateways gain a metadata card, set via the new MsgUpdateGatewayMetadata
+	// - Do not settle a claim before its own proof window closes, resolving the window
+	//   offsets at the claim's session end rather than from live params (diverges from
+	//   v0.1.34 as soon as governance shrinks the offsets' sum)
+	upgrades.Upgrade_0_1_35,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

@@ -58,7 +58,7 @@ And expect a response of the following format:
 If you're adding a service with a very large metadata file like so:
 
 ```bash
-pocketd tx service add-service pocket "Pocket Network" 1000 --from pokt1lf0kekv9zcv9v3wy4v6jx2wh7v4665s8e0sl9s --keyring-backend test --network=beta -y --gas auto --gas-prices 1upokt --gas-adjustment 1.5 --experimental-metadata-file=docs/static/openapi.json  --home=~/.pocket_prod
+pocketd tx service add-service pocket "Pocket Network" 1000 --from pokt1lf0kekv9zcv9v3wy4v6jx2wh7v4665s8e0sl9s --keyring-backend test --network=beta -y --gas auto --gas-prices 1upokt --gas-adjustment 1.5 --card-file=docs/static/openapi.json  --home=~/.pocket_prod
 ```
 
 You might hit a gas limit error like this:

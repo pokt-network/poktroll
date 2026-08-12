@@ -13,6 +13,7 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // Prevent strconv unused error
@@ -121,5 +122,70 @@ func TestGatewayQueryPaginated(t *testing.T) {
 	t.Run("InvalidRequest", func(t *testing.T) {
 		_, err := keeper.AllGateways(ctx, nil)
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
+	})
+}
+
+// TestGatewayQueryDehydrated verifies the `dehydrated` flag on both gateway queries.
+//
+// The flag exists because a card can be up to MaxServiceMetadataSizeBytes (256 KiB), so a
+// default page of 100 carried cards is large enough to exceed the 4 MB default gRPC message
+// limit. It defaults to FALSE (card included) to mirror the service queries -- a proto3
+// bool cannot default to true.
+func TestGatewayQueryDehydrated(t *testing.T) {
+	keeper, ctx := keepertest.GatewayKeeper(t)
+
+	gateways := createNGateways(keeper, ctx, 2)
+	card := []byte(`{"schema":"pocket-gateway-card/v1","name":"test gateway"}`)
+	for i := range gateways {
+		gateways[i].Metadata = &sharedtypes.Metadata{Card: card}
+		keeper.SetGateway(ctx, gateways[i])
+	}
+
+	t.Run("SingleHydratedByDefault", func(t *testing.T) {
+		resp, err := keeper.Gateway(ctx, &types.QueryGetGatewayRequest{Address: gateways[0].Address})
+		require.NoError(t, err)
+		require.Equal(t, card, resp.Gateway.GetMetadata().GetCard())
+	})
+
+	t.Run("SingleDehydratedStripsCard", func(t *testing.T) {
+		resp, err := keeper.Gateway(ctx, &types.QueryGetGatewayRequest{
+			Address:    gateways[0].Address,
+			Dehydrated: true,
+		})
+		require.NoError(t, err)
+		require.Nil(t, resp.Gateway.Metadata)
+		// Everything other than the card MUST survive dehydration.
+		require.Equal(t, gateways[0].Address, resp.Gateway.Address)
+		require.Equal(t, gateways[0].Stake, resp.Gateway.Stake)
+	})
+
+	t.Run("AllHydratedByDefault", func(t *testing.T) {
+		resp, err := keeper.AllGateways(ctx, &types.QueryAllGatewaysRequest{})
+		require.NoError(t, err)
+		require.Len(t, resp.Gateways, len(gateways))
+		for _, gateway := range resp.Gateways {
+			require.Equal(t, card, gateway.GetMetadata().GetCard())
+		}
+	})
+
+	t.Run("AllDehydratedStripsEveryCard", func(t *testing.T) {
+		resp, err := keeper.AllGateways(ctx, &types.QueryAllGatewaysRequest{Dehydrated: true})
+		require.NoError(t, err)
+		require.Len(t, resp.Gateways, len(gateways))
+		for _, gateway := range resp.Gateways {
+			require.Nil(t, gateway.Metadata)
+			require.NotEmpty(t, gateway.Address)
+		}
+	})
+
+	t.Run("DehydrationDoesNotMutateState", func(t *testing.T) {
+		_, err := keeper.AllGateways(ctx, &types.QueryAllGatewaysRequest{Dehydrated: true})
+		require.NoError(t, err)
+
+		// The stored record MUST still carry the card: stripping is a response-shaping
+		// concern, and the query keeper unmarshals into a local copy.
+		stored, found := keeper.GetGateway(ctx, gateways[0].Address)
+		require.True(t, found)
+		require.Equal(t, card, stored.GetMetadata().GetCard())
 	})
 }

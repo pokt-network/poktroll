@@ -131,6 +131,31 @@ func (rClient *replayClient[T]) LastNEvents(ctx context.Context, n int) []T {
 // subscription and publishes them to the replay observable.
 func (rClient *replayClient[T]) goPublishEvents(resultEventCh <-chan coretypes.ResultEvent) {
 	go func() {
+		// The subscription is established ONCE, in NewEventsReplayClient. When this channel
+		// closes there is no reconnect: this goroutine returns & the replay observable keeps
+		// its stale buffer while receiving nothing ever again. Every consumer then blocks
+		// until its own timeout with no indication of why.
+		//
+		// That is reachable in practice: CometBFT terminates subscribers which cannot keep
+		// up (see experimental_subscription_buffer_size), and Subscribe is called without an
+		// outCapacity, so it defaults to 1.
+		//
+		// This log makes the failure identify itself instead of surfacing as an unexplained
+		// hang somewhere downstream. It is NOT a fix — reconnecting with backoff is
+		// TODO_TECHDEBT below.
+		//
+		// TODO_TECHDEBT: Re-establish the subscription (with backoff) rather than giving up.
+		// This client backs the RelayMiner's block & tx clients, so giving up means the
+		// miner silently stops observing new blocks — no session boundaries, no claim/proof
+		// windows — until the process is restarted.
+		defer func() {
+			rClient.logger.Error().Msgf(
+				"🚨 event subscription for query %q CLOSED; no further events will be observed "+
+					"on this client and it will NOT reconnect. Restart the process to recover.",
+				rClient.queryString,
+			)
+		}()
+
 		// Process events until connection breaks or context is canceled
 		for resultEvent := range resultEventCh {
 			// Attempt to decode the raw event bytes into the target type T

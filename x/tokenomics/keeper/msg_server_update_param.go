@@ -65,6 +65,11 @@ func (k msgServer) UpdateParam(
 		logger = logger.With("param_value", msg.GetAsFloat())
 		params.MintRatio = msg.GetAsFloat()
 
+	// OverservicingBonusMultiplier (settlement budget redistribution)
+	case tokenomicstypes.ParamOverservicingBonusMultiplier:
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.OverservicingBonusMultiplier = msg.GetAsUint64()
+
 	// Default
 	default:
 		return nil, status.Error(
@@ -76,6 +81,10 @@ func (k msgServer) UpdateParam(
 	if err := params.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	// Surface (but do NOT reject) a param set which makes application/supplier
+	// self-dealing break-even or better. See Params.CheckAntiCollusionInvariant.
+	params.LogAntiCollusionInvariantViolation(logger)
 
 	if err := k.SetParams(ctx, params); err != nil {
 		err = fmt.Errorf("unable to set params: %w", err)

@@ -416,18 +416,18 @@ func TestEndBlockerUnbondSuppliers_IndexIntegrity(t *testing.T) {
 // instead of live params.
 //
 // Sequence exercised end-to-end:
-//   1. N=oldN; stake + unstake supplier → captures unstakeSessionEndHeight.
-//   2. Plant a NEW shared-params epoch with N=newN (smaller) at the boundary
-//      AFTER unstakeSessionEndHeight, simulating governance promotion of a
-//      DEFERRED num_blocks_per_session change.
-//   3. Compute the "buggy" early unbonding end the EndBlocker would land on if
-//      it read LIVE params at runtime (unstakeSessionEnd + unbonding_sessions * newN).
-//   4. Walk to that early height (at a session boundary under newN) and call
-//      EndBlockerUnbondSuppliers. Under the bug the supplier is removed here;
-//      under the fix it stays (because GetParamsAtHeight returns oldN's epoch
-//      at the unstake height).
-//   5. Walk to the TRUE oldN-derived unbonding horizon. EndBlocker releases the
-//      supplier here, confirming the original commitment was honored.
+//  1. N=oldN; stake + unstake supplier → captures unstakeSessionEndHeight.
+//  2. Plant a NEW shared-params epoch with N=newN (smaller) at the boundary
+//     AFTER unstakeSessionEndHeight, simulating governance promotion of a
+//     DEFERRED num_blocks_per_session change.
+//  3. Compute the "buggy" early unbonding end the EndBlocker would land on if
+//     it read LIVE params at runtime (unstakeSessionEnd + unbonding_sessions * newN).
+//  4. Walk to that early height (at a session boundary under newN) and call
+//     EndBlockerUnbondSuppliers. Under the bug the supplier is removed here;
+//     under the fix it stays (because GetParamsAtHeight returns oldN's epoch
+//     at the unstake height).
+//  5. Walk to the TRUE oldN-derived unbonding horizon. EndBlocker releases the
+//     supplier here, confirming the original commitment was honored.
 func TestEndBlockerUnbondSuppliers_NumBlocksPerSessionDecreaseDoesNotReleaseEarly(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
@@ -440,8 +440,8 @@ func TestEndBlockerUnbondSuppliers_NumBlocksPerSessionDecreaseDoesNotReleaseEarl
 	require.True(t, castOK, "test setup: expected concrete shared keeper")
 
 	const (
-		oldN                   int64 = 20
-		newN                   int64 = 4 // halving direction; F1 protects the unbonding actor
+		oldN                    int64 = 20
+		newN                    int64 = 4 // halving direction; F1 protects the unbonding actor
 		unbondingPeriodSessions int64 = 8
 	)
 

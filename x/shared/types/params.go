@@ -200,6 +200,10 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	if err := validateNumPendingSessionsIsPositive(params); err != nil {
+		return err
+	}
+
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Add validation which ensures that
 	// SessionEndToProofWindowCloseBlocks is a multiple of NumBlocksPerSession.
 
@@ -387,6 +391,37 @@ func validateSupplierUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlock
 			params.SupplierUnbondingPeriodSessions,
 			supplierUnbondingPeriodSessions,
 			cumulativeProofWindowCloseBlocks,
+		)
+	}
+
+	return nil
+}
+
+// validateNumPendingSessionsIsPositive ensures GetNumPendingSessions() can never
+// return zero.
+//
+// CHAIN-HALT GUARD: settlement divides the application's stake by numPendingSessions
+// to derive the per-session budget (see settlementContext.getOrInitSessionBudget).
+// math.Int.Quo panics with "Division by zero" on a zero divisor, and settlement runs
+// in the EndBlocker — a panic there halts the chain rather than failing a tx.
+//
+// numPendingSessions is ceil(cumulativeWindowBlocks / numBlocksPerSession), so it is
+// zero exactly when all four claim/proof window offsets are zero. Each offset is
+// individually valid at zero (they are only type-checked), so nothing else rejects
+// that combination. numBlocksPerSession >= 1 is already enforced by
+// ValidateNumBlocksPerSession, which ValidateBasic runs first, so calling
+// GetNumPendingSessions here cannot itself divide by zero.
+func validateNumPendingSessionsIsPositive(params *Params) error {
+	if numPendingSessions := GetNumPendingSessions(params); numPendingSessions < 1 {
+		return ErrSharedParamInvalid.Wrapf(
+			"the claim and proof window offsets yield %d pending sessions; their sum "+
+				"(ClaimWindowOpenOffsetBlocks %d + ClaimWindowCloseOffsetBlocks %d + "+
+				"ProofWindowOpenOffsetBlocks %d + ProofWindowCloseOffsetBlocks %d) must be greater than 0",
+			numPendingSessions,
+			params.ClaimWindowOpenOffsetBlocks,
+			params.ClaimWindowCloseOffsetBlocks,
+			params.ProofWindowOpenOffsetBlocks,
+			params.ProofWindowCloseOffsetBlocks,
 		)
 	}
 

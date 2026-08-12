@@ -544,26 +544,27 @@ func calculateProportionalRewards(
 	totalBondedTokens math.Int,
 	totalRewardAmount math.Int,
 ) map[string]math.Int {
+	// Compute per-address reward data (base reward + fractional remainder) exactly ONCE.
+	// Both the base-reward map (step 1) and the Largest Remainder Method (step 2) consume
+	// this; recomputing it in the LRM path was ~len(stakeholders) redundant big.Rat ops per
+	// settlement (all validators + delegators, twice).
+	rewardData := calculateAddressRewards(stakeAmounts, totalBondedTokens, totalRewardAmount)
+
 	// Step 1: Calculate base proportional rewards
-	rewardAmounts := calculateBaseProportionalRewards(logger, stakeAmounts, totalBondedTokens, totalRewardAmount)
+	rewardAmounts := calculateBaseProportionalRewards(logger, rewardData)
 
 	// Step 2: Distribute any remainder using Largest Remainder Method
-	applyLargestRemainderMethod(logger, rewardAmounts, stakeAmounts, totalBondedTokens, totalRewardAmount)
+	applyLargestRemainderMethod(logger, rewardAmounts, rewardData, totalRewardAmount)
 
 	return rewardAmounts
 }
 
-// calculateBaseProportionalRewards calculates base integer rewards for each stakeholder.
-// Returns reward amounts map with base rewards; fractional parts handled separately by LRM.
+// calculateBaseProportionalRewards builds the base integer reward map from the
+// pre-computed per-address reward data. Fractional parts are handled separately by LRM.
 func calculateBaseProportionalRewards(
 	logger cosmoslog.Logger,
-	stakeAmounts map[string]math.Int,
-	totalBondedTokens math.Int,
-	totalRewardAmount math.Int,
+	rewardData []addressRewardData,
 ) map[string]math.Int {
-	// Use consolidated calculation to get reward data for all addresses
-	rewardData := calculateAddressRewards(stakeAmounts, totalBondedTokens, totalRewardAmount)
-
 	// Build reward amounts map and log details
 	rewardAmounts := make(map[string]math.Int, len(rewardData))
 	for _, data := range rewardData {
@@ -588,8 +589,7 @@ func calculateBaseProportionalRewards(
 func applyLargestRemainderMethod(
 	logger cosmoslog.Logger,
 	rewardAmounts map[string]math.Int,
-	stakeAmounts map[string]math.Int,
-	totalBondedTokens math.Int,
+	rewardData []addressRewardData,
 	totalRewardAmount math.Int,
 ) {
 	// Compute the total distributed reward amount
@@ -617,7 +617,7 @@ func applyLargestRemainderMethod(
 	))
 
 	if remainder > 0 {
-		distributeRemainderTokens(logger, rewardAmounts, stakeAmounts, totalBondedTokens, totalRewardAmount, remainder)
+		distributeRemainderTokens(logger, rewardAmounts, rewardData, remainder)
 	}
 }
 
@@ -626,13 +626,11 @@ func applyLargestRemainderMethod(
 func distributeRemainderTokens(
 	logger cosmoslog.Logger,
 	rewardAmounts map[string]math.Int,
-	stakeAmounts map[string]math.Int,
-	totalBondedTokens math.Int,
-	totalRewardAmount math.Int,
+	rewardData []addressRewardData,
 	tokensToDistribute int64,
 ) {
 	// Sort addresses by fractional remainder (descending) for LRM distribution
-	sortedAddressesByFractionDesc := sortAddressesByFractionDesc(stakeAmounts, totalBondedTokens, totalRewardAmount)
+	sortedAddressesByFractionDesc := sortAddressesByFractionDesc(rewardData)
 	numAddresses := int64(len(sortedAddressesByFractionDesc))
 
 	// Sanity check: remainder should only exist if addresses have fractional parts

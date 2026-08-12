@@ -18,6 +18,12 @@ type YAMLServiceEntry struct {
 	ServiceId            string `yaml:"service_id"`
 	ServiceName          string `yaml:"service_name"`
 	ComputeUnitsPerRelay uint64 `yaml:"compute_units_per_relay"`
+
+	// CardFile is an optional path to the service card to publish for this service.
+	// When omitted, the stored card is left untouched: the message carries no metadata and
+	// the keeper preserves what is already onchain.
+	// See docs/pocket_service_card.md.
+	CardFile string `yaml:"card_file"`
 }
 
 // ParseEditServiceConfig parses the YAML config content into a YAMLEditServiceConfig.

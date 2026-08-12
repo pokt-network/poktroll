@@ -54,17 +54,24 @@ func (sync *relayMinerHTTPServer) replyWithError(
 	listenAddress := sync.serverConfig.ListenAddress
 	serviceId := relayRequest.Meta.SessionHeader.ServiceId
 
+	// IMPORTANT: Hold onto a polylog.Logger here, NEVER onto a polylog.Event.
+	// zerolog recycles the underlying *zerolog.Event into a sync.Pool as soon as
+	// Msg/Msgf/Send is called on it. Reusing the same event for a second log line
+	// therefore both corrupts that line AND puts the same *zerolog.Event into the
+	// pool twice, which hands one event to two goroutines. The losing goroutine
+	// observes an empty event buffer and panics with
+	// "index out of range [-1]" in zerolog/internal/json.(Encoder).AppendKey.
 	errorLogger := sync.logger.With(
 		"service_id", serviceId,
 		"listen_address", listenAddress,
-	).Error()
+	)
 
 	// Indicate whether the original error should be sent to the client or send a generic error reply.
 	if errors.Is(replyError, ErrRelayerProxyInternalError) {
 		// TODO_TECHDEBT: Reenable internal error obfuscation once we are confident
 		// that the relayer proxy is stable w.r.t. protocol compliance.
 		// replyError = ErrRelayerProxyInternalError
-		errorLogger.Err(replyError).Msgf("⚠️ Temporarily Overriding %v error until the RelayMiner is stable w.r.t. protocol compliance", ErrRelayerProxyInternalError)
+		errorLogger.Error().Err(replyError).Msgf("⚠️ Temporarily Overriding %v error until the RelayMiner is stable w.r.t. protocol compliance", ErrRelayerProxyInternalError)
 	}
 
 	// Fill in the needed missing fields of the RelayRequest with empty values.
@@ -84,7 +91,7 @@ func (sync *relayMinerHTTPServer) replyWithError(
 
 	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
-		errorLogger.Err(err).Msg("failed marshaling error relay response")
+		errorLogger.Error().Err(err).Msg("failed marshaling error relay response")
 		return
 	}
 
@@ -92,7 +99,7 @@ func (sync *relayMinerHTTPServer) replyWithError(
 	writer.Header().Set("Content-Length", relayResponseBzLenStr)
 	writer.Header().Set("Connection", "close")
 	if _, err = writer.Write(relayResponseBz); err != nil {
-		errorLogger.Err(err).Msg("failed writing error relay response")
+		errorLogger.Error().Err(err).Msg("failed writing error relay response")
 		return
 	}
 }

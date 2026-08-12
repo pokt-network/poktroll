@@ -3,8 +3,11 @@
 package e2e
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
+	"strings"
 	"text/template"
 	"time"
 
@@ -14,6 +17,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// txCodeOK is the tx result code which indicates that a tx was committed successfully.
+const txCodeOK = uint32(0)
+
+// cliTxResponse is the subset of the fields of the CLI's tx response JSON which the
+// E2E suite asserts on. The broadcast response (`tx authz exec`, i.e. CheckTx) and the
+// committed response (`query tx`, i.e. the tx result) share this shape.
+type cliTxResponse struct {
+	TxHash string `json:"txhash"`
+	Code   uint32 `json:"code"`
+	RawLog string `json:"raw_log"`
+}
+
 // execTxJSONTemplate is a text template for a tx JSON file which is
 // intended to be used with the `authz exec` CLI subcommand: `pocketd tx authz exec <tx_json_file>`.
 var execTxJSONTemplate = template.Must(
@@ -21,11 +36,42 @@ var execTxJSONTemplate = template.Must(
 )
 
 // sendAuthzExecTx sends an authz exec tx using the `authz exec` CLI subcommand:
-// `pocketd tx authz exec <tx_json_file>`.
-// It returns before the tx has been committed but after it has been broadcast.
+// `pocketd tx authz exec <tx_json_file>`, waits for it to be committed, and asserts
+// that it succeeded.
 // It ensures that all module params are reset to their default values after the
 // test completes.
 func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
+	s.Helper()
+
+	txRes := s.broadcastAndWaitForAuthzExecTx(signingKeyName, txJSONFilePath)
+	require.Equalf(s, txCodeOK, txRes.Code,
+		"authz exec tx %s was rejected with code %d: %s", txRes.TxHash, txRes.Code, txRes.RawLog,
+	)
+}
+
+// sendAuthzExecTxExpectingError sends an authz exec tx, waits for it to be committed,
+// and asserts that the chain REJECTED it with a raw log containing expectedRawLogSubstr.
+//
+// DEV_NOTE: A message which fails validation (e.g. params which fail `ValidateBasic`)
+// is rejected at delivery, NOT at broadcast, so the CLI still exits 0. Without an
+// explicit assertion on the committed tx result, such a rejection is silent and only
+// surfaces later as a confusing "params were not updated" diff.
+func (s *suite) sendAuthzExecTxExpectingError(signingKeyName, txJSONFilePath, expectedRawLogSubstr string) {
+	s.Helper()
+
+	txRes := s.broadcastAndWaitForAuthzExecTx(signingKeyName, txJSONFilePath)
+	require.NotEqualf(s, txCodeOK, txRes.Code,
+		"expected authz exec tx %s to be rejected but it succeeded", txRes.TxHash,
+	)
+	require.Containsf(s, txRes.RawLog, expectedRawLogSubstr,
+		"authz exec tx %s was rejected with an unexpected error", txRes.TxHash,
+	)
+}
+
+// broadcastAndWaitForAuthzExecTx broadcasts an authz exec tx, waits for it to be
+// committed, and returns the committed tx result. It ensures that all module params
+// are reset to their default values after the test completes.
+func (s *suite) broadcastAndWaitForAuthzExecTx(signingKeyName, txJSONFilePath string) cliTxResponse {
 	s.Helper()
 
 	argsAndFlags := []string{
@@ -36,8 +82,24 @@ func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
 		fmt.Sprintf("--%s=json", cli.OutputFlag),
 		"--yes",
 	}
-	_, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	require.NoError(s, err)
+
+	broadcastTxRes := s.parseCLITxResponse(res.Stdout)
+
+	// Reset all module params to their default values after the test completes.
+	// DEV_NOTE: Registered before the assertions below so that a rejected tx (or a
+	// failed assertion on one) still leaves the chain in a clean state for the
+	// scenarios which follow.
+	s.once.Do(func() {
+		s.Cleanup(func() { s.resetAllModuleParamsToDefaults() })
+	})
+
+	// A non-zero code here means the tx failed CheckTx and will never be committed,
+	// so there is nothing to wait for; the broadcast response is the final result.
+	if broadcastTxRes.Code != txCodeOK {
+		return broadcastTxRes
+	}
 
 	// TODO_IMPROVE: wait for the tx to be committed using an events query client
 	// instead of sleeping for a specific amount of time.
@@ -48,16 +110,82 @@ func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
 	//
 	// This resulted in observing many more events than expected, even accounting
 	// for those corresponding to the param reset step, which is automatically
-	// registered in a s.Cleanup() below. There are no useful attributes on these
+	// registered in a s.Cleanup() above. There are no useful attributes on these
 	// events such that we can filter out the noise.
 
 	s.Logf("waiting %d seconds for the authz exec tx to be committed...", txDelaySeconds)
 	time.Sleep(txDelaySeconds * time.Second)
 
-	// Reset all module params to their default values after the test completes.
-	s.once.Do(func() {
-		s.Cleanup(func() { s.resetAllModuleParamsToDefaults() })
-	})
+	return s.queryCommittedTx(broadcastTxRes.TxHash)
+}
+
+// broadcastTxAndRequireCommitted runs a `pocketd tx ...` command against the node under
+// test, blocks until the resulting tx is committed & asserts that it succeeded.
+//
+// DEV_NOTE: Prefer this over waiting on a tx-result EVENT when a step may run more than
+// once in a scenario. The events replay client also serves previously observed events, so
+// a second identical tx matches the first one's event & the assertion which follows reads
+// stale state. Confirming the returned tx hash cannot alias like that.
+func (s *suite) broadcastTxAndRequireCommitted(args ...string) cliTxResponse {
+	s.Helper()
+
+	// The response must be parseable, so the output flag is appended here rather than left
+	// to each call site: without it the CLI emits YAML & every caller would have to
+	// remember to opt in.
+	if !slices.ContainsFunc(args, func(arg string) bool {
+		return strings.HasPrefix(arg, fmt.Sprintf("--%s", cli.OutputFlag))
+	}) {
+		args = append(args, fmt.Sprintf("--%s=json", cli.OutputFlag))
+	}
+
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err)
+
+	broadcastTxRes := s.parseCLITxResponse(res.Stdout)
+	require.Equalf(s, txCodeOK, broadcastTxRes.Code,
+		"tx failed to broadcast with code %d: %s", broadcastTxRes.Code, broadcastTxRes.RawLog,
+	)
+
+	// Give the tx a block to land. queryCommittedTx retries on its own, but its first
+	// attempt would otherwise always miss & print a "tx not found" retry banner.
+	time.Sleep(txDelaySeconds * time.Second)
+
+	committedTxRes := s.queryCommittedTx(broadcastTxRes.TxHash)
+	require.Equalf(s, txCodeOK, committedTxRes.Code,
+		"tx %s was rejected with code %d: %s", committedTxRes.TxHash, committedTxRes.Code, committedTxRes.RawLog,
+	)
+
+	return committedTxRes
+}
+
+// queryCommittedTx queries the tx with the given hash & returns its committed result.
+func (s *suite) queryCommittedTx(txHash string) cliTxResponse {
+	s.Helper()
+
+	argsAndFlags := []string{
+		"query", "tx", txHash,
+		fmt.Sprintf("--%s=json", cli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
+	require.NoErrorf(s, err, "failed to query committed tx %s", txHash)
+
+	return s.parseCLITxResponse(res.Stdout)
+}
+
+// parseCLITxResponse extracts the tx response JSON from the given CLI stdout.
+// The JSON object is located by its opening brace because the CLI may emit
+// non-JSON preamble (e.g. gas estimates) ahead of it.
+func (s *suite) parseCLITxResponse(cliStdout string) cliTxResponse {
+	s.Helper()
+
+	jsonStartIdx := strings.Index(cliStdout, "{")
+	require.GreaterOrEqualf(s, jsonStartIdx, 0, "no tx response JSON found in CLI output: %s", cliStdout)
+
+	var txRes cliTxResponse
+	err := json.Unmarshal([]byte(cliStdout[jsonStartIdx:]), &txRes)
+	require.NoErrorf(s, err, "failed to unmarshal tx response JSON: %s", cliStdout[jsonStartIdx:])
+
+	return txRes
 }
 
 // newTempUpdateParamsTxJSONFile creates & returns a new temp file with the JSON representation of a tx

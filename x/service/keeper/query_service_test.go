@@ -75,7 +75,7 @@ func TestServiceMetadataExclusion(t *testing.T) {
 	// Create a service with metadata
 	serviceWithMetadata := createNServices(keeper, ctx, 1)[0]
 	serviceWithMetadata.Metadata = &sharedtypes.Metadata{
-		ExperimentalApiSpecs: []byte(`{"openapi": "3.0.0", "info": {"title": "Test API"}}`),
+		Card: []byte(`{"openapi": "3.0.0", "info": {"title": "Test API"}}`),
 	}
 	keeper.SetService(ctx, serviceWithMetadata)
 
@@ -89,7 +89,7 @@ func TestServiceMetadataExclusion(t *testing.T) {
 	singleServiceResp, err := keeper.Service(ctx, &types.QueryGetServiceRequest{Id: serviceWithMetadata.Id})
 	require.NoError(t, err)
 	require.NotNil(t, singleServiceResp.Service.Metadata, "Single service query should include metadata by default")
-	require.Equal(t, serviceWithMetadata.Metadata.ExperimentalApiSpecs, singleServiceResp.Service.Metadata.ExperimentalApiSpecs)
+	require.Equal(t, serviceWithMetadata.Metadata.Card, singleServiceResp.Service.Metadata.Card)
 }
 
 func TestServiceQueryDehydrated(t *testing.T) {
@@ -98,7 +98,7 @@ func TestServiceQueryDehydrated(t *testing.T) {
 	// Create a service with metadata
 	serviceWithMetadata := createNServices(keeper, ctx, 1)[0]
 	testMetadata := &sharedtypes.Metadata{
-		ExperimentalApiSpecs: []byte(`{"openapi": "3.0.0", "info": {"title": "Test API", "version": "1.0.0"}}`),
+		Card: []byte(`{"openapi": "3.0.0", "info": {"title": "Test API", "version": "1.0.0"}}`),
 	}
 	serviceWithMetadata.Metadata = testMetadata
 	keeper.SetService(ctx, serviceWithMetadata)
@@ -149,7 +149,7 @@ func TestServiceQueryDehydrated(t *testing.T) {
 				require.Nil(t, resp.Service.Metadata, "Metadata should be nil when dehydrated=true")
 			} else if test.expectMetadata {
 				require.NotNil(t, resp.Service.Metadata, "Metadata should not be nil when dehydrated=false")
-				require.Equal(t, testMetadata.ExperimentalApiSpecs, resp.Service.Metadata.ExperimentalApiSpecs)
+				require.Equal(t, testMetadata.Card, resp.Service.Metadata.Card)
 			}
 		})
 	}
@@ -162,7 +162,7 @@ func TestAllServicesQueryDehydrated(t *testing.T) {
 	services := createNServices(keeper, ctx, 3)
 	for i := range services {
 		services[i].Metadata = &sharedtypes.Metadata{
-			ExperimentalApiSpecs: []byte(`{"openapi": "3.0.0", "info": {"title": "Test API ` + string(rune('A'+i)) + `"}}`),
+			Card: []byte(`{"openapi": "3.0.0", "info": {"title": "Test API ` + string(rune('A'+i)) + `"}}`),
 		}
 		keeper.SetService(ctx, services[i])
 	}
@@ -212,7 +212,7 @@ func TestAllServicesQueryDehydrated(t *testing.T) {
 					require.Nil(t, service.Metadata, "Service %d metadata should be nil when dehydrated=true", i)
 				} else if test.expectMetadata {
 					require.NotNil(t, service.Metadata, "Service %d metadata should not be nil when dehydrated=false", i)
-					require.NotEmpty(t, service.Metadata.ExperimentalApiSpecs, "Service %d should have API specs", i)
+					require.NotEmpty(t, service.Metadata.Card, "Service %d should have API specs", i)
 				}
 			}
 		})

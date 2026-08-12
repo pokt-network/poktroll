@@ -15,7 +15,7 @@ message Params {
   option (amino.name) = "pocket/x/tokenomics/Params";
   option (gogoproto.equal) = true;
 
-  // Next free index: 10
+  // Next free index: 11
 
   // dao_reward_address is where the DAO's portion of claims submitted are distributed.
   string dao_reward_address = 6 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "dao_reward_address", (gogoproto.moretags) = "yaml:\"dao_reward_address\""]; // Bech32 cosmos address
@@ -38,6 +38,22 @@ message Params {
   // MintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement.
   // Default: 1.0 (no deflation - mint equals burn for backward compatibility)
   double mint_ratio = 9 [(gogoproto.jsontag) = "mint_ratio", (gogoproto.moretags) = "yaml:\"mint_ratio\""];
+
+  // overservicing_bonus_multiplier bounds how far above its guaranteed floor
+  // (per-session budget / actual number of claiming suppliers) a single supplier's
+  // settlement may be raised by redistributing budget unused by idle/light suppliers.
+  //   settled_i <= overservicing_bonus_multiplier * floor_i
+  // Semantics:
+  //   0 or 1 => reproduces the legacy head-split cap exactly (no redistribution above floor).
+  //   n > 1  => a supplier may be paid up to n * floor from unused budget (still bounded by B).
+  // The ZERO value is treated as 1 (legacy cap), NOT "unlimited", so an unset/clobbered value
+  // is always benign and can never silently enable redistribution. To lift the cap in practice
+  // set n >= num_suppliers_per_session, at which point the application budget B binds first.
+  // This is a rollout valve, NOT an economic safeguard (self-dealing and fabrication are
+  // guarded independently by the reward split and the proof threshold). Ships at 1 (no-op),
+  // then opened by governance.
+  // TokenLogicModules: Only used during claim settlement (ensureClaimAmountLimits).
+  uint64 overservicing_bonus_multiplier = 10 [(gogoproto.jsontag) = "overservicing_bonus_multiplier", (gogoproto.moretags) = "yaml:\"overservicing_bonus_multiplier\""];
 }
 
 // MintAllocationPercentages captures the distribution of newly minted tokens.

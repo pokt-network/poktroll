@@ -8,13 +8,17 @@ test_e2e_env: warn_message_acc_initialize_pubkeys ## Setup the default env vars 
 	export PATH_URL=$(PATH_URL) && \
 	export POCKETD_HOME=../../$(POCKETD_HOME)
 
+# DEV_NOTE: -timeout is set explicitly because the full suite runs for ~10 minutes of
+# real block time, which is exactly Go's default test timeout. Without it the suite dies
+# with "panic: test timed out after 10m0s" as soon as one more scenario is added, and the
+# panic looks nothing like the feature that pushed it over.
 .PHONY: test_e2e
 test_e2e: test_e2e_env ## Run all E2E tests
-	go test -count=1 -v ./e2e/tests/... -tags=e2e,test
+	go test -count=1 -v -timeout 30m ./e2e/tests/... -tags=e2e,test
 
 .PHONY: test_e2e_verbose
 test_e2e_verbose: test_e2e_env ## Run all E2E tests with verbose debug output
-	E2E_DEBUG_OUTPUT=true go test -count=1 -v ./e2e/tests/... -tags=e2e,test
+	E2E_DEBUG_OUTPUT=true go test -count=1 -v -timeout 30m ./e2e/tests/... -tags=e2e,test
 
 .PHONY: test_e2e_relay
 test_e2e_relay: test_e2e_env ## Run only the E2E suite that exercises the relay life-cycle

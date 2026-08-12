@@ -65,8 +65,6 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 	case tokenomicstypes.ModuleName:
 		var tokenomicsParamsRes tokenomicstypes.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &tokenomicsParamsRes)
-		fmt.Println("OLSH1", tokenomicsParamsRes.GetParams())
-		fmt.Println("OLSH2", tokenomicstypes.DefaultParams())
 		require.Equal(s, tokenomicstypes.DefaultParams(), tokenomicsParamsRes.GetParams())
 
 	case prooftypes.ModuleName:
@@ -380,6 +378,12 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		mintRatio, ok := paramsMap[tokenomicstypes.ParamMintRatio]
 		if ok {
 			params.MintRatio = mintRatio.value.(float64)
+		}
+
+		// Settlement budget redistribution (v0.1.35).
+		overservicingBonusMultiplier, ok := paramsMap[tokenomicstypes.ParamOverservicingBonusMultiplier]
+		if ok {
+			params.OverservicingBonusMultiplier = overservicingBonusMultiplier.value.(uint64)
 		}
 
 		assertUpdatedParams(s,

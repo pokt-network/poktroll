@@ -21,6 +21,7 @@ func (am AppModule) GetTxCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(CmdAddService())
+	cmd.AddCommand(CmdValidateCard())
 	cmd.AddCommand(CmdEditService())
 	// this line is used by starport scaffolding # 1
 

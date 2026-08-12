@@ -1323,6 +1323,11 @@ func prepareTestClaim(
 ) prooftypes.Claim {
 	numComputeUnits := numRelays * service.ComputeUnitsPerRelay
 	return prooftypes.Claim{
+		// These fixtures model claims that SETTLE. Say so explicitly: the budget
+		// accumulator excludes claims that will expire, so leaving the status at its
+		// zero value (PENDING_VALIDATION) would keep a proof-requiring claim out of the
+		// budget math and silently change what these tests measure.
+		ProofValidationStatus:   prooftypes.ClaimProofStatus_VALIDATED,
 		SupplierOperatorAddress: supplier.OperatorAddress,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      app.Address,

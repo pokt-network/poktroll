@@ -208,9 +208,15 @@ func (server *relayMinerHTTPServer) ServeHTTP(writer http.ResponseWriter, reques
 	if isWebSocketRequest(request) {
 		logger.ProbabilisticDebugInfo(relayProbabilisticDebugProb).Msg("🔍 detected asynchronous relay request")
 
-		if err := server.handleAsyncConnection(ctx, writer, request); err != nil {
-			// Reply with an error if the relay could not be served.
-			server.replyWithError(err, nil, writer)
+		alreadyResponded, err := server.handleAsyncConnection(ctx, writer, request)
+		if err != nil {
+			// Reply with an error ONLY while the response writer is still usable.
+			// Once the upgrader has hijacked the connection (or written its own
+			// handshake error), writing again fails with http.ErrHijacked and
+			// makes net/http log "response.Write on hijacked connection".
+			if !alreadyResponded {
+				server.replyWithError(err, nil, writer)
+			}
 			logger.Warn().Err(err).Msg("❌ failed serving asynchronous relay request")
 			return
 		}

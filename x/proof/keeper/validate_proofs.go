@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"sync"
 
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/x/proof/types"
@@ -71,7 +72,27 @@ func (k Keeper) ValidateSubmittedProofs(ctx sdk.Context) (numValidProofs, numInv
 		// Increment the wait group to wait for proof validation to finish.
 		proofValidationCoordinator.wg.Add(1)
 
-		go k.validateProof(ctx, proofBz, proofValidationCoordinator)
+		// DATA RACE: give each goroutine its OWN gas meter.
+		//
+		// Every store access made through an sdk.Context runs the context's gas meter,
+		// and gaskv.Store calls ConsumeGas OUTSIDE of any lock. infiniteGasMeter.ConsumeGas
+		// is an unsynchronized `consumed += amount`, so sharing one ctx across these
+		// goroutines races the parent's proofIterator.Next() (which consumes seek gas)
+		// against every child's reads (GetClaim, signature/closest-path validation, which
+		// run outside coordinatorMu). Detectable with `go test -race ./x/proof/keeper/...`.
+		//
+		// Handing each goroutine its own meter is behaviour-neutral: the meter is infinite
+		// (EndBlocker context, see baseapp) and EndBlocker gas is never reported in
+		// FinalizeBlockResponse, so no consensus-visible value is derived from it. Only the
+		// gas meter is swapped — the MultiStore and EventManager are carried over by
+		// pointer, so writes and events still land on the shared, mutex-protected state.
+		//
+		// The underlying cachekv.Store is already mutex-protected for Get/Set, and the
+		// parent iterates the PROOF store while children write the CLAIM store (distinct
+		// store keys), so the gas meter was the only unsynchronized shared state.
+		goroutineCtx := ctx.WithGasMeter(storetypes.NewInfiniteGasMeter())
+
+		go k.validateProof(goroutineCtx, proofBz, proofValidationCoordinator)
 	}
 
 	// Wait for all goroutines to finish before returning.

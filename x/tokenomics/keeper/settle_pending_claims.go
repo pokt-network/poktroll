@@ -75,6 +75,38 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				logger.Error(claimErr.Error())
 				continue
 			}
+			// Ripeness gate: only settle a claim once its proof window has actually
+			// closed, judged by the params effective at the claim's OWN sessionEndHeight.
+			//
+			// candidateSessionEndHeights is a deliberate SUPERSET: each params epoch
+			// contributes the height it would settle at this block, with no check that
+			// the epoch actually governs that height. When governance SHRINKS the sum of
+			// the window offsets, the live epoch's candidate reaches back into the
+			// previous epoch and yields a real session-end height whose claims are NOT
+			// yet ripe -- their proof window, resolved at-height, is still open. Settling
+			// them here marks every not-yet-submitted proof PROOF_MISSING, slashes the
+			// supplier, and removes the claim, so a later MsgSubmitProof cannot recover
+			// it. Nothing downstream re-checks this.
+			//
+			// Deferring is safe and cannot orphan the claim: at the block where it IS
+			// ripe, the epoch that owns its sessionEndHeight yields exactly that height
+			// as a candidate again (the history walk never early-stops), so the claim is
+			// collected then. Filtering here rather than when generating candidates keeps
+			// the superset intact -- narrowing candidate generation risks the opposite
+			// and far worse failure, a claim no epoch ever proposes again.
+			claimSessionEndHeight := claim.SessionHeader.GetSessionEndBlockHeight()
+			claimParams := settlementContext.GetSharedParamsAtHeight(ctx, claimSessionEndHeight)
+			claimProofWindowCloseHeight := claimSessionEndHeight +
+				sharedtypes.GetSessionEndToProofWindowCloseBlocks(&claimParams)
+			if blockHeight <= claimProofWindowCloseHeight {
+				logger.Info(fmt.Sprintf(
+					"skipping claim (session %q, supplier %s): proof window closes at %d, not yet reached at %d",
+					claim.SessionHeader.GetSessionId(), claim.SupplierOperatorAddress,
+					claimProofWindowCloseHeight, blockHeight,
+				))
+				continue
+			}
+
 			collectedClaims = append(collectedClaims, claim)
 			settlementContext.IncrementSupplierCount(
 				claim.SessionHeader.ApplicationAddress,
@@ -85,6 +117,36 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	}
 
 	logger.Info(fmt.Sprintf("Phase 1 complete: collected %d claims for settlement", len(collectedClaims)))
+
+	// Phase 1.5: Precompute each (application, session) group's guaranteed floor and the
+	// budget left unused by idle/light suppliers, so Phase 2 can redistribute that unused
+	// budget to suppliers that served above their floor (settlement budget redistribution).
+	//
+	// This requires pricing every claim, which needs warm caches (service, difficulty,
+	// application, params). We warm them here; Phase 2's own ClaimCacheWarmUp then hits the
+	// cache (it is idempotent). A claim that cannot be warmed or priced here is simply left
+	// out of the budget math — Phase 2 discards it deterministically for the same reason,
+	// exactly as before this change. IncrementSupplierCount stays in Phase 1 so the divisor
+	// N reflects the same claim set the pre-change code used.
+	for i := range collectedClaims {
+		claim := &collectedClaims[i]
+		if warmErr := settlementContext.ClaimCacheWarmUp(ctx, claim); warmErr != nil {
+			// Faulty claim; Phase 2 will surface and discard it. Skip budget accounting.
+			continue
+		}
+
+		if budgetErr := settlementContext.AccumulateClaimBudget(ctx, claim); budgetErr != nil {
+			// Claim could not be priced or its budget initialized; Phase 2 will discard it
+			// for the same reason. Skip budget accounting.
+			logger.Warn(fmt.Sprintf(
+				"Phase 1.5: skipping budget accounting for claim (session %q, supplier %s): %s",
+				claim.SessionHeader.SessionId, claim.SupplierOperatorAddress, budgetErr,
+			))
+			continue
+		}
+	}
+
+	logger.Info(fmt.Sprintf("Phase 1.5 complete: precomputed budgets for %d (app, session) groups", len(settlementContext.budgetPerAppSession)))
 
 	// Phase 2: Settle each collected claim using actual supplier counts.
 	for _, claim := range collectedClaims {
@@ -524,6 +586,47 @@ func (k Keeper) GetExpiringClaimsSessionEndHeights(
 	return k.candidateSessionEndHeightsForLiveParams(ctx, k.sharedKeeper.GetParams(ctx), blockHeight)
 }
 
+// claimWillSettle reports whether settleClaim will SETTLE this claim rather than
+// expire it, so Phase 1.5 can keep claims that pay nothing out of the budget math.
+//
+// This MUST mirror settleClaim's expiration branch exactly: a claim expires when a
+// proof is required and its recorded validation status is anything other than
+// VALIDATED. If the two ever disagree, the budget is sized against a different claim
+// set than the one that gets paid.
+//
+// Safe to evaluate here: proof validation runs in the x/proof EndBlocker, which is
+// ordered BEFORE tokenomics, so every claim's ProofValidationStatus is already final by
+// the time settlement runs. ProofRequirementForClaim is a pure read over the claim and
+// params (both resolved at the claim's session start), so calling it in both phases
+// within the same block yields the same answer -- no cached value is threaded between
+// them, precisely so the phases cannot drift apart.
+func (k Keeper) claimWillSettle(ctx context.Context, claim *prooftypes.Claim) (bool, error) {
+	// A VALIDATED claim settles regardless of whether a proof was required, so the
+	// answer is already known without resolving the requirement: the NOT_REQUIRED
+	// branch below returns true unconditionally, and the fallthrough returns true
+	// because the equality holds. Short-circuiting here is exactly equivalent.
+	//
+	// It matters because ProofRequirementForClaim is expensive -- two params-history
+	// reverse iterators, a difficulty-history iterator, a GetClaimeduPOKT recompute and
+	// a block-hash read -- and Phase 2 repeats all of it for the same claim. Without
+	// this, Phase 1.5's marginal per-claim cost is ~10x higher (~28.5us vs ~2.9us),
+	// which at mainnet claim volumes is material block time on the settlement path.
+	if claim.ProofValidationStatus == prooftypes.ClaimProofStatus_VALIDATED {
+		return true, nil
+	}
+
+	proofRequirement, err := k.proofKeeper.ProofRequirementForClaim(ctx, claim)
+	if err != nil {
+		return false, err
+	}
+
+	if proofRequirement == prooftypes.ProofRequirementReason_NOT_REQUIRED {
+		return true, nil
+	}
+
+	return claim.ProofValidationStatus == prooftypes.ClaimProofStatus_VALIDATED, nil
+}
+
 // candidateSessionEndHeightsForLiveParams returns the deduplicated set of
 // sessionEndHeight values whose claims are ripe for settlement at blockHeight,
 // computed under the shared params epoch effective at EACH candidate's session
@@ -906,9 +1009,16 @@ func (k Keeper) settleClaim(
 		return nil, err
 	}
 
-	// Retrieve the shared module params.
-	// It contains network wide governance params required to convert claims to POKT (e.g. CUTTM).
-	sharedParams := settlementContext.GetSharedParams()
+	// Retrieve the shared module params required to convert claimed work to POKT (e.g. CUTTM),
+	// resolved at this claim's session start height rather than live. This is the same epoch
+	// x/proof used to price the claim at creation and to decide whether a proof was required,
+	// including in the ProofRequirementForClaim call below — reading live params here made
+	// those two disagree whenever CUTTM changed mid-flight.
+	//
+	// Named pricingParams (not sharedParams) on purpose: this snapshot carries an OLD
+	// epoch's session grid and MUST NOT be used for timing math. Anything projecting a
+	// future height from the current block reads settlementContext.GetSharedParams().
+	pricingParams := settlementContext.GetSharedParamsAtHeight(ctx, sessionStartHeight)
 
 	// numEstimatedComputeUnits is the probabilistic estimation of the offchain
 	// work done by the relay miner in this session.
@@ -936,7 +1046,7 @@ func (k Keeper) settleClaim(
 	// - The service's configured CUPR
 	// - The service's onchain current relay mining difficulty
 	// - Global network parameters (e.g. CUTTM)
-	claimeduPOKT, err = claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	claimeduPOKT, err = claim.GetClaimeduPOKT(pricingParams, relayMiningDifficulty)
 	if err != nil {
 		return nil, err
 	}

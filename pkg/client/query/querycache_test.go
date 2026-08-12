@@ -86,6 +86,26 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_ServiceQuerier_RelayMiningDiffic
 	require.Equal(s.T(), 1, s.rpcCallCount.difficulty)
 }
 
+func (s *QueryCacheTestSuite) TestKeyValueCache_ServiceQuerier_ComputeUnitsPerRelayAtHeight() {
+	ctx := context.Background()
+
+	// Assert that the server has not been reached yet.
+	require.Equal(s.T(), 0, s.rpcCallCount.computeUnitsPerRelay)
+
+	// Repeated calls for the same (serviceId, height) hit the immutable cache: the
+	// server is reached only once.
+	for range numCalls {
+		_, err := s.queryClients.service.GetServiceComputeUnitsPerRelayAtHeight(ctx, "serviceId", 1)
+		require.NoError(s.T(), err)
+	}
+	require.Equal(s.T(), 1, s.rpcCallCount.computeUnitsPerRelay)
+
+	// A different height is a distinct cache key and reaches the server once more.
+	_, err := s.queryClients.service.GetServiceComputeUnitsPerRelayAtHeight(ctx, "serviceId", 2)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), 2, s.rpcCallCount.computeUnitsPerRelay)
+}
+
 func (s *QueryCacheTestSuite) TestKeyValueCache_ApplicationQuerier_Applications() {
 	ctx := context.Background()
 	appAddress := sample.AccAddressBech32()
@@ -171,6 +191,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 
 	// Assert that the server has not been reached yet.
 	require.Equal(s.T(), 0, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 0, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
 	// Call the GetParams method numCalls times and assert that the server
@@ -180,24 +201,32 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 0, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
-	// Call the GetClaimWindowOpenHeight method numCalls times and assert that the server
-	// is not reached again.
+	// Call the GetClaimWindowOpenHeight method numCalls times.
+	//
+	// Window timing is resolved from params HISTORY, never from live params: live is only
+	// guaranteed to describe the currently-effective epoch for session-timing fields, and
+	// even then only after the boundary promotion. So this reaches the params-at-height
+	// endpoint — exactly once, because the memo is keyed by height and every call here
+	// uses the same one.
 	for range numCalls {
 		_, err := s.queryClients.shared.GetClaimWindowOpenHeight(ctx, 1)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 1, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
 	// Call the GetProofWindowOpenHeight method numCalls times and assert that the server
-	// is not reached again.
+	// is not reached again — same height, so the params-at-height memo already holds it.
 	for range numCalls {
 		_, err := s.queryClients.shared.GetProofWindowOpenHeight(ctx, 1)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 1, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
 	// Call the GetSessionGracePeriodEndHeight method numCalls times and assert that the server
@@ -207,27 +236,45 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 1, s.rpcCallCount.sharedParamsAtHeight)
+	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
+
+	// A DIFFERENT height is a different params epoch as far as the querier knows, so it
+	// must not be served from the entry memoized above.
+	for range numCalls {
+		_, err := s.queryClients.shared.GetClaimWindowOpenHeight(ctx, 2)
+		require.NoError(s.T(), err)
+	}
+	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+	require.Equal(s.T(), 2, s.rpcCallCount.sharedParamsAtHeight)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
 	supplierAddr := sample.AccAddressBech32()
 
 	// Call the GetEarliestSupplierClaimCommitHeight method numCalls times and assert that
-	// the CometRPC server is reached only once.
+	// the CometRPC block endpoint is NEVER reached.
+	//
+	// These two methods used to fetch the claim/proof window-open block hash to seed a
+	// distribution offset. That seeding is disabled — sharedtypes.GetEarliestSupplier*
+	// CommitHeight ignores the block-hash argument — so the fetch was removed and nil is
+	// passed instead. Asserting 0 here is what keeps the RPC from creeping back in for a
+	// value nobody reads.
 	for range numCalls {
 		_, err := s.queryClients.shared.GetEarliestSupplierClaimCommitHeight(ctx, 1, supplierAddr)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
-	require.Equal(s.T(), 1, s.rpcCallCount.blocks)
+	require.Equal(s.T(), 2, s.rpcCallCount.sharedParamsAtHeight)
+	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
-	// Call the GetEarliestSupplierProofCommitHeight method numCalls times and assert that
-	// the CometRPC server is reached once again for a different block height
+	// Same for GetEarliestSupplierProofCommitHeight: params stay cached, no block fetch.
 	for range numCalls {
 		_, err := s.queryClients.shared.GetEarliestSupplierProofCommitHeight(ctx, 1, supplierAddr)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
-	require.Equal(s.T(), 2, s.rpcCallCount.blocks)
+	require.Equal(s.T(), 2, s.rpcCallCount.sharedParamsAtHeight)
+	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 }
 
 func (s *QueryCacheTestSuite) TestKeyValueCache_ProofQuerier_Params() {
@@ -371,6 +418,27 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 			response.Params = params
 		}).AnyTimes()
 
+	// Mock the params-at-height endpoint.
+	//
+	// Every shared-querier method that resolves a specific session (window timing, claim
+	// pricing) reads through GetParamsAtHeight, which always consults params history
+	// rather than assuming live params describe the queried height. It is memoized per
+	// height, so the assertions below count one call per DISTINCT height.
+	grpcClientConn.EXPECT().Invoke(
+		gomock.Any(), // ctx
+		"/pocket.shared.Query/ParamsAtHeight",
+		gomock.Any(),
+		gomock.Any(),
+	).
+		Do(func(_ context.Context, _ string, _ any, reply any, _ ...any) {
+			s.rpcCallCount.sharedParamsAtHeight++
+
+			response, ok := reply.(*sharedtypes.QueryParamsAtHeightResponse)
+			require.True(s.T(), ok)
+
+			response.Params = sharedtypes.DefaultParams()
+		}).AnyTimes()
+
 	// Mock the Invoke method of the GRPCClientConn.
 	// This method needs to return a valid codec.Any response that will be unmarshalled
 	// into an account by the account querier.
@@ -417,6 +485,8 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 				s.rpcCallCount.services++
 			case "/pocket.service.Query/RelayMiningDifficulty":
 				s.rpcCallCount.difficulty++
+			case "/pocket.service.Query/ComputeUnitsPerRelayAtHeight":
+				s.rpcCallCount.computeUnitsPerRelay++
 			case "/pocket.supplier.Query/Supplier":
 				s.rpcCallCount.suppliers++
 			case "/pocket.application.Query/Application":
@@ -437,17 +507,19 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 // rpcCallCount is a struct that keeps track of the number of times each RPC method is called.
 type rpcCallCount struct {
 	// pocket key value calls
-	services   int
-	difficulty int
-	apps       int
-	suppliers  int
-	sessions   int
+	services             int
+	difficulty           int
+	computeUnitsPerRelay int
+	apps                 int
+	suppliers            int
+	sessions             int
 
 	// pocket params calls
-	appParams     int
-	sessionParams int
-	sharedParams  int
-	proofParams   int
+	appParams            int
+	sessionParams        int
+	sharedParams         int
+	sharedParamsAtHeight int
+	proofParams          int
 
 	// cosmos-sdk calls
 	blocks   int
@@ -477,6 +549,9 @@ func supplyCacheDeps(t *testing.T) depinject.Config {
 	require.NoError(t, err)
 
 	difficultyCache, err := memory.NewKeyValueCache[servicetypes.RelayMiningDifficulty](opts)
+	require.NoError(t, err)
+
+	computeUnitsPerRelayCache, err := memory.NewKeyValueCache[uint64](opts)
 	require.NoError(t, err)
 
 	appCache, err := memory.NewKeyValueCache[apptypes.Application](opts)
@@ -521,6 +596,7 @@ func supplyCacheDeps(t *testing.T) depinject.Config {
 	return depinject.Supply(
 		serviceCache,
 		difficultyCache,
+		computeUnitsPerRelayCache,
 		appCache,
 		supplierCache,
 		sessionCache,

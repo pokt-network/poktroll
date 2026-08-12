@@ -141,7 +141,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 					ComputeUnitsPerRelay: 1,
 					OwnerAddress:         serviceOwnerAddress,
 					Metadata: &sharedtypes.Metadata{
-						ExperimentalApiSpecs: bytes.Repeat([]byte("a"), sharedtypes.MaxServiceMetadataSizeBytes+1),
+						Card: bytes.Repeat([]byte("a"), sharedtypes.MaxServiceMetadataSizeBytes+1),
 					},
 				},
 			},
@@ -157,7 +157,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 					ComputeUnitsPerRelay: 1,
 					OwnerAddress:         serviceOwnerAddress,
 					Metadata: &sharedtypes.Metadata{
-						ExperimentalApiSpecs: bytes.Repeat([]byte("a"), sharedtypes.MaxServiceMetadataSizeBytes),
+						Card: bytes.Repeat([]byte("a"), sharedtypes.MaxServiceMetadataSizeBytes),
 					},
 				},
 			},

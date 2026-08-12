@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -36,6 +38,13 @@ const (
 	testServiceId = "anvil"
 	// defaultJSONPRCPath is the default path used for sending JSON-RPC relay requests.
 	defaultJSONPRCPath = ""
+
+	// maxObservedEventTypesLogged bounds how many distinct event types a timed-out wait
+	// reports, so the diagnostic stays readable on a busy chain.
+	maxObservedEventTypesLogged = 40
+
+	// queryRetryDelay is how long queryWithRetry waits between attempts.
+	queryRetryDelay = 2 * time.Second
 
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
@@ -127,17 +136,76 @@ func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBe
 	s.buildSupplierMap()
 }
 
+// TheUserShouldWaitForTheClaimsettledEventClaimingUpoktToBeBroadcast waits for a
+// ClaimSettled end block event which settled exactly expectedClaimedUpokt.
+//
+// DEV_NOTE: Prefer this over matching on the proof requirement alone whenever the scenario
+// asserts on an AMOUNT afterwards. The new block events replay client also serves events it
+// observed earlier, so a proof-requirement-only match can bind to a claim from a previous
+// feature. That is not theoretical: a leftover 1-relay claim settling for 4200upokt one
+// block before this scenario's session started matched the generic wait, and the balance
+// assertion which followed then read the wrong settlement entirely.
+//
+// Matching on the settled amount also makes the wait itself load-bearing: a claim priced
+// against the wrong parameters never produces this event & the step times out.
+func (s *suite) TheUserShouldWaitForTheClaimsettledEventClaimingUpoktToBeBroadcast(expectedClaimedUpokt string) {
+	s.waitForNewBlockEvent(
+		combineEventMatchFns(
+			newEventTypeMatchFn("tokenomics", "ClaimSettled"),
+			newEventModeMatchFn("EndBlock"),
+			newEventAttributeUnquotedMatchFn("claimed_upokt", fmt.Sprintf("%supokt", expectedClaimedUpokt)),
+		),
+	)
+
+	// Update the actor maps after end block events have been emitted.
+	s.buildAppMap()
+	s.buildSupplierMap()
+}
+
+// queryWithRetry runs a query-client call, retrying transient transport failures.
+//
+// Steps which shell out go through RunCommandOnHostWithRetry, but calls made directly
+// through a query client had no retry at all, so a single transient failure failed the
+// whole scenario. The failure actually observed is:
+//
+//	post failed: Post "http://localhost:26657": EOF
+//
+// i.e. the node closed an idle keep-alive connection and the client then reused that same
+// connection. That is a race inherent to HTTP connection reuse — not a chain defect and not
+// something the assertion under test is meant to cover.
+func queryWithRetry[T any](s *suite, queryFn func(context.Context) (T, error)) T {
+	s.Helper()
+
+	var (
+		result T
+		err    error
+	)
+
+	for attempt := 1; attempt <= int(numQueryRetries)+1; attempt++ {
+		result, err = queryFn(context.Background())
+		if err == nil {
+			return result
+		}
+
+		s.Logf("query attempt %d/%d failed (%s); retrying...", attempt, int(numQueryRetries)+1, err)
+		time.Sleep(queryRetryDelay)
+	}
+
+	require.NoErrorf(s, err, "query failed after %d attempts", int(numQueryRetries)+1)
+
+	return result
+}
+
 // TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
 // was modified to using an event replay client, instead of a query, to eliminate the flakiness.
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierOperatorName, serviceId, appName string) {
-	ctx := context.Background()
-
-	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
-		Filter: &prooftypes.QueryAllClaimsRequest_SupplierOperatorAddress{
-			SupplierOperatorAddress: accNameToAddrMap[supplierOperatorName],
-		},
+	allClaimsRes := queryWithRetry(s, func(ctx context.Context) (*prooftypes.QueryAllClaimsResponse, error) {
+		return s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
+			Filter: &prooftypes.QueryAllClaimsRequest_SupplierOperatorAddress{
+				SupplierOperatorAddress: accNameToAddrMap[supplierOperatorName],
+			},
+		})
 	})
-	require.NoError(s, err)
 	require.NotNil(s, allClaimsRes)
 
 	// Assert that the number of claims has increased by one.
@@ -162,16 +230,15 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 }
 
 func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(supplierOperatorName, numRelaysStr, serviceId, appName string) {
-	ctx := context.Background()
-
 	numRelays, err := strconv.Atoi(numRelaysStr)
 	require.NoError(s, err)
 
 	// Wait for the claims to be 0 before proceeding since claims from a previous
 	// test may still be settling, skewing the results.
 	for {
-		allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
-		require.NoError(s, err)
+		allClaimsRes := queryWithRetry(s, func(ctx context.Context) (*prooftypes.QueryAllClaimsResponse, error) {
+			return s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
+		})
 		s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claims
 		if len(allClaimsRes.Claims) == 0 {
 			break
@@ -182,8 +249,9 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 
 	// Query for any existing proofs so that we can compare against them in
 	// future assertions about changes in onchain proofs.
-	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
-	require.NoError(s, err)
+	allProofsRes := queryWithRetry(s, func(ctx context.Context) (*prooftypes.QueryAllProofsResponse, error) {
+		return s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
+	})
 	s.scenarioState[preExistingProofsKey] = allProofsRes.Proofs
 
 	// Send relays for the session.
@@ -239,6 +307,22 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 	s.waitForNewBlockEvent(isValidClaimSettledEvent)
 }
 
+// TheUserWaitsForTheNextSessionToStart blocks until the next session begins.
+//
+// Use it before serving relays in a scenario whose assertions depend on ALL of those relays
+// landing in ONE session. Without it the relays are sent wherever the session grid happens
+// to be: if a boundary falls mid-loop the relays split across two sessions, two claims are
+// created, and a step which waits for a single ClaimSettled event then asserts against a
+// partial settlement. That failure is invisible when a feature is run on its own, because
+// the grid alignment depends on everything that ran before it.
+func (s *suite) TheUserWaitsForTheNextSessionToStart() {
+	sharedParams := s.getSharedParams()
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.getCurrentBlockHeight())
+
+	s.Logf("waiting for the next session to start at height %d", nextSessionStartHeight)
+	s.waitForBlockHeight(nextSessionStartHeight)
+}
+
 func (suite *suite) TheModuleParametersAreSetAsFollows(moduleName string, params gocuke.DataTable) {
 	suite.AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
 		"gov",
@@ -249,6 +333,33 @@ func (suite *suite) TheModuleParametersAreSetAsFollows(moduleName string, params
 	)
 
 	suite.TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams("pnf", moduleName, params)
+}
+
+// TheModuleParameterUpdateIsRejectedWithTheError asserts that a governance param update
+// for the given module is REJECTED by the chain with an error containing expectedErrSubstr.
+//
+// It exists to pin the param validations whose whole purpose is to be unreachable through
+// governance (e.g. a shared param set that would divide by zero in the settlement
+// EndBlocker & therefore halt the chain).
+func (s *suite) TheModuleParameterUpdateIsRejectedWithTheError(
+	moduleName string,
+	expectedErrSubstr string,
+	params gocuke.DataTable,
+) {
+	s.AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
+		"gov",
+		"module",
+		pnfKeyName,
+		"user",
+		fmt.Sprintf("/pocket.%s.MsgUpdateParams", moduleName),
+	)
+
+	// DEV_NOTE: Intentionally NOT stored on s#expectedModuleParams: the update is expected
+	// to be rejected, so these values must never become an expectation for later assertions.
+	rejectedModuleParams := moduleParamsMap{moduleName: s.parseParamsTable(params)}
+	txJSONFile := s.newTempUpdateParamsTxJSONFile(rejectedModuleParams)
+
+	s.sendAuthzExecTxExpectingError(pnfKeyName, txJSONFile.Name(), expectedErrSubstr)
 }
 
 func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName string, testWsServiceId string) {
@@ -439,14 +550,48 @@ func (s *suite) forEachTxResult(
 	txResultFn func(_ context.Context, txResult *abci.TxResult),
 ) {
 
+	// DIAGNOSTIC: record what this wait actually observes.
+	//
+	// A bare "timed out waiting for tx result" cannot distinguish the two failures which
+	// look identical from the outside:
+	//   - the event stream delivered NOTHING (a wedged/dead subscription), versus
+	//   - it delivered tx results but the matcher never fired (wrong event type, or the
+	//     tx genuinely lacks the event).
+	// Reporting the observed count & the distinct event types makes the next timeout
+	// self-diagnosing instead of requiring another full-suite reproduction.
+	var (
+		observedMu         sync.Mutex
+		numObservedResults int
+		observedEventTypes []string
+	)
+
 	channel.ForEach[*abci.TxResult](ctx,
 		s.txResultReplayClient.EventsSequence(ctx),
-		txResultFn,
+		func(fnCtx context.Context, txResult *abci.TxResult) {
+			observedMu.Lock()
+			numObservedResults++
+			if txResult != nil {
+				for _, event := range txResult.Result.Events {
+					if len(observedEventTypes) < maxObservedEventTypesLogged &&
+						!slices.Contains(observedEventTypes, event.Type) {
+						observedEventTypes = append(observedEventTypes, event.Type)
+					}
+				}
+			}
+			observedMu.Unlock()
+
+			txResultFn(fnCtx, txResult)
+		},
 	)
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for tx result")
+		observedMu.Lock()
+		defer observedMu.Unlock()
+		s.Fatalf(
+			"ERROR: timed out waiting for tx result after observing %d tx result(s); distinct event types seen: %v",
+			numObservedResults, observedEventTypes,
+		)
 	case <-ctx.Done():
 		s.Log("Success; tx result detected before timeout.")
 	}
@@ -499,6 +644,24 @@ func newEventAttributeMatchFn(key, value string) func(event *abci.Event) bool {
 
 		for _, attribute := range event.Attributes {
 			if attribute.Key == key && attribute.Value == value {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// newEventAttributeUnquotedMatchFn is newEventAttributeMatchFn for attributes whose values
+// are proto-JSON encoded, i.e. wrapped in double quotes (every string-typed event field).
+// It compares against the unquoted value so callers do not have to encode the quoting.
+func newEventAttributeUnquotedMatchFn(key, value string) func(event *abci.Event) bool {
+	return func(event *abci.Event) bool {
+		if event == nil {
+			return false
+		}
+
+		for _, attribute := range event.Attributes {
+			if attribute.Key == key && strings.Trim(attribute.Value, `"`) == value {
 				return true
 			}
 		}

@@ -30,13 +30,6 @@ import (
 func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height int64) error {
 	logger := rs.logger.With("method", "populateSessionTreeMap", "height", height)
 
-	// Retrieve the shared onchain parameters
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to get shared params")
-		return err
-	}
-
 	// Retrieve all persisted session metadata for evaluation of their current state
 	_, persistedSessions, err := rs.sessionSMTStore.GetAll([]byte{}, false)
 	if err != nil {
@@ -68,6 +61,19 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 		// 3. Past claim window with onchain claim: Retain for proof submission
 		// 4. Past claim window without onchain claim: Delete as it's too late to claim
 		// 5. Past proof window: Delete as the session is completely expired
+
+		// Window TIMING resolves at each session's OWN end height, mirroring the chain.
+		// This classification decides whether a restored session is kept or DELETED, and
+		// persisted sessions routinely span params epochs, so a single hoisted live read
+		// would mis-classify them on every restart after a window-offset change --
+		// discarding evidence for sessions whose real proof window is still open.
+		sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
+		if err != nil {
+			// Keep the session: dropping it on a failed lookup risks discarding a session
+			// that is still claimable.
+			logger.Error().Err(err).Msgf("failed to get shared params at session end height %d, skipping session %q", sessionEndHeight, sessionId)
+			continue
+		}
 
 		claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
 		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)

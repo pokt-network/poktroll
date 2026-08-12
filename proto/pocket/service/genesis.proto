@@ -10,6 +10,7 @@ import "gogoproto/gogo.proto";
 import "pocket/service/params.proto";
 import "pocket/shared/service.proto";
 import "pocket/service/relay_mining_difficulty.proto";
+import "pocket/service/compute_units.proto";
 
 
 // GenesisState defines the service module's genesis state.
@@ -19,5 +20,15 @@ message GenesisState {
   Params  params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
   repeated pocket.shared.Service service_list = 2 [(gogoproto.nullable) = false] ;
   repeated RelayMiningDifficulty relayMiningDifficultyList = 3 [(gogoproto.nullable) = false] ;
+
+  // compute_units_per_relay_history contains the per-service compute_units_per_relay
+  // snapshots that back the session-start cupr lookup.
+  //
+  // Without it an export/import round trip silently drops every entry and
+  // GetServiceComputeUnitsPerRelayAtHeight falls back to the LIVE cupr for all past
+  // sessions -- reverting to exactly the behaviour the session-start pin exists to
+  // prevent, with no signal that anything was lost. Mirrors params_history in
+  // pocket/shared/genesis.proto.
+  repeated ServiceComputeUnitsPerRelayUpdate compute_units_per_relay_history = 4 [(gogoproto.nullable) = false];
 }
 

@@ -132,3 +132,10 @@ release_prep_announcement.txt
 
 # Testing binaries
 test_binaries/
+
+# Compiled tool binaries (the Go sources next to them ARE tracked)
+/tools/iavl-tree-diff/iavl-tree-diff
+
+# Personal, machine-specific, or otherwise local-only paths do NOT belong in this file:
+# .gitignore is public, so listing them publishes their names. Use .git/info/exclude,
+# which is per-clone and never committed.

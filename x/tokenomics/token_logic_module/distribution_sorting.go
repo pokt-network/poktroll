@@ -42,7 +42,14 @@ func calculateAddressRewards(
 		baseRat := new(big.Rat).SetInt(baseReward)
 		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
 
-		// Append to reward data to a slice whose order is deterministic
+		// DEV_NOTE: stakeAmounts is a Go map, so the ORDER of this slice is NOT
+		// deterministic. Consumers MUST NOT depend on it. Both current consumers are
+		// order-independent by construction:
+		//   - calculateBaseProportionalRewards folds it into a map keyed by address.
+		//   - sortAddressesByFractionDesc sorts it with a comparator whose address
+		//     tie-breaker makes the ordering total (addresses are unique map keys),
+		//     so the unstable sort.Slice still yields one unique result.
+		// A consumer that reads this slice in order would be consensus-breaking.
 		rewardData = append(rewardData, addressRewardData{
 			address:    addrStr,
 			stake:      stake,
@@ -57,14 +64,12 @@ func calculateAddressRewards(
 // sortAddressesByFractionDesc sorts addresses by fractional remainder (descending) for LRM.
 // Addresses with largest fractional parts receive remainder tokens first.
 // Uses address as ordering tie-breaker for determinism.
-func sortAddressesByFractionDesc(
-	stakeAmounts map[string]math.Int,
-	totalBondedTokens math.Int,
-	totalRewardAmount math.Int,
-) []string {
-	// Use consolidated calculation to get reward data for all addresses
-	rewardData := calculateAddressRewards(stakeAmounts, totalBondedTokens, totalRewardAmount)
-
+//
+// It consumes the reward data already computed by the caller (see
+// calculateProportionalRewards) rather than recomputing it: calculateAddressRewards is a
+// pure function of its inputs, so recomputing here just repeated ~len(stakeholders) big.Rat
+// operations per settlement for no benefit.
+func sortAddressesByFractionDesc(rewardData []addressRewardData) []string {
 	// Filter addresses with non-zero fractional parts
 	var rewardDataNonZeroFractions []addressRewardData
 	for _, data := range rewardData {

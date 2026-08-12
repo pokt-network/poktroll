@@ -272,16 +272,21 @@ collect_service() {
 
     # Metadata (optional)
     echo ""
-    echo -e "${CYAN}About Service Metadata (Optional):${NC}"
-    echo "  You can attach an API specification (OpenAPI, OpenRPC, etc.) to the service."
-    echo "  This is stored on-chain and helps describe the service's interface."
+    echo -e "${CYAN}About the Service Card (Optional):${NC}"
+    echo "  You can attach a service card: a small, self-describing JSON document."
+    echo "  It is validated against the service card schema before broadcasting."
     echo "  Maximum size: 256 KiB"
     echo ""
+    echo "  NOTE: a full API specification (OpenAPI, OpenRPC) does NOT go here — those"
+    echo "  routinely exceed the size cap. Host the spec and reference it from the card's"
+    echo "  'specs[]' entries instead. Validate offline first with:"
+    echo "      pocketd tx service validate-card ./card.json"
+    echo ""
 
-    add_metadata=$(prompt_yes_no "Do you want to add API metadata from a file?" "n")
+    add_metadata=$(prompt_yes_no "Do you want to add a service card from a file?" "n")
     if [ "$add_metadata" = "y" ]; then
         while true; do
-            metadata_file=$(prompt_with_default "Path to metadata file (e.g., ./openapi.json)" "")
+            metadata_file=$(prompt_with_default "Path to service card file (e.g., ./card.json)" "")
             if [[ -z "$metadata_file" ]]; then
                 print_info "Skipping metadata"
                 break
@@ -382,7 +387,7 @@ execute_services() {
 
         # Add metadata flag if present
         if [[ -n "$metadata_file" ]]; then
-            cmd="$cmd --experimental-metadata-file \"$metadata_file\""
+            cmd="$cmd --card-file \"$metadata_file\""
         fi
 
         cmd="$cmd --gas auto --gas-adjustment 1.5 --from $address --network=$network --yes"

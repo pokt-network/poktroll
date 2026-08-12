@@ -52,6 +52,7 @@ func (s *ServiceModuleSuite) GetServiceQueryClient(t *testing.T) client.ServiceQ
 		polyzero.NewLogger(),
 		testcache.NewNoopKeyValueCache[sharedtypes.Service](),
 		testcache.NewNoopKeyValueCache[servicetypes.RelayMiningDifficulty](),
+		testcache.NewNoopKeyValueCache[uint64](),
 		testcache.NewNoopParamsCache[servicetypes.Params](),
 	)
 	serviceClient, err := query.NewServiceQuerier(deps)

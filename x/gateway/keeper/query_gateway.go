@@ -32,6 +32,16 @@ func (k Keeper) AllGateways(ctx context.Context, req *types.QueryAllGatewaysRequ
 			return status.Error(codes.Internal, err.Error())
 		}
 
+		// Strip the card when the caller asked for a dehydrated response.
+		//
+		// This matters most here: a card can be up to MaxServiceMetadataSizeBytes (256 KiB),
+		// so a default page of 100 carried cards would be ~25 MB and exceed the 4 MB default
+		// gRPC message limit. Callers enumerating gateways almost never want the payloads;
+		// `query gateway card <address>` fetches an individual one.
+		if req.Dehydrated {
+			gateway.Metadata = nil
+		}
+
 		gateways = append(gateways, gateway)
 		return nil
 	})
@@ -55,5 +65,12 @@ func (k Keeper) Gateway(ctx context.Context, req *types.QueryGetGatewayRequest) 
 	if !found {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("gateway not found: address %s", req.Address))
 	}
+
+	// Strip the card when the caller asked for a dehydrated response.
+	// Mirrors the same flag on the service queries. Defaults to false (card included).
+	if req.Dehydrated {
+		gateway.Metadata = nil
+	}
+
 	return &types.QueryGetGatewayResponse{Gateway: gateway}, nil
 }

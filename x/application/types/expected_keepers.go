@@ -31,6 +31,9 @@ type BankKeeper interface {
 type GatewayKeeper interface {
 	GetGateway(ctx context.Context, addr string) (gatewaytypes.Gateway, bool)
 	GetAllGateways(ctx context.Context) []gatewaytypes.Gateway
+	// GetAllGatewayLifecycles decodes every gateway WITHOUT its card; use it on hot
+	// paths (e.g. the per-block auto-undelegate scan) that never read the card.
+	GetAllGatewayLifecycles(ctx context.Context) []gatewaytypes.GatewayLifecycle
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared information.

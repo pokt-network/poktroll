@@ -100,9 +100,12 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 	// to get the most recently (asynchronously) observed (and cached) value.
-	// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
-	// we should be using the value that the params had for the session which includes queryHeight.
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	// Window TIMING resolves at the session END height, mirroring the chain
+	// (x/proof/keeper/session.go validateProofWindow). Reading live params here would
+	// open the proof window at a different height than the chain enforces after any
+	// window-offset or num_blocks_per_session change, submitting the proof outside the
+	// real window -> PROOF_MISSING -> the supplier is slashed.
+	sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Unable to calculate proof timing, which may prevent rewards and cause slashing.")
 		failedSubmitProofsSessionsCh <- sessionTrees
@@ -217,7 +220,9 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// - Avoid making assumptions about shared properties
 		// - Eliminate constant queries for sharedParams
 		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		// Window TIMING resolves at the session END height, mirroring the chain. This
+		// value becomes the proof tx's timeout height.
+		sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 		if err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
 			rs.logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Rewards may not be secured and supplier may be slashed.")
@@ -348,14 +353,28 @@ func (rs *relayerSessionsManager) isProofRequired(
 		return false, err
 	}
 
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	// Resolve the pricing params at the session's start height — the same epoch
+	// ProofRequirementForClaim uses onchain. If the miner evaluated this threshold under
+	// live params while the chain used session-start params, a CUTTM change mid-flight could
+	// make the miner skip a proof the chain still requires, which surfaces as PROOF_MISSING
+	// and slashes the supplier.
+	sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, claim.GetSessionHeader().GetSessionStartBlockHeight())
 	if err != nil {
 		return false, err
 	}
 
-	// Retrieving the relay mining difficulty for the service at hand
+	// Relay mining difficulty resolves at the session START height, the same as the
+	// pricing params above and the same as every onchain consumer
+	// (msg_server_create_claim, msg_server_submit_proof, ProofRequirementForClaim and
+	// settlement all use GetRelayMiningDifficultyAtHeight(sessionStartHeight)).
+	// claimeduPOKT is a product of difficulty AND the pricing params, so pinning only the
+	// latter left this factor free: with live difficulty the miner's claimeduPOKT can fall
+	// below proof_requirement_threshold while the chain's lands above it, so the miner
+	// skips a proof the chain requires -> PROOF_MISSING -> slash.
 	serviceId := claim.GetSessionHeader().GetServiceId()
-	relayMiningDifficulty, err := rs.serviceQueryClient.GetServiceRelayDifficulty(ctx, serviceId)
+	relayMiningDifficulty, err := rs.serviceQueryClient.GetServiceRelayDifficultyAtHeight(
+		ctx, serviceId, claim.GetSessionHeader().GetSessionStartBlockHeight(),
+	)
 	if err != nil {
 		return false, err
 	}

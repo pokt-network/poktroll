@@ -18,15 +18,27 @@ import (
 //
 // KNOWN LIMITATION — cross-param loss in same session (audit pass 3 MED2):
 // Each call's base is the LIVE params snapshot (line below). For session-timing
-// changes, live is NOT updated until the next-boundary EndBlocker. If governance
-// submits TWO MsgUpdateParam txs in the same in-flight session, each targeting a
-// DIFFERENT session-timing param, both writes use the same (stale) live base and
-// SetParamsAtHeight at the same effective_height — the second write overwrites
-// the first, dropping the first param's change.
+// changes, live is NOT updated until the next-boundary EndBlocker. So once a
+// session-timing change is pending, ANY subsequent MsgUpdateParam in the same
+// session rebuilds the params struct from a live snapshot that does not contain
+// it, and overwrites the history entry at the same effective_height — silently
+// reverting the pending change.
 //
-// Workaround: governance proposals that change MULTIPLE session-timing params in
-// one go MUST use the bulk MsgUpdateParams (which takes a full Params struct in
-// one shot) rather than chained MsgUpdateParam calls. The bulk handler is in
+// The second message does NOT have to target a session-timing param. A routine
+// non-timing update (e.g. compute_units_to_tokens_multiplier) reverts a pending
+// num_blocks_per_session change just as effectively, and looks harmless because
+// it takes effect on live immediately. The failure is order-dependent:
+//
+//   - timing THEN anything: the timing change is LOST.
+//   - non-timing THEN timing: both survive, because the non-timing write already
+//     landed in live before the timing call read it.
+//
+// Both orderings are pinned in
+// tests/integration/tokenomics/two_param_changes_same_session_test.go.
+//
+// Workaround: governance proposals that change MULTIPLE shared params in one go
+// MUST use the bulk MsgUpdateParams (which takes a full Params struct in one
+// shot) rather than chained MsgUpdateParam calls. The bulk handler is in
 // msg_update_params.go and writes the union atomically. Same-param sequential
 // updates work correctly (the second call writes the same effective_height key
 // with the final value — the last-write-wins semantic the SDK consumers expect;
@@ -186,6 +198,20 @@ func (k msgServer) recordParamsHistory(ctx context.Context, newParams types.Para
 	// legacy behavior of taking effect on live params immediately, but keep the CURRENT epoch's
 	// grid anchor in live (the EndBlocker advances the anchor at the boundary) so boundary math
 	// stays on the unchanged grid in the meantime.
+	//
+	// CONSEQUENCE — live and history disagree for these fields until the boundary. The history
+	// entry written above says the change is effective at nextSessionStartHeight, while the live
+	// write below applies it NOW. So for the remainder of the current session, live carries the
+	// new value but GetParamsAtHeight(h) for any h in that session still resolves to the old
+	// one. Two params epochs are observable at once, and which one a caller sees depends on
+	// which accessor it uses.
+	//
+	// This is why every consumer that PRICES a claim reads at-height rather than live:
+	// compute_units_to_tokens_multiplier and compute_unit_cost_granularity must be resolved at
+	// the claim's session start so the claim settles at the rate it was created and proof-gated
+	// under. See x/proof (create_claim, submit_proof, ProofRequirementForClaim),
+	// x/tokenomics settlementContext.GetSharedParamsAtHeight(sessionStart), and pkg/relayer/session.
+	// Reading live for pricing reintroduces the mid-flight rate change those pins exist to stop.
 	liveParams := k.GetParams(ctx)
 	if !sessionTimingParamsChanged(&liveParams, &newParams) {
 		immediateParams := newParams

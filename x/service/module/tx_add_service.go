@@ -16,6 +16,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/pkg/cards"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -35,27 +36,31 @@ func CmdAddService() *cobra.Command {
 		Long: `Add a new service or update an existing service on the network.
 
 This command allows any actor to add a new service or update an existing one (if they are the owner).
-Services are uniquely identified by their ID and can optionally include experimental metadata
-such as OpenAPI or OpenRPC specifications (limited to 256 KiB).
+Services are uniquely identified by their ID and can optionally carry a service card: a small,
+self-describing JSON document (limited to 256 KiB). See docs/pocket_service_card.md.
 
 The service ID MUST be unique but the service name doesn't have to be.
 Only the service owner can update an existing service.`,
-		Example: `  # Add a basic service without metadata
+		Example: `  # Add a basic service without a card
   pocketd tx service add-service "svc1" "My Service" 10 --from owner
 
-  # Add a service with metadata from a file
+  # Add a service with a card from a file
   pocketd tx service add-service "svc1" "My Service" 10 \
-    --experimental-metadata-file ./openapi.json --from owner
+    --card-file ./card.json --from owner
 
-  # Add a service with base64-encoded metadata
+  # Add a service with a base64-encoded card
   pocketd tx service add-service "svc1" "My Service" 10 \
-    --experimental-metadata-base64 $(base64 -w0 ./openapi.json) --from owner
+    --card-base64 $(base64 -w0 ./card.json) --from owner
 
-  # Update an existing service's compute units and metadata
+  # Update an existing service's compute units and card
   pocketd tx service add-service "svc1" "My Service" 20 \
-    --experimental-metadata-file ./openapi-v2.json --from owner`,
+    --card-file ./card-v2.json --from owner`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			// Args are already validated by cobra, so anything failing below (a malformed
+			// card, a missing key, a broadcast failure) is not a usage problem.
+			cmd.SilenceUsage = true
+
 			// Parse required arguments
 			serviceIdStr := args[0]
 			serviceNameStr := args[1]
@@ -109,92 +114,148 @@ Only the service owner can update an existing service.`,
 
 	flags.AddTxFlagsToCmd(cmd)
 	cmd.Flags().String(
-		FlagExperimentalMetadataBase64,
+		FlagCardBase64,
 		"",
-		"Base64-encoded experimental API specification (OpenAPI, OpenRPC, etc.) for the service. "+
-			"Limited to 256 KiB when decoded. Mutually exclusive with --experimental-metadata-file.",
+		"Base64-encoded service card (JSON) for the service. "+
+			"Limited to 256 KiB when decoded. Mutually exclusive with --card-file.",
 	)
 	cmd.Flags().String(
-		FlagExperimentalMetadataFile,
+		FlagCardFile,
 		"",
-		"Path to file containing experimental API specification (OpenAPI, OpenRPC, etc.) for the service. "+
-			"Limited to 256 KiB. Mutually exclusive with --experimental-metadata-base64.",
+		"Path to a file containing the service card (JSON). "+
+			"Limited to 256 KiB. Mutually exclusive with --card-base64.",
 	)
+
+	cmd.Flags().Bool(
+		FlagSkipCardValidation,
+		false,
+		"Publish the card without validating it against the Pocket Service Card schema. "+
+			"The chain does not parse the payload, so this lets you store something that is not a card.",
+	)
+
+	// Deprecated aliases, kept so existing tooling and scripts keep working.
+	cmd.Flags().String(FlagExperimentalMetadataBase64, "", "Deprecated: use --card-base64.")
+	cmd.Flags().String(FlagExperimentalMetadataFile, "", "Deprecated: use --card-file.")
+	_ = cmd.Flags().MarkDeprecated(FlagExperimentalMetadataBase64, "use --card-base64")
+	_ = cmd.Flags().MarkDeprecated(FlagExperimentalMetadataFile, "use --card-file")
 
 	return cmd
 }
 
 const (
-	// FlagExperimentalMetadataBase64 is the flag name for providing base64-encoded
-	// experimental service metadata (API specifications like OpenAPI, OpenRPC, etc.)
+	// FlagSkipCardValidation opts out of client-side card schema validation.
+	FlagSkipCardValidation = "skip-card-validation"
+
+	// FlagCardBase64 is the flag name for providing a base64-encoded service card.
+	FlagCardBase64 = "card-base64"
+
+	// FlagCardFile is the flag name for providing a file path containing a service card.
+	FlagCardFile = "card-file"
+
+	// FlagExperimentalMetadataBase64 is the deprecated alias for FlagCardBase64.
 	FlagExperimentalMetadataBase64 = "experimental-metadata-base64"
 
-	// FlagExperimentalMetadataFile is the flag name for providing a file path
-	// containing experimental service metadata (API specifications)
+	// FlagExperimentalMetadataFile is the deprecated alias for FlagCardFile.
 	FlagExperimentalMetadataFile = "experimental-metadata-file"
 )
 
-// parseServiceMetadata parses experimental service metadata from command-line flags.
-// It supports two mutually exclusive ways of providing metadata:
-// 1. --experimental-metadata-base64: Base64-encoded metadata string
-// 2. --experimental-metadata-file: Path to a file containing the metadata
+// parseServiceMetadata parses the service card from command-line flags.
+// It supports two mutually exclusive ways of providing the card:
+// 1. --card-base64: Base64-encoded card
+// 2. --card-file: Path to a file containing the card
 //
-// The metadata payload must not exceed 256 KiB when decoded. This is typically used
-// to attach API specifications (OpenAPI, OpenRPC, etc.) to a service.
+// The deprecated --experimental-metadata-{base64,file} aliases are still accepted.
+//
+// The card must not exceed 256 KiB when decoded. See docs/pocket_service_card.md.
 //
 // Returns:
-//   - *sharedtypes.Metadata: The parsed metadata, or nil if no metadata was provided
+//   - *sharedtypes.Metadata: The parsed card, or nil if none was provided
 //   - error: An error if parsing fails, flags conflict, or size limits are exceeded
 func parseServiceMetadata(cmd *cobra.Command) (*sharedtypes.Metadata, error) {
-	// Retrieve the base64-encoded metadata flag value
-	metadataBase64, err := cmd.Flags().GetString(FlagExperimentalMetadataBase64)
+	// Resolve each source from its current flag, falling back to the deprecated alias.
+	cardBase64, err := flagWithDeprecatedAlias(cmd, FlagCardBase64, FlagExperimentalMetadataBase64)
 	if err != nil {
 		return nil, err
 	}
 
-	// Retrieve the metadata file path flag value
-	metadataFile, err := cmd.Flags().GetString(FlagExperimentalMetadataFile)
+	cardFile, err := flagWithDeprecatedAlias(cmd, FlagCardFile, FlagExperimentalMetadataFile)
 	if err != nil {
 		return nil, err
 	}
 
-	// Ensure only one metadata source is provided
-	if metadataBase64 != "" && metadataFile != "" {
-		return nil, errors.New("--experimental-metadata-base64 and --experimental-metadata-file cannot be used together")
+	// Ensure only one card source is provided
+	if cardBase64 != "" && cardFile != "" {
+		return nil, errors.New("--card-base64 and --card-file cannot be used together")
 	}
 
-	// If no metadata is provided, return nil (metadata is optional)
-	if metadataBase64 == "" && metadataFile == "" {
+	// If no card is provided, return nil (the card is optional)
+	if cardBase64 == "" && cardFile == "" {
 		return nil, nil
 	}
 
-	// Parse the metadata from either base64 string or file
-	var apiSpecs []byte
-	if metadataBase64 != "" {
-		// Decode base64-encoded metadata
-		metadataBase64 = strings.TrimSpace(metadataBase64)
-		apiSpecs, err = base64.StdEncoding.DecodeString(metadataBase64)
+	// Parse the card from either the base64 string or the file
+	var card []byte
+	if cardBase64 != "" {
+		cardBase64 = strings.TrimSpace(cardBase64)
+		card, err = base64.StdEncoding.DecodeString(cardBase64)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode experimental-metadata-base64 value: %w", err)
+			return nil, fmt.Errorf("failed to decode card-base64 value: %w", err)
 		}
 	} else {
-		// Read metadata from file
-		apiSpecs, err = os.ReadFile(metadataFile)
+		card, err = os.ReadFile(cardFile)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read experimental metadata file %q: %w", metadataFile, err)
+			return nil, fmt.Errorf("failed to read card file %q: %w", cardFile, err)
 		}
 	}
 
-	// Validate metadata size does not exceed the maximum allowed (256 KiB)
-	if len(apiSpecs) > sharedtypes.MaxServiceMetadataSizeBytes {
-		// TODO_FUTURE: Add validation hints suggesting user compress or reduce spec size
-		return nil, fmt.Errorf("experimental service metadata size %d exceeds max %d bytes (256 KiB)", len(apiSpecs), sharedtypes.MaxServiceMetadataSizeBytes)
+	// Validate the card size does not exceed the maximum allowed (256 KiB)
+	if len(card) > sharedtypes.MaxServiceMetadataSizeBytes {
+		// TODO_FUTURE: Add validation hints suggesting the user point at a spec URL instead.
+		return nil, fmt.Errorf("service card size %d exceeds max %d bytes (256 KiB)", len(card), sharedtypes.MaxServiceMetadataSizeBytes)
 	}
 
-	// Ensure metadata is not empty (if provided, it must contain data)
-	if len(apiSpecs) == 0 {
-		return nil, errors.New("experimental service metadata cannot be empty")
+	// Ensure the card is not empty (if provided, it must contain data)
+	if len(card) == 0 {
+		return nil, errors.New("service card cannot be empty")
 	}
 
-	return &sharedtypes.Metadata{ExperimentalApiSpecs: apiSpecs}, nil
+	// Validate against the card schema unless explicitly skipped.
+	//
+	// The chain enforces size only and never parses this payload, so this is the ONLY
+	// place a malformed card is caught before it costs gas and lands onchain.
+	skipValidation, err := cmd.Flags().GetBool(FlagSkipCardValidation)
+	if err != nil {
+		return nil, err
+	}
+	if !skipValidation {
+		if err := cards.Validate(cards.KindService, card); err != nil {
+			return nil, fmt.Errorf("%w\n\nRe-run with --%s to publish it anyway", err, FlagSkipCardValidation)
+		}
+	}
+
+	return &sharedtypes.Metadata{Card: card}, nil
+}
+
+// flagWithDeprecatedAlias returns the value of name, falling back to deprecatedName when
+// name is unset. Setting both is an error rather than a silent precedence rule.
+func flagWithDeprecatedAlias(cmd *cobra.Command, name, deprecatedName string) (string, error) {
+	value, err := cmd.Flags().GetString(name)
+	if err != nil {
+		return "", err
+	}
+
+	deprecatedValue, err := cmd.Flags().GetString(deprecatedName)
+	if err != nil {
+		return "", err
+	}
+
+	if value != "" && deprecatedValue != "" {
+		return "", fmt.Errorf("--%s and its deprecated alias --%s cannot be used together", name, deprecatedName)
+	}
+
+	if value == "" {
+		return deprecatedValue, nil
+	}
+
+	return value, nil
 }

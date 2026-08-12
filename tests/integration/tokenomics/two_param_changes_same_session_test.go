@@ -121,3 +121,160 @@ func TestTwoSessionTimingParamChanges_SameSession_LastOneWins(t *testing.T) {
 	require.Equal(t, uint64(finalN), resolvedAtBoundary.NumBlocksPerSession,
 		"GetParamsAtHeight at the boundary must also resolve to finalN — at-height and live must agree post-promotion")
 }
+
+// TestTimingThenNonTimingParamChange_SameSession_TimingChangeIsLost pins the CURRENT
+// (defective) behavior of the cross-param same-session limitation documented in
+// x/shared/keeper/msg_server_update_param.go, for the timing + NON-timing pair.
+//
+// The documented limitation describes two MsgUpdateParam txs "each targeting a DIFFERENT
+// session-timing param". The blast radius is wider than that: because UpdateParam bases
+// every call on the LIVE params, and a session-timing change is withheld from live until
+// the boundary promotion, ANY subsequent MsgUpdateParam in the same session — including a
+// non-timing one such as compute_units_to_tokens_multiplier — rebuilds the params struct
+// from a live snapshot that does not contain the pending timing change, and overwrites the
+// history entry at the boundary with the pre-change value.
+//
+// The failure is silent and order-dependent:
+//
+//   - timing THEN non-timing: the timing change is lost (this test).
+//   - non-timing THEN timing: both survive, because the non-timing write already landed in
+//     live before the timing call read it (TestNonTimingThenTimingParamChange_SameSession_
+//     BothSurvive).
+//
+// This matters operationally: a num_blocks_per_session change is a high-stakes, scheduled
+// governance action, and a routine CUTTM update landing in the same session reverts it with
+// no error and no event. Until the base-on-pending-state fix lands (consensus-affecting,
+// deliberately deferred), multi-param changes MUST go through the bulk MsgUpdateParams.
+//
+// When that fix lands this test SHOULD fail — update it to assert the timing change
+// survives, rather than deleting it.
+func TestTimingThenNonTimingParamChange_SameSession_TimingChangeIsLost(t *testing.T) {
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil,
+		testkeeper.WithDefaultModuleBalances(),
+	)
+	sdkCtx := sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
+
+	const (
+		oldN           int64 = 4
+		newN           int64 = 7
+		boundaryHeight int64 = oldN + 1
+		insideSession  int64 = 2
+	)
+
+	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
+	sharedParams.NumBlocksPerSession = uint64(oldN)
+	sharedParams.SessionGridAnchorHeight = 1
+	sharedParams.SessionNumberAtAnchor = 1
+	sharedParams.SupplierUnbondingPeriodSessions = 16
+	sharedParams.ApplicationUnbondingPeriodSessions = 16
+	sharedParams.GatewayUnbondingPeriodSessions = 16
+	require.NoError(t, keepers.SharedKeeper.SetParams(sdkCtx, sharedParams))
+
+	newCUTTM := sharedParams.ComputeUnitsToTokensMultiplier * 2
+
+	concreteShared, ok := keepers.SharedKeeper.(*sharedkeeper.Keeper)
+	require.True(t, ok, "expected a concrete shared keeper")
+	sharedMsgSrv := sharedkeeper.NewMsgServerImpl(*concreteShared)
+	govAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	sdkCtx = sdkCtx.WithBlockHeight(insideSession)
+
+	// --- First: a session-timing change, which Option B withholds from live -------
+	_, err := sharedMsgSrv.UpdateParam(sdkCtx, &sharedtypes.MsgUpdateParam{
+		Authority: govAuthority,
+		Name:      sharedtypes.ParamNumBlocksPerSession,
+		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: uint64(newN)},
+	})
+	require.NoError(t, err)
+
+	pendingEntry, entryFound := concreteShared.GetParamsHistoryEntry(sdkCtx, boundaryHeight)
+	require.True(t, entryFound)
+	require.Equal(t, uint64(newN), pendingEntry.NumBlocksPerSession,
+		"the timing change must be pending at the boundary before the second update")
+
+	// --- Second: an unrelated NON-timing change in the same session ---------------
+	_, err = sharedMsgSrv.UpdateParam(sdkCtx, &sharedtypes.MsgUpdateParam{
+		Authority: govAuthority,
+		Name:      sharedtypes.ParamComputeUnitsToTokensMultiplier,
+		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: newCUTTM},
+	})
+	require.NoError(t, err)
+
+	clobberedEntry, entryFound := concreteShared.GetParamsHistoryEntry(sdkCtx, boundaryHeight)
+	require.True(t, entryFound)
+	require.Equal(t, newCUTTM, clobberedEntry.ComputeUnitsToTokensMultiplier,
+		"the non-timing change must be recorded")
+	require.Equal(t, uint64(oldN), clobberedEntry.NumBlocksPerSession,
+		"KNOWN LIMITATION: the non-timing update rebased on live and reverted the pending timing change")
+
+	// --- The boundary promotes the clobbered entry --------------------------------
+	sdkCtx = sdkCtx.WithBlockHeight(boundaryHeight)
+	require.NoError(t, concreteShared.EndBlocker(sdkCtx))
+
+	promotedLive := keepers.SharedKeeper.GetParams(sdkCtx)
+	require.Equal(t, uint64(oldN), promotedLive.NumBlocksPerSession,
+		"KNOWN LIMITATION: governance's num_blocks_per_session change never takes effect")
+	require.Equal(t, newCUTTM, promotedLive.ComputeUnitsToTokensMultiplier)
+}
+
+// TestNonTimingThenTimingParamChange_SameSession_BothSurvive pins the safe ordering of the
+// limitation above: a non-timing change takes effect on live immediately, so a subsequent
+// session-timing change in the same session rebases on a live snapshot that already
+// contains it and both survive the boundary promotion.
+//
+// Keeping both orderings pinned is what makes the asymmetry legible — the defect is not
+// "two updates in one session", it is specifically "a timing change followed by anything".
+func TestNonTimingThenTimingParamChange_SameSession_BothSurvive(t *testing.T) {
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil,
+		testkeeper.WithDefaultModuleBalances(),
+	)
+	sdkCtx := sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
+
+	const (
+		oldN           int64 = 4
+		newN           int64 = 7
+		boundaryHeight int64 = oldN + 1
+		insideSession  int64 = 2
+	)
+
+	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
+	sharedParams.NumBlocksPerSession = uint64(oldN)
+	sharedParams.SessionGridAnchorHeight = 1
+	sharedParams.SessionNumberAtAnchor = 1
+	sharedParams.SupplierUnbondingPeriodSessions = 16
+	sharedParams.ApplicationUnbondingPeriodSessions = 16
+	sharedParams.GatewayUnbondingPeriodSessions = 16
+	require.NoError(t, keepers.SharedKeeper.SetParams(sdkCtx, sharedParams))
+
+	newCUTTM := sharedParams.ComputeUnitsToTokensMultiplier * 2
+
+	concreteShared, ok := keepers.SharedKeeper.(*sharedkeeper.Keeper)
+	require.True(t, ok, "expected a concrete shared keeper")
+	sharedMsgSrv := sharedkeeper.NewMsgServerImpl(*concreteShared)
+	govAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	sdkCtx = sdkCtx.WithBlockHeight(insideSession)
+
+	_, err := sharedMsgSrv.UpdateParam(sdkCtx, &sharedtypes.MsgUpdateParam{
+		Authority: govAuthority,
+		Name:      sharedtypes.ParamComputeUnitsToTokensMultiplier,
+		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: newCUTTM},
+	})
+	require.NoError(t, err)
+
+	_, err = sharedMsgSrv.UpdateParam(sdkCtx, &sharedtypes.MsgUpdateParam{
+		Authority: govAuthority,
+		Name:      sharedtypes.ParamNumBlocksPerSession,
+		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: uint64(newN)},
+	})
+	require.NoError(t, err)
+
+	sdkCtx = sdkCtx.WithBlockHeight(boundaryHeight)
+	require.NoError(t, concreteShared.EndBlocker(sdkCtx))
+
+	promotedLive := keepers.SharedKeeper.GetParams(sdkCtx)
+	require.Equal(t, uint64(newN), promotedLive.NumBlocksPerSession,
+		"the timing change must survive when it is issued LAST")
+	require.Equal(t, newCUTTM, promotedLive.ComputeUnitsToTokensMultiplier,
+		"the non-timing change must survive too")
+}

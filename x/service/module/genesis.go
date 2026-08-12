@@ -17,6 +17,19 @@ func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisSta
 	for _, difficulty := range genState.RelayMiningDifficultyList {
 		k.SetRelayMiningDifficulty(ctx, difficulty)
 	}
+	// Restore the per-service compute_units_per_relay history that backs the session-start
+	// cupr lookup. Dropping it would silently fall every past session back to the LIVE
+	// cupr, which is the behaviour the pin exists to prevent.
+	for _, update := range genState.ComputeUnitsPerRelayHistory {
+		if err := k.SetServiceComputeUnitsPerRelayAtHeight(
+			ctx,
+			update.EffectiveHeight,
+			update.ServiceId,
+			update.ComputeUnitsPerRelay,
+		); err != nil {
+			panic(err)
+		}
+	}
 	// this line is used by starport scaffolding # genesis/module/init
 	if err := k.SetParams(ctx, genState.Params); err != nil {
 		panic(err)
@@ -30,6 +43,7 @@ func ExportGenesis(ctx context.Context, k keeper.Keeper) *types.GenesisState {
 
 	genesis.ServiceList = k.GetAllServices(ctx)
 	genesis.RelayMiningDifficultyList = k.GetAllRelayMiningDifficulty(ctx)
+	genesis.ComputeUnitsPerRelayHistory = k.GetAllServiceComputeUnitsPerRelayHistory(ctx)
 	// this line is used by starport scaffolding # genesis/module/export
 
 	return genesis
