@@ -30,7 +30,13 @@ func (k msgServer) AddService(
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger().With("method", "AddService")
-	logger.Info(fmt.Sprintf("About to add a new service with msg: %v", msg))
+	// Identifying fields only, NEVER the whole message: Service carries a metadata card
+	// of up to 256 KiB, and rendering it inflates the line to ~317 KB -- on every
+	// validator and full node, for every AddService.
+	logger.Info(fmt.Sprintf(
+		"About to add a new service with id: %q (owner: %s)",
+		msg.Service.GetId(), msg.GetOwnerAddress(),
+	))
 
 	// Validate the message.
 	if err := msg.ValidateBasic(); err != nil {
@@ -155,7 +161,11 @@ func (k msgServer) AddService(
 		)
 	}
 
-	logger.Info(fmt.Sprintf("Adding service: %v", msg.Service))
+	// See the note above: never render the Service value, it embeds the metadata card.
+	logger.Info(fmt.Sprintf(
+		"Adding service id: %q (compute units per relay: %d, has metadata: %t)",
+		msg.Service.GetId(), msg.Service.GetComputeUnitsPerRelay(), msg.Service.GetMetadata() != nil,
+	))
 	k.SetService(ctx, msg.Service)
 
 	// Seed the initial cupr in history so future changes have a baseline and

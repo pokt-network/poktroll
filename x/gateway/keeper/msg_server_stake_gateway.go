@@ -106,8 +106,8 @@ func (k msgServer) StakeGateway(
 	// Gateway carries a metadata card of up to 256 KiB, and `gateway` is a value, so its
 	// pointer-receiver String() is not in the method set and fmt falls back to
 	// reflection. The nested *Metadata DOES implement Stringer, so its generated String()
-	// renders Card []byte as a decimal list -- roughly 4x the payload, i.e. ~1 MB of log
-	// per re-stake for a maxed card.
+	// renders the Card bytes inline -- measured at ~317 KB of log per re-stake for a
+	// maxed 256 KiB card.
 	logger.Info(fmt.Sprintf(
 		"Successfully updated stake for gateway: %s (stake: %s)",
 		gateway.GetAddress(), gateway.GetStake(),

@@ -136,7 +136,7 @@ func TestGetSession_BelowAnchorDoesNotAliasSessions(t *testing.T) {
 		sessionsCache:     sessionsCache,
 	}
 
-	// Heights 20 and 35 are in DIFFERENT sessions on the 10-block grid (starts 20 and 30),
+	// Heights 20 and 35 are in DIFFERENT sessions on the 10-block grid (starts 11 and 31),
 	// but collapse to one key under the live 60-block grid.
 	first, err := sessq.GetSession(context.Background(), appAddress, serviceId, 20)
 	require.NoError(t, err)

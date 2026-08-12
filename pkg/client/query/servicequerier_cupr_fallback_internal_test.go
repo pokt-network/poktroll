@@ -19,12 +19,15 @@ import (
 const (
 	testFallbackServiceID = "svc1"
 	testLiveCUPR          = uint64(77)
+	testAtHeightCUPR      = uint64(42)
 )
 
 // unimplementedCUPRQueryClient stands in for a full node predating v0.1.35: it serves
-// Service but answers codes.Unimplemented for ComputeUnitsPerRelayAtHeight.
+// Service but answers codes.Unimplemented for ComputeUnitsPerRelayAtHeight until
+// implemented is flipped, which models the node being upgraded underneath a running miner.
 type unimplementedCUPRQueryClient struct {
 	servicetypes.QueryClient
+	implemented  bool
 	serviceCalls int
 	cuprCalls    int
 }
@@ -35,6 +38,11 @@ func (c *unimplementedCUPRQueryClient) ComputeUnitsPerRelayAtHeight(
 	_ ...grpc.CallOption,
 ) (*servicetypes.QueryComputeUnitsPerRelayAtHeightResponse, error) {
 	c.cuprCalls++
+	if c.implemented {
+		return &servicetypes.QueryComputeUnitsPerRelayAtHeightResponse{
+			ComputeUnitsPerRelay: testAtHeightCUPR,
+		}, nil
+	}
 	return nil, status.Error(codes.Unimplemented, "unknown method ComputeUnitsPerRelayAtHeight")
 }
 
@@ -69,6 +77,27 @@ func newFallbackTestQuerier(t *testing.T) (*serviceQuerier, *unimplementedCUPRQu
 	}, stub
 }
 
+// mustNotHang runs fn with a deadline and fails the test rather than letting the whole
+// package time out. Every test in this file guards a locking bug whose failure mode is a
+// HANG, not an error, so an unbounded call would take the package down with it instead of
+// reporting which assertion broke.
+func mustNotHang(t *testing.T, what string, fn func()) {
+	t.Helper()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		fn()
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(20 * time.Second):
+		t.Fatalf("DEADLOCK: %s did not return; the pre-v0.1.35 cupr fallback must not "+
+			"call GetService while holding servicesMutex", what)
+	}
+}
+
 // TestCUPRAtHeightFallback_ColdServiceCacheDoesNotDeadlock is a REGRESSION test for a
 // self-deadlock.
 //
@@ -80,59 +109,81 @@ func newFallbackTestQuerier(t *testing.T) (*serviceQuerier, *unimplementedCUPRQu
 // than the outage the fallback exists to prevent.
 //
 // A warm services cache hides it (GetService returns before locking), so this test uses a
-// COLD cache deliberately. It must be time-bounded: the failure mode is a hang, not an error.
+// COLD cache deliberately.
 func TestCUPRAtHeightFallback_ColdServiceCacheDoesNotDeadlock(t *testing.T) {
 	servq, stub := newFallbackTestQuerier(t)
 
-	type result struct {
-		cupr uint64
-		err  error
-	}
-	done := make(chan result, 1)
-	go func() {
-		cupr, err := servq.GetServiceComputeUnitsPerRelayAtHeight(context.Background(), testFallbackServiceID, 100)
-		done <- result{cupr, err}
-	}()
+	var cupr uint64
+	var err error
+	mustNotHang(t, "GetServiceComputeUnitsPerRelayAtHeight with a cold services cache", func() {
+		cupr, err = servq.GetServiceComputeUnitsPerRelayAtHeight(context.Background(), testFallbackServiceID, 100)
+	})
 
-	select {
-	case got := <-done:
-		require.NoError(t, got.err)
-		require.Equal(t, testLiveCUPR, got.cupr, "the fallback must return the LIVE compute units per relay")
-	case <-time.After(20 * time.Second):
-		t.Fatal("DEADLOCK: the pre-v0.1.35 cupr fallback called GetService while holding " +
-			"servicesMutex; the fallback must run after that lock is released")
-	}
-
+	require.NoError(t, err)
+	require.Equal(t, testLiveCUPR, cupr, "the fallback must return the LIVE compute units per relay")
 	require.Equal(t, 1, stub.serviceCalls, "the fallback should read the live service exactly once")
 
 	// The mutex must be genuinely free afterwards, not merely un-hung for that one call.
-	freed := make(chan struct{})
-	go func() {
+	mustNotHang(t, "a follow-up GetService", func() {
 		_, _ = servq.GetService(context.Background(), testFallbackServiceID)
-		close(freed)
-	}()
-	select {
-	case <-freed:
-	case <-time.After(10 * time.Second):
-		t.Fatal("servicesMutex was left held by the fallback path")
-	}
+	})
 }
 
-// TestCUPRAtHeightFallback_LatchesUnsupported guards the second half of the fix: once the
-// node has answered Unimplemented, later calls must NOT re-issue the doomed query. Without
-// the latch every relay pays a failed gRPC round trip — under servicesMutex — plus a
-// warning log, in exactly the configuration the fallback exists to keep usable.
-func TestCUPRAtHeightFallback_LatchesUnsupported(t *testing.T) {
+// TestCUPRAtHeightFallback_SuppressesDuringCooldown guards the throughput half of the fix:
+// while the cooldown runs, calls must NOT re-issue the doomed query. Without suppression
+// every relay pays a failed gRPC round trip — under servicesMutex — plus a log line, in
+// exactly the configuration the fallback exists to keep usable.
+func TestCUPRAtHeightFallback_SuppressesDuringCooldown(t *testing.T) {
 	servq, stub := newFallbackTestQuerier(t)
 
-	for i := 0; i < 5; i++ {
-		cupr, err := servq.GetServiceComputeUnitsPerRelayAtHeight(
-			context.Background(), testFallbackServiceID, int64(100+i),
-		)
-		require.NoError(t, err)
-		require.Equal(t, testLiveCUPR, cupr)
-	}
+	mustNotHang(t, "five suppressed lookups", func() {
+		for i := 0; i < 5; i++ {
+			cupr, err := servq.GetServiceComputeUnitsPerRelayAtHeight(
+				context.Background(), testFallbackServiceID, int64(100+i),
+			)
+			require.NoError(t, err)
+			require.Equal(t, testLiveCUPR, cupr)
+		}
+	})
 
 	require.Equal(t, 1, stub.cuprCalls,
-		"the at-height query must be attempted once then latched off; got %d attempts", stub.cuprCalls)
+		"the at-height query must be attempted once then suppressed for the cooldown; got %d attempts",
+		stub.cuprCalls)
+}
+
+// TestCUPRAtHeightFallback_RecoversAfterCooldown is the important one.
+//
+// The suppression MUST expire. The documented rollout has operators running the v0.1.35
+// RelayMiner from the upgrade height, but cosmovisor swaps the node binary AT that height
+// — so every compliant miner briefly talks to a v0.1.34 node and degrades on its first
+// relay. A permanent latch would leave it pricing with LIVE cupr forever while the chain
+// validates at session start, and the next compute_units_per_relay change would then
+// reject MsgCreateClaim with ErrProofComputeUnitsMismatch and forfeit whole sessions —
+// recreating the very incident the session-start pin exists to prevent.
+func TestCUPRAtHeightFallback_RecoversAfterCooldown(t *testing.T) {
+	servq, stub := newFallbackTestQuerier(t)
+
+	// First call degrades against a pre-v0.1.35 node.
+	cupr, err := servq.GetServiceComputeUnitsPerRelayAtHeight(context.Background(), testFallbackServiceID, 100)
+	require.NoError(t, err)
+	require.Equal(t, testLiveCUPR, cupr)
+	require.True(t, servq.cuprAtHeightDegraded.Load(), "the querier should be marked degraded")
+
+	// The node is upgraded, and the cooldown lapses. Expire it directly rather than
+	// sleeping for the real duration.
+	stub.implemented = true
+	servq.cuprAtHeightUnsupportedUntilUnixNano.Store(0)
+
+	mustNotHang(t, "the post-cooldown re-probe", func() {
+		cupr, err = servq.GetServiceComputeUnitsPerRelayAtHeight(context.Background(), testFallbackServiceID, 200)
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, testAtHeightCUPR, cupr,
+		"after the cooldown the querier must re-probe and use the AT-HEIGHT value again; "+
+			"a permanent latch would keep returning the live value forever")
+	require.False(t, servq.cuprAtHeightDegraded.Load(),
+		"recovery must clear the degraded flag so the transition is logged exactly once")
+	require.Zero(t, servq.cuprAtHeightUnsupportedUntilUnixNano.Load(),
+		"a successful query must clear the cooldown outright, not leave it to expire again")
 }

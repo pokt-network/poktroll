@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
@@ -18,6 +19,15 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// cuprAtHeightUnsupportedCooldown is how long the RelayMiner stops asking a node for
+// ComputeUnitsPerRelayAtHeight after it answers codes.Unimplemented.
+//
+// Short on purpose. The dominant case is a node mid-upgrade, so the miner must resume
+// session-start pricing promptly once it catches up; the cost of being wrong is one
+// failed RPC per cooldown for the whole querier, which is negligible next to pricing
+// every relay off live params.
+const cuprAtHeightUnsupportedCooldown = time.Minute
 
 var _ client.ServiceQueryClient = (*serviceQuerier)(nil)
 
@@ -35,18 +45,42 @@ type serviceQuerier struct {
 	relayMiningDifficultyCache cache.KeyValueCache[servicetypes.RelayMiningDifficulty]
 	// computeUnitsPerRelayCache caches serviceQueryClient.ComputeUnitsPerRelayAtHeight
 	// query requests. The cupr effective at a past height is immutable, so entries are
-	// keyed by "serviceId:height" and never invalidated.
+	// keyed by "serviceId:height" and never go stale; the cache is still cleared
+	// periodically (see the session-count clear fn wired in pkg/relayer/cmd/deps.go) to
+	// bound memory, which only ever costs a refetch.
 	computeUnitsPerRelayCache cache.KeyValueCache[uint64]
 	// servicesMutex to protect cache access patterns for services and relay mining difficulties
 	servicesMutex sync.Mutex
 
-	// cuprAtHeightUnsupported latches once the node has answered codes.Unimplemented for
-	// ComputeUnitsPerRelayAtHeight (i.e. it predates v0.1.35). Without the latch every
-	// relay pays a full failed gRPC round trip -- under servicesMutex -- plus a warning
-	// log, in exactly the configuration the fallback exists to keep usable.
-	cuprAtHeightUnsupported atomic.Bool
-	// cuprUnsupportedWarnOnce keeps the degrade notice to one line, not one per relay.
+	// cuprAtHeightUnsupportedUntilUnixNano suppresses the ComputeUnitsPerRelayAtHeight
+	// query for a cooldown after the node answers codes.Unimplemented (i.e. it predates
+	// v0.1.35). Without suppression, every relay pays a failed gRPC round trip -- under
+	// servicesMutex -- plus a log line, in exactly the configuration the fallback exists
+	// to keep usable.
+	//
+	// A COOLDOWN, never a permanent latch. The unsupported state is expected to END, and
+	// two routine situations set it against a node that will answer perfectly well
+	// moments later:
+	//
+	//   - The documented rollout. Operators are told to run the v0.1.35 RelayMiner from
+	//     the upgrade height, but cosmovisor swaps the node binary AT that height, so
+	//     every compliant miner briefly talks to a v0.1.34 node and latches on its first
+	//     relay.
+	//   - A single HTTP 404 from an ingress, load balancer or method allowlist. grpc-go
+	//     maps 404 to codes.Unimplemented, and Unimplemented is not retried.
+	//
+	// A permanent latch would leave the miner pricing every relay with LIVE cupr while
+	// the chain validates at session start -- so the next compute_units_per_relay change
+	// rejects MsgCreateClaim with ErrProofComputeUnitsMismatch and forfeits whole
+	// sessions. That is the incident the session-start pin exists to prevent, so the
+	// recovery path must not recreate it.
+	cuprAtHeightUnsupportedUntilUnixNano atomic.Int64
+	// cuprUnsupportedWarnOnce keeps the degrade notice to one line per process rather
+	// than one per cooldown; recovery is logged separately and unconditionally.
 	cuprUnsupportedWarnOnce sync.Once
+	// cuprAtHeightDegraded tracks whether the previous call fell back, so recovery can be
+	// logged exactly once per transition back to at-height pricing.
+	cuprAtHeightDegraded atomic.Bool
 
 	// paramsCache caches serviceQueryClient.Params query requests
 	paramsCache client.ParamsCache[servicetypes.Params]
@@ -195,13 +229,13 @@ func (servq *serviceQuerier) GetServiceComputeUnitsPerRelayAtHeight(
 		return computeUnitsPerRelay, nil
 	}
 
-	// ComputeUnitsPerRelayAtHeight is NEW in v0.1.35, and a node still running v0.1.34
-	// answers codes.Unimplemented -- not a transient code, so retry.Call gives up on the
-	// first attempt. Once that has been observed, skip the doomed round trip entirely.
+	// Skip the query while the cooldown from a previous codes.Unimplemented is still
+	// running. The cooldown EXPIRES so the miner re-probes and self-heals the moment the
+	// node is upgraded -- see the field's godoc for why a permanent latch is unsafe.
 	//
 	// This check MUST come before servicesMutex is taken: the live path calls GetService,
 	// which takes that SAME non-reentrant mutex.
-	if servq.cuprAtHeightUnsupported.Load() {
+	if time.Now().UnixNano() < servq.cuprAtHeightUnsupportedUntilUnixNano.Load() {
 		return servq.liveComputeUnitsPerRelay(ctx, serviceId)
 	}
 
@@ -216,17 +250,34 @@ func (servq *serviceQuerier) GetServiceComputeUnitsPerRelayAtHeight(
 		// against itself, and because the lock is held every other service, difficulty and
 		// cupr lookup blocks behind it forever -- a total hang of serving AND mining,
 		// strictly worse than the outage this fallback exists to prevent.
-		servq.cuprAtHeightUnsupported.Store(true)
+		servq.cuprAtHeightUnsupportedUntilUnixNano.Store(
+			time.Now().Add(cuprAtHeightUnsupportedCooldown).UnixNano(),
+		)
+		servq.cuprAtHeightDegraded.Store(true)
 		servq.cuprUnsupportedWarnOnce.Do(func() {
-			logger.Warn().Msg(
-				"node does not implement ComputeUnitsPerRelayAtHeight (pre-v0.1.35); " +
-					"falling back to the LIVE compute units per relay. Session-start cupr " +
-					"pricing is INACTIVE until the full node is upgraded to v0.1.35.",
+			logger.Warn().Msgf(
+				"node does not implement ComputeUnitsPerRelayAtHeight (pre-v0.1.35); "+
+					"falling back to the LIVE compute units per relay. Session-start cupr "+
+					"pricing is INACTIVE until the full node is upgraded to v0.1.35. "+
+					"Re-probing every %s; recovery will be logged.",
+				cuprAtHeightUnsupportedCooldown,
 			)
 		})
 		return servq.liveComputeUnitsPerRelay(ctx, serviceId)
 	case err != nil:
 		return 0, err
+	}
+
+	// A successful query means the node now implements the RPC. Clear the cooldown so the
+	// fast path resumes immediately, and say so: the degrade warning is emitted once per
+	// process and may well have rotated out of the logs by now, which would otherwise
+	// leave an operator no way to tell whether pricing is pinned or not.
+	servq.cuprAtHeightUnsupportedUntilUnixNano.Store(0)
+	if servq.cuprAtHeightDegraded.CompareAndSwap(true, false) {
+		logger.Info().Msg(
+			"node now implements ComputeUnitsPerRelayAtHeight; session-start compute " +
+				"units per relay pricing is ACTIVE again.",
+		)
 	}
 
 	return cupr, nil
