@@ -101,7 +101,7 @@ func TestSettlementRipeness_ShrunkOffsetsDoNotSettleOldEpochClaimsEarly(t *testi
 	require.Contains(t, candidates, prematureSessionEndHeight,
 		"the shrunk live epoch is expected to propose this height; the gate must reject the CLAIM, not the candidate")
 
-	settledResults, expiredResults, _, err := keepers.SettlePendingClaims(sdkCtx)
+	settledResults, expiredResults, discardedResults, err := keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// The claim must neither settle nor expire: it is deferred.
@@ -109,6 +109,11 @@ func TestSettlementRipeness_ShrunkOffsetsDoNotSettleOldEpochClaimsEarly(t *testi
 		"a claim whose proof window is still open must not be settled early")
 	require.Equal(t, 0, len(expiredResults),
 		"a claim whose proof window is still open must not be expired (that would slash the supplier as PROOF_MISSING)")
+	// Checked explicitly because "discarded as faulty" is a THIRD way to consume a
+	// claim. Without this, a gate that wrongly collected the claim and then discarded
+	// it would still report zero settled and zero expired, and pass.
+	require.Zero(t, discardedResults,
+		"a claim whose proof window is still open must not be collected at all, let alone discarded")
 
 	// It must still be in the store, recoverable at its real settlement block.
 	iter := keepers.GetSessionEndHeightClaimsIterator(sdkCtx, prematureSessionEndHeight)
@@ -119,4 +124,40 @@ func TestSettlementRipeness_ShrunkOffsetsDoNotSettleOldEpochClaimsEarly(t *testi
 	iter.Close()
 	require.Equal(t, 1, remaining,
 		"the deferred claim must remain in the store; removing it makes a later MsgSubmitProof impossible")
+
+	// ANTI-ORPHAN: deferring is only safe if some later block actually consumes the
+	// claim. "Not settled, not expired, still stored" is equally true of a claim that
+	// is never processed again, so the assertions above cannot distinguish a correct
+	// deferral from a permanent orphan -- the failure mode that would silently strand
+	// a supplier's work forever.
+	//
+	// The gate admits the claim from blockHeight > sessionEnd + tail(params AT sessionEnd),
+	// i.e. the OLD epoch's tail, so the first ripe block is sessionEnd + oldTail + 1.
+	// This also pins the tight boundary in the candidate scan: the old epoch's next
+	// entry takes effect at sessionEnd+1, so its in-flight test holds only because the
+	// comparison is >= and not >.
+	ripeHeight := prematureSessionEndHeight + oldTail + 1
+	sdkCtx = sdkCtx.WithBlockHeight(ripeHeight)
+
+	ripeCandidates := keepers.GetExpiringClaimsSessionEndHeights(sdkCtx, ripeHeight)
+	require.Contains(t, ripeCandidates, prematureSessionEndHeight,
+		"the epoch that governs the claim's session end must still propose it at its real settlement block")
+
+	// Any of the three outcomes proves the claim was COLLECTED rather than deferred
+	// again -- which is the property under test. This fixture's app and supplier are
+	// bare sample addresses with no onchain actors behind them, so the claim is
+	// discarded as faulty rather than settled or expired; that is incidental to the
+	// gate. A permanently orphaned claim would score zero on all three.
+	ripeSettled, ripeExpired, ripeDiscarded, err := keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(ripeSettled)+len(ripeExpired)+int(ripeDiscarded),
+		"the deferred claim must be consumed at sessionEnd+oldTail+1; if it is not, the gate has orphaned it permanently")
+
+	ripeIter := keepers.GetSessionEndHeightClaimsIterator(sdkCtx, prematureSessionEndHeight)
+	leftover := 0
+	for ; ripeIter.Valid(); ripeIter.Next() {
+		leftover++
+	}
+	ripeIter.Close()
+	require.Equal(t, 0, leftover, "the claim must be removed from the store once processed")
 }

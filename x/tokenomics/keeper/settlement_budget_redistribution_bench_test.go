@@ -60,6 +60,11 @@ func BenchmarkGetClaimeduPOKT(b *testing.B) {
 // pre-initialized (getOrInitSessionBudget's one store read, GetParamsAtHeight, is amortized
 // across the group's claims and excluded here), so this reflects the per-claim overhead for
 // every claim after the first in each (app, session) group.
+//
+// The claim is VALIDATED, so claimWillSettle short-circuits without resolving the proof
+// requirement. That is the steady-state case worth measuring: without the short-circuit this
+// benchmark reports ~28.5us/claim instead of ~1.7us, because ProofRequirementForClaim runs
+// three history iterators that Phase 2 then repeats for the same claim.
 func BenchmarkPhase15_AccumulateClaimBudget(b *testing.B) {
 	f := newBudgetRedistributionFixture(b, 1000, []uint64{1500})
 
