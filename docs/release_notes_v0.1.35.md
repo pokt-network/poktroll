@@ -19,19 +19,17 @@ Consensus-breaking release, applied at the upgrade height.
 Claim pricing is now pinned to the height a session **started**, so a `compute_units_per_relay` change applies only to sessions that start after it. Same for the global pricing multipliers.
 
 **⚡ RelayMiner reliability**
-Claim/proof transactions are re-broadcast if evicted from the mempool — the main cause of `PROOF_MISSING` slashing. Plus timing and validation hardening so valid work is not rejected. Also fixed: a WebSocket goroutine leak, a concurrent-logging crash, and two session-cache bugs.
+Claim/proof transactions are re-broadcast if evicted from the mempool — the main cause of `PROOF_MISSING` slashing. Plus timing and validation hardening so valid work is not rejected.
 
-**🪪 Gateways get onchain identity**
-Gateways can publish a **gateway card** — a small self-describing JSON document — via the new `MsgUpdateGatewayMetadata`. Validate offline before paying gas: `pocketd tx gateway validate-card ./card.json`
+**🪪 Cards: onchain identity for gateways and services**
+Gateways can now publish a **card** — a small self-describing JSON doc — via `MsgUpdateGatewayMetadata`. Services already had one; a routine service edit no longer wipes it. Validate offline before paying gas: `pocketd tx {service,gateway} validate-card ./card.json`
+⚠️ **Integrators:** service metadata field renamed `experimental_api_specs` → `card` — wire format unchanged, but clients reading it by name must update.
 
 **🔑 Supplier owners protected**
 An operator can no longer re-stake repeatedly to cancel an owner-initiated unstake.
 
 **💸 Settlement budget redistribution (ships OFF)**
-Makes overservicing — work delivered but unpaid — far more visible, plus the machinery to pay for part of it. **No economic change at this upgrade** — an exact no-op until governance raises `overservicing_bonus_multiplier`.
-
-**🛑 Governance param guard**
-Shared-params combinations that settlement cannot process are now rejected at validation time.
+Makes overservicing — work delivered but unpaid — visible, plus the machinery to pay for part of it. **No economic change at this upgrade** — inert until governance raises `overservicing_bonus_multiplier`.
 
 ### ⚠️ Operators
 - **Do not swap the binary early.** Nodes halt at the upgrade height and switch there; running it early risks corrupting your state. `cosmovisor` handles the swap automatically — manual operators swap after the halt.
