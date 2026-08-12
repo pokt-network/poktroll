@@ -78,6 +78,38 @@ func (sessq *sessionQuerier) GetSession(
 	if err != nil {
 		return nil, err
 	}
+
+	// Live params only describe the session grid at or above their own anchor. Below it,
+	// GetSessionStartHeight silently falls back to the GENESIS grid (sessionGridAnchor's
+	// fallback), so the derived start height belongs to no real session -- and two heights
+	// in two DIFFERENT real sessions can collapse onto the same cache key. GetSession then
+	// returns the wrong cached session, which surfaces downstream as a session ID mismatch
+	// and rejects legitimate relays. The exposure is the grace-period window right after a
+	// num_blocks_per_session change, which is what the "restart the fleet after an N change"
+	// runbook step has been papering over.
+	//
+	// Anchoring the check on SessionGridAnchorHeight is sound HERE, unlike the fast path
+	// removed from GetParamsAtHeight in this same release. That one used the anchor to
+	// decide whether live described a PRICING param, and pricing changes do not move the
+	// anchor, so the guard passed when it should not have. This call uses params for grid
+	// math ONLY -- GetSessionStartHeight reads num_blocks_per_session and the anchor and
+	// nothing else -- and recordParamsHistory advances the anchor exactly when
+	// num_blocks_per_session changes. So at or above the live anchor, the live grid IS the
+	// grid in effect.
+	//
+	// Keeping the common path on live params also respects the at-height memo's contract:
+	// it is keyed by height and documented for session start/end heights only, whereas this
+	// method is called with the CURRENT block height on the relay hot path. Querying
+	// at-height unconditionally would add an entry per block and trip the memo's
+	// drop-everything eviction, degrading every other at-height caller.
+	if blockHeight < int64(sharedParams.GetSessionGridAnchorHeight()) {
+		paramsAtHeight, paramsErr := sessq.sharedQueryClient.GetParamsAtHeight(ctx, blockHeight)
+		if paramsErr != nil {
+			return nil, paramsErr
+		}
+		sharedParams = paramsAtHeight
+	}
+
 	sessionCacheKey := getSessionCacheKey(sharedParams, appAddress, serviceId, blockHeight)
 
 	// Check if the session is present in the cache.
@@ -158,6 +190,11 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 }
 
 // getSessionCacheKey constructs the cache key for a session in the form of: appAddress/serviceId/sessionStartHeight.
+//
+// sharedParams MUST be the params governing blockHeight's grid, not necessarily live --
+// see GetSession. Passing params from a different grid derives a start height that can
+// alias two distinct sessions onto one key, which returns the wrong session rather than
+// merely missing the cache.
 func getSessionCacheKey(
 	sharedParams *sharedtypes.Params,
 	appAddress,
