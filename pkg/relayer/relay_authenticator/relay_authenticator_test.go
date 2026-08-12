@@ -141,6 +141,72 @@ func (s *RelayAuthenticatorTestSuite) TestVerifyRelayRequest_Success() {
 	require.NoError(s.T(), err)
 }
 
+// TestVerifyRelayRequest_ForgedSessionHeaderFields asserts that a relay request carrying
+// a LEGITIMATE session ID alongside forged session header fields is rejected.
+//
+// The session ID is a hash over (blockHash, serviceId, appAddress, sessionStartHeight),
+// so it proves only that the client knew those values -- it does not bind the header's own
+// fields. Such a relay would otherwise be filed into the honest session's tree and, if
+// sampled at proof time, fail the chain's compareSessionHeaders check and slash the
+// supplier.
+func (s *RelayAuthenticatorTestSuite) TestVerifyRelayRequest_ForgedSessionHeaderFields() {
+	auth, err := relay_authenticator.NewRelayAuthenticator(
+		s.deps,
+		relay_authenticator.WithSigningKeyNames([]string{s.supplierKeyName}),
+	)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), auth)
+
+	// Each case keeps the session ID (and everything else) valid, and forges exactly one
+	// field of the header.
+	tests := []struct {
+		name           string
+		forgeFn        func(header *sessiontypes.SessionHeader)
+		expectedErrSub string
+	}{
+		{
+			name: "forged session start block height",
+			forgeFn: func(header *sessiontypes.SessionHeader) {
+				header.SessionStartBlockHeight = s.session.Header.SessionStartBlockHeight + 1
+			},
+			expectedErrSub: "session start height mismatch",
+		},
+		{
+			name: "forged session end block height",
+			forgeFn: func(header *sessiontypes.SessionHeader) {
+				header.SessionEndBlockHeight = s.session.Header.SessionEndBlockHeight + 1
+			},
+			expectedErrSub: "session end height mismatch",
+		},
+	}
+
+	for _, test := range tests {
+		s.T().Run(test.name, func(t *testing.T) {
+			relayReq := &servicetypes.RelayRequest{
+				Meta: servicetypes.RelayRequestMetadata{
+					SupplierOperatorAddress: s.supplierAddress,
+					SessionHeader: &sessiontypes.SessionHeader{
+						ApplicationAddress:      s.appAddress,
+						SessionId:               s.session.SessionId,
+						SessionStartBlockHeight: s.session.Header.SessionStartBlockHeight,
+						SessionEndBlockHeight:   s.session.Header.SessionEndBlockHeight,
+						ServiceId:               serviceId,
+					},
+				},
+			}
+			test.forgeFn(relayReq.Meta.SessionHeader)
+
+			// The application signs the forged header: the attacker controls the app key,
+			// so the signature is genuine and cannot be what rejects the relay.
+			relayReq.Meta.Signature = testproxy.GetApplicationRingSignature(t, relayReq, s.appPrivKey)
+
+			err := auth.VerifyRelayRequest(s.ctx, relayReq, serviceId)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), test.expectedErrSub)
+		})
+	}
+}
+
 func (s *RelayAuthenticatorTestSuite) TestSignRelayResponse_Success() {
 	// Create authenticator with valid key name
 	auth, err := relay_authenticator.NewRelayAuthenticator(

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -75,6 +76,36 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 		)
 	}
 
+	// A matching session ID does NOT validate the header's OWN fields.
+	//
+	// The session ID is sha3(blockHash | serviceId | appAddress | sessionStartHeight)
+	// (x/session/keeper/session_hydrator.go GetSessionId), so a matching ID only proves
+	// the client KNEW those values -- every field of the header is still whatever the
+	// client put in it. The only other constraint is SessionHeader.ValidateBasic
+	// (start >= 1, end > start), so a request may pair a legitimate session ID with an
+	// arbitrary session_start_block_height (or service ID, or end height).
+	//
+	// Left unchecked, that mismatch is fatal LATER, onchain, and the SUPPLIER pays:
+	//
+	//   - The relay is filed under (supplier, session END height, session ID)
+	//     (relayer/session/session.go ensureSessionTree), all of which the forged header
+	//     can set correctly, so it lands in the SAME tree as the session's honest relays.
+	//   - At proof time the chain re-compares the SAMPLED relay's header field-by-field
+	//     against the claim's (x/proof/keeper/proof_validation.go compareSessionHeaders,
+	//     which checks start and end height explicitly). Sampling a forged relay yields
+	//     ErrProofInvalidRelay -- an invalid proof, and the supplier is SLASHED.
+	//   - The forged start height is also the height the miner resolves relay mining
+	//     difficulty at (relayer/miner/miner.go) and the height that weights the relay
+	//     (relayer/session/service.go). A stale height resolves an easier target than the
+	//     chain validates against, and a different compute-units-per-relay than the chain
+	//     prices the claim with.
+	//
+	// So enforce here exactly the equality the chain enforces at proof time. The onchain
+	// session was already fetched above, so this costs NO additional query.
+	if err = compareSessionHeaders(session.GetHeader(), sessionHeader); err != nil {
+		return err
+	}
+
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
 	_, isSupplierOperatorAddressPresent := ra.operatorAddressToSigningKeyNameMap[meta.GetSupplierOperatorAddress()]
 	if !isSupplierOperatorAddressPresent {
@@ -92,6 +123,61 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	}
 
 	return ErrRelayAuthenticatorInvalidSessionSupplier
+}
+
+// compareSessionHeaders returns an error if any field of the relay request's session
+// header differs from the corresponding field of the onchain session's header.
+//
+// It deliberately mirrors x/proof/keeper.compareSessionHeaders, which the chain applies
+// to the sampled relay during proof validation. Enforcing the same equality at the door
+// means a relay that would invalidate the claim (and slash the supplier) is rejected
+// instead of being mined into the session tree.
+//
+// The session ID is compared last: its dedicated check upstream carries an operator-facing
+// "is your full node in sync" hint, so a mismatch there is expected to be caught before
+// reaching this function.
+func compareSessionHeaders(onchainSessionHeader, requestSessionHeader *sessiontypes.SessionHeader) error {
+	if requestSessionHeader.GetApplicationAddress() != onchainSessionHeader.GetApplicationAddress() {
+		return ErrRelayAuthenticatorInvalidSession.Wrapf(
+			"session header application address mismatch, expecting: %q, got: %q",
+			onchainSessionHeader.GetApplicationAddress(),
+			requestSessionHeader.GetApplicationAddress(),
+		)
+	}
+
+	if requestSessionHeader.GetServiceId() != onchainSessionHeader.GetServiceId() {
+		return ErrRelayAuthenticatorInvalidSession.Wrapf(
+			"session header service ID mismatch, expecting: %q, got: %q",
+			onchainSessionHeader.GetServiceId(),
+			requestSessionHeader.GetServiceId(),
+		)
+	}
+
+	if requestSessionHeader.GetSessionStartBlockHeight() != onchainSessionHeader.GetSessionStartBlockHeight() {
+		return ErrRelayAuthenticatorInvalidSession.Wrapf(
+			"session header session start height mismatch, expecting: %d, got: %d",
+			onchainSessionHeader.GetSessionStartBlockHeight(),
+			requestSessionHeader.GetSessionStartBlockHeight(),
+		)
+	}
+
+	if requestSessionHeader.GetSessionEndBlockHeight() != onchainSessionHeader.GetSessionEndBlockHeight() {
+		return ErrRelayAuthenticatorInvalidSession.Wrapf(
+			"session header session end height mismatch, expecting: %d, got: %d",
+			onchainSessionHeader.GetSessionEndBlockHeight(),
+			requestSessionHeader.GetSessionEndBlockHeight(),
+		)
+	}
+
+	if requestSessionHeader.GetSessionId() != onchainSessionHeader.GetSessionId() {
+		return ErrRelayAuthenticatorInvalidSession.Wrapf(
+			"session header session ID mismatch, expecting: %q, got: %q",
+			onchainSessionHeader.GetSessionId(),
+			requestSessionHeader.GetSessionId(),
+		)
+	}
+
+	return nil
 }
 
 // CheckRelayRewardEligibility verifies the relay's session hasn't expired for reward
