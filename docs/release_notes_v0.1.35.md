@@ -52,7 +52,7 @@ This addresses measured **delivered-but-unpaid work**: 24–31% of claimed value
 - New tokenomics param **`overservicing_bonus_multiplier`** (field 10), seeded to `1` by the upgrade handler.
 - **`m == 1` reproduces the legacy head-split cap byte-for-byte.** The change ships economically inert; governance opens redistribution afterwards by raising the multiplier — no second upgrade required.
 - The **zero value is coerced to `1` at read time**, not treated as "unlimited", so an unset, un-migrated, or clobbered param can never silently enable redistribution.
-- Bounded above by `MaxOverservicingBonusMultiplier` (1000). Any value at or above `num_suppliers_per_session` already removes the cap in practice (the application budget `B` binds first), so a larger number buys nothing — rejecting it turns a fat-fingered extra digit into a loud validation error instead of a silent no-op.
+- Bounded above by `MaxOverservicingBonusMultiplier` (1000). Any value at or above `num_suppliers_per_session` already removes the cap in practice, since the application's budget `B` binds first — so a larger number buys nothing and is rejected loudly rather than silently doing nothing.
 - Solvency invariant: `Σ floor + Σ bonus ≤ N × floor = B`, so an application's stake can never be overdrawn.
 
 ### 🔒 Anti-collusion invariant reported (NOT a validation error)
@@ -132,13 +132,13 @@ This also affects **chain-initiated** unbonding: a supplier force-unbonded for f
 
 ### 🧹 Dead block-hash reads removed from the claim/proof path (consensus-breaking: gas)
 
-`GetEarliestSupplierClaimCommitHeight` / `GetEarliestSupplierProofCommitHeight` ignore their block-hash argument (distribution seeding is disabled), yet the on-chain callers were still issuing a gas-metered `GetBlockHash` store read for the discarded value. A discarded read that still consumes consensus gas is a latent nondeterminism surface — if it ever returned a different byte length across nodes, `gas_used` would diverge and `LastResultsHash` would split while `AppHash` stayed identical. That is the signature of the beta-lego block-432943 halt (suspected carrier, not a proven root cause). These reads now pass `nil`.
+The claim/proof commit-height helpers ignore their block-hash argument, yet the on-chain callers still issued a gas-metered `GetBlockHash` store read for the discarded value. A discarded read that consumes consensus gas is a latent nondeterminism surface: if it ever returned a different byte length across nodes, `gas_used` would diverge and `LastResultsHash` would split while `AppHash` stayed identical. These reads now pass `nil`.
 
 **This changes gas on the `MsgCreateClaim` and `MsgSubmitProof` paths.** The proof-requirement seed itself is unchanged.
 
 It is not the only gas change in this release: the `compute_units_per_relay` pin also moves `MsgCreateClaim`, where a single `GetService` read became a history-store seek plus a possible fallback. Both take effect atomically at the upgrade height and need no migration, but the consequence is the same and worth stating once for operators: **a node still running an older binary past the upgrade height diverges on `gas_used` — and therefore `LastResultsHash` — even though its `AppHash` matches.**
 
-The RelayMiner's off-chain twin (`pkg/client/query/sharedquerier.go`) did the same thing over RPC — a full `blockQuerier.Block` call per claim/proof window for a discarded hash, which also turned any RPC hiccup into an error return. That fetch is gone too, along with its now-unused block-hash cache.
+The RelayMiner did the same thing over RPC — a full block fetch per claim/proof window for a discarded hash, which also turned any RPC hiccup into an error. That fetch is gone too.
 
 ### 🛑 Shared params: reject an all-zero claim/proof window offset set (consensus-breaking)
 
@@ -250,31 +250,31 @@ Upgrade the node first, or together with the fleet. Do not run an upgraded fleet
 
 ### 🧵 Concurrent proof validation: gas-meter data race fixed
 
-`ValidateSubmittedProofs` fans proof validation across `numCPU` goroutines that all shared a single `sdk.Context`. Every store access runs that context's gas meter, and `gaskv.Store` calls `ConsumeGas` outside any lock — so the parent's `proofIterator.Next()` (seek gas) raced every child's reads (`GetClaim`, signature/closest-path validation, which run outside the coordinator mutex) on `infiniteGasMeter`'s unsynchronized `consumed += amount`.
+Proof validation fans across CPU goroutines that shared a single gas meter, producing a data race under `-race`. Each goroutine now gets its own.
 
-Each goroutine now gets its own gas meter. Behaviour-neutral: the meter is infinite (EndBlocker) and EndBlocker gas is never reported in `FinalizeBlockResponse`, so nothing consensus-visible was derived from it — state writes were already serialized under the coordinator mutex and are per-claim keyed, so `AppHash` was never at risk. Only the meter is swapped; the MultiStore and EventManager carry over by pointer.
+**Behaviour-neutral:** the meter is infinite in the EndBlocker and nothing consensus-visible was derived from it — state writes were already serialized and per-claim keyed, so `AppHash` was never at risk.
 
-This is a **pre-existing bug** (introduced in #1031, present in v0.1.34 and live on mainnet), not a v0.1.35 regression. It was making the race-enabled targets (`make test_verbose`, `make test_integration`, `make test_all_with_integration`) fail on `x/proof/keeper` and `x/tokenomics/keeper`. Both packages are now race-clean. Note `make test_all` is **not** among them: it builds with `-buildmode=pie`, which is incompatible with `-race`.
+This is a **pre-existing bug** (introduced in #1031, present in v0.1.34 and live on mainnet), not a v0.1.35 regression. It was making the race-enabled test targets fail on `x/proof/keeper` and `x/tokenomics/keeper`; both are now race-clean.
 
 ### 🚀 Settlement performance
 
-- Aggregation maps keyed by struct instead of `fmt.Sprintf` — removes ~181K string allocations per mainnet settlement block. Sort order is preserved exactly.
-- Validator reward data computed once instead of twice per distribution (`calculateAddressRewards` was re-run inside the Largest Remainder Method path).
+- Aggregation maps keyed by struct instead of formatted strings — removes ~181K allocations per mainnet settlement block. Sort order unchanged.
+- Validator reward data computed once per distribution instead of twice.
 
 ### 🛡️ Additional hardening
 
-- **Settlement no longer settles a claim before its proof window closes.** The candidate session-end scan is a deliberate superset, and when governance *shrinks* the window offsets the live epoch's candidate reaches back into the previous epoch and names heights whose claims are not yet ripe. Nothing downstream re-checked, so those claims settled early: every not-yet-submitted proof recorded `PROOF_MISSING`, the supplier slashed, the claim removed. Ripeness is now gated per claim against the params at that claim's own session-end height; a not-yet-ripe claim is **deferred**, not dropped.
-- **A corrupt `compute_units_per_relay` history entry can no longer halt the chain.** That getter is reached from the settlement EndBlocker and used `MustUnmarshal`, while every sibling history reader had already been hardened to log and fall back to live.
-- **Gateway cards no longer inflate the per-block EndBlocker scans.** Two EndBlockers — one running *every block* — decoded every full gateway record. With a 256 KiB card per gateway that is unbounded, un-gas-metered work for data those paths never read. They now decode a card-less projection; the same bytes are read from the store, so gas is unchanged.
-- **The RelayMiner resolves claim/proof window timing at height**, matching the chain. Pricing was pinned in this release but the window-timing reads were left live, so any window-offset or `num_blocks_per_session` change mis-timed the session in flight — including deleting a session tree before the chain's real proof window closed.
-- The supplier unstake-cancel guard now checks the **stored** owner rather than the message-supplied one (not exploitable before, but it depended on an unrelated guard 40 lines away).
-- The redistribution bonus is skipped entirely at `m == 1`, where it was computed and then discarded by the cap.
+- **A claim is no longer settled before its own proof window closes.** When governance *shrinks* the window offsets, claims could previously settle early — recording `PROOF_MISSING`, slashing the supplier and removing the claim. Not-yet-ripe claims are now deferred, not dropped.
+- **A corrupt `compute_units_per_relay` history entry can no longer halt the chain** during settlement; it logs and falls back to the live value.
+- **Gateway cards no longer inflate the per-block EndBlocker scans.** Those paths now decode a card-less projection. The same bytes are read from the store, so **gas is unchanged**.
+- **The RelayMiner resolves claim/proof window timing and relay-mining difficulty at height**, matching the chain. Left on live values, a window-offset or `num_blocks_per_session` change mis-timed the session in flight, and a mid-session difficulty change could produce a proof the chain rejects.
+- The supplier unstake-cancel guard checks the **stored** owner rather than the message-supplied one (not exploitable before; defence in depth).
+- The redistribution bonus is skipped entirely at `m == 1`, where the cap discarded it anyway.
 
 ### 🔐 Supply-chain & docs
 
 - `pocketd-install.sh` now verifies the downloaded tarball against the published `release_checksum` (SHA256) and aborts on mismatch; documents how to review the script before piping it to a shell, and that it installs only the CLI.
 - `golang.org/x/crypto` → v0.54.0 (+ `net`, `text`, `sync`, `sys`, `term`, `mod`, `tools`) in the root module and `tools/iavl-tree-diff`.
-- `google.golang.org/grpc` → v1.82.1, closing **GHSA-hrxh-6v49-42gf** (HIGH). Of the three issues in that advisory, the two xDS RBAC ones do not apply (no xDS), but the third does: an **HTTP/2 Rapid Reset mitigation bypass** allowing high-CPU denial of service via client-initiated stream resets. `govulncheck` reached it through the validator's gRPC server and the RelayMiner's HTTP server (`pkg/relayer/proxy/http_server.go` → `transport.http2Server.HandleStreams`), so it was live on both. Carried over from v0.1.34, not introduced here.
+- `google.golang.org/grpc` → v1.82.1, closing **GHSA-hrxh-6v49-42gf** (HIGH): an HTTP/2 Rapid Reset mitigation bypass allowing high-CPU denial of service. It was reachable on both the validator's gRPC server and the RelayMiner's HTTP server. Carried over from v0.1.34, not introduced here.
 
 > **Known outstanding, no fix available:** `govulncheck` still reports `golang.org/x/crypto/openpgp` (GO-2026-5932) — an "unmaintained and unsafe by design" deprecation rather than a patchable CVE, reached via cosmos-sdk's keyring armor; the v0.54.0 bump does **not** clear it. Also two 2023 `x/crisis` advisories against cosmos-sdk v0.53.7 (GO-2023-1881, GO-2023-1821) with no fixed version on that line. All three predate this release.
 - Docusaurus `baseUrl` fixed so the docs site loads.
