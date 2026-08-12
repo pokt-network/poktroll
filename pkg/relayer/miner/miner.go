@@ -205,7 +205,21 @@ func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *
 		return nil, fmt.Errorf("invalid session header: %w", err)
 	}
 
-	serviceRelayDifficulty, err := mnr.serviceQueryClient.GetServiceRelayDifficulty(ctx, sessionHeader.ServiceId)
+	// Resolve the difficulty at the SESSION START height, never live.
+	//
+	// This target decides MEMBERSHIP of the session tree (IsRelayVolumeApplicable), and
+	// x/proof validates the sampled relay against GetRelayMiningDifficultyAtHeight at the
+	// same session start height (x/proof/keeper/proof_validation.go). Reading live here
+	// re-opens that gap: update_relay_mining_difficulty writes the new value to live
+	// IMMEDIATELY while recording history effective only at the next session start, and
+	// settlement (which triggers the miner's difficulty cache clear) lands mid-session --
+	// so the tail of an in-flight session would be mined against a target the chain will
+	// not validate against. If the target eased, the sampled relay can be one the chain
+	// rejects (ErrProofInvalidRelayDifficulty -> invalidated claim -> slash); if it
+	// tightened, relays the chain would have paid for are silently dropped.
+	serviceRelayDifficulty, err := mnr.serviceQueryClient.GetServiceRelayDifficultyAtHeight(
+		ctx, sessionHeader.ServiceId, sessionHeader.GetSessionStartBlockHeight(),
+	)
 	if err != nil {
 		return nil, err
 	}
