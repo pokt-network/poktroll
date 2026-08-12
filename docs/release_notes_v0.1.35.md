@@ -13,24 +13,25 @@
 ## 🚀 Pocket Network `v0.1.35`
 
 Consensus-breaking release, applied at the upgrade height.
+**📅 Target: height 883,667 — Tue 2026-08-18, ~13:10 UTC / 09:10 EDT / 15:10 CEST**
 
-**🧾 Mid-session config changes no longer void claims**
-Changing a service's `compute_units_per_relay` used to forfeit every in-flight claim for that service. Pricing is now pinned to the height a session **started**, so a change applies only to sessions that start after it. Same fix for the global pricing multipliers.
+**🧾 Service config changes are session-scoped**
+Claim pricing is now pinned to the height a session **started**, so a `compute_units_per_relay` change applies only to sessions that start after it. Same for the global pricing multipliers.
 
 **⚡ RelayMiner reliability**
-Claim/proof transactions are re-broadcast if evicted from the mempool — the main cause of `PROOF_MISSING` slashing. Also fixed: a WebSocket goroutine leak, a concurrent-logging crash, and two session-cache bugs.
+Claim/proof transactions are re-broadcast if evicted from the mempool — the main cause of `PROOF_MISSING` slashing. Plus timing and validation hardening so valid work is not rejected. Also fixed: a WebSocket goroutine leak, a concurrent-logging crash, and two session-cache bugs.
 
 **🪪 Gateways get onchain identity**
-Gateways can publish a **gateway card** — a small self-describing JSON document — via the new `MsgUpdateGatewayMetadata`, the same container services use. Validate offline before paying gas: `pocketd tx gateway validate-card ./card.json`
+Gateways can publish a **gateway card** — a small self-describing JSON document — via the new `MsgUpdateGatewayMetadata`. Validate offline before paying gas: `pocketd tx gateway validate-card ./card.json`
 
 **🔑 Supplier owners protected**
 An operator can no longer re-stake repeatedly to cancel an owner-initiated unstake.
 
 **💸 Settlement budget redistribution (ships OFF)**
-Makes the split between work done-and-paid and work done-but-unpaid (overservicing) far more visible, plus the machinery to pay for part of it. **No economic change at this upgrade** — an exact no-op until governance raises `overservicing_bonus_multiplier`.
+Makes overservicing — work delivered but unpaid — far more visible, plus the machinery to pay for part of it. **No economic change at this upgrade** — an exact no-op until governance raises `overservicing_bonus_multiplier`.
 
-**🛑 Chain-halt guard**
-Governance can no longer submit a shared-params set that would halt the chain during settlement.
+**🛑 Governance param guard**
+Shared-params combinations that settlement cannot process are now rejected at validation time.
 
 ### ⚠️ Operators
 - **Do not swap the binary early.** Nodes halt at the upgrade height and switch there; running it early risks corrupting your state. `cosmovisor` handles the swap automatically — manual operators swap after the halt.
