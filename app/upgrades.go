@@ -199,6 +199,9 @@ var allUpgrades = []upgrades.Upgrade{
 	//   (the offsets' sum is a settlement divisor; zero would halt the chain)
 	// - AddService preserves stored service metadata when an update omits it
 	// - Gateways gain a metadata card, set via the new MsgUpdateGatewayMetadata
+	// - Do not settle a claim before its own proof window closes, resolving the window
+	//   offsets at the claim's session end rather than from live params (diverges from
+	//   v0.1.34 as soon as governance shrinks the offsets' sum)
 	upgrades.Upgrade_0_1_35,
 }
 

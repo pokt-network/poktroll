@@ -50,17 +50,31 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 	}
 
 	// Validate before promoting. SetParams marshals and writes with NO validation, so
-	// promotion is the one path that can install a live param set the MsgUpdateParam(s)
-	// handlers would have rejected -- including one whose four claim/proof window offsets
-	// are all zero, which makes GetNumPendingSessions() zero and divides by zero in the
-	// settlement EndBlocker. Governance cannot get such an entry into history (that path
-	// validates), so this guards the remaining writer: an upgrade handler calling
-	// SetParamsAtHeight directly.
+	// promotion is the one path that can install a LIVE param set the MsgUpdateParam(s)
+	// handlers would have rejected. Governance cannot get such an entry into history
+	// (that path validates), so this guards the writers that bypass it: an upgrade
+	// handler calling SetParamsAtHeight directly, and x/shared genesis import, whose
+	// Validate() checks live Params but never the ParamsHistory entries.
 	//
-	// Log and skip rather than return the error: this runs in the EndBlocker, so returning
-	// it would halt the chain at the promotion height -- exactly the outcome the guard
-	// exists to prevent. Declining to promote leaves the previous live params in place,
-	// which are known-valid and keep the chain running on the old epoch.
+	// Log and skip rather than return the error: this runs in the EndBlocker, so
+	// returning it would halt the chain at the promotion height. Declining to promote
+	// leaves the previous live params in place, which are known-valid.
+	//
+	// SCOPE -- this guard protects the LIVE value only; it does NOT make an invalid
+	// epoch harmless. The entry stays in history, and the consumers that matter read
+	// history, not live: settlement's budget divisor resolves via
+	// GetSharedParamsAtHeight(sessionEndBlockHeight), and GetParamsAtHeight returns a
+	// stored entry verbatim (only an unmarshal failure falls back to live). So an
+	// all-zero-window-offsets epoch still reaches GetNumPendingSessions() == 0 and
+	// panics on the divide in the settlement EndBlocker, roughly one settlement cycle
+	// later, via the first claim whose session end lands at or after effective_height.
+	// Refusing to promote delays that halt; it does not prevent it.
+	//
+	// A future change wanting real protection must also reconcile the stored entry --
+	// e.g. overwrite history at effective_height with the current live params, which is
+	// a deterministic write every node performs identically. That is deliberately NOT
+	// done here: it is a state change, and no writer in this release reaches it
+	// (Upgrade_0_1_35 never calls SetParamsAtHeight).
 	if err := newParams.ValidateBasic(); err != nil {
 		k.logger.Error(fmt.Sprintf(
 			"REFUSING to promote invalid params epoch at effective_height=%d: %s; keeping the previous live params",

@@ -19,7 +19,7 @@ const (
 
 // Upgrade_0_1_35 handles the upgrade to release `v0.1.35`.
 //
-// This upgrade carries EIGHT consensus-breaking changes, all detailed below:
+// This upgrade carries NINE consensus-breaking changes, all detailed below:
 //  1. Settlement budget redistribution (head-split cap -> floor); ships as a no-op
 //  2. Claim PRICING params pinned to the session-start height, so settlement agrees
 //     with x/proof on the same claim (compute_units_to_tokens_multiplier and
@@ -30,10 +30,19 @@ const (
 //  6. Shared params validation rejects an all-zero claim/proof window offset set
 //  7. AddService preserves stored service metadata when an update omits it
 //  8. Gateway gains a metadata card, set via the new MsgUpdateGatewayMetadata
+//  9. A claim is no longer settled before its own proof window closes, where "its own"
+//     resolves the window offsets at the claim's session end rather than from live
+//     params. Inert while the offsets are unchanged, but the moment governance shrinks
+//     their sum, a v0.1.34 node settles claims at a block where a v0.1.35 node defers
+//     them -- a state-transition divergence at the same height.
 //
-// NOT in the list, deliberately: the anti-collusion invariant. It is REPORTED as a
-// warning and never rejects, so it changes no state transition and is not
-// consensus-breaking. See Params.CheckAntiCollusionInvariant and the section below.
+// NOT in the list, deliberately:
+//   - The anti-collusion invariant: REPORTED as a warning, never rejects, so it changes
+//     no state transition. See Params.CheckAntiCollusionInvariant and the section below.
+//   - Excluding expiring claims from the redistribution budget: provably inert at
+//     overservicing_bonus_multiplier == 1, which is the value this upgrade seeds.
+//   - The shared EndBlocker's validate-before-promote guard: unreachable via governance,
+//     which already validates on both MsgUpdateParam(s) paths before recording history.
 //
 // CONSENSUS-BREAKING (shared params: zero-pending-sessions guard):
 // x/shared Params.ValidateBasic now rejects a param set whose four claim/proof window
@@ -81,8 +90,10 @@ const (
 // The separate message is deliberate. MsgStakeGateway enforces a strictly-positive stake
 // delta on every call (x/gateway/keeper/msg_server_stake_gateway.go, "MUST ALWAYS stake or
 // upstake"), so folding the card into it would mean escrowing real POKT to fix a typo in a
-// description. MsgStakeGateway is left completely untouched; a freshly staked gateway
-// starts with no card and becomes descriptor-complete via a follow-up call.
+// description. MsgStakeGateway's staking SEMANTICS are untouched -- it neither reads nor
+// writes the card -- so a freshly staked gateway starts with no card and becomes
+// descriptor-complete via a follow-up call. Its handler does change in one respect: the
+// events it emits now go through DehydratedForEvent(), per the EVENTS note below.
 //
 // Semantics match MsgAddService: a nil metadata on the message leaves the stored card
 // alone rather than clearing it, so a client that does not re-send the card cannot

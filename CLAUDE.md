@@ -133,7 +133,8 @@ release (`v0.1.34.go`, `v0.1.35.go`, ...), each defining an `upgrades.Upgrade` v
    corresponding handler write is left at its zero value on upgraded chains.
 3. **Register it**: append the new `upgrades.Upgrade_X_Y_Z` value to the `allUpgrades` slice in
    `app/upgrades.go`. Defining the descriptor does NOT register it - `setUpgrades` only ranges
-   over `allUpgrades`. An unregistered handler is a silent no-op at the upgrade height.
+   over `allUpgrades`. An unregistered handler HALTS THE CHAIN at the upgrade height:
+   `x/upgrade`'s BeginBlocker errors on `!HasHandler(plan.Name)`, which panics the node.
    `app/upgrades_registration_test.go` guards this; keep it passing.
 4. The upgrade MUST be in a released binary before the on-chain upgrade is scheduled, so
    `cosmovisor` can fetch it from GitHub Releases.

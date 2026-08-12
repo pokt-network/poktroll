@@ -47,7 +47,7 @@ Full notes: <https://github.com/pokt-network/poktroll/releases/tag/v0.1.35>
 
 The per-supplier head-split (`appStake / numPendingSessions / actualNumSuppliers`) is demoted from a hard **ceiling** to a guaranteed **floor**. Budget left unused by idle or light suppliers can now be redistributed to suppliers that served above their floor, in proportion to each one's excess, bounded by the application's committed per-session budget `B`.
 
-This addresses measured **delivered-but-unpaid work**: 24–31% of all claimed value on mainnet, amplified ~15× by the N=60→20 session-length flip.
+This addresses measured **delivered-but-unpaid work**: 24–31% of claimed value on the affected service, amplified ~15× by the N=60→20 session-length flip. The figure is **not** network-wide — it was measured on one service and one supplier, where the loss is concentrated (see `docs/settlement_budget_redistribution_spec.md` §1.0).
 
 - New tokenomics param **`overservicing_bonus_multiplier`** (field 10), seeded to `1` by the upgrade handler.
 - **`m == 1` reproduces the legacy head-split cap byte-for-byte.** The change ships economically inert; governance opens redistribution afterwards by raising the multiplier — no second upgrade required.
@@ -111,6 +111,24 @@ pocketd tx supplier stake-supplier --config <config-without-services> --stake-on
 ```
 
 Reusing the supplier's existing stake config (which has services in it) instead fails with `only the operator account is authorized to update the service configurations` — a misleading error for what is meant to be a cancel.
+
+:::danger The owner's cancel is not sufficient on its own — the operator must follow up
+`MsgUnstakeSupplier` stamps a `DeactivationHeight` on **every** service config. Because the owner's cancel must be services-less, it preserves that history verbatim: the supplier ends up staked and no longer unbonding, but with every service config deactivated — active at no height at all. **It serves no relays and earns nothing**, and the cancel transaction succeeds with no warning.
+
+Restoring service requires a **second** transaction, and the owner cannot send it — setting service configs requires the **operator**'s signature:
+
+```bash
+# 1. Owner cancels the unbonding (supplier is now staked but serving nothing)
+pocketd tx supplier stake-supplier --config <config-without-services> --stake-only --from <owner>
+
+# 2. Operator re-activates the service configs (REQUIRED — without this the supplier earns nothing)
+pocketd tx supplier stake-supplier --config <config-with-services> --from <operator>
+```
+
+Verify with `pocketd query supplier show-supplier <operator-addr>` — each `service_config_history` entry should show a zero `deactivation_height`.
+
+This also affects **chain-initiated** unbonding: a supplier force-unbonded for falling below min stake (settlement slashing) can no longer be rescued by an operator-key re-stake, which is a common automated top-up pattern — it now fails with `PermissionDenied`. The owner must cancel first, then the operator restores services.
+:::
 
 ### 🧹 Dead block-hash reads removed from the claim/proof path (consensus-breaking: gas)
 
@@ -183,7 +201,7 @@ Adding a query request field is not consensus-breaking.
 
 Not included, deliberately: no service-id-filtered gateway query — the advertised service list lives inside the opaque card, so the chain cannot filter on it; that belongs to an offchain index.
 
-Schema: `docs/pocket_gateway_card.schema.json`, documented alongside the service card in `docs/pocket_service_card.md`.
+Schema: `pkg/cards/gateway_card.schema.json`, documented alongside the service card in `docs/pocket_service_card.md`.
 
 ### 🏷️ `experimental_api_specs` renamed to `card` (client-facing, NOT consensus-breaking)
 
@@ -210,9 +228,17 @@ The reverse direction is also now incompatible: `service` genesis gained a `comp
 
 CLI flags follow: `--card-base64` / `--card-file`. The old `--experimental-metadata-base64` / `--experimental-metadata-file` remain as **deprecated aliases**, so existing scripts keep working; passing both a flag and its alias is an error rather than a silent precedence rule.
 
-The field now carries a **service card** — a small, self-describing JSON document. See `docs/pocket_service_card.md` for the schema and `docs/pocket_service_card.schema.json` to validate against.
+The field now carries a **service card** — a small, self-describing JSON document. See `docs/pocket_service_card.md` for the schema and `pkg/cards/service_card.schema.json` to validate against.
 
 ### ⚡ RelayMiner reliability (off-chain, backward-compatible)
+
+:::warning Upgrade the full node before, or with, the RelayMiner
+`ComputeUnitsPerRelayAtHeight` is a **new** query in v0.1.35. A full node still on v0.1.34 answers `codes.Unimplemented`, which is not a transient code and is therefore not retried.
+
+A v0.1.35 RelayMiner pointed at a v0.1.34 node falls back to the **live** compute-units-per-relay and logs a warning, so it keeps mining — but the session-start cupr pin is inactive for as long as that lasts, which is precisely the mid-session-change exposure the pin exists to close. `ParamsAtHeight` and `RelayMiningDifficultyAtHeight` already existed in v0.1.34 and are unaffected.
+
+Upgrade the node first, or together with the fleet. Do not run an upgraded fleet against un-upgraded nodes across a cupr change.
+:::
 
 - **`GetParamsAtHeight` served live params — the off-chain half of the session-start pins was a silent no-op.** `sharedQuerier.GetParamsAtHeight` short-circuited to live whenever `session_grid_anchor_height <= queryHeight`, on the theory that live always describes the currently-effective epoch. That invariant is narrower than the guard assumed: the anchor advances **only** on a `num_blocks_per_session` change, so a CUTTM or window-offset change leaves it untouched, and non-timing params are written to live immediately while their history entry is only effective at the next session boundary. The guard therefore passed for essentially every real query — mainnet anchor is `831001` against session starts in the 870k range — degrading the method to `GetParams`. The RelayMiner priced claims and proof requirements under live params while the chain used the session-start epoch: a CUTTM decrease made the miner skip a proof the chain still required (`PROOF_MISSING` → slash), and a window-offset change had the same shape against session timing, submitting claims and proofs outside their real windows. The fast path is gone, replaced by a bounded per-height memo — a params-history entry is only ever recorded with a *future* effective height, so for any committed height the answer is frozen and safe to cache indefinitely. The remaining live-params readers now resolve at the epoch the chain uses for the same quantity — **pricing at session start, window timing at session end**: `relay_meter` (`IsOverServicing`, `SetNonApplicableRelayReward`, `ensureRequestSessionRelayMeter`, `forEachNewBlockFn`), `relay_verifier.CheckRelayRewardEligibility`, and the async websocket bridge teardown. `forEachNewBlockFn` snapshots session end heights under the read lock and resolves params outside it (querier I/O must not run under `relayMeterMu`), and keeps a meter on query failure rather than dropping it — a lost meter means unmetered relays.
 - **Event subscription close is now logged.** `NewEventsReplayClient` subscribes once and `goPublishEvents` consumes that channel until it closes; on close the goroutine simply returned — no reconnect, no error, no log. The replay observable then kept its stale buffer and received nothing ever again, so every consumer blocked until its own timeout with no indication of why. This is reachable rather than theoretical: CometBFT terminates subscribers that cannot keep up, and `Subscribe` is called without an `outCapacity`, so it defaults to `1`. The close is now logged; **automatic reconnect remains a TODO** — recovery is still a process restart.
@@ -228,7 +254,7 @@ The field now carries a **service card** — a small, self-describing JSON docum
 
 Each goroutine now gets its own gas meter. Behaviour-neutral: the meter is infinite (EndBlocker) and EndBlocker gas is never reported in `FinalizeBlockResponse`, so nothing consensus-visible was derived from it — state writes were already serialized under the coordinator mutex and are per-claim keyed, so `AppHash` was never at risk. Only the meter is swapped; the MultiStore and EventManager carry over by pointer.
 
-This is a **pre-existing bug** (introduced in #1031, present in v0.1.34 and live on mainnet), not a v0.1.35 regression. It was making `make test_all` / `make test_integration` — which run with `-race` — fail on `x/proof/keeper` and `x/tokenomics/keeper`. Both packages are now race-clean.
+This is a **pre-existing bug** (introduced in #1031, present in v0.1.34 and live on mainnet), not a v0.1.35 regression. It was making the race-enabled targets (`make test_verbose`, `make test_integration`, `make test_all_with_integration`) fail on `x/proof/keeper` and `x/tokenomics/keeper`. Both packages are now race-clean. Note `make test_all` is **not** among them: it builds with `-buildmode=pie`, which is incompatible with `-race`.
 
 ### 🚀 Settlement performance
 
@@ -247,7 +273,7 @@ This is a **pre-existing bug** (introduced in #1031, present in v0.1.34 and live
 ### 🔐 Supply-chain & docs
 
 - `pocketd-install.sh` now verifies the downloaded tarball against the published `release_checksum` (SHA256) and aborts on mismatch; documents how to review the script before piping it to a shell, and that it installs only the CLI.
-- `golang.org/x/crypto` → v0.54.0 (+ `net`, `text`, `sync`, `sys`, `term`, `mod`, `tools`) in both modules.
+- `golang.org/x/crypto` → v0.54.0 (+ `net`, `text`, `sync`, `sys`, `term`, `mod`, `tools`) in the root module and `tools/iavl-tree-diff`.
 - `google.golang.org/grpc` → v1.82.1, closing **GHSA-hrxh-6v49-42gf** (HIGH). Of the three issues in that advisory, the two xDS RBAC ones do not apply (no xDS), but the third does: an **HTTP/2 Rapid Reset mitigation bypass** allowing high-CPU denial of service via client-initiated stream resets. `govulncheck` reached it through the validator's gRPC server and the RelayMiner's HTTP server (`pkg/relayer/proxy/http_server.go` → `transport.http2Server.HandleStreams`), so it was live on both. Carried over from v0.1.34, not introduced here.
 
 > **Known outstanding, no fix available:** `govulncheck` still reports `golang.org/x/crypto/openpgp` (GO-2026-5932) — an "unmaintained and unsafe by design" deprecation rather than a patchable CVE, reached via cosmos-sdk's keyring armor; the v0.54.0 bump does **not** clear it. Also two 2023 `x/crisis` advisories against cosmos-sdk v0.53.7 (GO-2023-1881, GO-2023-1821) with no fixed version on that line. All three predate this release.
@@ -263,8 +289,9 @@ This is a **pre-existing bug** (introduced in #1031, present in v0.1.34 and live
 6. `x/shared` params validation rejects an all-zero claim/proof window offset set (would yield `numPendingSessions = 0` → divide-by-zero panic in settlement → chain halt)
 7. `MsgAddService` preserves stored service metadata when the message omits it (previously overwritten with nil by any unrelated update)
 8. `Gateway` gains a `metadata` card + new `MsgUpdateGatewayMetadata`; gateway lifecycle events no longer embed the card
+9. A claim is no longer settled before **its own** proof window closes — the window offsets are resolved at the claim's session end rather than from live params. Inert while the offsets are unchanged, but once governance shrinks their sum a v0.1.34 node settles claims at a block where a v0.1.35 node defers them
 
-The anti-collusion invariant is **not** on this list: it is a warning log, not a validation error, and changes no state transition.
+Two changes are deliberately **not** on this list. The anti-collusion invariant is a warning log, not a validation error, and changes no state transition. Excluding expiring claims from the redistribution budget is provably inert at `overservicing_bonus_multiplier = 1`, the value this upgrade seeds.
 
 ## Upgrade Handler (`v0.1.35`)
 
@@ -285,7 +312,7 @@ pocketd q tokenomics params --node <rpc>
 - ⚠️ **Avoid pricing-param changes during the rollout too.** Hold `compute_units_to_tokens_multiplier`, `compute_unit_cost_granularity` and the claim/proof window offsets steady from the upgrade height until the fleet is upgraded, for the same reason as the cupr freeze.
 - ⚠️ **Bulk tokenomics params updates must include every field.** `MsgUpdateParams` (plural) replaces the whole struct — omitting `overservicing_bonus_multiplier` decodes it to `0`, which is coerced to `1`, silently reverting redistribution to OFF. The `bulk_params_main` and `bulk_params_beta` files are backfilled from live chain state and guarded by a test; **`bulk_params_alpha` is NOT verified** (its RPC/gRPC endpoint no longer resolves) — re-derive it from the chain before ever using it.
 - **Redistribution stays OFF until governance raises the multiplier.** Enabling it is a treasury decision (absorb the additional settlement, or cut `compute_units_to_tokens_multiplier` for budget neutrality). To lift the cap in practice, set `m ≥ num_suppliers_per_session`, at which point the application budget `B` binds first.
-- **Suppliers:** an operator can no longer re-stake to cancel an owner-initiated unstake; that `MsgStakeSupplier` now fails with `PermissionDenied`. The owner cancels with `stake-supplier --config <config-without-services> --stake-only --from <owner>` — the services-less requirement is pre-existing, but it only starts binding on the cancel path now that the operator cannot cancel.
+- **Suppliers:** an operator can no longer re-stake to cancel an owner-initiated unstake; that `MsgStakeSupplier` now fails with `PermissionDenied`. The owner cancels with `stake-supplier --config <config-without-services> --stake-only --from <owner>` — the services-less requirement is pre-existing, but it only starts binding on the cancel path now that the operator cannot cancel. **The cancel is a two-step operation:** it leaves every service config deactivated, so the supplier earns nothing until the **operator** sends a second `stake-supplier` carrying the services. Automated top-ups signed with the operator key can no longer rescue a supplier force-unbonded by slashing. See the cancel section above for the exact commands.
 - **Indexers:** new `service/ComputeUnitsPerRelayAtHeight` and `service/ComputeUnitsPerRelayHistory` queries; new `ServiceComputeUnitsPerRelayUpdate` state. `EventApplicationOverserviced` semantics are unchanged at `m = 1`.
 
 ---

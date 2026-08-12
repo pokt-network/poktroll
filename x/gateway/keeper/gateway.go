@@ -50,7 +50,6 @@ func (k Keeper) RemoveGateway(
 	store.Delete(types.GatewayKey(address))
 }
 
-// GetAllGateways returns all gateway
 // GetAllGatewayLifecycles returns every gateway in state decoded WITHOUT its card.
 //
 // Prefer this over GetAllGateways on any path that only needs lifecycle state. A card
