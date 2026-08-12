@@ -102,7 +102,16 @@ func (k msgServer) StakeGateway(
 
 	// Update the Gateway in the store
 	k.SetGateway(ctx, gateway)
-	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
+	// Log identifying fields only, NEVER %+v on the whole gateway. Since v0.1.35 a
+	// Gateway carries a metadata card of up to 256 KiB, and `gateway` is a value, so its
+	// pointer-receiver String() is not in the method set and fmt falls back to
+	// reflection. The nested *Metadata DOES implement Stringer, so its generated String()
+	// renders Card []byte as a decimal list -- roughly 4x the payload, i.e. ~1 MB of log
+	// per re-stake for a maxed card.
+	logger.Info(fmt.Sprintf(
+		"Successfully updated stake for gateway: %s (stake: %s)",
+		gateway.GetAddress(), gateway.GetStake(),
+	))
 
 	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdk.UnwrapSDKContext(ctx).BlockHeight())
 	events := make([]sdk.Msg, 0)

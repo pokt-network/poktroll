@@ -386,6 +386,31 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 	sessionsToClaimsPublishCh chan<- []relayer.SessionTree,
 ) channel.ForEachFn[client.Block] {
 	return func(ctx context.Context, block client.Block) {
+		// Pre-warm the params memo for every session end height currently tracked,
+		// WITHOUT holding sessionsTreesMu.
+		//
+		// The loop below needs params per session end height, but sessionsTreesMu is the
+		// same mutex ensureSessionTree takes for every mined relay, so a network round
+		// trip under it stalls relay ingestion -- and on a memo miss against a flaky node
+		// that means retry backoff, not microseconds. Warming here means the in-loop
+		// GetParamsAtHeight hits the in-process memo instead.
+		//
+		// Deliberately not restructured into a full two-pass: the loop marks sessions via
+		// StartClaiming() under this lock specifically so that exactly one caller claims a
+		// session, and it publishes to sessionsToClaimsPublishCh under it as well. Errors
+		// here are ignored on purpose -- this is only a warm-up, and the in-loop call
+		// handles failure (skip the session, keep the tree).
+		rs.sessionsTreesMu.Lock()
+		sessionEndHeightsToWarm := make([]int64, 0, len(rs.sessionsTrees[sessionsSupplier]))
+		for sessionEndHeight := range rs.sessionsTrees[sessionsSupplier] {
+			sessionEndHeightsToWarm = append(sessionEndHeightsToWarm, sessionEndHeight)
+		}
+		rs.sessionsTreesMu.Unlock()
+
+		for _, sessionEndHeight := range sessionEndHeightsToWarm {
+			_, _ = rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
+		}
+
 		rs.sessionsTreesMu.Lock()
 		defer rs.sessionsTreesMu.Unlock()
 
@@ -661,46 +686,66 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 			return
 		}
 
-		// Create a copy of the relevant trees to avoid holding the lock
-		// during the potentially time-consuming operations that follow
-		expiredSessionTrees := make([]relayer.SessionTree, 0)
+		// PASS 1 -- snapshot the candidates under the lock. Deliberately NO querier I/O
+		// here: sessionsTreesMu is the same mutex ensureSessionTree takes for every mined
+		// relay, so a network round trip inside this loop stalls relay ingestion for as
+		// long as it takes. A GetParamsAtHeight memo miss against a flaky node retries
+		// with backoff, which can be a very long time. Mirrors the two-pass shape in
+		// relayMeter.forEachNewBlockFn, which exists for exactly this reason.
+		type expiryCandidate struct {
+			sessionTree      relayer.SessionTree
+			sessionId        string
+			sessionEndHeight int64
+		}
+		candidates := make([]expiryCandidate, 0)
 		for _, sessionTrees := range supplierSessionTrees {
 			for sessionId, sessionTree := range sessionTrees {
-				sessionHeader := sessionTree.GetSessionHeader()
-				sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
-				// Window TIMING resolves at each session's OWN end height, mirroring the
-				// chain. This decides when the session tree is DELETED: resolving it from
-				// live params after a window-offset shrink would destroy the evidence
-				// before the chain's real proof window closes, making the proof
-				// unsubmittable -> PROOF_MISSING -> the supplier is slashed. Per-session
-				// because the map spans sessions from different params epochs; the
-				// querier memoizes per height, so this is not a per-session round trip.
-				sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
-				if err != nil {
-					// Keep the tree: deleting on a failed lookup risks destroying evidence
-					// for a session whose proof window is still open.
-					logger.Error().Err(err).Msgf("❌️ Failed to query shared module parameters at session end height %d for session expiry check. ❗Keeping the session tree. ❗Check node connectivity and sync status.", sessionEndHeight)
-					continue
-				}
-				proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
-				currentHeight := currentHeight.Height()
-				// If the session is already past its proof window close height,
-				// it is considered expired and should be deleted.
-				if currentHeight > proofWindowCloseHeight {
-					logger.Info().
-						Str("service_id", sessionHeader.GetServiceId()).
-						Str("application_address", sessionHeader.GetApplicationAddress()).
-						Str("session_id", sessionId).
-						Msgf("🗑️ Marking expired session for deletion - proof window closed at height %d (current: %d). Session can no longer earn rewards.",
-							proofWindowCloseHeight, currentHeight)
-
-					expiredSessionTrees = append(expiredSessionTrees, sessionTree)
-				}
+				candidates = append(candidates, expiryCandidate{
+					sessionTree:      sessionTree,
+					sessionId:        sessionId,
+					sessionEndHeight: sessionTree.GetSessionHeader().GetSessionEndBlockHeight(),
+				})
 			}
 		}
 
 		// Unlock the mutex after we're done reading the map
 		rs.sessionsTreesMu.Unlock()
+
+		// PASS 2 -- resolve params and decide, with the lock released. deleteSessionTrees
+		// already ran outside the lock, so evaluating here introduces no race that the
+		// previous shape did not already tolerate.
+		currentBlockHeight := currentHeight.Height()
+		expiredSessionTrees := make([]relayer.SessionTree, 0)
+		for _, candidate := range candidates {
+			sessionHeader := candidate.sessionTree.GetSessionHeader()
+			// Window TIMING resolves at each session's OWN end height, mirroring the
+			// chain. This decides when the session tree is DELETED: resolving it from
+			// live params after a window-offset shrink would destroy the evidence
+			// before the chain's real proof window closes, making the proof
+			// unsubmittable -> PROOF_MISSING -> the supplier is slashed. Per-session
+			// because the map spans sessions from different params epochs; the
+			// querier memoizes per height, so this is not a per-session round trip.
+			sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, candidate.sessionEndHeight)
+			if err != nil {
+				// Keep the tree: deleting on a failed lookup risks destroying evidence
+				// for a session whose proof window is still open.
+				logger.Error().Err(err).Msgf("❌️ Failed to query shared module parameters at session end height %d for session expiry check. ❗Keeping the session tree. ❗Check node connectivity and sync status.", candidate.sessionEndHeight)
+				continue
+			}
+			proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, candidate.sessionEndHeight)
+			// If the session is already past its proof window close height,
+			// it is considered expired and should be deleted.
+			if currentBlockHeight > proofWindowCloseHeight {
+				logger.Info().
+					Str("service_id", sessionHeader.GetServiceId()).
+					Str("application_address", sessionHeader.GetApplicationAddress()).
+					Str("session_id", candidate.sessionId).
+					Msgf("🗑️ Marking expired session for deletion - proof window closed at height %d (current: %d). Session can no longer earn rewards.",
+						proofWindowCloseHeight, currentBlockHeight)
+
+				expiredSessionTrees = append(expiredSessionTrees, candidate.sessionTree)
+			}
+		}
 
 		// Delete the expired session trees from the relayerSessions.
 		rs.deleteSessionTrees(ctx, expiredSessionTrees)

@@ -97,7 +97,11 @@ func (k Keeper) UnbondGateway(ctx context.Context, gateway *gatewaytypes.Gateway
 
 	// Remove the Gateway from the store.
 	k.RemoveGateway(ctx, gateway.GetAddress())
-	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
+	// Identifying fields only -- a Gateway can carry a 256 KiB metadata card, and %+v
+	// renders it as a decimal byte list (~4x the payload). Today's caller passes a
+	// card-less projection from GatewayLifecycle.ToGateway(), but UnbondGateway is
+	// exported and takes a *Gateway, so this must not depend on that.
+	logger.Info(fmt.Sprintf("Successfully removed the gateway: %s", gateway.GetAddress()))
 
 	return nil
 }
