@@ -7,6 +7,8 @@ import (
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -206,6 +208,30 @@ func (servq *serviceQuerier) GetServiceComputeUnitsPerRelayAtHeight(
 		return servq.serviceQuerier.ComputeUnitsPerRelayAtHeight(queryCtx, req)
 	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
+		// ComputeUnitsPerRelayAtHeight is NEW in v0.1.35. A full node still running
+		// v0.1.34 answers codes.Unimplemented, which is not a transient code and so is
+		// not retried. Without this fallback, a RelayMiner upgraded before its node --
+		// the normal cosmovisor ordering -- fails getServiceComputeUnitsPerRelay, which
+		// drops EVERY relay from the session tree: a total, silent mining outage.
+		//
+		// Degrade to the live cupr, which is exactly what this call site read before
+		// v0.1.35, so behaviour matches the old binary until the node catches up. The
+		// result is deliberately NOT cached: it is the live value, not the value at
+		// blockHeight, and must not be served once the node is upgraded.
+		if status.Code(err) == codes.Unimplemented {
+			logger.Warn().Msgf(
+				"node does not implement ComputeUnitsPerRelayAtHeight (pre-v0.1.35); "+
+					"falling back to the LIVE compute units per relay for service %s. "+
+					"Upgrade the full node to v0.1.35 to restore session-start pricing.",
+				serviceId,
+			)
+			service, serviceErr := servq.GetService(ctx, serviceId)
+			if serviceErr != nil {
+				return 0, serviceErr
+			}
+			return service.ComputeUnitsPerRelay, nil
+		}
+
 		return 0, ErrQueryRetrieveService.Wrapf(
 			"serviceId: %s; height: %d; error: [%v]",
 			serviceId, blockHeight, err,
