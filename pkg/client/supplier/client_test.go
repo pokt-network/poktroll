@@ -118,28 +118,30 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 		SessionHeader: &sessionHeader,
 	}
 
+	// Measure how long the call blocks rather than racing it against a timer:
+	// a timer-vs-channel select has a 2.5ms margin at this delay and picks
+	// randomly when both are ready, which flaked under `make test_all` load.
+	// time.Sleep in the mock can never return early, so elapsed >= delay is a
+	// stable assertion regardless of scheduler latency.
+	var (
+		createClaimsErr error
+		elapsed         time.Duration
+	)
+	startTime := time.Now()
 	go func() {
-		err = supplierClient.CreateClaims(ctx, 0, msgClaim)
-		require.NoError(t, err)
+		createClaimsErr = supplierClient.CreateClaims(ctx, 0, msgClaim)
+		elapsed = time.Since(startTime)
 		close(doneCh)
 	}()
 
-	// TODO_IMPROVE: this could be rewritten to record the times at which
-	// things happen and then compare them to the expected times.
-
 	select {
 	case <-doneCh:
-		t.Fatal("expected CreateClaim to block for signAndBroadcastDelay")
-	case <-time.After(signAndBroadcastDelay * 95 / 100):
-		t.Log("OK: CreateClaim blocked for at least 95% of signAndBroadcastDelay")
+	case <-time.After(signAndBroadcastDelay * 20):
+		t.Fatal("expected CreateClaims to unblock after signAndBroadcastDelay")
 	}
-
-	select {
-	case <-time.After(signAndBroadcastDelay):
-		t.Fatal("expected CreateClaim to unblock after signAndBroadcastDelay")
-	case <-doneCh:
-		t.Log("OK: CreateClaim unblocked after signAndBroadcastDelay")
-	}
+	require.NoError(t, createClaimsErr)
+	require.GreaterOrEqual(t, elapsed, signAndBroadcastDelay*95/100,
+		"expected CreateClaims to block for signAndBroadcastDelay")
 }
 
 func TestSupplierClient_SubmitProof(t *testing.T) {
@@ -193,26 +195,25 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 		SessionHeader: &sessionHeader,
 	}
 
+	// See TestSupplierClient_CreateClaim for why elapsed time is measured
+	// instead of racing the call against a timer.
+	var (
+		submitProofsErr error
+		elapsed         time.Duration
+	)
+	startTime := time.Now()
 	go func() {
-		err = supplierClient.SubmitProofs(ctx, 0, msgProof)
-		require.NoError(t, err)
+		submitProofsErr = supplierClient.SubmitProofs(ctx, 0, msgProof)
+		elapsed = time.Since(startTime)
 		close(doneCh)
 	}()
 
-	// TODO_IMPROVE: this could be rewritten to record the times at which
-	// things happen and then compare them to the expected times.
-
 	select {
 	case <-doneCh:
-		t.Fatal("expected SubmitProof to block for signAndBroadcastDelay")
-	case <-time.After(signAndBroadcastDelay * 95 / 100):
-		t.Log("OK: SubmitProof blocked for at least 95% of signAndBroadcastDelay")
+	case <-time.After(signAndBroadcastDelay * 20):
+		t.Fatal("expected SubmitProofs to unblock after signAndBroadcastDelay")
 	}
-
-	select {
-	case <-time.After(signAndBroadcastDelay):
-		t.Fatal("expected SubmitProof to unblock after signAndBroadcastDelay")
-	case <-doneCh:
-		t.Log("OK: SubmitProof unblocked after signAndBroadcastDelay")
-	}
+	require.NoError(t, submitProofsErr)
+	require.GreaterOrEqual(t, elapsed, signAndBroadcastDelay*95/100,
+		"expected SubmitProofs to block for signAndBroadcastDelay")
 }
