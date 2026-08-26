@@ -22,7 +22,7 @@
             "application": 0
           },
           "mint_ratio": 0.975,
-          "overservicing_bonus_multiplier": "1"
+            "overservicing_bonus_multiplier": "2"
         }
       }
     ]
