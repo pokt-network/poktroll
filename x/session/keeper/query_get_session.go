@@ -40,12 +40,23 @@ func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionReques
 
 	logger.Debug(fmt.Sprintf("Getting session for height: %d", blockHeight))
 
+	// Within FinalizeBlock, the same session is requested once per claim/proof
+	// of every supplier in it. Serve repeats from the block-scoped memo.
+	// See session_memo.go for why this is consensus-safe.
+	memoKey := types.SessionMemoKey(req.ApplicationAddress, req.ServiceId, blockHeight)
+	if session, found := k.getMemoizedSession(ctx, memoKey); found {
+		return &types.QueryGetSessionResponse{Session: session}, nil
+	}
+
 	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.ServiceId, blockHeight)
 	session, err := k.HydrateSession(ctx, sessionHydrator)
 	if err != nil {
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	// Only successful hydrations are memoized; an error is recomputed every time.
+	k.memoizeSession(ctx, memoKey, session)
 
 	res := &types.QueryGetSessionResponse{
 		Session: session,

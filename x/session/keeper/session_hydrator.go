@@ -64,15 +64,7 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 	}
 	logger.Debug("Finished hydrating session metadata")
 
-	// CRITICAL: Session caching has been disabled to fix consensus failure.
-	// The in-memory cache caused non-determinism because different nodes had
-	// different cache states (populated by external RPC queries), leading to
-	// different gas consumption during tx execution and AppHash mismatches.
-	// See: https://github.com/pokt-network/poktroll/issues/XXX
-	//
-	// TODO_POST_MAINNET: Re-implement caching in a determinism-safe way:
-	// - Only cache during queries (ExecModeCheck/Simulate), not during FinalizeBlock
-	// - Or use a store-backed cache that's part of consensus state
+	// NOTE: Never cached here; GetSession memoizes the result per block (session_memo.go).
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
 		return nil, err
