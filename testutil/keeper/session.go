@@ -10,6 +10,7 @@ import (
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	"cosmossdk.io/store/prefix"
+	"cosmossdk.io/store/rootmulti"
 	storetypes "cosmossdk.io/store/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -149,10 +150,12 @@ func SessionKeeper(t testing.TB, opts ...KeeperOptionFn) (keeper.Keeper, context
 	}
 
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
+	transientStoreKey := storetypes.NewTransientStoreKey(types.TransientStoreKey)
 
 	db := dbm.NewMemDB()
 	stateStore := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
 	stateStore.MountStoreWithDB(storeKey, storetypes.StoreTypeIAVL, db)
+	stateStore.MountStoreWithDB(transientStoreKey, storetypes.StoreTypeTransient, nil)
 	require.NoError(t, stateStore.LoadLatestVersion())
 
 	registry := codectypes.NewInterfaceRegistry()
@@ -177,6 +180,7 @@ func SessionKeeper(t testing.TB, opts ...KeeperOptionFn) (keeper.Keeper, context
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
+		runtime.NewTransientStoreService(transientStoreKey),
 		log.NewNopLogger(),
 		authority.String(),
 		mockAccountKeeper,
@@ -305,4 +309,47 @@ func defaultSharedKeeperMock(t testing.TB, params *sharedtypes.Params) types.Sha
 		Return(*params).
 		AnyTimes()
 	return mockSharedKeeper
+}
+
+// MountSessionTransientStore mounts the session module's transient store on a
+// multistore that was already loaded (e.g. by integration.CreateMultiStore) and
+// returns its key. MountStoreWithDB only registers the key; rootmulti
+// instantiates stores in loadVersion, so the multistore MUST be reloaded before
+// the key is usable. Reloading re-opens every IAVL store from the DB, so call
+// this BEFORE any state is written.
+func MountSessionTransientStore(t testing.TB, stateStore storetypes.CommitMultiStore) *storetypes.TransientStoreKey {
+	t.Helper()
+
+	transientStoreKey := storetypes.NewTransientStoreKey(types.TransientStoreKey)
+	stateStore.MountStoreWithDB(transientStoreKey, storetypes.StoreTypeTransient, nil)
+	require.NoError(t, stateStore.LoadLatestVersion())
+	return transientStoreKey
+}
+
+// SessionTransientStoreKey returns the session module's transient store key as
+// mounted on a rootmulti-backed test context.
+func SessionTransientStoreKey(t testing.TB, ctx sdk.Context) storetypes.StoreKey {
+	t.Helper()
+
+	rootStore, ok := ctx.MultiStore().(*rootmulti.Store)
+	require.True(t, ok, "expected a rootmulti-backed test context")
+	transientStoreKey := rootStore.StoreKeysByName()[types.TransientStoreKey]
+	require.NotNil(t, transientStoreKey, "session transient store is not mounted")
+	return transientStoreKey
+}
+
+// CountSessionMemoEntries returns the number of hydrated sessions memoized in
+// the session module's transient store for ctx.
+func CountSessionMemoEntries(t testing.TB, ctx sdk.Context) int {
+	t.Helper()
+
+	memoStore := prefix.NewStore(ctx.KVStore(SessionTransientStoreKey(t, ctx)), types.SessionMemoKeyPrefix)
+	iterator := memoStore.Iterator(nil, nil)
+	defer iterator.Close()
+
+	numEntries := 0
+	for ; iterator.Valid(); iterator.Next() {
+		numEntries++
+	}
+	return numEntries
 }
