@@ -145,6 +145,7 @@ func NewIntegrationApp(
 	authority sdk.AccAddress,
 	modules map[string]appmodule.AppModule,
 	keys map[string]*storetypes.KVStoreKey,
+	transientKeys map[string]*storetypes.TransientStoreKey,
 	msgRouter *baseapp.MsgServiceRouter,
 	queryHelper *baseapp.QueryServiceTestHelper,
 	opts ...IntegrationAppOptionFn,
@@ -184,6 +185,7 @@ func NewIntegrationApp(
 
 	// Create the base application
 	bApp.MountKVStores(keys)
+	bApp.MountTransientStores(transientKeys)
 
 	bApp.SetInitChainer(
 		func(ctx sdk.Context, _ *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
@@ -298,6 +300,9 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		servicetypes.StoreKey,
 		authtypes.StoreKey,
 		migrationtypes.StoreKey,
+	)
+	transientStoreKeys := storetypes.NewTransientStoreKeys(
+		sessiontypes.TransientStoreKey,
 	)
 
 	// Prepare the codec
@@ -465,6 +470,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	sessionKeeper := sessionkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[sessiontypes.StoreKey]),
+		runtime.NewTransientStoreService(transientStoreKeys[sessiontypes.TransientStoreKey]),
 		logger,
 		authority.String(),
 
@@ -636,6 +642,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		authority,
 		modules,
 		storeKeys,
+		transientStoreKeys,
 		msgRouter,
 		queryHelper,
 		opts...,

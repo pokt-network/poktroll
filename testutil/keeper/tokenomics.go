@@ -429,6 +429,7 @@ func NewTokenomicsModuleKeepers(
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
 	stateStore := integration.CreateMultiStore(keys, log.NewNopLogger())
+	sessionTransientStoreKey := MountSessionTransientStore(t, stateStore)
 
 	// Use the test logger by default (i.e. if none is given).
 	if logger == nil {
@@ -577,6 +578,7 @@ func NewTokenomicsModuleKeepers(
 	sessionKeeper := sessionkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(keys[sessiontypes.StoreKey]),
+		runtime.NewTransientStoreService(sessionTransientStoreKey),
 		logger,
 		authority.String(),
 		accountKeeper,
