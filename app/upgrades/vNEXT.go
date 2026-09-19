@@ -19,7 +19,11 @@ const (
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
-// - ...
+//   - Block-scoped session supplier memo (x/session transient store, see
+//     x/session/keeper/session_memo.go). CONSENSUS-BREAKING: memo hits lower
+//     gas_used of claim/proof txs, which changes LastResultsHash (not AppHash).
+//     It MUST only ship through this upgrade, never in a patch release. Needs no
+//     handler code or StoreUpgrades: transient stores hold no committed state.
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.

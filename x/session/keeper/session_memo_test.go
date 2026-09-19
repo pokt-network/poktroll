@@ -112,13 +112,16 @@ func TestGetSession_Memo_IsNotGasMetered(t *testing.T) {
 	}
 
 	// Simulation runs memo-off, so its estimate MUST bound the FinalizeBlock cost:
-	// a miss costs exactly a fresh hydration, a hit strictly less.
+	// a miss costs exactly a fresh hydration, a hit no more. The supplier keeper
+	// is mocked here, so the walk a hit skips costs no gas; the strict saving
+	// against a real supplier store is asserted in x/proof
+	// (TestMsgServer_CreateClaim_SessionMemoIsStateEquivalent).
 	finalizeCtx := checkCtx.WithExecMode(sdk.ExecModeFinalize)
 	freshGas := gasOf(checkCtx)
 	missGas := gasOf(finalizeCtx)
 	hitGas := gasOf(finalizeCtx)
 	require.Equal(t, freshGas, missGas)
-	require.Less(t, hitGas, missGas)
+	require.LessOrEqual(t, hitGas, missGas)
 }
 
 func TestGetSession_Memo_FailedTxWritesAreDiscarded(t *testing.T) {
@@ -129,14 +132,30 @@ func TestGetSession_Memo_FailedTxWritesAreDiscarded(t *testing.T) {
 	txCtx, writeCache := ctx.CacheContext()
 	_, err := sessionKeeper.GetSession(txCtx, req)
 	require.NoError(t, err)
-	memoKey := types.SessionMemoKey(req.ApplicationAddress, req.ServiceId, req.BlockHeight)
 	transientKey := keepertest.SessionTransientStoreKey(t, ctx)
-	require.True(t, prefix.NewStore(txCtx.KVStore(transientKey), types.SessionMemoKeyPrefix).Has(memoKey))
+	txMemoIterator := prefix.NewStore(txCtx.KVStore(transientKey), types.SessionMemoKeyPrefix).Iterator(nil, nil)
+	require.True(t, txMemoIterator.Valid(), "the tx branch holds the memo entry")
+	require.NoError(t, txMemoIterator.Close())
 	require.Equal(t, 0, keepertest.CountSessionMemoEntries(t, ctx))
 
 	// A successful tx's branch is written back and later txs see the memo.
 	writeCache()
 	require.Equal(t, 1, keepertest.CountSessionMemoEntries(t, ctx))
+}
+
+func TestGetSession_Memo_ScopedToCurrentHeight(t *testing.T) {
+	sessionKeeper, ctx, req := newMemoTestKeeper(t, sdk.ExecModeFinalize)
+
+	_, err := sessionKeeper.GetSession(ctx, req)
+	require.NoError(t, err)
+	require.Equal(t, 1, keepertest.CountSessionMemoEntries(t, ctx))
+
+	// A context moved to the next height without a Commit (e.g. a test driving
+	// blocks by hand) MUST NOT be served the previous height's selection.
+	nextCtx := ctx.WithBlockHeight(ctx.BlockHeight() + 1)
+	_, err = sessionKeeper.GetSession(nextCtx, req)
+	require.NoError(t, err)
+	require.Equal(t, 2, keepertest.CountSessionMemoEntries(t, nextCtx))
 }
 
 func TestGetSession_Memo_ClearedOnCommit(t *testing.T) {

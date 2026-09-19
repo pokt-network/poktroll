@@ -17,7 +17,8 @@ import (
 // TestSessionMemo_ClaimsThroughFinalizeBlock drives MsgCreateClaim through the
 // integration app's real FinalizeBlock (ExecModeFinalize, tx store branch) and
 // Commit, so the block-scoped session memo is exercised end-to-end: claims for
-// the same session in one tx succeed, and nothing survives the block.
+// the same session in one tx succeed, the memo is populated during
+// FinalizeBlock, and nothing survives the block.
 func TestSessionMemo_ClaimsThroughFinalizeBlock(t *testing.T) {
 	integrationApp := integration.NewCompleteIntegrationApp(t)
 
@@ -38,6 +39,27 @@ func TestSessionMemo_ClaimsThroughFinalizeBlock(t *testing.T) {
 		integrationApp.NextBlock(t)
 	}
 
+	rootStore, ok := integrationApp.CommitMultiStore().(*rootmulti.Store)
+	require.True(t, ok)
+	transientKey := rootStore.StoreKeysByName()[sessiontypes.TransientStoreKey]
+	require.NotNil(t, transientKey, "session transient store is not mounted on the integration app")
+	countMemoEntries := func() int {
+		memoIterator := prefix.NewStore(rootStore.GetKVStore(transientKey), sessiontypes.SessionMemoKeyPrefix).Iterator(nil, nil)
+		defer memoIterator.Close()
+		numEntries := 0
+		for ; memoIterator.Valid(); memoIterator.Next() {
+			numEntries++
+		}
+		return numEntries
+	}
+
+	// FinalizeBlock writes the block's state, transient stores included, to the
+	// CommitMultiStore; Commit then wipes the transient stores. Count the memo in
+	// between, so a memo that is never populated (unwired store, disabled
+	// FinalizeBlock path) fails this test.
+	memoEntriesBeforeCommit := -1
+	integrationApp.SetBeforeCommitHook(func() { memoEntriesBeforeCommit = countMemoEntries() })
+
 	// Two claims for the same session in one tx: the second is a memo hit.
 	// (Same supplier twice is an upsert, which keeps the fixture to one supplier.)
 	createClaimMsg := &prooftypes.MsgCreateClaim{
@@ -50,15 +72,8 @@ func TestSessionMemo_ClaimsThroughFinalizeBlock(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, msgResps, 1)
 
-	// The block is committed: the memo written during FinalizeBlock is gone.
-	rootStore, ok := integrationApp.CommitMultiStore().(*rootmulti.Store)
-	require.True(t, ok)
-	transientKey := rootStore.StoreKeysByName()[sessiontypes.TransientStoreKey]
-	require.NotNil(t, transientKey, "session transient store is not mounted on the integration app")
-
-	memoIterator := prefix.NewStore(rootStore.GetKVStore(transientKey), sessiontypes.SessionMemoKeyPrefix).Iterator(nil, nil)
-	defer memoIterator.Close()
-	require.False(t, memoIterator.Valid(), "session memo survived Commit")
+	require.Equal(t, 1, memoEntriesBeforeCommit, "one session, so one memo entry during FinalizeBlock")
+	require.Equal(t, 0, countMemoEntries(), "session memo survived Commit")
 
 	// The claim itself persisted.
 	proofQueryClient := prooftypes.NewQueryClient(integrationApp.QueryHelper())
