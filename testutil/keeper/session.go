@@ -338,8 +338,8 @@ func SessionTransientStoreKey(t testing.TB, ctx sdk.Context) storetypes.StoreKey
 	return transientStoreKey
 }
 
-// CountSessionMemoEntries returns the number of hydrated sessions memoized in
-// the session module's transient store for ctx.
+// CountSessionMemoEntries returns the number of session supplier selections
+// memoized in the session module's transient store for ctx.
 func CountSessionMemoEntries(t testing.TB, ctx sdk.Context) int {
 	t.Helper()
 

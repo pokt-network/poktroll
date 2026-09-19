@@ -15,7 +15,7 @@ import (
 )
 
 // TestSessionTransientStoreIsMounted guards the wiring of the session module's
-// transient store, which backs the block-scoped hydrated-session memo.
+// transient store, which backs the block-scoped session supplier memo.
 // runtime registers "transient:<module>" only when the module declares a
 // store.TransientStoreService depinject input (x/session/module/depinject.go),
 // so a mounted key proves x/session received a non-nil service. If that input
@@ -27,8 +27,9 @@ func TestSessionTransientStoreIsMounted(t *testing.T) {
 	pocketApp, err := app.New(log.NewNopLogger(), dbm.NewMemDB(), nil, true, appOptions)
 	require.NoError(t, err)
 
-	// depinject names transient keys "transient:<module>".
-	storeKey := pocketApp.UnsafeFindStoreKey("transient:" + sessiontypes.ModuleName)
+	// depinject names transient keys "transient:<module>"; test factories use
+	// the same name through sessiontypes.TransientStoreKey.
+	storeKey := pocketApp.UnsafeFindStoreKey(sessiontypes.TransientStoreKey)
 	require.NotNil(t, storeKey, "session transient store key is not registered on the app")
 
 	commitStore := pocketApp.CommitMultiStore()

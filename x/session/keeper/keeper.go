@@ -18,8 +18,10 @@ type (
 	Keeper struct {
 		cdc          codec.BinaryCodec
 		storeService store.KVStoreService
-		// transientStoreService backs the block-scoped hydrated-session memo.
-		// See session_memo.go. MAY be nil (e.g. some test factories), which disables the memo.
+		// transientStoreService backs the block-scoped session supplier memo
+		// (session_memo.go). A nil service disables the memo. A non-nil one MUST
+		// be backed by a mounted transient store key: opening an unmounted key
+		// panics. depinject mounts it (guarded by app/session_transient_store_test.go).
 		transientStoreService store.TransientStoreService
 		logger                log.Logger
 
@@ -35,8 +37,8 @@ type (
 	}
 )
 
-// NOTE: Block-scoped session memoization lives in the transient store; see
-// session_memo.go for the determinism argument. An earlier keeper-level
+// NOTE: Block-scoped supplier-selection memoization lives in the transient
+// store; see session_memo.go for the determinism argument. An earlier keeper-level
 // in-memory cache caused AppHash mismatches.
 func NewKeeper(
 	cdc codec.BinaryCodec,

@@ -7,6 +7,7 @@ import (
 
 	storetypes "cosmossdk.io/store/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	"github.com/stretchr/testify/require"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
@@ -14,8 +15,11 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // claimBlockFixture models a mainnet claim block at keeper level: one service,
@@ -201,55 +205,139 @@ func TestMsgServer_CreateClaim_SessionMemoIsStateEquivalent(t *testing.T) {
 		sum(gasMemoOff), sum(gasMemoOn), 100*float64(sum(gasMemoOn))/float64(sum(gasMemoOff)), len(memoOff.claims), numApps)
 }
 
-// TestGetSession_Memo_InBlockSupplierStakeDoesNotChangeHit pins the invariant
-// the memo relies on: a supplier staked (or restaked) in the same block gets a
-// service-config activation at the NEXT session start, so a memoized session
-// for an earlier height still equals a fresh hydration after the write.
-func TestGetSession_Memo_InBlockSupplierStakeDoesNotChangeHit(t *testing.T) {
-	fixture := newClaimBlockFixture(t, cosmostypes.ExecModeFinalize, 1, 5)
-	req := &sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: fixture.claims[0].GetSessionHeader().GetApplicationAddress(),
-		ServiceId:          fixture.claims[0].GetSessionHeader().GetServiceId(),
-		BlockHeight:        fixture.claims[0].GetSessionHeader().GetSessionStartBlockHeight(),
+// memoTestRequest returns the GetSession request every claim of the fixture's
+// first session resolves.
+func (f *claimBlockFixture) memoTestRequest() *sessiontypes.QueryGetSessionRequest {
+	sessionHeader := f.claims[0].GetSessionHeader()
+	return &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: sessionHeader.GetApplicationAddress(),
+		ServiceId:          sessionHeader.GetServiceId(),
+		BlockHeight:        sessionHeader.GetSessionStartBlockHeight(),
 	}
+}
 
-	missRes, err := fixture.keepers.GetSession(fixture.ctx, req)
+// requireHitEqualsFresh resolves req in the fixture's FinalizeBlock context
+// (memo on) and outside it (memo off, i.e. a fresh hydration), asserts both are
+// identical on the wire, and returns the memo-on session.
+func (f *claimBlockFixture) requireHitEqualsFresh(t *testing.T, req *sessiontypes.QueryGetSessionRequest) *sessiontypes.Session {
+	t.Helper()
+
+	memoRes, err := f.keepers.GetSession(f.ctx, req)
 	require.NoError(t, err)
-	require.Equal(t, 1, keepertest.CountSessionMemoEntries(t, fixture.ctx))
-
-	// A new supplier stakes for the service mid-block: MsgStakeSupplier stamps
-	// its activation at the next session start (see x/supplier msg_server_stake_supplier.go).
-	sharedParams := fixture.keepers.SharedKeeper.GetParams(fixture.ctx)
-	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, fixture.ctx.BlockHeight())
-	newSupplierAddr := deterministicAddr("late-supplier", 0)
-	supplierServices := []*sharedtypes.SupplierServiceConfig{{ServiceId: req.ServiceId}}
-	fixture.keepers.SetAndIndexDehydratedSupplier(fixture.ctx, sharedtypes.Supplier{
-		OperatorAddress:      newSupplierAddr,
-		Services:             supplierServices,
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(newSupplierAddr, supplierServices, nextSessionStartHeight, 0),
-	})
-
-	hitRes, err := fixture.keepers.GetSession(fixture.ctx, req)
-	require.NoError(t, err)
-	freshRes, err := fixture.keepers.GetSession(fixture.ctx.WithExecMode(cosmostypes.ExecModeCheck), req)
+	freshRes, err := f.keepers.GetSession(f.ctx.WithExecMode(cosmostypes.ExecModeCheck), req)
 	require.NoError(t, err)
 
-	missBz, err := missRes.GetSession().Marshal()
-	require.NoError(t, err)
-	hitBz, err := hitRes.GetSession().Marshal()
+	memoBz, err := memoRes.GetSession().Marshal()
 	require.NoError(t, err)
 	freshBz, err := freshRes.GetSession().Marshal()
 	require.NoError(t, err)
+	require.Equal(t, freshBz, memoBz)
+	return memoRes.GetSession()
+}
+
+// TestGetSession_Memo_InBlockSupplierStakeDoesNotChangeHit pins the invariant
+// the memo relies on, through the real MsgStakeSupplier handler: a supplier
+// staked in the same block gets a service-config activation at the NEXT session
+// start, so a memoized selection for an earlier height still equals a fresh one.
+func TestGetSession_Memo_InBlockSupplierStakeDoesNotChangeHit(t *testing.T) {
+	fixture := newClaimBlockFixture(t, cosmostypes.ExecModeFinalize, 1, 5)
+	req := fixture.memoTestRequest()
+
+	missSession := fixture.requireHitEqualsFresh(t, req)
+	require.Equal(t, 1, keepertest.CountSessionMemoEntries(t, fixture.ctx))
+
+	// A new supplier stakes for the service mid-block.
+	supplierKeeper := fixture.keepers.SupplierKeeper.(*supplierkeeper.Keeper)
+	stake := suppliertypes.DefaultMinStake
+	newSupplierAddr := deterministicAddr("late-supplier", 0)
+	// Fund the stake plus the staking fee.
+	bankKeeper := fixture.keepers.BankKeeper.(*bankkeeper.BaseKeeper)
+	require.NoError(t, bankKeeper.SendCoinsFromModuleToAccount(
+		fixture.ctx, suppliertypes.ModuleName, cosmostypes.MustAccAddressFromBech32(newSupplierAddr), cosmostypes.NewCoins(stake.Add(stake)),
+	))
+	stakeMsg := suppliertypes.NewMsgStakeSupplier(newSupplierAddr, newSupplierAddr, newSupplierAddr, &stake,
+		[]*sharedtypes.SupplierServiceConfig{{
+			ServiceId: req.ServiceId,
+			Endpoints: []*sharedtypes.SupplierEndpoint{{Url: "http://localhost:8545", RpcType: sharedtypes.RPCType_JSON_RPC}},
+			RevShare:  []*sharedtypes.ServiceRevenueShare{{Address: newSupplierAddr, RevSharePercentage: 100}},
+		}},
+	)
+	_, err := supplierkeeper.NewMsgServerImpl(*supplierKeeper).StakeSupplier(fixture.ctx, stakeMsg)
+	require.NoError(t, err)
+
+	hitSession := fixture.requireHitEqualsFresh(t, req)
+	require.Equal(t, 1, keepertest.CountSessionMemoEntries(t, fixture.ctx), "same inputs, so a hit")
+	missBz, err := missSession.Marshal()
+	require.NoError(t, err)
+	hitBz, err := hitSession.Marshal()
+	require.NoError(t, err)
 	require.Equal(t, missBz, hitBz)
-	require.Equal(t, freshBz, hitBz)
 
 	// The late supplier is in the NEXT session, not the memoized one.
+	sharedParams := fixture.keepers.SharedKeeper.GetParams(fixture.ctx)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, fixture.ctx.BlockHeight())
 	nextRes, err := fixture.keepers.GetSession(
 		fixture.ctx.WithBlockHeight(nextSessionStartHeight).WithExecMode(cosmostypes.ExecModeCheck),
 		&sessiontypes.QueryGetSessionRequest{ApplicationAddress: req.ApplicationAddress, ServiceId: req.ServiceId, BlockHeight: nextSessionStartHeight},
 	)
 	require.NoError(t, err)
 	require.Len(t, nextRes.GetSession().GetSuppliers(), 6)
+}
+
+// TestGetSession_Memo_HitReadsLiveRecords asserts that application and supplier
+// records written earlier in the block show up in a memo hit exactly as in a
+// fresh hydration: only the supplier selection is memoized, the records are read
+// on every call.
+func TestGetSession_Memo_HitReadsLiveRecords(t *testing.T) {
+	fixture := newClaimBlockFixture(t, cosmostypes.ExecModeFinalize, 1, 5)
+	req := fixture.memoTestRequest()
+
+	missSession := fixture.requireHitEqualsFresh(t, req)
+	require.Len(t, missSession.GetSuppliers(), 5)
+
+	// Mid-block: the application upstakes and delegates (MsgStakeApplication and
+	// MsgDelegateToGateway both write the record immediately), and one of the
+	// session's suppliers is removed.
+	app, found := fixture.keepers.GetApplication(fixture.ctx, req.ApplicationAddress)
+	require.True(t, found)
+	upstake := cosmostypes.NewInt64Coin("upokt", 200)
+	app.Stake = &upstake
+	app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, deterministicAddr("gateway", 0))
+	fixture.keepers.SetApplication(fixture.ctx, app)
+
+	removedSupplierAddr := missSession.GetSuppliers()[0].GetOperatorAddress()
+	fixture.keepers.SupplierKeeper.(*supplierkeeper.Keeper).RemoveSupplier(fixture.ctx, removedSupplierAddr)
+
+	hitSession := fixture.requireHitEqualsFresh(t, req)
+	require.Equal(t, 1, keepertest.CountSessionMemoEntries(t, fixture.ctx), "same inputs, so a hit")
+	require.Equal(t, upstake, *hitSession.GetApplication().GetStake())
+	require.Equal(t, app.DelegateeGatewayAddresses, hitSession.GetApplication().GetDelegateeGatewayAddresses())
+	require.Len(t, hitSession.GetSuppliers(), 4)
+	for _, supplier := range hitSession.GetSuppliers() {
+		require.NotEqual(t, removedSupplierAddr, supplier.GetOperatorAddress())
+	}
+}
+
+// TestGetSession_Memo_InBlockParamChangeMisses covers a session param update in
+// the same block on a chain with no params history, where GetParamsAtHeight
+// falls back to LIVE params even for past heights. NumSuppliersPerSession is part
+// of the memo key, so the update misses and resolves the new value, like a fresh
+// hydration does.
+func TestGetSession_Memo_InBlockParamChangeMisses(t *testing.T) {
+	fixture := newClaimBlockFixture(t, cosmostypes.ExecModeFinalize, 1, 5)
+	req := fixture.memoTestRequest()
+
+	sessionKeeper := fixture.keepers.SessionKeeper.(*sessionkeeper.Keeper)
+	require.False(t, sessionKeeper.HasParamsHistory(fixture.ctx), "the fallback to live params needs an empty history")
+
+	require.Len(t, fixture.requireHitEqualsFresh(t, req).GetSuppliers(), 5)
+
+	sessionParams := sessionKeeper.GetParams(fixture.ctx)
+	sessionParams.NumSuppliersPerSession = 2
+	require.NoError(t, sessionKeeper.SetParams(fixture.ctx, sessionParams))
+
+	require.Len(t, fixture.requireHitEqualsFresh(t, req).GetSuppliers(), 2)
+	require.Equal(t, 2, keepertest.CountSessionMemoEntries(t, fixture.ctx), "a changed input is a new key")
 }
 
 // BenchmarkCreateClaim_ClaimBlock measures applying a claim block's worth of
