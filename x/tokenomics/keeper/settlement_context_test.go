@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
+	"strings"
 	"testing"
 
 	"cosmossdk.io/depinject"
@@ -36,6 +37,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -1002,6 +1004,97 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// emitted for all expired claims.
 	require.Len(t, unbondingEndEvents, 1)
 	require.EqualValues(t, expectedUnbondingEndEvent, unbondingEndEvents[0])
+}
+
+// TestSettlePendingClaims_SlashBelowMinStake_UnbondsSupplier asserts that a
+// supplier slashed below the min stake during settlement is unbonded end to end:
+// it keeps its current session, leaves every session from the next one on, and
+// is removed once its unbonding period elapses. The settlement context only holds
+// a dehydrated supplier, so this guards against persisting it without its
+// service config and unstaking indexes.
+func (s *TestSuite) TestSettlePendingClaims_SlashBelowMinStake_UnbondsSupplier() {
+	t := s.T()
+	ctx := s.ctx
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	claim := s.claims[0]
+	serviceId := claim.GetSessionHeader().GetServiceId()
+	supplierOperatorAddr := claim.SupplierOperatorAddress
+
+	// Require a proof for the claim and make the missing proof penalty the whole stake.
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulties[0])
+	require.NoError(t, err)
+	proofRequirementThreshold = proofRequirementThreshold.Sub(uPOKTCoin(1))
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	proofParams.ProofMissingPenalty = &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(supplierStakeAmt)}
+	require.NoError(t, s.keepers.ProofKeeper.SetParams(ctx, proofParams))
+
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+	appAddr := sample.AccAddressBech32()
+	s.keepers.SetApplication(s.ctx, apptypes.Application{
+		Address:        appAddr,
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: serviceId}},
+	})
+	getSessionSuppliers := func(ctx cosmostypes.Context, height int64) []string {
+		sessionRes, sessionErr := s.keepers.GetSession(ctx.WithBlockHeight(height), &sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddr,
+			ServiceId:          serviceId,
+			BlockHeight:        height,
+		})
+		// The slashed supplier is the fixture's only supplier for the service.
+		if sessionErr != nil && strings.Contains(sessionErr.Error(), sessiontypes.ErrSessionSuppliersNotFound.Error()) {
+			return nil
+		}
+		require.NoError(t, sessionErr)
+		operatorAddrs := make([]string, 0, len(sessionRes.GetSession().GetSuppliers()))
+		for _, supplier := range sessionRes.GetSession().GetSuppliers() {
+			operatorAddrs = append(operatorAddrs, supplier.GetOperatorAddress())
+		}
+		return operatorAddrs
+	}
+
+	sessionRes, err := s.keepers.GetSession(sdkCtx, &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: appAddr,
+		ServiceId:          serviceId,
+		BlockHeight:        1,
+	})
+	require.NoError(t, err)
+	merkleRoot := testproof.SmstRootWithSumAndCount(1000, 1000)
+	s.keepers.UpsertClaim(ctx, *testtree.NewClaim(t, supplierOperatorAddr, sessionRes.Session.Header, merkleRoot))
+
+	// The claim expires without a proof: the supplier is slashed to 0 and force unstaked.
+	sessionProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, claim.SessionHeader.SessionEndBlockHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(sessionProofWindowCloseHeight)
+	_, _, _, err = s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+
+	unstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sessionProofWindowCloseHeight)
+	nextSessionStartHeight := unstakeSessionEndHeight + 1
+
+	slashedSupplier, found := s.keepers.GetSupplier(sdkCtx, supplierOperatorAddr)
+	require.True(t, found)
+	require.Equal(t, uint64(unstakeSessionEndHeight), slashedSupplier.UnstakeSessionEndHeight)
+	require.NotEmpty(t, slashedSupplier.ServiceConfigHistory, "service configs MUST survive re-indexing")
+	for _, serviceConfig := range slashedSupplier.ServiceConfigHistory {
+		require.Equal(t, nextSessionStartHeight, serviceConfig.DeactivationHeight)
+	}
+
+	// The supplier keeps its current session and leaves the next one.
+	currentSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, sessionProofWindowCloseHeight)
+	require.Contains(t, getSessionSuppliers(sdkCtx, currentSessionStartHeight), supplierOperatorAddr)
+	require.NotContains(t, getSessionSuppliers(sdkCtx, nextSessionStartHeight), supplierOperatorAddr)
+
+	// The supplier is unbonded once its unbonding period elapses.
+	supplierKeeper := s.keepers.SupplierKeeper.(*supplierkeeper.Keeper)
+	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &slashedSupplier)
+	numUnbondedSuppliers, err := supplierKeeper.EndBlockerUnbondSuppliers(sdkCtx.WithBlockHeight(unbondingEndHeight))
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), numUnbondedSuppliers)
+	_, found = supplierKeeper.GetDehydratedSupplier(sdkCtx, supplierOperatorAddr)
+	require.False(t, found)
 }
 
 func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices() {
