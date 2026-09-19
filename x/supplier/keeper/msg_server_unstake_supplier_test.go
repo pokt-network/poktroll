@@ -510,3 +510,62 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	// remains deducted from the supplier's balance.
 	require.Equal(t, -supplierStakingFee.Amount.Int64(), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 }
+
+// TestMsgServer_UnstakeSupplier_KeepsDeactivatedServiceConfigs asserts that
+// unstaking only schedules the deactivation of service configs that are still
+// active: a config a restake already deactivated keeps its deactivation height.
+// Moving it to the next session start would reactivate it for past sessions and
+// change which suppliers they contain.
+func TestMsgServer_UnstakeSupplier_KeepsDeactivatedServiceConfigs(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	operatorAddr := sample.AccAddressBech32()
+	stakeAmount := suppliertypes.DefaultMinStake.Amount.Int64()
+
+	// Stake for serviceID: active from the next session.
+	stakeMsg, _ := newSupplierStakeMsg(operatorAddr, operatorAddr, stakeAmount, serviceID)
+	_, err := srv.StakeSupplier(sdkCtx, stakeMsg)
+	require.NoError(t, err)
+
+	// Next session: restake for another service, which schedules serviceID's
+	// deactivation at the following session start.
+	restakeHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
+	sdkCtx = sdkCtx.WithBlockHeight(restakeHeight)
+	restakeMsg, _ := newSupplierStakeMsg(operatorAddr, operatorAddr, stakeAmount, "svcId2")
+	_, err = srv.StakeSupplier(sdkCtx, restakeMsg)
+	require.NoError(t, err)
+	serviceIDDeactivationHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, restakeHeight)
+
+	// Unstake two sessions later, before the deactivated config is pruned.
+	unstakeHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, serviceIDDeactivationHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(unstakeHeight)
+	_, err = srv.UnstakeSupplier(sdkCtx, &suppliertypes.MsgUnstakeSupplier{Signer: operatorAddr, OperatorAddress: operatorAddr})
+	require.NoError(t, err)
+
+	supplier, found := supplierModuleKeepers.GetSupplier(sdkCtx, operatorAddr)
+	require.True(t, found)
+	require.Len(t, supplier.ServiceConfigHistory, 2)
+	unstakeDeactivationHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, unstakeHeight)
+	for _, serviceConfig := range supplier.ServiceConfigHistory {
+		switch serviceConfig.Service.ServiceId {
+		case serviceID:
+			require.Equal(t, serviceIDDeactivationHeight, serviceConfig.DeactivationHeight)
+		default:
+			require.Equal(t, unstakeDeactivationHeight, serviceConfig.DeactivationHeight)
+		}
+	}
+
+	// The index sessions are hydrated from agrees: serviceID stays inactive
+	// for the session it was deactivated at.
+	serviceConfigsIterator := supplierModuleKeepers.GetServiceConfigUpdatesIterator(sdkCtx, serviceID, serviceIDDeactivationHeight)
+	defer serviceConfigsIterator.Close()
+	for ; serviceConfigsIterator.Valid(); serviceConfigsIterator.Next() {
+		serviceConfig, err := serviceConfigsIterator.Value()
+		require.NoError(t, err)
+		if serviceConfig.OperatorAddress == operatorAddr {
+			require.False(t, serviceConfig.IsActive(serviceIDDeactivationHeight))
+		}
+	}
+}
