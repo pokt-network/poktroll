@@ -18,7 +18,12 @@ type (
 	Keeper struct {
 		cdc          codec.BinaryCodec
 		storeService store.KVStoreService
-		logger       log.Logger
+		// transientStoreService backs the block-scoped session supplier memo
+		// (session_memo.go). A nil service disables the memo. A non-nil one MUST
+		// be backed by a mounted transient store key: opening an unmounted key
+		// panics. depinject mounts it (guarded by app/session_transient_store_test.go).
+		transientStoreService store.TransientStoreService
+		logger                log.Logger
 
 		// the address capable of executing a MsgUpdateParams message. Typically, this
 		// should be the x/gov module account.
@@ -32,18 +37,13 @@ type (
 	}
 )
 
-// NOTE: Session caching has been removed to fix a consensus failure.
-// The in-memory cache caused non-determinism because different nodes had
-// different cache states (populated by external RPC queries), leading to
-// different gas consumption during tx execution and AppHash mismatches.
-//
-// TODO_POST_MAINNET: Re-implement caching in a determinism-safe way:
-// - Only cache during queries (ExecModeCheck/Simulate), not during FinalizeBlock
-// - Or use a store-backed cache that's part of consensus state
-
+// NOTE: Block-scoped supplier-selection memoization lives in the transient
+// store; see session_memo.go for the determinism argument. An earlier keeper-level
+// in-memory cache caused AppHash mismatches.
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
+	transientStoreService store.TransientStoreService,
 	logger log.Logger,
 	authority string,
 
@@ -58,10 +58,11 @@ func NewKeeper(
 	}
 
 	return Keeper{
-		cdc:          cdc,
-		storeService: storeService,
-		authority:    authority,
-		logger:       logger,
+		cdc:                   cdc,
+		storeService:          storeService,
+		transientStoreService: transientStoreService,
+		authority:             authority,
+		logger:                logger,
 
 		accountKeeper:     accountKeeper,
 		bankKeeper:        bankKeeper,

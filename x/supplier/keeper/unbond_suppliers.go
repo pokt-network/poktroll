@@ -10,6 +10,42 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// BeginSupplierUnbonding starts unbonding supplier at the end of the current
+// session and persists it, service config indexes included. It sets
+// supplier.UnstakeSessionEndHeight and returns it.
+//
+// Every service config still active at the next session start is scheduled to
+// deactivate there, so the supplier keeps serving the current session and the
+// session's supplier set never changes mid-session. A config that is already
+// deactivated keeps its height: moving it later would reactivate it for past
+// sessions and change which suppliers they contain.
+//
+// supplier MAY be dehydrated (e.g. from the settlement context): the service
+// config history is always reloaded from the index, since re-indexing from an
+// empty history would delete every service config of the supplier.
+func (k Keeper) BeginSupplierUnbonding(ctx context.Context, supplier *sharedtypes.Supplier) (unstakeSessionEndHeight int64) {
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	unstakeSessionEndHeight = sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+
+	supplier.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
+
+	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, "")
+	for _, serviceConfig := range serviceConfigHistory {
+		if serviceConfig.DeactivationHeight == sharedtypes.NoDeactivationHeight ||
+			serviceConfig.DeactivationHeight > nextSessionStartHeight {
+			serviceConfig.DeactivationHeight = nextSessionStartHeight
+		}
+	}
+
+	supplierToIndex := *supplier
+	supplierToIndex.ServiceConfigHistory = serviceConfigHistory
+	k.SetAndIndexDehydratedSupplier(ctx, supplierToIndex)
+
+	return unstakeSessionEndHeight
+}
+
 // EndBlockerUnbondSuppliers unbonds suppliers whose unbonding period has elapsed.
 func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppliers uint64, err error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)

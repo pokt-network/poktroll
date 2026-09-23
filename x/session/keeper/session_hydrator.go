@@ -64,16 +64,6 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 	}
 	logger.Debug("Finished hydrating session metadata")
 
-	// CRITICAL: Session caching has been disabled to fix consensus failure.
-	// The in-memory cache caused non-determinism because different nodes had
-	// different cache states (populated by external RPC queries), leading to
-	// different gas consumption during tx execution and AppHash mismatches.
-	// See: https://github.com/pokt-network/poktroll/issues/XXX
-	//
-	// TODO_POST_MAINNET: Re-implement caching in a determinism-safe way:
-	// - Only cache during queries (ExecModeCheck/Simulate), not during FinalizeBlock
-	// - Or use a store-backed cache that's part of consensus state
-
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
 		return nil, err
 	}
@@ -191,6 +181,20 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	params := k.GetParamsAtHeight(ctx, sh.blockHeight)
 	numSuppliersPerSession := int(params.NumSuppliersPerSession)
 
+	// Within FinalizeBlock, every claim/proof of a session selects the same
+	// suppliers: serve repeats from the block memo (see session_memo.go).
+	// Only the selection is memoized; supplier records are still read below.
+	memoStore := k.sessionMemoStore(ctx)
+	var memoKey []byte
+	if memoStore != nil {
+		currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+		memoKey = types.SessionMemoKey(currentHeight, sh.blockHeight, params.NumSuppliersPerSession, sh.sessionIDBz)
+		if selected, found := k.getMemoizedSupplierConfigs(memoStore, memoKey); found {
+			sh.session.Suppliers = k.getServiceConfigsSuppliers(ctx, selected)
+			return nil
+		}
+	}
+
 	// Map supplier operator addresses to random weights for deterministic sorting.
 	// This ensures fair distribution when:
 	// - NumCandidateSuppliers exceeds NumSuppliersPerSession
@@ -238,26 +242,27 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 
 	// If the number of available suppliers is less than the maximum number of
 	// possible suppliers per session, use all available suppliers.
+	selected := candidateSupplierConfigs
 	if len(candidateSupplierConfigs) < numSuppliersPerSession {
 		logger.Debug(fmt.Sprintf(
 			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
 			len(candidateSupplierConfigs),
 			numSuppliersPerSession,
 		))
-		suppliers := k.getServiceConfigsSuppliers(ctx, candidateSupplierConfigs)
-		sh.session.Suppliers = suppliers
+	} else {
+		for _, serviceConfigUpdate := range candidateSupplierConfigs {
+			supplierOperatorAddress := serviceConfigUpdate.OperatorAddress
+			candidatesToRandomWeight[supplierOperatorAddress] = generateSupplierRandomWeight(supplierOperatorAddress, sh.sessionIDBz)
+		}
 
-		return nil
+		sortedCandidates := sortCandidateSupplierConfigsBySupplierWeight(candidateSupplierConfigs, candidatesToRandomWeight)
+		selected = sortedCandidates[:numSuppliersPerSession]
 	}
 
-	for _, serviceConfigUpdate := range candidateSupplierConfigs {
-		supplierOperatorAddress := serviceConfigUpdate.OperatorAddress
-		candidatesToRandomWeight[supplierOperatorAddress] = generateSupplierRandomWeight(supplierOperatorAddress, sh.sessionIDBz)
+	if memoStore != nil {
+		k.memoizeSupplierConfigs(memoStore, memoKey, selected)
 	}
-
-	sortedCandidates := sortCandidateSupplierConfigsBySupplierWeight(candidateSupplierConfigs, candidatesToRandomWeight)
-	suppliers := k.getServiceConfigsSuppliers(ctx, sortedCandidates[:numSuppliersPerSession])
-	sh.session.Suppliers = suppliers
+	sh.session.Suppliers = k.getServiceConfigsSuppliers(ctx, selected)
 
 	return nil
 }

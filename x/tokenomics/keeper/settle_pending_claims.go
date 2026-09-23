@@ -811,11 +811,6 @@ func (k Keeper) slashSupplierStake(
 	// Ensure that a slashed supplier going below min stake is unbonded only once.
 	minSupplierStakeCoin := k.supplierKeeper.GetParams(ctx).MinStake
 	if supplierToSlash.GetStake().IsLT(*minSupplierStakeCoin) && !supplierToSlash.IsUnbonding() {
-		sharedParams := settlementContext.GetSharedParams()
-		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-		currentHeight := sdkCtx.BlockHeight()
-		unstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
-
 		logger.Warn(fmt.Sprintf(
 			"unstaking supplier %q owned by %q due to stake (%s) below the minimum (%s)",
 			supplierToSlash.GetOperatorAddress(),
@@ -824,14 +819,11 @@ func (k Keeper) slashSupplierStake(
 			minSupplierStakeCoin,
 		))
 
-		// Start force unstaking the supplier.
-		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
-
-		// Deactivate the supplier's services so they can no longer be selected to
-		// service relays in the next session.
-		for _, serviceConfig := range supplierToSlash.ServiceConfigHistory {
-			serviceConfig.DeactivationHeight = unstakeSessionEndHeight
-		}
+		// Start force unstaking the supplier: record its unstake session end height,
+		// deactivate its services from the next session on, and persist it WITH its
+		// indexes, so it leaves future sessions and EndBlockerUnbondSuppliers unbonds it.
+		// supplierToSlash is dehydrated; BeginSupplierUnbonding reloads its history.
+		unstakeSessionEndHeight := k.supplierKeeper.BeginSupplierUnbonding(ctx, supplierToSlash)
 
 		// Handling unbonding for slashed suppliers:
 		// - Initiate unbonding at the current session end height (earliest possible time)
@@ -844,10 +836,10 @@ func (k Keeper) slashSupplierStake(
 			SessionEndHeight:   unstakeSessionEndHeight,
 			UnbondingEndHeight: unstakeSessionEndHeight,
 		})
+	} else {
+		// Only update the dehydrated supplier, since the service config will remain unchanged.
+		k.supplierKeeper.SetDehydratedSupplier(ctx, *supplierToSlash)
 	}
-
-	// Only update the dehydrated supplier, since the service config will remain unchanged.
-	k.supplierKeeper.SetDehydratedSupplier(ctx, *supplierToSlash)
 
 	// Emit an event that a supplier has been slashed.
 	claim := claimSettlementResult.GetClaim()

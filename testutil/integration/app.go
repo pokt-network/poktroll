@@ -117,6 +117,9 @@ type App struct {
 	// it can be used as a faucet for integration tests.
 	faucetBech32 string
 
+	// beforeCommit, when set, runs between RunMsgs' FinalizeBlock and Commit.
+	beforeCommit func()
+
 	// Some default helper fixtures for general testing.
 	// They're publicly exposed and should/could be improved and expand on
 	// over time.
@@ -145,6 +148,7 @@ func NewIntegrationApp(
 	authority sdk.AccAddress,
 	modules map[string]appmodule.AppModule,
 	keys map[string]*storetypes.KVStoreKey,
+	transientKeys map[string]*storetypes.TransientStoreKey,
 	msgRouter *baseapp.MsgServiceRouter,
 	queryHelper *baseapp.QueryServiceTestHelper,
 	opts ...IntegrationAppOptionFn,
@@ -184,6 +188,7 @@ func NewIntegrationApp(
 
 	// Create the base application
 	bApp.MountKVStores(keys)
+	bApp.MountTransientStores(transientKeys)
 
 	bApp.SetInitChainer(
 		func(ctx sdk.Context, _ *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
@@ -298,6 +303,9 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		servicetypes.StoreKey,
 		authtypes.StoreKey,
 		migrationtypes.StoreKey,
+	)
+	transientStoreKeys := storetypes.NewTransientStoreKeys(
+		sessiontypes.TransientStoreKey,
 	)
 
 	// Prepare the codec
@@ -465,6 +473,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	sessionKeeper := sessionkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[sessiontypes.StoreKey]),
+		runtime.NewTransientStoreService(transientStoreKeys[sessiontypes.TransientStoreKey]),
 		logger,
 		authority.String(),
 
@@ -636,6 +645,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		authority,
 		modules,
 		storeKeys,
+		transientStoreKeys,
 		msgRouter,
 		queryHelper,
 		opts...,
@@ -761,6 +771,9 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 	// Commit the updated state after the message has been handled.
 	var finalizeBlockRes *abci.ResponseFinalizeBlock
 	defer func() {
+		if app.beforeCommit != nil {
+			app.beforeCommit()
+		}
 		if _, commitErr := app.Commit(); commitErr != nil {
 			err = fmt.Errorf("committing state: %w", commitErr)
 			return
@@ -839,6 +852,13 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 	}
 
 	return txMsgResps, nil
+}
+
+// SetBeforeCommitHook registers fn to run after each RunMsgs FinalizeBlock and
+// before its Commit, while block-scoped state (e.g. transient stores) is still
+// on the CommitMultiStore.
+func (app *App) SetBeforeCommitHook(fn func()) {
+	app.beforeCommit = fn
 }
 
 // NextBlocks calls NextBlock numBlocks times
