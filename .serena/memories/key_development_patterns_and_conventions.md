@@ -144,4 +144,4 @@
 3. Regenerate code: `make proto_regen`
 4. Run tests: `make test_all`
 5. Run linting: `make go_lint` (mandatory before commits)
-6. Reset network if needed: `make localnet_reset`
+6. Reset network if needed: `make localnet_down && make localnet_up`

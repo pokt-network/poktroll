@@ -43,7 +43,7 @@ full list, plus the `test_load_relays_stress_*` load-test targets.
 ```bash
 make localnet_up               # Start local development network
 make localnet_down             # Stop local network
-make localnet_reset            # Reset and restart network
+make localnet_down && make localnet_up  # Reset: tear down, then clean start
 make acc_balance_query ACC=<addr>  # Query account balance
 ```
 
@@ -94,12 +94,12 @@ These rules prevent AppHash mismatches and chain halts. Violating them will caus
 - **Use `ctx.BlockTime()`, never `time.Now()`** - `time.Now()` differs across validators and will cause consensus failure.
 - **Use `encoding.Float64ToRat` for float64 params** - Float64 arithmetic is non-deterministic across platforms. Convert to `big.Rat` for deterministic computation.
 - **`MustUnmarshal(nil)` does not panic with gogoproto** - It silently returns a zero-value struct with nil message fields. Add nil checks when reading from secondary indexes that may contain orphaned entries.
-- **Params-at-height is available for `shared` only; settlement uses it selectively** - `x/shared` maintains a params history (`recordParamsHistory`, `GetParamsAtHeight`, `IterateParamsHistoryReverse`); `x/session` exposes `GetParamsAtHeight` over it. No other module has a history store, so their `GetParams(ctx)` is always the *live* value. Settlement is a mix, by design and by omission:
-  - **At-height:** the expiring-claim scan walks params history per-epoch (`candidateSessionEndHeightsForLiveParams`) instead of solving against live offsets — `GetExpiringClaimsIterator` is deprecated and no longer on the settlement path. The budget divisor reads `GetParamsAtHeight(sessionEndBlockHeight)`; compute-units-per-relay resolves via `GetServiceComputeUnitsPerRelayAtHeight(sessionStartHeight)`; and **claim pricing** (`compute_units_to_tokens_multiplier`, `compute_unit_cost_granularity`) resolves via `settlementContext.GetSharedParamsAtHeight(sessionStartHeight)`, which is what makes settlement agree with `x/proof`.
+- **Params-at-height is available for `shared` only; settlement uses it selectively** - `x/shared` maintains a params history (`recordParamsHistory`, `GetParamsAtHeight`, `IterateParamsHistoryReverse`); `x/session` exposes `GetParamsAtHeight` over it. No other module keeps a params history, so their `GetParams(ctx)` is always the *live* value. Settlement is a mix, by design and by omission:
+  - **At-height:** the expiring-claim scan walks params history per-epoch (`candidateSessionEndHeightsForLiveParams`). Do not put `GetExpiringClaimsIterator` on the settlement path: it solves against live offsets only and misses claims that crossed a window-offset change. The budget divisor reads `GetParamsAtHeight(sessionEndBlockHeight)`; compute-units-per-relay resolves via `GetServiceComputeUnitsPerRelayAtHeight(sessionStartHeight)`; and **claim pricing** (`compute_units_to_tokens_multiplier`, `compute_unit_cost_granularity`) resolves via `settlementContext.GetSharedParamsAtHeight(sessionStartHeight)`, which is what makes settlement agree with `x/proof`.
   - **Still live, deliberately:** `settlementContext.GetSharedParams()` is the live snapshot and MUST stay live for its remaining callers — they project *future* heights from the *current* block (supplier unbonding, application unbonding, session end height), which need the grid in effect now. Also live: tokenomics params (mint ratios, distribution), `TargetNumRelays`, and proof/supplier/application params, none of which have a history store to read from.
 
   When adding a param that settlement consumes, decide explicitly which side it belongs on: **pricing → session start; scheduling a future height → live**. Anything on the live side changes payouts for already-claimed, not-yet-settled work the moment governance updates it.
-- **An upgrade handler that writes shared params with `SetParams` alone is invisible to params history** - Only `msgServer.recordParamsHistory` (the `MsgUpdateParam(s)` path) writes history; a handler calling `SharedKeeper.SetParams` moves live and nothing else. Since every at-height consumer (`x/proof`, settlement pricing, the budget divisor, the RelayMiner) resolves from history, such a write **silently does not take effect for those consumers** until the next governance param update rewrites history from live. It does not halt or diverge — the chain stays self-consistent on the stale value — it just ignores the change. `v0.1.34.go` got this right by pairing its stamp with `SetParamsAtHeight`; `v0.0.10`/`v0.0.13`/`v0.1.13` predate history and did not. If a future handler must change a shared param, write BOTH live and a history entry at the upgrade height.
+- **An upgrade handler that writes shared params with `SetParams` alone is invisible to params history** - Only `msgServer.recordParamsHistory` (the `MsgUpdateParam(s)` path) writes history; a handler calling `SharedKeeper.SetParams` moves live and nothing else. Since every at-height consumer (`x/proof`, settlement pricing, the budget divisor, the RelayMiner) resolves from history, such a write **silently does not take effect for those consumers** until the next governance param update rewrites history from live. It does not halt or diverge — the chain stays self-consistent on the stale value — it just ignores the change. If a handler must change a shared param, write BOTH live and a history entry at the upgrade height; `v0.1.34.go` (`SetParams` + `SetParamsAtHeight`) is the reference.
 - **Offchain pricing and window timing must track the onchain epoch** - The RelayMiner re-derives claim value and window boundaries locally: to decide whether a proof is worth submitting (`pkg/relayer/session/proof.go`), to meter overservicing (`pkg/relayer/proxy/relay_meter.go`), to gate reward eligibility (`pkg/relayer/relay_authenticator/relay_verifier.go`), and to close websocket bridges (`pkg/relayer/proxy/async.go`). All of these read `sharedQueryClient.GetParamsAtHeight` — **pricing at session START, window timing at session END**, mirroring `x/proof`. Using `GetParams` (live) at any of them re-opens the divergence: mis-priced claims skip a proof the chain requires (`PROOF_MISSING` → slash), and mis-timed windows submit claims/proofs outside them. `GetParamsAtHeight` deliberately has no "live already describes this height" shortcut — see its godoc for why the `session_grid_anchor_height` guard was wrong.
 - **Watch integer crossings when changing session length (`num_blocks_per_session`)** - Derived values computed with `ceil()` are step functions, so a small `N` change can discontinuously double or halve a derived quantity. Compute the before/after values for realistic inputs rather than assuming the change is proportional.
 
@@ -152,7 +152,7 @@ upgrade height rather than failing a transaction. Two consequences:
 
 - Validate that new param values are legal against the *live* values they will coexist with. A
   handler that writes params which fail the module's `Validate()` will halt the chain.
-- Everything under Consensus Safety below applies to handler code too.
+- Everything under Consensus Safety above applies to handler code too.
 
 ## Adding Query Endpoints
 
@@ -182,4 +182,4 @@ Use LocalNet for testing multi-node scenarios and protocol upgrades:
 
 - Configuration in `/localnet/kubernetes/`
 - Observability with Grafana dashboards
-- Reset network state with `make localnet_reset` when testing breaking changes
+- Reset network state with `make localnet_down && make localnet_up` when testing breaking changes

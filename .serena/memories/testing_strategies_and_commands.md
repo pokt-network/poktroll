@@ -79,6 +79,6 @@
 
 1. **Always run linting**: `make go_lint` before any commit
 2. **Protocol-first development**: Update `.proto` files first, then run `make proto_regen`
-3. **LocalNet for E2E**: Use `make localnet_reset` to ensure clean state
+3. **LocalNet for E2E**: Use `make localnet_down && make localnet_up` to ensure clean state
 4. **Test categorization**: Use appropriate build tags for test inclusion
 5. **Flaky test handling**: Set `INCLUDE_FLAKY_TESTS=true` when needed

@@ -13,7 +13,7 @@
 
 - `make localnet_up` - Start local development network
 - `make localnet_down` - Stop local network
-- `make localnet_reset` - Reset and restart network
+- `make localnet_down && make localnet_up` - Reset and restart network
 - `make acc_balance_query ACC=<addr>` - Query account balance
 
 ### Module Addresses

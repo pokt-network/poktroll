@@ -15,7 +15,7 @@ make localnet_up
 make go_lint
 
 # Reset LocalNet when needed
-make localnet_reset
+make localnet_down && make localnet_up
 ```
 
 ### Protocol Buffer Workflow
@@ -126,7 +126,7 @@ echo $PATH | tr ':' '\n' | grep go
 
 ```bash
 # Complete LocalNet reset (destructive)
-make localnet_down && make localnet_reset
+make localnet_down && make localnet_up
 
 # Clean build artifacts
 make clean  # if available
@@ -163,7 +163,7 @@ grep -r "pkg/polylog" --include="*.go" . | head -5
 ## Notes
 
 - **Always run `make go_lint` before commits** - This is mandatory
-- **Use `make localnet_reset`** when LocalNet state becomes inconsistent
+- **Use `make localnet_down && make localnet_up`** when LocalNet state becomes inconsistent
 - **Run `make proto_regen`** after any `.proto` file changes
 - **Check `make help`** for complete list of available targets
 - **GOPATH/bin must be in PATH** for tools like gopls to work properly
