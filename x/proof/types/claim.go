@@ -174,7 +174,11 @@ func (claim *Claim) GetProofRequirementSampleValue(
 	proofRequirementSeedBlockHash []byte,
 ) (float64, error) {
 	// Get the hash of the claim to seed the random number generator.
-	claimHash, err := claim.GetHash()
+	// Hash the claim as created: the sample must not depend on the proof
+	// validation status written after the claim.
+	unvalidatedClaim := *claim
+	unvalidatedClaim.ProofValidationStatus = ClaimProofStatus_PENDING_VALIDATION
+	claimHash, err := unvalidatedClaim.GetHash()
 	if err != nil {
 		return 0, err
 	}
