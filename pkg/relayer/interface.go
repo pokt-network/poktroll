@@ -167,10 +167,10 @@ type SessionTree interface {
 	// This function should be called when a Relay has been successfully served.
 	Update(key, value []byte, weight uint64) error
 
-	// ProveClosest is a wrapper for the SMST's ProveClosest function. It returns the
-	// proof for the given path.
+	// ProveWeighted is a wrapper for the SMST's ProveWeighted function. It returns the
+	// proof for the leaf the given seed selects, weighted by relay count.
 	// This function should be called several blocks after a session has been claimed and needs to be proven.
-	ProveClosest(path []byte) (proof *smt.SparseCompactMerkleClosestProof, err error)
+	ProveWeighted(seed []byte) (proof *smt.SparseCompactMerkleClosestProof, err error)
 
 	// GetSMSTRoot returns the the current root hash of the SMST.
 	// It differs from GetClaimRoot in that it always returns the latest root hash
@@ -182,7 +182,7 @@ type SessionTree interface {
 	// It returns nil if the session tree has not been flushed yet.
 	GetClaimRoot() []byte
 
-	// GetProofBz returns the proof created by ProveClosest needed for submitting
+	// GetProofBz returns the proof created by ProveWeighted needed for submitting
 	// a proof in byte format.
 	GetProofBz() []byte
 

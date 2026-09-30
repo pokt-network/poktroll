@@ -290,15 +290,15 @@ func (rs *relayerSessionsManager) proveClaims(
 	// Separate the sessionTrees into those that failed to generate a proof
 	// and those that succeeded, before returning each of them.
 	for _, sessionTree := range sessionTreesWithProofRequired {
-		// Generate the proof path for the sessionTree using the previously committed
+		// Generate the proof seed for the sessionTree using the previously committed
 		// sessionPathBlock hash.
-		path := protocol.GetPathForProof(
+		seed := protocol.GetPathForProof(
 			proofPathSeedBlock.Hash(),
 			sessionTree.GetSessionHeader().GetSessionId(),
 		)
 
 		// If the proof cannot be generated, add the sessionTree to the failedProofs.
-		if _, err := sessionTree.ProveClosest(path); err != nil {
+		if _, err := sessionTree.ProveWeighted(seed); err != nil {
 			logger.Error().Err(err).Msg("⚠️ Failed to generate cryptographic proof for session. ❗Check session tree integrity and storage health.")
 
 			failedProofs = append(failedProofs, sessionTree)

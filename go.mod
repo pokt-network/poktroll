@@ -84,7 +84,7 @@ require (
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
 	github.com/pokt-network/shannon-sdk v0.0.0-20260812141256-a508808fbbe0
-	github.com/pokt-network/smt v0.14.1
+	github.com/pokt-network/smt v0.16.0
 	github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188
 	github.com/prometheus/client_golang v1.23.0
 	github.com/regen-network/gocuke v1.1.0

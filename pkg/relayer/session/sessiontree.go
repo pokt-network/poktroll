@@ -47,13 +47,13 @@ type sessionTree struct {
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed,
 	// committed to disk and no more updates can be made to it. A non-nil value also
-	// indicates that a proof could be generated using ProveClosest function.
+	// indicates that a proof could be generated using ProveWeighted function.
 	claimedRoot []byte
 
-	// proofPath is the path for which the proof was generated.
-	proofPath []byte
+	// proofSeed is the seed for which the proof was generated.
+	proofSeed []byte
 
-	// compactProof is the generated compactProof for the session given a proofPath.
+	// compactProof is the generated compactProof for the session given a proofSeed.
 	compactProof *smt.SparseCompactMerkleClosestProof
 
 	// compactProofBz is the marshaled proof for the session.
@@ -268,15 +268,16 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 	return nil
 }
 
-// ProveClosest is a wrapper for the SMST's ProveClosest function. It returns a proof for the given path.
+// ProveWeighted is a wrapper for the SMST's ProveWeighted function. It returns a proof
+// for the leaf the given seed selects, weighted by relay count.
 // This function is intended to be called after a session has been claimed and needs to be proven.
 // If the proof has already been generated, it returns the cached proof.
 // It returns an error if the SMST has not been flushed yet (the claim has not been generated)
-func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompactMerkleClosestProof, err error) {
+func (st *sessionTree) ProveWeighted(seed []byte) (compactProof *smt.SparseCompactMerkleClosestProof, err error) {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
-	logger := st.logger.With("method", "ProveClosest")
+	logger := st.logger.With("method", "ProveWeighted")
 
 	// A claim need to be generated before a proof can be generated.
 	if st.claimedRoot == nil {
@@ -285,8 +286,8 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 
 	// If the proof has already been generated, return the cached proof.
 	if st.compactProof != nil {
-		// Make sure the path is the same as the one for which the proof was generated.
-		if !bytes.Equal(path, st.proofPath) {
+		// Make sure the seed is the same as the one for which the proof was generated.
+		if !bytes.Equal(seed, st.proofSeed) {
 			return nil, ErrSessionTreeProofPathMismatch
 		}
 
@@ -299,10 +300,10 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return nil, fmt.Errorf("sessionSMT is nil - cannot generate proof for session %s", st.sessionHeader.SessionId)
 	}
 
-	// Generate the proof and cache it along with the path for which it was generated.
-	// There is no ProveClosest variant that generates a compact proof directly.
+	// Generate the proof and cache it along with the seed for which it was generated.
+	// There is no ProveWeighted variant that generates a compact proof directly.
 	// Generate a regular SparseMerkleClosestProof then compact it.
-	proof, err := st.sessionSMT.ProveClosest(path)
+	proof, err := st.sessionSMT.ProveWeighted(seed)
 	if err != nil {
 		logger.Error().Err(err).Msg("🚨 SHOULD RARELY HAPPEN: Proving the path in the sessionSMT failed! Cannot generate proof! Claims exist but REWARDS WILL BE LOST! 🚨")
 		return nil, err
@@ -318,8 +319,8 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return nil, err
 	}
 
-	// If no error occurred, cache the proof and the path for which it was generated.
-	st.proofPath = path
+	// If no error occurred, cache the proof and the seed for which it was generated.
+	st.proofSeed = seed
 	st.compactProof = compactProof
 	st.compactProofBz = compactProofBz
 
@@ -328,7 +329,7 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 
 // GetProofBz returns the marshaled proof for the session.
 //
-// Locking: ProveClosest writes compactProofBz under sessionMu; reading it
+// Locking: ProveWeighted writes compactProofBz under sessionMu; reading it
 // concurrently without the lock is a data race.
 func (st *sessionTree) GetProofBz() []byte {
 	st.sessionMu.Lock()
@@ -349,7 +350,7 @@ func (st *sessionTree) GetTrieSpec() smt.TrieSpec {
 
 // GetProof returns the proof for the SMST if it has been generated or nil otherwise.
 //
-// Locking: ProveClosest writes compactProof under sessionMu; concurrent
+// Locking: ProveWeighted writes compactProof under sessionMu; concurrent
 // reads must take the same lock.
 func (st *sessionTree) GetProof() *smt.SparseCompactMerkleClosestProof {
 	st.sessionMu.Lock()

@@ -557,7 +557,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			},
 		},
 		{
-			desc: "the merkle proof path provided does not match the one expected/enforced by the protocol",
+			desc: "the merkle proof must be for the leaf selected by the seed expected/enforced by the protocol",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a new valid session tree for this test case because once the
 				// closest proof has already been generated, the path cannot be changed.
@@ -590,11 +590,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// with an invalid relay response signature.
 				return testtree.NewProof(t, supplierOperatorAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
 			},
-			expectedErr: prooftypes.ErrProofInvalidProof.Wrapf(
-				"the path of the proof provided (%x) does not match one expected by the onchain protocol (%x)",
-				wrongClosestProofPath,
-				protocol.GetPathForProof(sdkCtx.HeaderHash(), validSessionHeader.GetSessionId()),
-			),
+			expectedErr: prooftypes.ErrProofInvalidProof.Wrap("invalid weighted merkle proof"),
 		},
 		{
 			desc: "relay difficulty must be greater than or equal to a high difficulty (low target hash)",
@@ -733,7 +729,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: prooftypes.ErrProofInvalidProof.Wrap("invalid closest merkle proof"),
+			expectedErr: prooftypes.ErrProofInvalidProof.Wrap("invalid weighted merkle proof"),
 		},
 		{
 			desc: "claim and proof application addresses must match",

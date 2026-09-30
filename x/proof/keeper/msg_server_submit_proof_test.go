@@ -849,12 +849,12 @@ func newTestProofMsg(
 	supplierOperatorAddr string,
 	sessionHeader *sessiontypes.SessionHeader,
 	sessionTree relayer.SessionTree,
-	closestProofPath []byte,
+	proofSeed []byte,
 ) *prooftypes.MsgSubmitProof {
 	t.Helper()
 
-	// Generate a closest proof from the session tree using closestProofPath.
-	merkleProof, err := sessionTree.ProveClosest(closestProofPath)
+	// Generate a weighted proof from the session tree using proofSeed.
+	merkleProof, err := sessionTree.ProveWeighted(proofSeed)
 	require.NoError(t, err)
 	require.NotNil(t, merkleProof)
 
