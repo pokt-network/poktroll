@@ -174,14 +174,23 @@ func (k Keeper) validateProof(
 	// Set the invalidity reason to an empty string by default.
 	invalidProofReason := ""
 
-	if err := k.EnsureValidProofSignaturesAndClosestPath(ctx, &claim, &proof); err != nil {
+	// Treat any unexpected failure during proof validation as an invalid proof.
+	validationErr := func() (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				err = types.ErrProofInvalidProof.Wrapf("panic during proof validation: %v", r)
+			}
+		}()
+		return k.EnsureValidProofSignaturesAndClosestPath(ctx, &claim, &proof)
+	}()
+	if validationErr != nil {
 		// Set the proof status to invalid.
 		proofStatus = types.ClaimProofStatus_INVALID
 
 		// Set the invalidity reason to the error message.
-		invalidProofReason = err.Error()
+		invalidProofReason = validationErr.Error()
 
-		logger.Info(fmt.Sprintf("invalid proof due to error: %v", err))
+		logger.Info(fmt.Sprintf("invalid proof due to error: %v", validationErr))
 	}
 	logger.Info(fmt.Sprintf("proof checked, validation result: %s", proofStatus))
 

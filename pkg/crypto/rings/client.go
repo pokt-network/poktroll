@@ -136,6 +136,13 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		)
 	}
 
+	// A ring has at least two members.
+	if numRingMembers := len(relayRequestRingSig.PublicKeys()); numRingMembers < 2 {
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
+			"ring signature has %d members, expected at least 2", numRingMembers,
+		)
+	}
+
 	// Get the ring for the application address of the relay request.
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 	appAddress := sessionHeader.GetApplicationAddress()
