@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	"cosmossdk.io/depinject"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	ring_secp256k1 "github.com/pokt-network/go-dleq/secp256k1"
 	ringtypes "github.com/pokt-network/go-dleq/types"
@@ -22,12 +21,6 @@ import (
 
 var (
 	_ crypto.RingClient = (*ringClient)(nil)
-
-	// PlaceholderRingPubKey is a deterministic dummy public key used when an application
-	// has no delegated gateways.
-	// This ensures the ring has at least two keys without using duplicates.
-	PlaceholderRingPubKey  = secp256k1.GenPrivKeyFromSecret([]byte("placeholder_ring_key_for_apps_without_gateways")).PubKey()
-	PlaceholderRingAddress = PlaceholderRingPubKey.Address().String()
 
 	// ringCurve is the elliptic curve used for the ring signatures.
 	// It is used to deserialize the ring signatures.
@@ -206,16 +199,17 @@ func (rc *ringClient) getRingPubKeysForAddress(
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
 
 	// Ring signatures require at least two pubKeys.
-	// If the Application has not delegated to any gateways, use a placeholder
-	// deterministic address to avoid duplicate keys in the ring.
+	// If the Application has not delegated to any gateways, add its own address
+	// again.
 	if len(delegateeGatewayAddresses) == 0 {
-		delegateeGatewayAddresses = append(delegateeGatewayAddresses, PlaceholderRingAddress)
+		delegateeGatewayAddresses = append(delegateeGatewayAddresses, appAddress)
 	}
 
 	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
 
-	// Sort the ring addresses to ensure the ring is consistent between signing and
-	// verification by satisfying relayRequestRingSig.Ring().Equals(expectedAppRing)
+	// Sort the ring addresses so the ring is built the same way every time.
+	// Verification checks that every key in the signature's ring is in this set
+	// (see ringPointsContain); it does not require the rings to be equal.
 	slices.Sort(ringAddresses)
 
 	rc.logger.Debug().
@@ -234,11 +228,6 @@ func (rc *ringClient) addressesToPubKeys(
 ) ([]cryptotypes.PubKey, error) {
 	pubKeys := make([]cryptotypes.PubKey, len(addresses))
 	for i, addr := range addresses {
-		// Check if this is the dummy gateway address
-		if addr == PlaceholderRingAddress {
-			pubKeys[i] = PlaceholderRingPubKey
-			continue
-		}
 		acc, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, addr)
 		if err != nil {
 			return nil, err

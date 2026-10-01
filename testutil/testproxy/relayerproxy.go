@@ -27,7 +27,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
@@ -483,16 +482,15 @@ func GetApplicationRingSignature(
 	publicKey := appPrivateKey.PubKey()
 	curve := ring_secp256k1.NewCurve()
 
-	point, err := curve.DecodeToPoint(publicKey.Bytes())
+	// Ring signatures require at least two points. An app without delegations
+	// signs with its own key twice, as the ring client builds its ring. Decode
+	// the point twice: NewFixedKeyRingFromPublicKeys dedupes by object identity,
+	// as the real signer does when it fetches each ring address's key separately.
+	point1, err := curve.DecodeToPoint(publicKey.Bytes())
 	require.NoError(t, err)
-
-	// Ring signatures require at least two points.
-	// Use the same deterministic dummy key that the ring client uses for apps without delegations.
-	placeholderPoint, err := curve.DecodeToPoint(rings.PlaceholderRingPubKey.Bytes())
+	point2, err := curve.DecodeToPoint(publicKey.Bytes())
 	require.NoError(t, err)
-
-	// Sort the points to match the order used in verification
-	points := []ringtypes.Point{point, placeholderPoint}
+	points := []ringtypes.Point{point1, point2}
 	pointsRing, err := ring.NewFixedKeyRingFromPublicKeys(curve, points)
 	require.NoError(t, err)
 

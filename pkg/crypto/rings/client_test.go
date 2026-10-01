@@ -2,17 +2,22 @@ package rings
 
 import (
 	"context"
+	"crypto/sha3"
 	"encoding/binary"
 	"testing"
 
 	ring "github.com/pokt-network/ring-go"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/sha3"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // A relay request ring signature must declare at least two members.
@@ -47,4 +52,40 @@ func TestVerifyRelayRequestSignature_RequiresTwoMemberRing(t *testing.T) {
 
 	err = rc.VerifyRelayRequestSignature(context.Background(), relayRequest)
 	require.ErrorContains(t, err, "at least 2")
+}
+
+// For an application with no delegated gateways, the expected ring contains
+// only the app's own key.
+func TestGetRingForAddress_NoGateway_RingIsAppKeyOnly(t *testing.T) {
+	appAddr, appPubKey := sample.AccAddressAndPubKey()
+
+	ctrl := gomock.NewController(t)
+	appQuerier := mockclient.NewMockApplicationQueryClient(ctrl)
+	appQuerier.EXPECT().GetApplication(gomock.Any(), appAddr).Return(
+		apptypes.Application{Address: appAddr}, // no DelegateeGatewayAddresses
+		nil,
+	).AnyTimes()
+
+	acctQuerier := mockclient.NewMockAccountQueryClient(ctrl)
+	acctQuerier.EXPECT().GetPubKeyFromAddress(gomock.Any(), appAddr).Return(appPubKey, nil).AnyTimes()
+
+	sharedParams := sharedtypes.DefaultParams()
+	sharedQuerier := mockclient.NewMockSharedQueryClient(ctrl)
+	sharedQuerier.EXPECT().GetParams(gomock.Any()).Return(&sharedParams, nil).AnyTimes()
+
+	rc := &ringClient{
+		logger:             polyzero.NewLogger(),
+		applicationQuerier: appQuerier,
+		accountQuerier:     acctQuerier,
+		sharedQuerier:      sharedQuerier,
+	}
+
+	expectedPoints, err := rc.getRingPointsForAddressAtHeight(context.Background(), appAddr, 1)
+	require.NoError(t, err)
+
+	// The ring contains exactly the app's own key.
+	appPoints, err := pointsFromPublicKeys(appPubKey)
+	require.NoError(t, err)
+	require.Contains(t, expectedPoints, string(appPoints[0].Encode()))
+	require.Len(t, expectedPoints, 1)
 }
