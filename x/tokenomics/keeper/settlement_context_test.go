@@ -918,6 +918,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.Equal(t, math.NewInt(0), slashedSupplier.Stake.Amount)
 	require.Equal(t, uint64(upcomingSessionEndHeight), slashedSupplier.UnstakeSessionEndHeight)
 	require.True(t, slashedSupplier.IsUnbonding())
+	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &slashedSupplier)
 
 	events := sdkCtx.EventManager().Events()
 
@@ -978,7 +979,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   upcomingSessionEndHeight,
-		UnbondingEndHeight: upcomingSessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
 	}
 	// A single unbonding begin event corresponding to the slashed supplier should be
 	// emitted for all expired claims.
@@ -998,7 +999,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   upcomingSessionEndHeight,
-		UnbondingEndHeight: upcomingSessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
 	}
 	// A single unbonding end event corresponding to the slashed supplier should be
 	// emitted for all expired claims.

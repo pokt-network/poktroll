@@ -824,6 +824,7 @@ func (k Keeper) slashSupplierStake(
 		// indexes, so it leaves future sessions and EndBlockerUnbondSuppliers unbonds it.
 		// supplierToSlash is dehydrated; BeginSupplierUnbonding reloads its history.
 		unstakeSessionEndHeight := k.supplierKeeper.BeginSupplierUnbonding(ctx, supplierToSlash)
+		sharedParams := settlementContext.GetSharedParams()
 
 		// Handling unbonding for slashed suppliers:
 		// - Initiate unbonding at the current session end height (earliest possible time)
@@ -834,7 +835,7 @@ func (k Keeper) slashSupplierStake(
 			Supplier:           supplierToSlash,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   unstakeSessionEndHeight,
-			UnbondingEndHeight: unstakeSessionEndHeight,
+			UnbondingEndHeight: sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, supplierToSlash),
 		})
 	} else {
 		// Only update the dehydrated supplier, since the service config will remain unchanged.
