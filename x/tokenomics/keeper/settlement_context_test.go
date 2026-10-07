@@ -985,26 +985,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// emitted for all expired claims.
 	require.Len(t, unbondingBeginEvents, 1)
 	require.EqualValues(t, expectedUnbondingBeginEvent, unbondingBeginEvents[0])
-
-	// Advance the block height to the settlement session end height.
-	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
-	sdkCtx.WithBlockHeight(settlementHeight)
-
-	// Assert that the EventSupplierUnbondingEnd event is emitted.
-	unbondingEndEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, events)
-	require.Equal(t, 1, len(unbondingEndEvents))
-
-	// Validate the EventSupplierUnbondingEnd event.
-	expectedUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
-		Supplier:           &slashedSupplier,
-		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
-		SessionEndHeight:   upcomingSessionEndHeight,
-		UnbondingEndHeight: unbondingEndHeight,
-	}
-	// A single unbonding end event corresponding to the slashed supplier should be
-	// emitted for all expired claims.
-	require.Len(t, unbondingEndEvents, 1)
-	require.EqualValues(t, expectedUnbondingEndEvent, unbondingEndEvents[0])
 }
 
 // TestSettlePendingClaims_SlashBelowMinStake_UnbondsSupplier asserts that a
@@ -1088,14 +1068,26 @@ func (s *TestSuite) TestSettlePendingClaims_SlashBelowMinStake_UnbondsSupplier()
 	require.Contains(t, getSessionSuppliers(sdkCtx, currentSessionStartHeight), supplierOperatorAddr)
 	require.NotContains(t, getSessionSuppliers(sdkCtx, nextSessionStartHeight), supplierOperatorAddr)
 
+	// The begin event announces the height at which the supplier is actually unbonded.
+	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &slashedSupplier)
+	unbondingBeginEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, sdkCtx.EventManager().Events())
+	require.Len(t, unbondingBeginEvents, 1)
+	require.Equal(t, unbondingEndHeight, unbondingBeginEvents[0].GetUnbondingEndHeight())
+
 	// The supplier is unbonded once its unbonding period elapses.
 	supplierKeeper := s.keepers.SupplierKeeper.(*supplierkeeper.Keeper)
-	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &slashedSupplier)
-	numUnbondedSuppliers, err := supplierKeeper.EndBlockerUnbondSuppliers(sdkCtx.WithBlockHeight(unbondingEndHeight))
+	unbondingEndCtx := sdkCtx.WithBlockHeight(unbondingEndHeight).WithEventManager(cosmostypes.NewEventManager())
+	numUnbondedSuppliers, err := supplierKeeper.EndBlockerUnbondSuppliers(unbondingEndCtx)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), numUnbondedSuppliers)
 	_, found = supplierKeeper.GetDehydratedSupplier(sdkCtx, supplierOperatorAddr)
 	require.False(t, found)
+
+	unbondingEndEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingEnd](t, unbondingEndCtx.EventManager().Events())
+	require.Len(t, unbondingEndEvents, 1)
+	require.Equal(t, supplierOperatorAddr, unbondingEndEvents[0].GetSupplier().GetOperatorAddress())
+	require.Equal(t, suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE, unbondingEndEvents[0].GetReason())
+	require.Equal(t, unbondingEndHeight, unbondingEndEvents[0].GetUnbondingEndHeight())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices() {
