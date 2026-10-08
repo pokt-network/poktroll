@@ -21,4 +21,5 @@ var (
 	ErrServiceMissingRelayMiningDifficulty = sdkerrors.Register(ModuleName, 1116, "missing relay mining difficulty")
 	ErrServiceNotFound                     = sdkerrors.Register(ModuleName, 1117, "service not found")
 	ErrServiceUnauthorized                 = sdkerrors.Register(ModuleName, 1118, "unauthorized service operation")
+	ErrServiceEmitEvent                    = sdkerrors.Register(ModuleName, 1119, "unable to emit onchain event")
 )
