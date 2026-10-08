@@ -327,9 +327,10 @@ card changes:
 
 - **Both carry primitives only:** the service ID or gateway address, `session_end_height` and
   `card_size_bytes`. The card itself is never in the event log; read it from state.
-- **Only a real change emits.** Re-sending the stored card byte for byte, or sending no card,
-  emits nothing and writes nothing. A service update that changes only its name or
-  `compute_units_per_relay` is stored but emits no card event.
+- **Only a card change emits.** Re-sending the stored card byte for byte, or sending no card,
+  emits no card event. A service update that changes only its name or
+  `compute_units_per_relay` is stored but emits no card event; an update that changes nothing
+  at all is not even written.
 - **A new service created with a card emits.** From an indexer's point of view the stored card
   went from none to this one. A gateway has no equivalent: it must already be staked before
   `MsgUpdateGatewayMetadata` can set a card.

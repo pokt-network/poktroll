@@ -378,7 +378,23 @@ func TestMsgServer_AddService_MetadataUpdatedEvent(t *testing.T) {
 	// identical re-Set would still create a fresh IAVL node holding the whole card.
 	require.LessOrEqual(t, noOpGas+storetypes.KVGasConfig().WriteCostFlat, renameGas,
 		"an identical update must not write the service")
-	service, found := k.GetService(sdkCtx, "svc-card")
+
+	// Re-sending a card-less service unchanged (no card, same name and cupr) is the
+	// same no-op: no event, no write.
+	events, nilNoOpGas := addService(newMsg("svc-no-card", "no card", 1, nil))
+	require.Empty(t, events)
+	require.LessOrEqual(t, nilNoOpGas+storetypes.KVGasConfig().WriteCostFlat, renameGas,
+		"an unchanged card-less update must not write the service")
+
+	// Adding a card to a service that had none is a card change: stored and announced.
+	events, _ = addService(newMsg("svc-no-card", "no card", 1, card))
+	require.Len(t, events, 1)
+	require.Equal(t, "svc-no-card", events[0].ServiceId)
+	require.Equal(t, uint64(len(card)), events[0].CardSizeBytes)
+	service, found := k.GetService(sdkCtx, "svc-no-card")
+	require.True(t, found)
+	require.Equal(t, card, service.Metadata.GetCard())
+	service, found = k.GetService(sdkCtx, "svc-card")
 	require.True(t, found)
 	require.Equal(t, "renamed", service.Name)
 	require.Equal(t, uint64(2), service.ComputeUnitsPerRelay)
