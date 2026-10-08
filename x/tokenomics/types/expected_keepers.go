@@ -115,6 +115,7 @@ type SupplierKeeper interface {
 	// Setters
 	SetAndIndexDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 	SetDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	BeginSupplierUnbonding(ctx context.Context, supplier *sharedtypes.Supplier) (unstakeSessionEndHeight int64)
 }
 
 type ServiceKeeper interface {

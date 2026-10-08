@@ -144,6 +144,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
 	stateStore := integration.CreateMultiStore(keys, log.NewNopLogger())
+	sessionTransientStoreKey := MountSessionTransientStore(t, stateStore)
 
 	logger := log.NewTestLogger(t)
 	ctx = sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
@@ -243,6 +244,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 	sessionKeeper := sessionkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(keys[sessiontypes.StoreKey]),
+		runtime.NewTransientStoreService(sessionTransientStoreKey),
 		log.NewNopLogger(),
 		authority.String(),
 		accountKeeper,
