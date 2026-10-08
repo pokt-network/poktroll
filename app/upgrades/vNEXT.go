@@ -41,9 +41,27 @@ const (
 //     Testnets were not checked; the handler logs every repaired address.
 //   - EventServiceMetadataUpdated (x/service, #2009): MsgAddService emits it whenever
 //     the stored card changes, including a service created with a card. CONSENSUS-
-//     BREAKING (state and gas): an update that changes nothing (same name, cupr and
-//     card) now skips the store write, as UpdateGatewayMetadata already does. The
-//     event itself is not hashed into block results. No handler code needed.
+//     BREAKING, state and gas: an update that changes nothing (same name, cupr and
+//     card) now skips the store write (as UpdateGatewayMetadata already does), and
+//     emitting the event reads the shared params (~1.1k gas per card set or change).
+//     Do NOT backport the emission alone as a patch: the extra read changes gas_used.
+//     No handler code needed.
+//
+// Gas changes (gas_used, hence LastResultsHash; no AppHash change):
+//   - MsgCreateClaim / MsgSubmitProof: lower on memo hits.
+//   - MsgUnstakeSupplier: reads the supplier dehydrated and its service config history
+//     once (in BeginSupplierUnbonding) instead of hydrating it up front.
+//   - MsgAddService: lower on a no-op update, higher when a card is set or changed.
+//
+// Event changes (not hashed, but visible to indexers such as pocketdex):
+//   - EventSupplierUnbondingBegin with reason BELOW_MIN_STAKE now reports the real
+//     UnbondingEndHeight (unstake session end + unbonding period), not the unstake
+//     session end height.
+//   - New EventServiceMetadataUpdated.
+//
+// Operators: blocks before the upgrade height MUST be replayed with the previous
+// binary (cosmovisor does this). The memo is not height-gated, so replaying old
+// blocks with this binary yields different gas_used and a LastResultsHash mismatch.
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
