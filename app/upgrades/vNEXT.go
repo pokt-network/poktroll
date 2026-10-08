@@ -5,6 +5,7 @@ import (
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
@@ -29,8 +30,13 @@ const (
 //     with its service config and unstaking indexes, so it leaves sessions from the
 //     next one on and is unbonded (it previously stayed selectable and never
 //     unbonded); unstaking no longer pushes an already-deactivated service config's
-//     deactivation later (which reactivated it for past sessions). No migration: no
-//     mainnet supplier was below min stake or had overlapping configs (2026-09-19).
+//     deactivation later (which reactivated it for past sessions).
+//   - One-shot repair (RepairUnindexedUnbondingSuppliers): every supplier the old
+//     settlement code left unbonding but unindexed starts unbonding again from
+//     this session, so it leaves sessions and is unbonded. Mainnet had none on
+//     2026-10-07, but two suppliers sat at or 1 upokt above min stake with a
+//     1 upokt proof_missing_penalty, so one could get stuck before the upgrade.
+//     Testnets were not checked; the handler logs every repaired address.
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
@@ -49,6 +55,17 @@ var Upgrade_NEXT = Upgrade{
 		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
+
+			// Repair suppliers force-unstaked below min stake by the old settlement
+			// code, which never indexed them. Never errors: a failure here would
+			// halt the chain at the upgrade height.
+			repaired := keepers.SupplierKeeper.RepairUnindexedUnbondingSuppliers(ctx)
+			for _, operatorAddress := range repaired {
+				logger.Info("Repaired unindexed unbonding supplier", "operator_address", operatorAddress)
+			}
+			logger.Info("Repaired unindexed unbonding suppliers", "count", len(repaired))
+
 			return vm, nil
 		}
 	},

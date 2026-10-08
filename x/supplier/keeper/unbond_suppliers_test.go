@@ -551,3 +551,82 @@ func TestEndBlockerUnbondSuppliers_NumBlocksPerSessionDecreaseDoesNotReleaseEarl
 	require.False(t, stillFound,
 		"supplier should be removed from state at its real oldN-derived unbonding horizon")
 }
+
+// TestRepairUnindexedUnbondingSuppliers reproduces a supplier force-unstaked by the
+// pre-fix settlement code (unbonding but unindexed, service configs still active)
+// next to a voluntary unstake, and asserts the upgrade repair restarts only the
+// stuck one's unbonding and leaves the voluntary one untouched.
+func TestRepairUnindexedUnbondingSuppliers(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
+	stakeAmount := suppliertypes.DefaultMinStake.Amount.Int64()
+
+	stuckAddr := sample.AccAddressBech32()
+	voluntaryAddr := sample.AccAddressBech32()
+	for _, operatorAddr := range []string{stuckAddr, voluntaryAddr} {
+		stakeMsg, _ := newSupplierStakeMsg(operatorAddr, operatorAddr, stakeAmount, serviceID)
+		_, err := srv.StakeSupplier(ctx, stakeMsg)
+		require.NoError(t, err)
+	}
+
+	// Both suppliers serve from the next session on.
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	slashHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
+	sdkCtx = sdkCtx.WithBlockHeight(slashHeight)
+	slashSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, slashHeight)
+
+	// Pre-fix settlement: set the unstake height and store the supplier without indexes.
+	stuckSupplier, found := supplierModuleKeepers.GetDehydratedSupplier(sdkCtx, stuckAddr)
+	require.True(t, found)
+	stuckSupplier.UnstakeSessionEndHeight = uint64(slashSessionEndHeight)
+	supplierModuleKeepers.SetDehydratedSupplier(sdkCtx, stuckSupplier)
+
+	_, err := srv.UnstakeSupplier(sdkCtx, &suppliertypes.MsgUnstakeSupplier{Signer: voluntaryAddr, OperatorAddress: voluntaryAddr})
+	require.NoError(t, err)
+	voluntaryBefore, found := supplierModuleKeepers.GetSupplier(sdkCtx, voluntaryAddr)
+	require.True(t, found)
+
+	// The stuck supplier is unbonding but missing from the index the EndBlocker reads.
+	require.Equal(t, []string{voluntaryAddr}, unstakingIndexAddrs(sdkCtx, supplierModuleKeepers.Keeper))
+
+	// The upgrade runs mid-session, some sessions later.
+	repairHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, slashSessionEndHeight) + 1
+	sdkCtx = sdkCtx.WithBlockHeight(repairHeight)
+	require.Equal(t, []string{stuckAddr}, supplierModuleKeepers.RepairUnindexedUnbondingSuppliers(sdkCtx))
+
+	repairedSupplier, found := supplierModuleKeepers.GetSupplier(sdkCtx, stuckAddr)
+	require.True(t, found)
+	require.Equal(t, uint64(sharedtypes.GetSessionEndHeight(&sharedParams, repairHeight)), repairedSupplier.UnstakeSessionEndHeight)
+	require.NotEmpty(t, repairedSupplier.ServiceConfigHistory)
+	for _, serviceConfig := range repairedSupplier.ServiceConfigHistory {
+		require.Equal(t, sharedtypes.GetNextSessionStartHeight(&sharedParams, repairHeight), serviceConfig.DeactivationHeight)
+	}
+	require.ElementsMatch(t, []string{stuckAddr, voluntaryAddr}, unstakingIndexAddrs(sdkCtx, supplierModuleKeepers.Keeper))
+
+	// The voluntary unstake is untouched: same unbonding height, same deactivations.
+	voluntaryAfter, found := supplierModuleKeepers.GetSupplier(sdkCtx, voluntaryAddr)
+	require.True(t, found)
+	require.Equal(t, voluntaryBefore.UnstakeSessionEndHeight, voluntaryAfter.UnstakeSessionEndHeight)
+	require.Equal(t, voluntaryBefore.ServiceConfigHistory, voluntaryAfter.ServiceConfigHistory)
+
+	// Idempotent: a second run finds nothing to repair.
+	require.Empty(t, supplierModuleKeepers.RepairUnindexedUnbondingSuppliers(sdkCtx))
+
+	// The repaired supplier is unbonded at the end of its new unbonding period.
+	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &repairedSupplier)
+	_, err = supplierModuleKeepers.EndBlockerUnbondSuppliers(sdkCtx.WithBlockHeight(unbondingEndHeight))
+	require.NoError(t, err)
+	_, found = supplierModuleKeepers.GetDehydratedSupplier(sdkCtx, stuckAddr)
+	require.False(t, found)
+}
+
+// unstakingIndexAddrs returns the operator addresses in the supplier unstaking index.
+func unstakingIndexAddrs(ctx cosmostypes.Context, k *keeper.Keeper) (addrs []string) {
+	iterator := k.GetAllUnstakingSuppliersIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		addrs = append(addrs, string(iterator.Value()))
+	}
+	return addrs
+}

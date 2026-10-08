@@ -46,6 +46,46 @@ func (k Keeper) BeginSupplierUnbonding(ctx context.Context, supplier *sharedtype
 	return unstakeSessionEndHeight
 }
 
+// RepairUnindexedUnbondingSuppliers runs BeginSupplierUnbonding again for every
+// supplier that is unbonding but missing from the unstaking index, and returns
+// their operator addresses in store order.
+//
+// Before BeginSupplierUnbonding existed, settlement force-unstaked a supplier
+// below min stake without indexing it: it stayed selectable in sessions, was
+// never unbonded, and MsgUnstakeSupplier rejected it as already unbonding.
+// Settlement now skips such a supplier (it is already unbonding), so it needs
+// this one-shot repair from an upgrade handler.
+//
+// The unstake session end height is reset to the current session end, restarting
+// the unbonding period. A stuck supplier is still in the current session, so
+// keeping its old (past) height would let EndBlockerUnbondSuppliers remove it
+// mid-session and orphan the claims of the sessions it serves.
+//
+// Suppliers already in the index (voluntary unstakes, Morse claims) are left
+// untouched.
+func (k Keeper) RepairUnindexedUnbondingSuppliers(ctx context.Context) (repaired []string) {
+	indexed := make(map[string]struct{})
+	unstakingIterator := k.GetAllUnstakingSuppliersIterator(ctx)
+	for ; unstakingIterator.Valid(); unstakingIterator.Next() {
+		indexed[string(unstakingIterator.Value())] = struct{}{}
+	}
+	unstakingIterator.Close()
+
+	// GetAllSuppliers returns a slice, so the writes below never run while a
+	// supplier store iterator is open.
+	for _, supplier := range k.GetAllSuppliers(ctx) {
+		if !supplier.IsUnbonding() {
+			continue
+		}
+		if _, ok := indexed[supplier.OperatorAddress]; ok {
+			continue
+		}
+		k.BeginSupplierUnbonding(ctx, &supplier)
+		repaired = append(repaired, supplier.OperatorAddress)
+	}
+	return repaired
+}
+
 // EndBlockerUnbondSuppliers unbonds suppliers whose unbonding period has elapsed.
 func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppliers uint64, err error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
