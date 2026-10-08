@@ -809,8 +809,14 @@ func (k Keeper) slashSupplierStake(
 
 	// Check if the supplier's stake is below the minimum and unstake it if necessary.
 	// Ensure that a slashed supplier going below min stake is unbonded only once.
-	minSupplierStakeCoin := k.supplierKeeper.GetParams(ctx).MinStake
-	if supplierToSlash.GetStake().IsLT(*minSupplierStakeCoin) && !supplierToSlash.IsUnbonding() {
+	// Defensive: GetParams returns a zero-value Params{} (nil MinStake) if params
+	// were never written. Fall back to DefaultMinStake, as EndBlockerUnbondSuppliers
+	// does, so a nil-deref never halts the chain in the EndBlocker.
+	minSupplierStakeCoin := suppliertypes.DefaultMinStake
+	if minStake := k.supplierKeeper.GetParams(ctx).MinStake; minStake != nil {
+		minSupplierStakeCoin = *minStake
+	}
+	if supplierToSlash.GetStake().IsLT(minSupplierStakeCoin) && !supplierToSlash.IsUnbonding() {
 		logger.Warn(fmt.Sprintf(
 			"unstaking supplier %q owned by %q due to stake (%s) below the minimum (%s)",
 			supplierToSlash.GetOperatorAddress(),
