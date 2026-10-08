@@ -67,9 +67,12 @@ import (
 // free to amplify.
 //
 // Consensus impact: a memo hit skips gas-metered store reads, so gas_used of
-// claim/proof txs changes. That alters LastResultsHash (block header), not the
-// AppHash - fees are charged on gas_limit, so state is identical with and
-// without the memo. Activating this is therefore a coordinated upgrade.
+// claim/proof txs changes. That alters LastResultsHash (block header). While
+// block max_gas is -1 (mainnet today) it does not alter the AppHash: fees are
+// charged on gas_limit, so state is identical with and without the memo. Under
+// a block gas limit, memo hits lower the block's gas total, so a late tx that
+// would fail out of block gas without the memo can fit with it - a state
+// difference. Activating this is therefore a coordinated upgrade.
 
 // sessionMemoStore returns the prefixed transient store holding memoized
 // supplier selections, or nil when the memo is off: outside FinalizeBlock, or

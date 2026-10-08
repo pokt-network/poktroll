@@ -22,9 +22,11 @@ const (
 // This upgrade adds:
 //   - Block-scoped session supplier memo (x/session transient store, see
 //     x/session/keeper/session_memo.go). CONSENSUS-BREAKING: memo hits lower
-//     gas_used of claim/proof txs, which changes LastResultsHash (not AppHash).
-//     It MUST only ship through this upgrade, never in a patch release. Needs no
-//     handler code or StoreUpgrades: transient stores hold no committed state.
+//     gas_used of claim/proof txs, which changes LastResultsHash. It does not
+//     change the AppHash while block max_gas is -1 (mainnet today); under a block
+//     gas limit it could. It MUST only ship through this upgrade, never in a patch
+//     release. Needs no handler code or StoreUpgrades: transient stores hold no
+//     committed state.
 //   - Supplier unbonding fixes (x/supplier BeginSupplierUnbonding). CONSENSUS-BREAKING
 //     (state): a supplier slashed below min stake during settlement is now persisted
 //     with its service config and unstaking indexes, so it leaves sessions from the
