@@ -15,3 +15,20 @@ message EventRelayMiningDifficultyUpdated {
     uint64 prev_num_relays_ema = 4;
     uint64 new_num_relays_ema = 5;
 }
+
+// EventServiceMetadataUpdated is emitted when a service's card is set or replaced,
+// including when a new service is created with a card.
+//
+// DEV_NOTE: PRIMITIVES ONLY, mirroring EventGatewayMetadataUpdated. Service.metadata can
+// hold up to 256 KiB, so embedding the service here would write the entire card into the
+// event log on every card update -- exactly the disk-utilization problem
+// check_proto_event_fields exists to catch. Consumers that need the card should read it
+// from state.
+message EventServiceMetadataUpdated {
+    // The ID of the service whose card was updated.
+    string service_id = 1 [(gogoproto.jsontag) = "service_id"];
+    // The end height of the session in which the card was updated.
+    int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
+    // Size in bytes of the card now stored, so indexers can see the change without the payload.
+    uint64 card_size_bytes = 3 [(gogoproto.jsontag) = "card_size_bytes"];
+}

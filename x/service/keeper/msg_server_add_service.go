@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // AddService adds a service to the network.
@@ -69,10 +71,7 @@ func (k msgServer) AddService(
 		// for session-start-pinned claim validation.
 		prevComputeUnitsPerRelay := foundService.ComputeUnitsPerRelay
 
-		foundService.Name = msg.Service.Name
-		foundService.ComputeUnitsPerRelay = msg.Service.ComputeUnitsPerRelay
-
-		// Only overwrite metadata when the message actually carries it.
+		// Only overwrite metadata when the message actually carries a DIFFERENT card.
 		//
 		// MsgAddService is the ONLY update path for an existing service and always
 		// carries a full Service{}, so a message that only intends to change
@@ -87,7 +86,27 @@ func (k msgServer) AddService(
 		// non-nil Metadata always remains. Consumers must therefore treat a non-nil
 		// Metadata as "may be empty", not "has content". Add a dedicated clear mechanism
 		// if/when the metadata fields are reworked.
-		if msg.Service.Metadata != nil {
+		isCardChanged := msg.Service.Metadata != nil &&
+			!bytes.Equal(foundService.Metadata.GetCard(), msg.Service.Metadata.GetCard())
+
+		// Short-circuit a no-op update: nothing to write, nothing to announce.
+		//
+		// cosmos-sdk's KVStore marks the key dirty on any Set, identical value or not, so
+		// re-Setting an unchanged Service creates a fresh IAVL node at commit -- a full
+		// extra copy of a card up to MaxServiceMetadataSizeBytes, retained forever by
+		// archive nodes. Re-broadcasting the same service would then be an unbounded
+		// state-growth lever costing only gas. Same guard as UpdateGatewayMetadata.
+		if !isCardChanged &&
+			foundService.Name == msg.Service.Name &&
+			prevComputeUnitsPerRelay == msg.Service.ComputeUnitsPerRelay {
+			logger.Info(fmt.Sprintf("Service %q is already up to date; skipping redundant write", msg.Service.Id))
+			isSuccessful = true
+			return &types.MsgAddServiceResponse{}, nil
+		}
+
+		foundService.Name = msg.Service.Name
+		foundService.ComputeUnitsPerRelay = msg.Service.ComputeUnitsPerRelay
+		if isCardChanged {
 			foundService.Metadata = msg.Service.Metadata
 		}
 
@@ -105,6 +124,12 @@ func (k msgServer) AddService(
 				msg.Service.ComputeUnitsPerRelay,
 			); err != nil {
 				return nil, status.Error(codes.Internal, err.Error())
+			}
+		}
+
+		if isCardChanged {
+			if err := k.emitServiceMetadataUpdated(ctx, foundService); err != nil {
+				return nil, err
 			}
 		}
 
@@ -178,6 +203,31 @@ func (k msgServer) AddService(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	// A new service created with a card announces it too: from an indexer's point of
+	// view the stored card changed (from none to this one).
+	if msg.Service.Metadata != nil {
+		if err := k.emitServiceMetadataUpdated(ctx, msg.Service); err != nil {
+			return nil, err
+		}
+	}
+
 	isSuccessful = true
 	return &types.MsgAddServiceResponse{}, nil
+}
+
+// emitServiceMetadataUpdated emits EventServiceMetadataUpdated for service, whose
+// card was just stored. The event carries the card's size, never the card itself.
+func (k msgServer) emitServiceMetadataUpdated(ctx sdk.Context, service sharedtypes.Service) error {
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	event := &types.EventServiceMetadataUpdated{
+		ServiceId:        service.Id,
+		SessionEndHeight: sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight()),
+		CardSizeBytes:    uint64(len(service.Metadata.GetCard())),
+	}
+	if err := ctx.EventManager().EmitTypedEvent(event); err != nil {
+		err = types.ErrServiceEmitEvent.Wrapf("(%+v): %s", event, err)
+		k.Logger().Error(err.Error())
+		return status.Error(codes.Internal, err.Error())
+	}
+	return nil
 }

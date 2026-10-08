@@ -3,9 +3,12 @@ package keeper_test
 import (
 	"testing"
 
+	storetypes "cosmossdk.io/store/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/pocket"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/service/keeper"
@@ -314,4 +317,79 @@ func TestMsgServer_AddService_UpdatePreservesMetadata(t *testing.T) {
 	serviceFound, found = k.GetService(ctx, "svc-meta")
 	require.True(t, found)
 	require.Equal(t, replacementMetadata, serviceFound.Metadata, "explicit metadata must replace the stored value")
+}
+
+// TestMsgServer_AddService_MetadataUpdatedEvent asserts that EventServiceMetadataUpdated
+// is emitted exactly when the stored card changes (including a service created with a
+// card), and that an update changing nothing skips both the event and the store write.
+func TestMsgServer_AddService_MetadataUpdatedEvent(t *testing.T) {
+	k, ctx := keepertest.ServiceKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+	sdkCtx := sdk.UnwrapSDKContext(ctx).WithBlockHeight(7)
+	sharedParams := sharedtypes.DefaultParams()
+
+	ownerAddr := sample.AccAddressBech32()
+	keepertest.AddAccToAccMapCoins(t, ownerAddr, pocket.DenomuPOKT, 2*oneUPOKTGreaterThanFee)
+
+	card := []byte(`{"schema":"pocket-service-card/v1","name":"stable"}`)
+	newMsg := func(id, name string, cupr uint64, card []byte) *types.MsgAddService {
+		service := sharedtypes.Service{Id: id, Name: name, ComputeUnitsPerRelay: cupr, OwnerAddress: ownerAddr}
+		if card != nil {
+			service.Metadata = &sharedtypes.Metadata{Card: card}
+		}
+		return &types.MsgAddService{OwnerAddress: ownerAddr, Service: service}
+	}
+	// addService runs msg on a fresh event manager and gas meter, and returns the
+	// metadata events it emitted and the gas it consumed.
+	addService := func(msg *types.MsgAddService) ([]*types.EventServiceMetadataUpdated, storetypes.Gas) {
+		t.Helper()
+		sdkCtx = sdkCtx.WithEventManager(sdk.NewEventManager()).WithGasMeter(storetypes.NewInfiniteGasMeter())
+		_, err := srv.AddService(sdkCtx, msg)
+		require.NoError(t, err)
+		events := testevents.FilterEvents[*types.EventServiceMetadataUpdated](t, sdkCtx.EventManager().Events())
+		return events, sdkCtx.GasMeter().GasConsumed()
+	}
+
+	// Created with a card: emits, carrying the size and never the card.
+	events, _ := addService(newMsg("svc-card", "with card", 1, card))
+	require.Len(t, events, 1)
+	require.Equal(t, &types.EventServiceMetadataUpdated{
+		ServiceId:        "svc-card",
+		SessionEndHeight: sharedtypes.GetSessionEndHeight(&sharedParams, 7),
+		CardSizeBytes:    uint64(len(card)),
+	}, events[0])
+
+	// Created without a card: nothing to announce.
+	events, _ = addService(newMsg("svc-no-card", "no card", 1, nil))
+	require.Empty(t, events)
+
+	// Identical update: succeeds, no event.
+	events, noOpGas := addService(newMsg("svc-card", "with card", 1, card))
+	require.Empty(t, events)
+
+	// Updates that leave the card alone apply but do not emit: cupr only (nil
+	// metadata, as `edit-service` sends), then name only (same card re-sent).
+	events, _ = addService(newMsg("svc-card", "with card", 2, nil))
+	require.Empty(t, events)
+	events, renameGas := addService(newMsg("svc-card", "renamed", 2, card))
+	require.Empty(t, events)
+
+	// The identical update skipped the store write that the rename paid for. An
+	// identical re-Set would still create a fresh IAVL node holding the whole card.
+	require.LessOrEqual(t, noOpGas+storetypes.KVGasConfig().WriteCostFlat, renameGas,
+		"an identical update must not write the service")
+	service, found := k.GetService(sdkCtx, "svc-card")
+	require.True(t, found)
+	require.Equal(t, "renamed", service.Name)
+	require.Equal(t, uint64(2), service.ComputeUnitsPerRelay)
+	require.Equal(t, card, service.Metadata.GetCard())
+
+	// A different card is stored and announced.
+	changed := []byte(`{"schema":"pocket-service-card/v1","name":"changed card"}`)
+	events, _ = addService(newMsg("svc-card", "renamed", 2, changed))
+	require.Len(t, events, 1)
+	require.Equal(t, uint64(len(changed)), events[0].CardSizeBytes)
+	service, found = k.GetService(sdkCtx, "svc-card")
+	require.True(t, found)
+	require.Equal(t, changed, service.Metadata.GetCard())
 }

@@ -39,6 +39,11 @@ const (
 //     2026-10-07, but two suppliers sat at or 1 upokt above min stake with a
 //     1 upokt proof_missing_penalty, so one could get stuck before the upgrade.
 //     Testnets were not checked; the handler logs every repaired address.
+//   - EventServiceMetadataUpdated (x/service, #2009): MsgAddService emits it whenever
+//     the stored card changes, including a service created with a card. CONSENSUS-
+//     BREAKING (state and gas): an update that changes nothing (same name, cupr and
+//     card) now skips the store write, as UpdateGatewayMetadata already does. The
+//     event itself is not hashed into block results. No handler code needed.
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
