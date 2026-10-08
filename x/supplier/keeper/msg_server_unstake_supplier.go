@@ -38,8 +38,11 @@ func (k msgServer) UnstakeSupplier(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// Check if the supplier already exists or not
-	supplier, isSupplierFound := k.GetSupplier(ctx, msg.GetOperatorAddress())
+	// Check if the supplier already exists or not.
+	// Dehydrated on purpose: only the owner, operator and unstake height are read
+	// here, and BeginSupplierUnbonding reloads the service config history itself.
+	// Hydrating would gas-meter the whole history for nothing.
+	supplier, isSupplierFound := k.GetDehydratedSupplier(ctx, msg.GetOperatorAddress())
 	if !isSupplierFound {
 		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.GetOperatorAddress()))
 		return nil, status.Error(
@@ -90,10 +93,6 @@ func (k msgServer) UnstakeSupplier(
 	// (e.g. a session with less than the minimum or 0 number of suppliers,
 	// offchain actors that need to listen to session supplier's change mid-session, etc).
 	k.BeginSupplierUnbonding(ctx, &supplier)
-
-	// dehydrate the supplier to avoid sending the entire object
-	supplier.Services = nil
-	supplier.ServiceConfigHistory = nil
 
 	// Emit an event signaling that the supplier has begun the unbonding process
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
