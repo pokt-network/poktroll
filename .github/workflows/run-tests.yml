@@ -24,7 +24,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26.5"
+          go-version: "1.27.2"
 
       - name: Install CI dependencies
         run: make install_ci_deps
@@ -48,7 +48,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.11
+          version: v2.14
           args: --timeout 20m --verbose
 
       - name: Test
