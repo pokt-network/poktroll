@@ -73,7 +73,8 @@ const (
 //     min_stake_included_services or stake_per_additional_service changes.
 //   - MsgStakeSupplier and MsgClaimMorseSupplier (which stakes through
 //     StakeSupplier): read the supplier params once more when the message lists
-//     services (service cap check); the min stake re-check on a stake increase is gone.
+//     services (service cap check), and once less when the stake is unchanged (the
+//     min stake re-check in the stake reconciliation is gone).
 //   - Supplier records grow by service_priority on every stake message that lists
 //     services, including new suppliers, so both those writes and later reads of
 //     the records (claims, proofs, settlement) cost slightly more gas.

@@ -301,8 +301,10 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	t.Run("owner signed", func(t *testing.T) {
 		updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake-1)
 		setStakeMsgSigner(updateMsg, ownerAddr)
+		ownerBalanceBefore := supplierModuleKeepers.SupplierBalanceMap[ownerAddr]
 
 		_, err := srv.StakeSupplier(ctx, updateMsg)
+		require.Equal(t, ownerBalanceBefore, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 		require.ErrorContains(t, err, suppliertypes.ErrSupplierInvalidStake.Error())
 		require.Equal(t, codes.InvalidArgument, status.Code(err))
 		requireStake(t, initialStake)
