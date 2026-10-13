@@ -10,7 +10,7 @@ import (
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 )
 
-func TestUpgrade_NEXT_SeedsServiceCapParams(t *testing.T) {
+func TestUpgrade_0_1_36_SeedsServiceCapParams(t *testing.T) {
 	k, ctx := testkeeper.SupplierKeeper(t)
 
 	// Simulate a pre-upgrade chain: params without the new fields.
