@@ -113,3 +113,23 @@ message EventSupplierServiceConfigActivated {
 
   string service_id = 4; // The Service ID for which the supplier is configured
 }
+// ServiceCapReason is why a supplier's services were capped.
+enum ServiceCapReason {
+  SERVICE_CAP_REASON_UNSPECIFIED = 0;
+  // The supplier was slashed and its stake no longer covers its services.
+  SERVICE_CAP_REASON_SLASH = 1;
+  // Governance changed the service cap params.
+  SERVICE_CAP_REASON_PARAMS = 2;
+}
+
+// EventSupplierServicesCapped is emitted when services beyond what a supplier's
+// stake covers are scheduled for deactivation at the next session start.
+message EventSupplierServicesCapped {
+  string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string owner_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  cosmos.base.v1beta1.Coin stake = 3 [(gogoproto.jsontag) = "stake"];
+  uint64 allowed_services = 4 [(gogoproto.jsontag) = "allowed_services"];
+  repeated string deactivated_service_ids = 5 [(gogoproto.jsontag) = "deactivated_service_ids"];
+  ServiceCapReason reason = 6 [(gogoproto.jsontag) = "reason"];
+  int64 effective_height = 7 [(gogoproto.jsontag) = "effective_height"];
+}

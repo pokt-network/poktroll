@@ -46,8 +46,10 @@ func TestMsgUpdateParams(t *testing.T) {
 			params: &suppliertypes.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params: suppliertypes.Params{
-					MinStake:   &suppliertypes.DefaultMinStake,
-					StakingFee: &zerouPokt,
+					MinStake:                  &suppliertypes.DefaultMinStake,
+					StakingFee:                &zerouPokt,
+					MinStakeIncludedServices:  suppliertypes.DefaultMinStakeIncludedServices,
+					StakePerAdditionalService: &suppliertypes.DefaultStakePerAdditionalService,
 				},
 			},
 			shouldError: false,

@@ -41,6 +41,12 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 	case suppliertypes.ParamStakingFee:
 		logger = logger.With("staking_fee", msg.GetAsCoin())
 		params.StakingFee = msg.GetAsCoin()
+	case suppliertypes.ParamMinStakeIncludedServices:
+		logger = logger.With("min_stake_included_services", msg.GetAsUint64())
+		params.MinStakeIncludedServices = msg.GetAsUint64()
+	case suppliertypes.ParamStakePerAdditionalService:
+		logger = logger.With("stake_per_additional_service", msg.GetAsCoin())
+		params.StakePerAdditionalService = msg.GetAsCoin()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,

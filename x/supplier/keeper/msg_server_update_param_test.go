@@ -41,3 +41,38 @@ func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
 	// Ensure the other parameters are unchanged
 	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(suppliertypes.KeyMinStake))
 }
+
+func TestMsgUpdateParam_UpdateMinStakeIncludedServices(t *testing.T) {
+	k, msgSrv, ctx := setupMsgServer(t)
+	require.NoError(t, k.SetParams(ctx, suppliertypes.DefaultParams()))
+
+	_, err := msgSrv.UpdateParam(ctx, &suppliertypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      suppliertypes.ParamMinStakeIncludedServices,
+		AsType:    &suppliertypes.MsgUpdateParam_AsUint64{AsUint64: 35},
+	})
+	require.NoError(t, err)
+	require.Equal(t, uint64(35), k.GetParams(ctx).MinStakeIncludedServices)
+
+	_, err = msgSrv.UpdateParam(ctx, &suppliertypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      suppliertypes.ParamMinStakeIncludedServices,
+		AsType:    &suppliertypes.MsgUpdateParam_AsUint64{AsUint64: 0},
+	})
+	require.Error(t, err)
+	require.Equal(t, uint64(35), k.GetParams(ctx).MinStakeIncludedServices)
+}
+
+func TestMsgUpdateParam_UpdateStakePerAdditionalService(t *testing.T) {
+	k, msgSrv, ctx := setupMsgServer(t)
+	require.NoError(t, k.SetParams(ctx, suppliertypes.DefaultParams()))
+
+	price := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 5_000_000_000)
+	_, err := msgSrv.UpdateParam(ctx, &suppliertypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      suppliertypes.ParamStakePerAdditionalService,
+		AsType:    &suppliertypes.MsgUpdateParam_AsCoin{AsCoin: &price},
+	})
+	require.NoError(t, err)
+	require.Equal(t, price.Amount, k.GetParams(ctx).StakePerAdditionalService.Amount)
+}

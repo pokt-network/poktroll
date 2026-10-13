@@ -311,6 +311,12 @@ genesis:
         staking_fee:
           amount: "1000000" # 1 POKT
           denom: upokt
+        # Services covered by min_stake. At least 1.
+        min_stake_included_services: 1
+        # Stake per service beyond the included ones. 0 disables the service cap.
+        stake_per_additional_service:
+          amount: "0"
+          denom: upokt
       supplierList:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj

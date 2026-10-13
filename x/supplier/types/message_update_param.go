@@ -16,6 +16,8 @@ func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdatePara
 	switch t := asType.(type) {
 	case *cosmostypes.Coin:
 		asTypeIface = &MsgUpdateParam_AsCoin{AsCoin: t}
+	case uint64:
+		asTypeIface = &MsgUpdateParam_AsUint64{AsUint64: t}
 	default:
 		panic(fmt.Sprintf("unexpected param value type: %T", asType))
 	}
@@ -54,6 +56,16 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateStakingFee(msg.GetAsCoin())
+	case ParamMinStakeIncludedServices:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsUint64](msg); err != nil {
+			return err
+		}
+		return ValidateMinStakeIncludedServices(msg.GetAsUint64())
+	case ParamStakePerAdditionalService:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsCoin](msg); err != nil {
+			return err
+		}
+		return ValidateStakePerAdditionalService(msg.GetAsCoin())
 	default:
 		return ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
