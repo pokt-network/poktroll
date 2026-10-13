@@ -208,10 +208,10 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	require.Equal(t, expectedEvent, claimEvents[0])
 }
 
-// The supplier keeper's StakeSupplier enforces the service cap, and a Morse
-// claim stakes through it, so a claim whose stake covers fewer services than
-// it lists fails with the error the keeper returns. The check itself is covered
-// by the supplier keeper's tests (including a direct keeper-level call).
+// A Morse claim stakes through the supplier keeper's StakeSupplier. This test
+// checks propagation only: the (mocked) keeper returns the service cap error and
+// the claim fails with it. The real check is covered by
+// TestStakeSupplier_ServiceCap_KeeperLevelMorseStylePath in x/supplier/keeper.
 func TestMsgServer_ClaimMorseSupplier_ServiceCapExceeded(t *testing.T) {
 	shannonDestAddr := sample.AccAddressBech32()
 	unstakedBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
@@ -224,16 +224,12 @@ func TestMsgServer_ClaimMorseSupplier_ServiceCapExceeded(t *testing.T) {
 	bankKeeper.EXPECT().MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	// Enable the cap: the 200upokt stake covers no more than the one included service.
 	supplierParams := suppliertypes.DefaultParams()
 	supplierParams.MinStake = &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: cosmosmath.ZeroInt()}
-	supplierParams.MinStakeIncludedServices = 1
-	supplierParams.StakePerAdditionalService = &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: cosmosmath.NewInt(100)}
 	supplierKeeper.EXPECT().GetParams(gomock.Any()).Return(supplierParams).AnyTimes()
 	supplierKeeper.EXPECT().GetSupplier(gomock.Any(), gomock.Eq(shannonDestAddr)).
 		Return(sharedtypes.Supplier{}, false).AnyTimes()
 
-	// Two services against a stake that covers one (stake 200 < min_stake + 100 -> 1 allowed).
 	services := append(
 		append([]*sharedtypes.SupplierServiceConfig{}, testSupplierServices...),
 		&sharedtypes.SupplierServiceConfig{

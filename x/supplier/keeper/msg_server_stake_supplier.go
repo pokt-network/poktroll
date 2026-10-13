@@ -264,7 +264,7 @@ func (k Keeper) StakeSupplier(
 
 	// The stake must cover the supplier's services. msg.Stake is the stake that
 	// will apply: updateSupplier filled it in when the message carried none.
-	if err = k.checkServiceCap(ctx, &supplier, msg); err != nil {
+	if err = k.checkServiceCap(ctx, &supplier, msg, supplierCurrentStake); err != nil {
 		logger.Info(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -484,11 +484,13 @@ func (k Keeper) reconcileSupplierStakeDiff(
 
 // checkServiceCap returns an error if msg.Stake does not cover the supplier's
 // services: the services in the message, or for a stake-only update, the
-// services that are active or pending activation.
+// services that are active or pending activation. A stake-only update that does
+// not lower the stake is always accepted, so an over-cap supplier can top up in steps.
 func (k Keeper) checkServiceCap(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
 	msg *suppliertypes.MsgStakeSupplier,
+	currentStake sdk.Coin,
 ) error {
 	params := k.GetParams(ctx)
 	allowed, limited := suppliertypes.AllowedServices(*msg.Stake, params)
@@ -498,6 +500,9 @@ func (k Keeper) checkServiceCap(
 
 	numServices := uint64(len(msg.Services))
 	if numServices == 0 {
+		if msg.Stake.Amount.GTE(currentStake.Amount) {
+			return nil
+		}
 		sharedParams := k.sharedKeeper.GetParams(ctx)
 		currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 		nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)

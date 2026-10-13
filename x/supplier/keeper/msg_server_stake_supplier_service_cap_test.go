@@ -175,3 +175,37 @@ func TestStakeSupplier_ServiceCap_KeeperLevelMorseStylePath(t *testing.T) {
 	_, err = k.StakeSupplier(ctx, log.NewNopLogger(), msg)
 	require.NoError(t, err)
 }
+
+func TestStakeSupplier_ServiceCap_StakeOnlyIncreaseAcceptedWhileOverCap(t *testing.T) {
+	k, ctx := keepertest.SupplierKeeper(t)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(*k.Keeper)
+	enableServiceCap(t, k, sdkCtx)
+	ownerAddr, operatorAddr := sample.AccAddressBech32(), sample.AccAddressBech32()
+
+	// 2 services at min+1*price: exactly at the cap.
+	msg := multiServiceStakeMsg(t, k, sdkCtx, ownerAddr, operatorAddr, capMinStake+capPrice, "svc1", "svc2")
+	_, err := srv.StakeSupplier(ctx, msg)
+	require.NoError(t, err)
+
+	// Governance raises the price to 2 POKT: the stake now covers 1 service.
+	params := k.Keeper.GetParams(sdkCtx)
+	price := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 2_000_000)
+	params.StakePerAdditionalService = &price
+	require.NoError(t, k.SetParams(sdkCtx, params))
+
+	stakeOnly := func(amount int64) *suppliertypes.MsgStakeSupplier {
+		return &suppliertypes.MsgStakeSupplier{
+			Signer: ownerAddr, OwnerAddress: ownerAddr, OperatorAddress: operatorAddr,
+			Stake: &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(amount)},
+		}
+	}
+
+	// A decrease is rejected.
+	_, err = srv.StakeSupplier(ctx, stakeOnly(capMinStake))
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierTooManyServices.Error())
+
+	// An increase that still covers only 1 service is accepted.
+	_, err = srv.StakeSupplier(ctx, stakeOnly(capMinStake+capPrice+1))
+	require.NoError(t, err)
+}
