@@ -1148,10 +1148,10 @@ func (s *TestSuite) setupSlashCapScenario(price int64, extraServiceIds []string,
 
 // upsertMissingProofClaim creates a new app for the service and upserts a claim
 // (without a proof) for the supplier in that app's session.
-func (s *TestSuite) upsertMissingProofClaim(serviceId, supplierOperatorAddr string) {
+func (s *TestSuite) upsertMissingProofClaim(serviceId, supplierOperatorAddr string) (appAddr string) {
 	t := s.T()
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
-	appAddr := sample.AccAddressBech32()
+	appAddr = sample.AccAddressBech32()
 	s.keepers.SetApplication(s.ctx, apptypes.Application{
 		Address:        appAddr,
 		Stake:          &appStake,
@@ -1165,6 +1165,7 @@ func (s *TestSuite) upsertMissingProofClaim(serviceId, supplierOperatorAddr stri
 	require.NoError(t, err)
 	merkleRoot := testproof.SmstRootWithSumAndCount(1000, 1000)
 	s.keepers.UpsertClaim(s.ctx, *testtree.NewClaim(t, supplierOperatorAddr, sessionRes.Session.Header, merkleRoot))
+	return appAddr
 }
 
 // deactivationHeights returns the deactivation height of every deactivated service config.
@@ -1183,7 +1184,7 @@ func (s *TestSuite) TestSettlePendingClaims_Slash_CapsServices() {
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
 	price := supplierStakeAmt / 10
 	settleHeight, serviceId, supplierOperatorAddr := s.setupSlashCapScenario(price, []string{"svc_extra_1", "svc_extra_2"}, true)
-	s.upsertMissingProofClaim(serviceId, supplierOperatorAddr)
+	appAddr := s.upsertMissingProofClaim(serviceId, supplierOperatorAddr)
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(settleHeight)
 	_, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
@@ -1200,6 +1201,31 @@ func (s *TestSuite) TestSettlePendingClaims_Slash_CapsServices() {
 	capped := testutilevents.FilterEvents[*suppliertypes.EventSupplierServicesCapped](t, sdkCtx.EventManager().Events())
 	require.Len(t, capped, 1)
 	require.Equal(t, suppliertypes.ServiceCapReason_SERVICE_CAP_REASON_SLASH, capped[0].GetReason())
+
+	// svc_extra_2 is still active now and inactive from the next session start.
+	activeServiceIds := func(height int64) []string {
+		ids := make([]string, 0)
+		for _, config := range slashed.GetActiveServiceConfigs(height) {
+			ids = append(ids, config.GetServiceId())
+		}
+		return ids
+	}
+	require.Contains(t, activeServiceIds(settleHeight), "svc_extra_2")
+	require.NotContains(t, activeServiceIds(next), "svc_extra_2")
+
+	// The claimed session is unaffected: hydrating it still includes the supplier.
+	currentSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, settleHeight)
+	sessionRes, err := s.keepers.GetSession(sdkCtx.WithBlockHeight(currentSessionStartHeight), &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: appAddr,
+		ServiceId:          serviceId,
+		BlockHeight:        currentSessionStartHeight,
+	})
+	require.NoError(t, err)
+	operatorAddrs := make([]string, 0, len(sessionRes.GetSession().GetSuppliers()))
+	for _, supplier := range sessionRes.GetSession().GetSuppliers() {
+		operatorAddrs = append(operatorAddrs, supplier.GetOperatorAddress())
+	}
+	require.Contains(t, operatorAddrs, supplierOperatorAddr)
 }
 
 func (s *TestSuite) TestSettlePendingClaims_TwoSlashesSameBlock_CapsTwice() {
@@ -1225,6 +1251,8 @@ func (s *TestSuite) TestSettlePendingClaims_TwoSlashesSameBlock_CapsTwice() {
 
 	capped := testutilevents.FilterEvents[*suppliertypes.EventSupplierServicesCapped](t, sdkCtx.EventManager().Events())
 	require.Len(t, capped, 2)
+	require.Equal(t, []string{"svc_extra_2"}, capped[0].GetDeactivatedServiceIds())
+	require.Equal(t, []string{"svc_extra_1"}, capped[1].GetDeactivatedServiceIds())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_Slash_UnderCap_Unchanged() {
