@@ -245,6 +245,9 @@ Unit:
   `updateSupplier` returned); fallback order for suppliers with an empty
   `service_priority`; next-session deactivation; idempotent; skips unbonding suppliers;
   never unbonds; event fields.
+- A supplier staked with zero services (owner-first flow, before the operator sets
+  services) and stake above `min_stake` is left untouched by `EnforceServiceCap`, the
+  slash path and the sweep: no deactivation, no unbonding, no event.
 - Nil `stake_per_additional_service` behaves as a disabled cap.
 - Morse supplier claim with more services than the stake covers is rejected.
 - Past-session determinism: a claim for a session before the deactivation still validates
