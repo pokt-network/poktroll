@@ -3,12 +3,15 @@ package upgrades
 import (
 	"context"
 
+	cosmoslog "cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
+	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // TODO_NEXT_UPGRADE: Rename NEXT with the appropriate next
@@ -46,18 +49,30 @@ const (
 //     emitting the event reads the shared params (~1.1k gas per card set or change).
 //     Do NOT backport the emission alone as a patch: the extra read changes gas_used.
 //     No handler code needed.
+//   - Supplier service cap (x/supplier). CONSENSUS-BREAKING (state): two new params,
+//     min_stake_included_services = 1 and stake_per_additional_service = 0upokt
+//     (cap disabled), a new Supplier.service_priority field written by every stake
+//     message that lists services, a slash-path call that is a no-op while the cap
+//     is disabled, and a param-change sweep. Behavior is unchanged until governance
+//     sets a price. An upgrade handler that later changes min_stake,
+//     min_stake_included_services or stake_per_additional_service with SetParams
+//     MUST also call SupplierKeeper.ScheduleServiceCapSweep.
 //
 // Gas changes (gas_used, hence LastResultsHash; no AppHash change):
 //   - MsgCreateClaim / MsgSubmitProof: lower on memo hits.
 //   - MsgUnstakeSupplier: reads the supplier dehydrated and its service config history
 //     once (in BeginSupplierUnbonding) instead of hydrating it up front.
 //   - MsgAddService: lower on a no-op update, higher when a card is set or changed.
+//   - MsgStakeSupplier: reads the supplier params once more (service cap check).
+//   - Supplier records grow by service_priority after the supplier restakes, so
+//     reads of those records (claims, proofs, settlement) cost slightly more gas.
 //
 // Event changes (not hashed, but visible to indexers such as pocketdex):
 //   - EventSupplierUnbondingBegin with reason BELOW_MIN_STAKE now reports the real
 //     UnbondingEndHeight (unstake session end + unbonding period), not the unstake
 //     session end height.
 //   - New EventServiceMetadataUpdated.
+//   - New EventSupplierServicesCapped.
 //
 // Operators: blocks before the upgrade height MUST be replayed with the previous
 // binary (cosmovisor does this). The memo is not height-gated, so replaying old
@@ -91,7 +106,33 @@ var Upgrade_NEXT = Upgrade{
 			}
 			logger.Info("Repaired unindexed unbonding suppliers", "count", len(repaired))
 
+			if err := seedServiceCapParams(ctx, logger, keepers.SupplierKeeper); err != nil {
+				return vm, err
+			}
+
 			return vm, nil
 		}
 	},
+}
+
+// seedServiceCapParams writes the service cap params so they pass Validate().
+// The cap ships disabled (price 0): behavior is unchanged until governance sets a price.
+// No sweep is scheduled, since nothing can be over a disabled cap.
+func seedServiceCapParams(ctx context.Context, logger cosmoslog.Logger, supplierKeeper supplierkeeper.Keeper) error {
+	params := supplierKeeper.GetParams(ctx)
+	params.MinStakeIncludedServices = suppliertypes.DefaultMinStakeIncludedServices
+	price := suppliertypes.DefaultStakePerAdditionalService
+	params.StakePerAdditionalService = &price
+
+	if err := params.Validate(); err != nil {
+		logger.Error("Invalid supplier params after seeding the service cap", "error", err)
+		return err
+	}
+	if err := supplierKeeper.SetParams(ctx, params); err != nil {
+		logger.Error("Failed to set supplier params", "error", err)
+		return err
+	}
+
+	logger.Info("Seeded service cap params (disabled)", "params", params)
+	return nil
 }

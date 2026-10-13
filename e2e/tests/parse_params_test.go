@@ -310,6 +310,10 @@ func (s *suite) newSupplierMsgUpdateParams(params map[string]paramAny) cosmostyp
 			msgUpdateParams.Params.MinStake = paramValue.value.(*cosmostypes.Coin)
 		case suppliertypes.ParamStakingFee:
 			msgUpdateParams.Params.StakingFee = paramValue.value.(*cosmostypes.Coin)
+		case suppliertypes.ParamMinStakeIncludedServices:
+			msgUpdateParams.Params.MinStakeIncludedServices = paramValue.value.(uint64)
+		case suppliertypes.ParamStakePerAdditionalService:
+			msgUpdateParams.Params.StakePerAdditionalService = paramValue.value.(*cosmostypes.Coin)
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -494,6 +498,14 @@ func (s *suite) newSupplierMsgUpdateParam(authority string, param paramAny) (msg
 			Name:      param.name,
 			AsType: &suppliertypes.MsgUpdateParam_AsCoin{
 				AsCoin: param.value.(*cosmostypes.Coin),
+			},
+		})
+	case "uint64":
+		msg = proto.Message(&suppliertypes.MsgUpdateParam{
+			Authority: authority,
+			Name:      param.name,
+			AsType: &suppliertypes.MsgUpdateParam_AsUint64{
+				AsUint64: param.value.(uint64),
 			},
 		})
 	default:

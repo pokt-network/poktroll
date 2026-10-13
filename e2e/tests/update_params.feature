@@ -60,3 +60,18 @@ Feature: Params Namespace
         Given the user has the pocketd binary installed
         When the user runs the query "query shared params-at-height 1"
         Then the user should be able to see standard output containing "num_blocks_per_session"
+
+    # The supplier service cap ships disabled (price 0); governance enables it.
+    Scenario: The supplier service cap can be set by governance
+        Given the user has the pocketd binary installed
+        When the "supplier" module parameters are set as follows
+            | name                         | value   | type   |
+            | min_stake_included_services  | 35      | uint64 |
+            | stake_per_additional_service | 5000000 | coin   |
+        Then all "supplier" module params should be updated
+
+    Scenario: A supplier service cap with zero included services is rejected
+        Given the user has the pocketd binary installed
+        Then the "supplier" module parameter update is rejected with the error "min_stake_included_services"
+            | name                        | value | type   |
+            | min_stake_included_services | 0     | uint64 |

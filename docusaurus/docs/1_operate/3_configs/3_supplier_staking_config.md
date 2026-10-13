@@ -286,6 +286,20 @@ It takes the form of a list of `service` objects. Each `service` object
 consists of a `service_id` and a list of `endpoints` that the `Supplier` will
 advertise on Pocket Network.
 
+:::note Service order is service priority
+
+When the network's service cap is enabled, your stake covers a limited number of
+services: `min_stake` covers `min_stake_included_services`, and each additional
+`stake_per_additional_service` covers one more. If your stake stops covering all
+your services (after a slash, or when governance tightens the cap), the services
+**last** in this list are deactivated at the next session start, and an
+`EventSupplierServicesCapped` event lists them. Restake with more stake to restore
+them, or restake with a shorter list to choose which ones you keep.
+
+Suppliers staked before this feature keep their services in service ID order until
+they next restake with services.
+:::
+
 #### `service_id`
 
 | Scenario             | Requirement  |
