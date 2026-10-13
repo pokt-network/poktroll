@@ -37,7 +37,7 @@ replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.2021
 // so Go canonicalizes the pseudo-version to `v0.38.19-0.<timestamp>-<short-sha>`).
 // To bump, point at the latest commit on `v0.38.23_fork` (or whichever fork branch
 // is current); run `go mod tidy` to recompute the pseudo-version.
-replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.19-0.20260515210023-5831282cdcbf
+replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.19-0.20261013205308-cd7f14c45d92
 
 require (
 	cosmossdk.io/api v0.9.2
@@ -211,6 +211,7 @@ require (
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/ckaznocha/intrange v0.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
+	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
