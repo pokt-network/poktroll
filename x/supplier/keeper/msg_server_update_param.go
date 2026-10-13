@@ -33,6 +33,7 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 	}
 
 	params := k.GetParams(ctx)
+	paramsBefore := k.GetParams(ctx)
 
 	switch msg.Name {
 	case suppliertypes.ParamMinStake:
@@ -64,6 +65,10 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 		err = fmt.Errorf("unable to set params: %v", err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if serviceCapParamsChanged(paramsBefore, params) {
+		k.ScheduleServiceCapSweep(ctx)
 	}
 
 	return &suppliertypes.MsgUpdateParamResponse{}, nil

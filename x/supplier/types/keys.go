@@ -59,6 +59,10 @@ const (
 
 var ParamsKey = []byte("p_supplier")
 
+// ServiceCapSweepKey marks a pending service cap sweep. Its value is the store key
+// of the last supplier processed; empty means the sweep starts from the beginning.
+var ServiceCapSweepKey = []byte("ServiceCapSweep/cursor")
+
 func KeyPrefix(p string) []byte { return []byte(p) }
 
 var _ binary.ByteOrder

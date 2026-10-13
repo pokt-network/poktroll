@@ -30,10 +30,15 @@ func (k msgServer) UpdateParams(
 
 	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params))
 
+	paramsBefore := k.GetParams(ctx)
 	if err := k.SetParams(ctx, msg.Params); err != nil {
 		err = fmt.Errorf("unable to set params: %w", err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if serviceCapParamsChanged(paramsBefore, msg.Params) {
+		k.ScheduleServiceCapSweep(ctx)
 	}
 
 	logger.Info("Done updating params")

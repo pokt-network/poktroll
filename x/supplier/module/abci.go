@@ -33,6 +33,11 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 
 	k.Logger().Info(fmt.Sprintf("pruned service config history for %d suppliers", numSuppliersWithPrunedHistory))
 
+	numSuppliersSwept := k.EndBlockerServiceCapSweep(ctx)
+	if numSuppliersSwept > 0 {
+		logger.Info(fmt.Sprintf("service cap sweep visited %d suppliers", numSuppliersSwept))
+	}
+
 	return nil
 }
 
