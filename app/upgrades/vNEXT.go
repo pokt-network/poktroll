@@ -63,9 +63,15 @@ const (
 //   - MsgUnstakeSupplier: reads the supplier dehydrated and its service config history
 //     once (in BeginSupplierUnbonding) instead of hydrating it up front.
 //   - MsgAddService: lower on a no-op update, higher when a card is set or changed.
-//   - MsgStakeSupplier: reads the supplier params once more (service cap check).
-//   - Supplier records grow by service_priority after the supplier restakes, so
-//     reads of those records (claims, proofs, settlement) cost slightly more gas.
+//   - MsgUpdateParam / MsgUpdateParams (supplier): read the params an extra time,
+//     and write the service cap sweep key when min_stake,
+//     min_stake_included_services or stake_per_additional_service changes.
+//   - MsgStakeSupplier and MsgClaimMorseSupplier (which stakes through
+//     StakeSupplier): read the supplier params once more (service cap check); with
+//     the cap enabled, a stake-only decrease also reads the shared params.
+//   - Supplier records grow by service_priority on every stake message that lists
+//     services, including new suppliers, so both those writes and later reads of
+//     the records (claims, proofs, settlement) cost slightly more gas.
 //
 // Event changes (not hashed, but visible to indexers such as pocketdex):
 //   - EventSupplierUnbondingBegin with reason BELOW_MIN_STAKE now reports the real

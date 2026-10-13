@@ -20,6 +20,12 @@ import (
 //
 // supplier must be the caller's live copy (in settlement, the settlement
 // context's cached pointer), since callers may write it again afterwards.
+//
+// The new service config history is written to the store through a copy, and the
+// caller's supplier.ServiceConfigHistory is left unchanged. Callers must only
+// write the supplier back with SetDehydratedSupplier, never re-index it with
+// SetAndIndexDehydratedSupplier from a hydrated copy, which would undo the
+// deactivation.
 func (k Keeper) EnforceServiceCap(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
