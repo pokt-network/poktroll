@@ -137,6 +137,10 @@ services through user input and are not call sites.
 
 - Reject with `ErrSupplierTooManyServices` if `len(msg.Services)` exceeds
   `AllowedServices(msg.Stake)`.
+- A new supplier staked without services stays allowed. That is the existing
+  two-address flow (the owner stakes, then the operator adds services, since only the
+  operator may set service configs). Zero services never exceeds the cap; the cap itself
+  never creates a zero-service supplier because `min_stake_included_services >= 1`.
 - For a stake-only update (no services in the message), reject if the new stake does
   not cover the configs with no scheduled deactivation (the same set `EnforceServiceCap`
   counts: active now or pending activation).
