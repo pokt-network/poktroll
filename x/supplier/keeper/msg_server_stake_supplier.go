@@ -74,6 +74,7 @@ func (k Keeper) createSupplier(
 		Services:                make([]*sharedtypes.SupplierServiceConfig, 0),
 		ServiceConfigHistory:    make([]*sharedtypes.ServiceConfigUpdate, 0),
 		UnstakeSessionEndHeight: sharedtypes.SupplierNotUnstaking,
+		ServicePriority:         suppliertypes.ServicePriorityFromConfigs(msg.Services),
 	}
 
 	// Store the service configurations details of the newly created supplier.
@@ -261,6 +262,13 @@ func (k Keeper) StakeSupplier(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	// The stake must cover the supplier's services. msg.Stake is the stake that
+	// will apply: updateSupplier filled it in when the message carried none.
+	if err = k.checkServiceCap(ctx, &supplier, msg); err != nil {
+		logger.Info(fmt.Sprintf("ERROR: %s", err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	// Retrieve the account address of the message signer
 	msgSignerAddress, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
@@ -343,6 +351,8 @@ func (k Keeper) updateSupplier(
 	if len(msg.Services) == 0 {
 		return nil
 	}
+
+	supplier.ServicePriority = suppliertypes.ServicePriorityFromConfigs(msg.Services)
 
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -470,4 +480,40 @@ func (k Keeper) reconcileSupplierStakeDiff(
 	// is updating its service configurations or owner address but not the stake.
 	logger.Info(fmt.Sprintf("Updating supplier with address %q but stake is unchanged", msg.OperatorAddress))
 	return nil
+}
+
+// checkServiceCap returns an error if msg.Stake does not cover the supplier's
+// services: the services in the message, or for a stake-only update, the
+// services that are active or pending activation.
+func (k Keeper) checkServiceCap(
+	ctx context.Context,
+	supplier *sharedtypes.Supplier,
+	msg *suppliertypes.MsgStakeSupplier,
+) error {
+	params := k.GetParams(ctx)
+	allowed, limited := suppliertypes.AllowedServices(*msg.Stake, params)
+	if !limited {
+		return nil
+	}
+
+	numServices := uint64(len(msg.Services))
+	if numServices == 0 {
+		sharedParams := k.sharedKeeper.GetParams(ctx)
+		currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+		nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+		for _, config := range supplier.ServiceConfigHistory {
+			if suppliertypes.IsCountedServiceConfig(config, nextSessionStartHeight) {
+				numServices++
+			}
+		}
+	}
+
+	if numServices <= allowed {
+		return nil
+	}
+
+	return suppliertypes.ErrSupplierTooManyServices.Wrapf(
+		"%d services require %s; supplier stake is %s",
+		numServices, suppliertypes.RequiredStake(numServices, params), msg.Stake,
+	)
 }

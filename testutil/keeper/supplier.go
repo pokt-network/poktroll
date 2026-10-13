@@ -32,6 +32,8 @@ import (
 type SupplierModuleKeepers struct {
 	*keeper.Keeper
 	types.SharedKeeper
+	// ServiceKeeper registers services used by tests.
+	ServiceKeeper servicekeeper.Keeper
 	// Tracks the amount of funds returned to the supplier owner when the supplier is unbonded.
 	SupplierBalanceMap map[string]int64
 }
@@ -112,6 +114,7 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 	supplierModuleKeepers := SupplierModuleKeepers{
 		Keeper:             &supplierKeeper,
 		SharedKeeper:       sharedKeeper,
+		ServiceKeeper:      serviceKeeper,
 		SupplierBalanceMap: supplierBalanceMap,
 	}
 

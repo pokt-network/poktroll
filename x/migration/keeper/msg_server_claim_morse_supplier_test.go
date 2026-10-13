@@ -74,6 +74,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		Services:                testSupplierServices,
 		ServiceConfigHistory:    sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(shannonDestAddr, testSupplierServices, 1, 0),
 		UnstakeSessionEndHeight: 0,
+		ServicePriority:         []string{},
 	}
 
 	ctrl := gomock.NewController(t)
@@ -205,6 +206,80 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	claimEvents := events.FilterEvents[*migrationtypes.EventMorseSupplierClaimed](t, ctx.EventManager().Events())
 	require.Equal(t, 1, len(claimEvents))
 	require.Equal(t, expectedEvent, claimEvents[0])
+}
+
+// The supplier keeper's StakeSupplier enforces the service cap, and a Morse
+// claim stakes through it, so a claim whose stake covers fewer services than
+// it lists fails with the error the keeper returns. The check itself is covered
+// by the supplier keeper's tests (including a direct keeper-level call).
+func TestMsgServer_ClaimMorseSupplier_ServiceCapExceeded(t *testing.T) {
+	shannonDestAddr := sample.AccAddressBech32()
+	unstakedBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	supplierStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 200)
+
+	ctrl := gomock.NewController(t)
+	bankKeeper := mocks.NewMockBankKeeper(ctrl)
+	supplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
+
+	bankKeeper.EXPECT().MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	// Enable the cap: the 200upokt stake covers no more than the one included service.
+	supplierParams := suppliertypes.DefaultParams()
+	supplierParams.MinStake = &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: cosmosmath.ZeroInt()}
+	supplierParams.MinStakeIncludedServices = 1
+	supplierParams.StakePerAdditionalService = &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: cosmosmath.NewInt(100)}
+	supplierKeeper.EXPECT().GetParams(gomock.Any()).Return(supplierParams).AnyTimes()
+	supplierKeeper.EXPECT().GetSupplier(gomock.Any(), gomock.Eq(shannonDestAddr)).
+		Return(sharedtypes.Supplier{}, false).AnyTimes()
+
+	// Two services against a stake that covers one (stake 200 < min_stake + 100 -> 1 allowed).
+	services := append(
+		append([]*sharedtypes.SupplierServiceConfig{}, testSupplierServices...),
+		&sharedtypes.SupplierServiceConfig{
+			ServiceId: "svc2",
+			Endpoints: testSupplierServices[0].Endpoints,
+			RevShare:  testSupplierServices[0].RevShare,
+		},
+	)
+	supplierKeeper.EXPECT().StakeSupplier(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, status.Error(codes.InvalidArgument, suppliertypes.ErrSupplierTooManyServices.Error())).
+		Times(1)
+
+	k, ctx := keepertest.MigrationKeeper(t,
+		keepertest.WithBankKeeper(bankKeeper),
+		keepertest.WithSupplierKeeper(supplierKeeper),
+	)
+	ctx = ctx.WithBlockHeight(10)
+	srv := keeper.NewMsgServerImpl(k)
+
+	morsePrivKey := testmigration.GenMorsePrivateKey(0)
+	accountState := &migrationtypes.MorseAccountState{
+		Accounts: []*migrationtypes.MorseClaimableAccount{{
+			MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
+			UnstakedBalance:  unstakedBalance,
+			ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+			SupplierStake:    supplierStake,
+		}},
+	}
+	accountStateHash, err := accountState.GetHash()
+	require.NoError(t, err)
+	_, err = srv.ImportMorseClaimableAccounts(ctx, &migrationtypes.MsgImportMorseClaimableAccounts{
+		Authority:             authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		MorseAccountState:     *accountState,
+		MorseAccountStateHash: accountStateHash,
+	})
+	require.NoError(t, err)
+
+	msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
+		shannonDestAddr, shannonDestAddr,
+		morsePrivKey.PubKey().Address().String(), morsePrivKey,
+		services, sample.AccAddressBech32(),
+	)
+	require.NoError(t, err)
+
+	_, err = srv.ClaimMorseSupplier(ctx, msgClaim)
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierTooManyServices.Error())
 }
 
 func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
