@@ -844,8 +844,11 @@ func (k Keeper) slashSupplierStake(
 			UnbondingEndHeight: sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, supplierToSlash),
 		})
 	} else {
-		// Only update the dehydrated supplier, since the service config will remain unchanged.
 		k.supplierKeeper.SetDehydratedSupplier(ctx, *supplierToSlash)
+		// The lower stake may no longer cover every service: deactivate the excess
+		// from the next session on. Uses the cached pointer, which the settlement
+		// flush writes back later; the flush does not touch the service config indexes.
+		k.supplierKeeper.EnforceServiceCap(ctx, supplierToSlash, suppliertypes.ServiceCapReason_SERVICE_CAP_REASON_SLASH)
 	}
 
 	// Emit an event that a supplier has been slashed.
