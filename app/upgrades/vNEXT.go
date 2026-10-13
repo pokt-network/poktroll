@@ -57,6 +57,11 @@ const (
 //     sets a price. An upgrade handler that later changes min_stake,
 //     min_stake_included_services or stake_per_additional_service with SetParams
 //     MUST also call SupplierKeeper.ScheduleServiceCapSweep.
+//   - MsgStakeSupplier can no longer lower a supplier's stake. CONSENSUS-BREAKING
+//     (state): this reverts the immediate downstake (stake decrease returned to the
+//     owner at once) that a lower stake at or above min_stake used to trigger.
+//     Owners withdraw stake by unstaking, which goes through the unbonding period.
+//     Morse supplier claims stake through the same path and never decrease stake.
 //
 // Gas changes (gas_used, hence LastResultsHash; no AppHash change):
 //   - MsgCreateClaim / MsgSubmitProof: lower on memo hits.
@@ -67,8 +72,8 @@ const (
 //     and write the service cap sweep key when min_stake,
 //     min_stake_included_services or stake_per_additional_service changes.
 //   - MsgStakeSupplier and MsgClaimMorseSupplier (which stakes through
-//     StakeSupplier): read the supplier params once more (service cap check); with
-//     the cap enabled, a stake-only decrease also reads the shared params.
+//     StakeSupplier): read the supplier params once more when the message lists
+//     services (service cap check); the min stake re-check on a stake increase is gone.
 //   - Supplier records grow by service_priority on every stake message that lists
 //     services, including new suppliers, so both those writes and later reads of
 //     the records (claims, proofs, settlement) cost slightly more gas.

@@ -140,7 +140,7 @@ func TestStakeSupplier_ServiceCap_NonCustodialFlow(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestStakeSupplier_ServiceCap_StakeOnlyDecreaseBelowServicesRejected(t *testing.T) {
+func TestStakeSupplier_ServiceCap_StakeOnlyDecreaseRejected(t *testing.T) {
 	k, ctx := keepertest.SupplierKeeper(t)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	srv := keeper.NewMsgServerImpl(*k.Keeper)
@@ -156,7 +156,7 @@ func TestStakeSupplier_ServiceCap_StakeOnlyDecreaseBelowServicesRejected(t *test
 		Stake: &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(capMinStake)},
 	}
 	_, err = srv.StakeSupplier(ctx, stakeOnly)
-	require.ErrorContains(t, err, suppliertypes.ErrSupplierTooManyServices.Error())
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierInvalidStake.Error())
 }
 
 // A Morse supplier claim stakes through Keeper.StakeSupplier with the claimant
@@ -201,9 +201,9 @@ func TestStakeSupplier_ServiceCap_StakeOnlyIncreaseAcceptedWhileOverCap(t *testi
 		}
 	}
 
-	// A decrease is rejected.
+	// A decrease is rejected as a stake decrease, not by the cap.
 	_, err = srv.StakeSupplier(ctx, stakeOnly(capMinStake))
-	require.ErrorContains(t, err, suppliertypes.ErrSupplierTooManyServices.Error())
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierInvalidStake.Error())
 
 	// An increase that still covers only 1 service is accepted.
 	_, err = srv.StakeSupplier(ctx, stakeOnly(capMinStake+capPrice+1))

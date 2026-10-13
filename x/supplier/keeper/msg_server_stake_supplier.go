@@ -98,10 +98,10 @@ func (k Keeper) createSupplier(
 //   - if the supplier is found and is not unbonding, it is updated (in memory) according to the msg
 //   - if the supplier is found and is unbonding, it is updated (in memory; and no longer unbonding)
 //   - additional stake validation (e.g. min stake, etc.)
-//   - EITHER any positive difference between the msg stake and any current stake is transferred
+//   - the stake can never decrease: a msg stake below the current stake is rejected.
+//     Stake is withdrawn only by unstaking (which goes through the unbonding period).
+//   - any positive difference between the msg stake and any current stake is transferred
 //     from the staking supplier's account, to the supplier module's accounts.
-//   - OR any negative difference between the msg stake and any current stake is transferred
-//     from the supplier module's account (stake escrow) to the staking supplier's account.
 //   - the supplier staking fee is deducted from the staking supplier's account balance.
 //   - the (new or updated) supplier is persisted.
 //   - an EventSupplierStaked event is emitted.
@@ -262,9 +262,20 @@ func (k Keeper) StakeSupplier(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	// The stake can only be withdrawn by unstaking, never lowered by a stake message.
+	// msg.Stake is the stake that will apply (updateSupplier filled it in if nil).
+	if msg.Stake.Amount.LT(supplierCurrentStake.Amount) {
+		err = suppliertypes.ErrSupplierInvalidStake.Wrapf(
+			"supplier %q has stake %s; requested stake %s is lower, stake can only be withdrawn by unstaking",
+			msg.OperatorAddress, supplierCurrentStake, msg.Stake,
+		)
+		logger.Info(fmt.Sprintf("ERROR: %s", err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	// The stake must cover the supplier's services. msg.Stake is the stake that
 	// will apply: updateSupplier filled it in when the message carried none.
-	if err = k.checkServiceCap(ctx, &supplier, msg, supplierCurrentStake); err != nil {
+	if err = k.checkServiceCap(ctx, msg); err != nil {
 		logger.Info(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -425,8 +436,9 @@ func (k Keeper) updateSupplier(
 	return nil
 }
 
-// reconcileSupplierStakeDiff transfers the difference between the current and new stake
-// amounts by either escrowing, when the stake is increased, or unescrowing otherwise.
+// reconcileSupplierStakeDiff escrows the difference between the new and the current
+// stake from the msg signer when the stake is increased. The caller has already
+// rejected decreases, so there is nothing to unescrow.
 func (k Keeper) reconcileSupplierStakeDiff(
 	ctx context.Context,
 	msg *suppliertypes.MsgStakeSupplier,
@@ -442,12 +454,6 @@ func (k Keeper) reconcileSupplierStakeDiff(
 		return err
 	}
 
-	// Parse the owner address - this is the account that will receive stake decreases
-	ownerAccAddr, err := sdk.AccAddressFromBech32(msg.OwnerAddress)
-	if err != nil {
-		return err
-	}
-
 	// The Supplier is increasing its stake, so escrow the difference
 	if currentStake.Amount.LT(newStake.Amount) {
 		coinsToEscrow := sdk.NewCoins(newStake.Sub(currentStake))
@@ -456,64 +462,27 @@ func (k Keeper) reconcileSupplierStakeDiff(
 		return k.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAccAddr, suppliertypes.ModuleName, coinsToEscrow)
 	}
 
-	// Ensure that the new stake is at least the minimum stake which is required for:
-	// 1. The supplier to be considered active.
-	// 2. Cover for any potential slashing that may occur during claims settlement.
-	minStake := k.GetParams(ctx).MinStake
-	if newStake.Amount.LT(minStake.Amount) {
-		err := suppliertypes.ErrSupplierInvalidStake.Wrapf(
-			"supplier with owner %q must stake at least %s",
-			signerAccAddr, minStake,
-		)
-		return err
-	}
-
-	// The supplier is decreasing its stake, unescrow the difference.
-	if currentStake.Amount.GT(newStake.Amount) {
-		coinsToUnescrow := sdk.NewCoins(currentStake.Sub(newStake))
-
-		// Send the coins from the staked supplier pool to the supplier owner account
-		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, suppliertypes.ModuleName, ownerAccAddr, coinsToUnescrow)
-	}
-
 	// The supplier is not changing its stake. This can happen if the supplier
 	// is updating its service configurations or owner address but not the stake.
 	logger.Info(fmt.Sprintf("Updating supplier with address %q but stake is unchanged", msg.OperatorAddress))
 	return nil
 }
 
-// checkServiceCap returns an error if msg.Stake does not cover the supplier's
-// services: the services in the message, or for a stake-only update, the
-// services that are active or pending activation. A stake-only update that does
-// not lower the stake is always accepted, so an over-cap supplier can top up in steps.
+// checkServiceCap returns an error if msg.Stake does not cover the services in
+// the message. A stake-only update carries no services; it can only keep or raise
+// the stake, so it never reduces coverage and is always accepted.
 func (k Keeper) checkServiceCap(
 	ctx context.Context,
-	supplier *sharedtypes.Supplier,
 	msg *suppliertypes.MsgStakeSupplier,
-	currentStake sdk.Coin,
 ) error {
-	params := k.GetParams(ctx)
-	allowed, limited := suppliertypes.AllowedServices(*msg.Stake, params)
-	if !limited {
+	numServices := uint64(len(msg.Services))
+	if numServices == 0 {
 		return nil
 	}
 
-	numServices := uint64(len(msg.Services))
-	if numServices == 0 {
-		if msg.Stake.Amount.GTE(currentStake.Amount) {
-			return nil
-		}
-		sharedParams := k.sharedKeeper.GetParams(ctx)
-		currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
-		nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
-		for _, config := range supplier.ServiceConfigHistory {
-			if suppliertypes.IsCountedServiceConfig(config, nextSessionStartHeight) {
-				numServices++
-			}
-		}
-	}
-
-	if numServices <= allowed {
+	params := k.GetParams(ctx)
+	allowed, limited := suppliertypes.AllowedServices(*msg.Stake, params)
+	if !limited || numServices <= allowed {
 		return nil
 	}
 

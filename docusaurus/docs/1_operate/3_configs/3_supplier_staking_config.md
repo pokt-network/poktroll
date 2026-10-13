@@ -210,7 +210,7 @@ is custodial.
 | Scenario                   | Requirement  |
 | -------------------------- | ------------ |
 | Initial Supplier Stake     | _`Required`_ |
-| In/Decrease Supplier Stake | _`Required`_ |
+| Increase Supplier Stake    | _`Required`_ |
 | Otherwise                  | _`Optional`_ |
 
 ```yaml
@@ -219,6 +219,9 @@ stake_amount: <number>upokt
 
 Defines the amount of `upokt` to stake for the `Supplier` account.
 This amount covers all the `service`s defined in the `services` section.
+
+The stake can only be increased. A stake below the current stake is rejected.
+To reduce it, unstake (the stake is returned after the unbonding period) and stake again.
 
 ### `default_rev_share_percent`
 
@@ -468,8 +471,8 @@ Both stake and services can be updated in a single transaction.
 |                   | Operator | ❌ No                     | ✅ Yes                 | ✅ Stake escrowed, no services configured           |
 |                   |          | ✅ Yes                    | ✅ Yes                 | ✅ Stake escrowed, services configured              |
 |                   |          | ❌ No / ✅ Yes            | ❌ No                  | ❌ ERROR – stake amount must be provided            |
-| Upstake/Downstake | Owner    | ❌ No                     | ✅ Yes                 | ✅ Stake (un)escrowed, no change to service configs |
+| Upstake           | Owner    | ❌ No                     | ✅ Yes                 | ✅ Stake escrowed, no change to service configs     |
 |                   |          | ✅ Yes                    | ❌ No / ✅ Yes         | ❌ ERROR – owner may not provide service configs    |
-|                   | Operator | ❌ No                     | ✅ Yes                 | ✅ Stake (un)escrowed, no change to service configs |
-|                   |          | ✅ Yes                    | ✅ Yes                 | ✅ Stake (un)escrowed, services updated             |
+|                   | Operator | ❌ No                     | ✅ Yes                 | ✅ Stake escrowed, no change to service configs     |
+|                   |          | ✅ Yes                    | ✅ Yes                 | ✅ Stake escrowed, services updated                 |
 |                   |          | ✅ Yes                    | ❌ No                  | ✅ Service configs updated                          |
