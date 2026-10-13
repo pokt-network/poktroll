@@ -34,6 +34,10 @@ Two new `x/supplier` params, set through `MsgUpdateParam` / `MsgUpdateParams` li
 Validation: `stake_per_additional_service` is a valid, non-negative upokt coin.
 `min_stake_included_services` has no upper bound.
 
+`stake_per_additional_service` is a pointer `Coin`, like `min_stake`, and `GetParams` can
+return it nil. Every reader treats a nil price as 0 (cap disabled), the same way the
+existing code falls back to `DefaultMinStake` for a nil `min_stake`.
+
 These params have no history store and are always read live. That is correct here: the
 cap only decides which services are active from the *next* session start, i.e. it
 schedules a future height and never prices past work.
@@ -64,10 +68,21 @@ When a supplier has more active services than it can afford, it keeps the first
 `allowed` services in the order of its most recent `MsgStakeSupplier`, and the rest are
 deactivated.
 
-This order is already in state: `updateSupplier` appends the new service configs in
-message order first, then the older (deactivated) ones. Filtering the history to configs
-with no scheduled deactivation preserves the operator's order exactly. No new field is
-needed.
+The service config history does not carry this order: it is reloaded from the index
+keyed `operator | serviceId | activationHeight`, so a reload returns configs sorted by
+service ID. The order is therefore stored explicitly:
+
+- New field on `Supplier`: `repeated string service_priority`, the service IDs of the
+  most recent `MsgStakeSupplier` in message order.
+- `updateSupplier` (and the new-supplier path in `StakeSupplier`) writes it from
+  `msg.Services`. A stake-only update leaves it unchanged.
+- `SetDehydratedSupplier` clears only `Services` and `ServiceConfigHistory`, so the field
+  persists on the dehydrated record.
+- `EnforceServiceCap` ranks active configs by their position in `service_priority`.
+  Services missing from the list (every supplier staked before this release, until it
+  restakes) rank after listed ones, in service ID order. This fallback is deterministic
+  and is shown in the pre-tightening impact list. The upgrade handler cannot backfill the
+  field because the original message order is not recoverable from state.
 
 Rejected alternative: "newest activation first". Any restake that lists services gives
 every listed service a fresh activation height, so activation height carries no tenure
@@ -84,33 +99,55 @@ explicit choice of which services to keep.
 EnforceServiceCap(ctx, supplier, reason) -> deactivatedServiceIds
 ```
 
-1. Load the supplier's service config history.
-2. Compute `allowed` from its current stake and the live params.
-3. Walk the history in stored order, counting configs with no scheduled deactivation.
-4. Set `DeactivationHeight = nextSessionStartHeight` on every such config past `allowed`.
-5. Persist with `SetAndIndexDehydratedSupplier` so the per-service index used by session
+1. Compute `allowed` from the supplier's current stake and the live params. If the cap
+   is disabled, return.
+2. If `allowed == 0` and the supplier is not already unbonding, call
+   `BeginSupplierUnbonding` with reason `BELOW_MIN_STAKE` and return. This lives here,
+   not only at the slash call site, so a governance tightening can never leave a supplier
+   staked with zero services.
+3. Load the supplier's service config history from the store.
+4. Take the configs with no scheduled deactivation (`DeactivationHeight == 0`: active now
+   or pending activation) and rank them by `service_priority`.
+5. Set `DeactivationHeight = nextSessionStartHeight` on every config ranked past
+   `allowed`.
+6. Persist with `SetAndIndexDehydratedSupplier` so the per-service index used by session
    hydration reflects the change.
-6. Emit `EventSupplierServicesCapped` when anything was deactivated.
+7. Emit `EventSupplierServicesCapped` when anything was deactivated.
+
+Callers pass the supplier pointer they already hold. In settlement this must be the
+`settlementContext` cached pointer: `FlushAllActorsToStore` later rewrites the dehydrated
+record from that cache. The flush does not touch the service config indexes, so the
+deactivations written here survive it.
 
 Deactivation always lands on the next session start, so the current session and its
 claims and proofs are unaffected. Session hydration for past heights stays deterministic
 because it reads the history index, which records the deactivation height.
 
-### Call site 1: `MsgStakeSupplier`
+### Call site 1: `StakeSupplier`
 
-After the existing `min_stake` check:
+The check goes in the keeper's `StakeSupplier`, next to the existing `min_stake` check,
+not in the message handler. `MsgStakeSupplier` and Morse supplier claims
+(`x/migration` `msg_server_claim_morse_supplier.go`) both stake through `StakeSupplier`,
+so neither bypasses the cap. Genesis import and existing migrations do not register
+services through user input and are not call sites.
 
 - Reject with `ErrSupplierTooManyServices` if `len(msg.Services)` exceeds
   `AllowedServices(msg.Stake)`.
 - For a stake-only update (no services in the message), reject if the new stake does
-  not cover the supplier's currently active services.
+  not cover the configs with no scheduled deactivation (the same set `EnforceServiceCap`
+  counts: active now or pending activation).
 
 ### Call site 2: slashing (`x/tokenomics` `slashSupplierStake`)
 
 - The unbond condition `stake < min_stake` becomes `AllowedServices(stake) == 0`, which
   includes the old condition. The unbonding path itself is unchanged.
-- Otherwise call `EnforceServiceCap(…, SLASH)` in place of the plain
-  `SetDehydratedSupplier`. When nothing is over the cap this is the same write as today.
+- Otherwise call `EnforceServiceCap(…, SLASH)` on the cached supplier in place of the
+  plain `SetDehydratedSupplier`. When nothing is over the cap this is the same write as
+  today.
+- Today's `else` branch writes only the dehydrated record because "the service config will
+  remain unchanged". That assumption no longer holds. A second slash on the same supplier
+  in the same settlement reloads history from the store and sees the deactivations already
+  scheduled.
 
 ### Call site 3: param-change sweep (`x/supplier` EndBlocker)
 
@@ -161,6 +198,11 @@ EventSupplierServicesCapped {
 - Deterministic iteration (store key order). No map iteration affects output.
 - Live params only, which is correct for scheduling the next session.
 - Session hydration is untouched; it continues to read the service config history index.
+- Only `MsgUpdateParam(s)` sets the pending-sweep flag. An upgrade handler that changes
+  `min_stake`, `min_stake_included_services` or `stake_per_additional_service` with
+  `SetParams` must also set the flag, or no sweep runs. Same class of trap as the shared
+  params history note in CLAUDE.md.
+- A nil `stake_per_additional_service` is treated as 0 on every path.
 - Upgrade handler must set both params explicitly. Unset params read as zero values;
   price 0 is the intended launch value, but the handler writes it explicitly rather than
   relying on the default.
@@ -175,8 +217,13 @@ Unit:
   division by zero.
 - `MsgStakeSupplier`: reject one over the cap, accept exactly at the cap, reject a
   stake-only decrease below active services, identical behavior with price 0.
-- `EnforceServiceCap`: order preserved, next-session deactivation, idempotent, skips
-  unbonding suppliers, event fields.
+- `EnforceServiceCap`: order preserved through the store (stake, reload the supplier
+  from the store, assert the kept services follow `service_priority`, not the slice
+  `updateSupplier` returned); fallback order for suppliers with an empty
+  `service_priority`; next-session deactivation; idempotent; skips unbonding suppliers;
+  `allowed == 0` unbonds; event fields.
+- Nil `stake_per_additional_service` behaves as a disabled cap.
+- Morse supplier claim with more services than the stake covers is rejected.
 - Past-session determinism: a claim for a session before the deactivation still validates
   after it.
 - Sweep: flag set by param update, cursor across blocks, reset on mid-sweep param change,
@@ -186,6 +233,9 @@ Integration (`tests/integration`):
 
 - A slash crossing one price step deactivates the last service.
 - A slash leaving zero allowed services unbonds with `BELOW_MIN_STAKE`.
+- Two `PROOF_MISSING` claims for the same supplier in one settlement block: the second
+  slash sees the reduced service set, and the end-of-settlement flush does not undo the
+  deactivations.
 - Settlement payouts for suppliers under the cap are identical with the cap on and off.
 
 E2E:
