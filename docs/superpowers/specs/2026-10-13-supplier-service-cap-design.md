@@ -28,11 +28,18 @@ Two new `x/supplier` params, set through `MsgUpdateParam` / `MsgUpdateParams` li
 
 | Param | Type | Meaning |
 |---|---|---|
-| `min_stake_included_services` | `uint64` | Services covered by `min_stake`. May be 0. |
+| `min_stake_included_services` | `uint64` | Services covered by `min_stake`. At least 1. Default 1. |
 | `stake_per_additional_service` | `Coin` (upokt) | Stake required per service beyond the included ones. 0 disables the cap. |
 
 Validation: `stake_per_additional_service` is a valid, non-negative upokt coin.
-`min_stake_included_services` has no upper bound.
+`min_stake_included_services` must be at least 1 and has no upper bound.
+
+Why at least 1: a staked supplier exists to serve. With 0, a supplier between `min_stake`
+and `min_stake + price` would be staked but allowed no services. Any pricing expressed
+with 0 included services is expressed identically with 1 by raising `min_stake` by one
+price step (`min 5k, included 0, price 5k` requires the same stake for every service
+count as `min 10k, included 1, price 5k`). Allowing 0 later would be a consensus change
+(message validation) that also has to add handling for the zero-services state.
 
 `stake_per_additional_service` is a pointer `Coin`, like `min_stake`, and `GetParams` can
 return it nil. Every reader treats a nil price as 0 (cap disabled), the same way the
@@ -56,9 +63,9 @@ otherwise:                included + floor((stake - min_stake) / price)
 
 - Price 0 returns before any division, so no parameter combination divides by zero.
 - Required stake for `n` services: `min_stake + max(0, n - included) * price`.
-- A supplier whose allowed count is 0 is treated exactly like a supplier below
-  `min_stake`: it is unbonded with reason `BELOW_MIN_STAKE`. This prevents a supplier
-  that is staked but can serve nothing.
+- Because `included >= 1`, the allowed count is 0 exactly when stake is below
+  `min_stake`. The existing below-minimum unbonding covers it; this design adds no new
+  unbonding rule.
 
 With price 0 every path is a no-op and behavior is identical to today.
 
@@ -100,19 +107,16 @@ EnforceServiceCap(ctx, supplier, reason) -> deactivatedServiceIds
 ```
 
 1. Compute `allowed` from the supplier's current stake and the live params. If the cap
-   is disabled, return.
-2. If `allowed == 0` and the supplier is not already unbonding, call
-   `BeginSupplierUnbonding` with reason `BELOW_MIN_STAKE` and return. This lives here,
-   not only at the slash call site, so a governance tightening can never leave a supplier
-   staked with zero services.
-3. Load the supplier's service config history from the store.
-4. Take the configs with no scheduled deactivation (`DeactivationHeight == 0`: active now
+   is disabled, or the supplier is unbonding, return. A supplier below `min_stake` is
+   left to the existing unbonding path.
+2. Load the supplier's service config history from the store.
+3. Take the configs with no scheduled deactivation (`DeactivationHeight == 0`: active now
    or pending activation) and rank them by `service_priority`.
-5. Set `DeactivationHeight = nextSessionStartHeight` on every config ranked past
+4. Set `DeactivationHeight = nextSessionStartHeight` on every config ranked past
    `allowed`.
-6. Persist with `SetAndIndexDehydratedSupplier` so the per-service index used by session
+5. Persist with `SetAndIndexDehydratedSupplier` so the per-service index used by session
    hydration reflects the change.
-7. Emit `EventSupplierServicesCapped` when anything was deactivated.
+6. Emit `EventSupplierServicesCapped` when anything was deactivated.
 
 Callers pass the supplier pointer they already hold. In settlement this must be the
 `settlementContext` cached pointer: `FlushAllActorsToStore` later rewrites the dehydrated
@@ -139,8 +143,7 @@ services through user input and are not call sites.
 
 ### Call site 2: slashing (`x/tokenomics` `slashSupplierStake`)
 
-- The unbond condition `stake < min_stake` becomes `AllowedServices(stake) == 0`, which
-  includes the old condition. The unbonding path itself is unchanged.
+- The unbond condition `stake < min_stake` is unchanged.
 - Otherwise call `EnforceServiceCap(…, SLASH)` on the cached supplier in place of the
   plain `SetDehydratedSupplier`. When nothing is over the cap this is the same write as
   today.
@@ -203,7 +206,9 @@ EventSupplierServicesCapped {
   `SetParams` must also set the flag, or no sweep runs. Same class of trap as the shared
   params history note in CLAUDE.md.
 - A nil `stake_per_additional_service` is treated as 0 on every path.
-- Upgrade handler must set both params explicitly. Unset params read as zero values;
+- Upgrade handler must set both params explicitly and to values that pass `Validate()`
+  (`min_stake_included_services = 1`, `stake_per_additional_service = 0`). A handler
+  writing params that fail validation halts the chain. Unset params read as zero values;
   price 0 is the intended launch value, but the handler writes it explicitly rather than
   relying on the default.
 
@@ -213,15 +218,15 @@ Unit:
 
 - `AllowedServices`: price 0, `included` 0, stake below min, exact boundaries
   (`min + k·price` ± 1 upokt), large stake without overflow.
-- Params: single-field validation and joint combinations; no combination reaches a
-  division by zero.
+- Params: single-field validation (including `min_stake_included_services = 0` rejected)
+  and joint combinations; no combination reaches a division by zero.
 - `MsgStakeSupplier`: reject one over the cap, accept exactly at the cap, reject a
   stake-only decrease below active services, identical behavior with price 0.
 - `EnforceServiceCap`: order preserved through the store (stake, reload the supplier
   from the store, assert the kept services follow `service_priority`, not the slice
   `updateSupplier` returned); fallback order for suppliers with an empty
   `service_priority`; next-session deactivation; idempotent; skips unbonding suppliers;
-  `allowed == 0` unbonds; event fields.
+  never unbonds; event fields.
 - Nil `stake_per_additional_service` behaves as a disabled cap.
 - Morse supplier claim with more services than the stake covers is rejected.
 - Past-session determinism: a claim for a session before the deactivation still validates
@@ -232,7 +237,7 @@ Unit:
 Integration (`tests/integration`):
 
 - A slash crossing one price step deactivates the last service.
-- A slash leaving zero allowed services unbonds with `BELOW_MIN_STAKE`.
+- A slash below `min_stake` still unbonds with `BELOW_MIN_STAKE`, unchanged.
 - Two `PROOF_MISSING` claims for the same supplier in one settlement block: the second
   slash sees the reduced service set, and the end-of-settlement flush does not undo the
   deactivations.
