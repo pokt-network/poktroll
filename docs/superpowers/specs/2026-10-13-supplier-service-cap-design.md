@@ -137,10 +137,24 @@ services through user input and are not call sites.
 
 - Reject with `ErrSupplierTooManyServices` if `len(msg.Services)` exceeds
   `AllowedServices(msg.Stake)`.
+- The check runs right after the existing `min_stake` check, which is after
+  `updateSupplier` has filled a nil `msg.Stake` with the current stake. It therefore
+  always sees the stake that will apply. Running it earlier would dereference a nil stake
+  on operator updates, which usually carry no stake.
+- The rejection names the required and the current stake (e.g. "N services require X
+  upokt; supplier stake is Y"). In the non-custodial flow the operator hits this error
+  but only the owner can top up.
 - A new supplier staked without services stays allowed. That is the existing
   two-address flow (the owner stakes, then the operator adds services, since only the
   operator may set service configs). Zero services never exceeds the cap; the cap itself
   never creates a zero-service supplier because `min_stake_included_services >= 1`.
+- Non-custodial flow: the owner stakes (usually with no services), then the operator sets
+  services. If the owner's stake does not cover them, the operator's message is rejected
+  and the owner tops up first. The operator never changes the stake on the owner's behalf.
+  `service_priority` comes from the operator's message; the owner's stake-only updates
+  leave it unchanged. An owner lowering stake below what the active services need is
+  rejected; the operator drops services first, or the owner unstakes fully (unstake is
+  unaffected by the cap).
 - For a stake-only update (no services in the message), reject if the new stake does
   not cover the configs with no scheduled deactivation (the same set `EnforceServiceCap`
   counts: active now or pending activation).
