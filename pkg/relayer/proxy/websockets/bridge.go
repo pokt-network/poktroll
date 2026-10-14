@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"sync/atomic"
 
 	"github.com/gorilla/websocket"
 
@@ -247,13 +248,14 @@ func (b *bridge) Run(closeHeight int64) {
 		b.messageLoop()
 	}()
 
+	var lastHeight atomic.Int64
 	channel.ForEach(
 		b.ctx,
 		b.blockClient.CommittedBlocksSequence(b.ctx),
 		func(ctx context.Context, block client.Block) {
+			lastHeight.Store(block.Height())
 			if block.Height() >= closeHeight {
 				b.logger.Info().Int64("height", block.Height()).Msg("session closing, bridge stopped")
-				relayer.WebsocketBridgeSessionCloseHeight.With("service_id", b.serviceId).Set(float64(block.Height()))
 				// TODO_MAINNET(@red-0ne) Propagate the session closing as a close message
 				// to the gateway so end user can be informed.
 				b.cancelCtx()
@@ -277,7 +279,10 @@ func (b *bridge) Run(closeHeight int64) {
 	b.gatewayConn.waitSenders()
 	b.stopChanCloseOnce.Do(func() { close(b.stopChan) })
 
-	b.logger.Info().Msg("bridge stopped")
+	if height := lastHeight.Load(); height > 0 {
+		relayer.WebsocketBridgeCloseHeight.With("service_id", b.serviceId).Set(float64(height))
+	}
+	b.logger.Info().Int64("last_height", lastHeight.Load()).Msg("bridge stopped")
 }
 
 // goCancelBridgeOnStop cancels the bridge context as soon as the stop observable

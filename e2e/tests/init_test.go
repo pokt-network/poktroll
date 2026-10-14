@@ -167,6 +167,8 @@ type suite struct {
 	numEVMSubscriptionEvents atomic.Uint64
 	// wsServiceId is the service of the websocket connection.
 	wsServiceId string
+	// wsSessionStartHeight is the start height of the websocket connection's session.
+	wsSessionStartHeight int64
 	// wsCloseHeight is the block height at which the websocket connection should be closed
 	// by the relay miner due to the end of the session.
 	wsCloseHeight int64

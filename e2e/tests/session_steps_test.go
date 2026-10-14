@@ -376,6 +376,7 @@ func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName
 	currentHeight := s.getCurrentBlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 	s.waitForBlockHeight(nextSessionStartHeight)
+	s.wsSessionStartHeight = nextSessionStartHeight
 
 	// Set WebSocket close height just before the claim window opens
 	// TODO_TECHDEBT(@red-0ne): Re-evaluate if the -1 is needed here or not.
@@ -429,12 +430,13 @@ func (s *suite) TheApplicationReceivesEvmSubscriptionEventsUntilTheSessionEnds()
 }
 
 func (s *suite) TheRelayminerStopsTheWebsocketBridgeBeforeClaimWindowOpenHeightIsReached() {
-	// The RelayMiner reports the height at which it stopped the session's bridge.
+	// The RelayMiner reports the last height its bridge saw before stopping: at
+	// the session's close height, or earlier if the gateway disconnected first.
 	metricsUrl := relayminerMetricsUrl
 	if url := os.Getenv("RELAYMINER_METRICS_URL"); url != "" {
 		metricsUrl = url
 	}
-	metricLine := fmt.Sprintf("relayminer_websocket_bridge_session_close_height{service_id=%q} ", s.wsServiceId)
+	metricLine := fmt.Sprintf("relayminer_websocket_bridge_close_height{service_id=%q} ", s.wsServiceId)
 
 	require.Eventually(s, func() bool {
 		res, err := http.Get(metricsUrl)
@@ -449,11 +451,11 @@ func (s *suite) TheRelayminerStopsTheWebsocketBridgeBeforeClaimWindowOpenHeightI
 		for _, line := range strings.Split(string(body), "\n") {
 			if value, found := strings.CutPrefix(line, metricLine); found {
 				closeHeight, err := strconv.ParseFloat(value, 64)
-				return err == nil && int64(closeHeight) == s.wsCloseHeight
+				return err == nil && int64(closeHeight) >= s.wsSessionStartHeight && int64(closeHeight) <= s.wsCloseHeight
 			}
 		}
 		return false
-	}, 30*time.Second, time.Second, "RelayMiner did not stop the websocket bridge at height %d", s.wsCloseHeight)
+	}, 30*time.Second, time.Second, "RelayMiner did not stop the websocket bridge by height %d", s.wsCloseHeight)
 }
 
 func (s *suite) sendRelaysForSession(

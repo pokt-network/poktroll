@@ -23,3 +23,15 @@ gateway_config:
     - id: anvilws
       type: evm
       rpc_types: ["json_rpc", "websocket"]
+  # E2E counts relays exactly: no health-check probes (each one is a paid relay).
+  active_health_checks:
+    enabled: false
+# E2E counts relays exactly: send each client request as exactly one relay.
+feature_flags:
+  health_checks: false
+  websocket_probes: false
+  retry: false
+  hedge: false
+  cache: false
+  singleflight: false
+  request_sampler: false
