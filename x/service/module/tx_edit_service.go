@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -35,15 +36,15 @@ name a card_file: a Pocket Service Card to publish for that service
 (see docs/pocket_service_card.md). Cards are validated against the schema before anything
 is broadcast; --skip-card-validation opts out.
 
-The service_name field is optional and ignored (the chain does not support updating
-service names for existing services).
+The service_name field is optional. When set and different from the on-chain name, the
+service is renamed; when omitted, the on-chain name is kept.
 
 The command queries the chain to verify:
   - Each service exists on-chain
   - The transaction signer is the service owner
 
-A service is skipped only when BOTH its compute_units_per_relay and its card already match
-what is on-chain. An entry that names no card_file leaves the stored card untouched.
+A service is skipped only when its name (if given), its compute_units_per_relay and its card
+all already match what is on-chain. An entry that names no card_file leaves the stored card untouched.
 
 Card comparison is byte-exact against what is stored, so reformatting a card file counts
 as a change even when the JSON is semantically identical.
@@ -115,29 +116,16 @@ By default, all updates are submitted as a single batched transaction. Use
 					return cardErr
 				}
 
-				// Decide what actually needs to change.
-				//
-				// DEV_NOTE: This MUST consider the card as well as cupr. Comparing cupr alone
-				// -- as this command originally did -- silently drops card-only edits: the
-				// entry looks "already up to date" and is skipped, so the new card is never
-				// published and the command reports success.
-				cuprChanged := onChainSvc.ComputeUnitsPerRelay != svcEntry.ComputeUnitsPerRelay
-				cardChanged := desiredCard != nil && !bytes.Equal(onChainSvc.GetMetadata().GetCard(), desiredCard)
-
-				if !cuprChanged && !cardChanged {
+				changes := decideServiceEdit(onChainSvc, svcEntry, desiredCard)
+				if !changes.any() {
 					fmt.Fprintf(cmd.OutOrStdout(), "Skipping service %q: already up to date\n", svcEntry.ServiceId)
 					continue
 				}
 
-				// Re-send the on-chain name so this command never renames a service as a side
-				// effect. The keeper DOES overwrite Name on update, so omitting it here would
-				// blank it out. If the config provides a name, ignore it silently.
-				serviceName := onChainSvc.Name
-
 				msg := types.NewMsgAddService(
 					signerAddress,
 					svcEntry.ServiceId,
-					serviceName,
+					changes.name,
 					svcEntry.ComputeUnitsPerRelay,
 				)
 
@@ -153,7 +141,7 @@ By default, all updates are submitted as a single batched transaction. Use
 				}
 
 				fmt.Fprintf(cmd.OutOrStdout(), "Updating service %q: %s\n",
-					svcEntry.ServiceId, describeChanges(cuprChanged, cardChanged))
+					svcEntry.ServiceId, changes.describe())
 
 				msgs = append(msgs, msg)
 			}
@@ -237,15 +225,54 @@ func loadEntryCard(cmd *cobra.Command, svcEntry *config.YAMLServiceEntry) ([]byt
 	return card, nil
 }
 
-// describeChanges renders which fields an update is actually changing, so a batch run says
-// what it did rather than just how many messages it sent.
-func describeChanges(cuprChanged, cardChanged bool) string {
-	switch {
-	case cuprChanged && cardChanged:
-		return "compute_units_per_relay and card"
-	case cuprChanged:
-		return "compute_units_per_relay"
-	default:
-		return "card"
+// serviceEdit is what an edit-service entry changes on an existing service.
+type serviceEdit struct {
+	// name is the name to send: the config's name when it renames the service,
+	// otherwise the on-chain name. The keeper overwrites Name on every update, so
+	// it must always be set or the service would be renamed to "".
+	name                                  string
+	nameChanged, cuprChanged, cardChanged bool
+}
+
+// decideServiceEdit compares a config entry with the on-chain service.
+//
+// DEV_NOTE: Every field the command can update MUST take part in the skip decision.
+// Leaving one out makes an edit of only that field look "already up to date": the
+// entry is skipped, nothing is broadcast, and the command reports success. This
+// happened to card-only and then to name-only edits.
+func decideServiceEdit(
+	onChain sharedtypes.Service,
+	entry *config.YAMLServiceEntry,
+	desiredCard []byte,
+) serviceEdit {
+	edit := serviceEdit{
+		name:        onChain.Name,
+		cuprChanged: onChain.ComputeUnitsPerRelay != entry.ComputeUnitsPerRelay,
+		cardChanged: desiredCard != nil && !bytes.Equal(onChain.GetMetadata().GetCard(), desiredCard),
 	}
+	if entry.ServiceName != "" && entry.ServiceName != onChain.Name {
+		edit.name = entry.ServiceName
+		edit.nameChanged = true
+	}
+	return edit
+}
+
+func (e serviceEdit) any() bool {
+	return e.nameChanged || e.cuprChanged || e.cardChanged
+}
+
+// describe renders which fields an update is actually changing, so a batch run says
+// what it did rather than just how many messages it sent.
+func (e serviceEdit) describe() string {
+	fields := make([]string, 0, 3)
+	if e.nameChanged {
+		fields = append(fields, "service_name")
+	}
+	if e.cuprChanged {
+		fields = append(fields, "compute_units_per_relay")
+	}
+	if e.cardChanged {
+		fields = append(fields, "card")
+	}
+	return strings.Join(fields, ", ")
 }
