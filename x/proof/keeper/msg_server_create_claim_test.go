@@ -455,6 +455,29 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			),
 		},
 		{
+			desc: "claim msg session end height must match the onchain session",
+			claimMsgFn: func(t *testing.T) *prooftypes.MsgCreateClaim {
+				msg := newTestClaimMsg(t,
+					sessionStartHeight,
+					sessionRes.GetSession().GetSessionId(),
+					supplierOperatorAddr,
+					appAddr,
+					service,
+					defaultMerkleRoot,
+				)
+				msg.SessionHeader.SessionEndBlockHeight += sharedtypes.DefaultNumBlocksPerSession
+				return msg
+			},
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				prooftypes.ErrProofInvalidSessionEndHeight.Wrapf(
+					"session end height does not match onchain session; expected %d, got %d",
+					sessionRes.GetSession().GetHeader().GetSessionEndBlockHeight(),
+					sessionRes.GetSession().GetHeader().GetSessionEndBlockHeight()+sharedtypes.DefaultNumBlocksPerSession,
+				).Error(),
+			),
+		},
+		{
 			desc: "claim msg supplier operator address must be in the session",
 			claimMsgFn: func(t *testing.T) *prooftypes.MsgCreateClaim {
 				return newTestClaimMsg(t,
@@ -583,6 +606,26 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			),
 		},
 	}
+
+	t.Run("claim msg session start height must match the onchain session", func(t *testing.T) {
+		laterCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(sessionStartHeight + 1)
+		msg := newTestClaimMsg(t,
+			sessionStartHeight+1,
+			sessionRes.GetSession().GetSessionId(),
+			supplierOperatorAddr,
+			appAddr,
+			service,
+			defaultMerkleRoot,
+		)
+		msg.SessionHeader.SessionEndBlockHeight = sessionRes.GetSession().GetHeader().GetSessionEndBlockHeight()
+
+		_, err := srv.CreateClaim(laterCtx, msg)
+		require.ErrorContains(t, err, prooftypes.ErrProofInvalidSessionStartHeight.Wrapf(
+			"session start height does not match onchain session; expected %d, got %d",
+			sessionStartHeight,
+			sessionStartHeight+1,
+		).Error())
+	})
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {

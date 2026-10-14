@@ -52,8 +52,7 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 
 		// A config deactivated at or before its activation height (an unstake, a
 		// same-session restake or the service cap) never becomes active: skip it.
-		if supplierConfigUpdate.DeactivationHeight != sharedtypes.NoDeactivationHeight &&
-			supplierConfigUpdate.DeactivationHeight <= supplierConfigUpdate.ActivationHeight {
+		if !supplierConfigUpdate.IsActive(currentHeight) {
 			continue
 		}
 

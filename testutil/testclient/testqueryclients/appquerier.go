@@ -53,6 +53,8 @@ func NewTestApplicationQueryClient(
 			}, nil
 		}).
 		AnyTimes()
+	appParams := apptypes.DefaultParams()
+	applicationQuerier.EXPECT().GetParams(gomock.Any()).Return(&appParams, nil).AnyTimes()
 
 	return applicationQuerier
 }

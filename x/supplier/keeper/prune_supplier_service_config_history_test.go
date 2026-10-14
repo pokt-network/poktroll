@@ -9,6 +9,7 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -198,4 +199,53 @@ func TestEndBlockerPruneSupplierServiceConfigHistory_RespectsProofWindow(t *test
 		require.Equal(t, 1, numPruned,
 			"config should be pruned because we use lastActiveHeight (session 1), not deactivationHeight (session 2)")
 	})
+}
+
+// A config is kept until the proof window of every session it served has closed,
+// including a session under earlier params with longer claim and proof windows.
+func TestEndBlockerPruneSupplierServiceConfigHistory_KeepsConfigAcrossWindowShrink(t *testing.T) {
+	keepers, ctx := keepertest.SupplierKeeper(t)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedKeeper := keepers.SharedKeeper.(sharedkeeper.Keeper)
+
+	shortParams := sharedKeeper.GetParams(ctx)
+	longParams := shortParams
+	longParams.ClaimWindowCloseOffsetBlocks += 20
+	longParams.ProofWindowCloseOffsetBlocks += 20
+
+	// Long windows until the second session, short windows from then on.
+	secondSessionStart := sharedtypes.GetNextSessionStartHeight(&shortParams, 1)
+	require.NoError(t, sharedKeeper.SetParamsAtHeight(ctx, 1, longParams))
+	require.NoError(t, sharedKeeper.SetParamsAtHeight(ctx, secondSessionStart, shortParams))
+
+	// The config served the first two sessions.
+	deactivationHeight := sharedtypes.GetNextSessionStartHeight(&shortParams, secondSessionStart)
+	firstSessionProofClose := sharedtypes.GetProofWindowCloseHeight(&longParams, secondSessionStart-1)
+	secondSessionProofClose := sharedtypes.GetProofWindowCloseHeight(&shortParams, deactivationHeight-1)
+	require.Greater(t, firstSessionProofClose, secondSessionProofClose)
+
+	operatorAddr := sample.AccAddressBech32()
+	services := []*sharedtypes.SupplierServiceConfig{{ServiceId: "svcId"}}
+	keepers.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
+		OperatorAddress:      operatorAddr,
+		Services:             services,
+		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(operatorAddr, services, 1, deactivationHeight),
+	})
+
+	for _, step := range []struct {
+		height             int64
+		expectedNumConfigs int
+	}{
+		{secondSessionProofClose + 1, 1},
+		{firstSessionProofClose, 1},
+		{firstSessionProofClose + 1, 0},
+	} {
+		height, expectedNumConfigs := step.height, step.expectedNumConfigs
+		heightCtx := sdkCtx.WithBlockHeight(height)
+		_, err := keepers.EndBlockerPruneSupplierServiceConfigHistory(heightCtx)
+		require.NoError(t, err)
+		supplier, found := keepers.GetSupplier(heightCtx, operatorAddr)
+		require.True(t, found)
+		require.Len(t, supplier.ServiceConfigHistory, expectedNumConfigs, "height %d", height)
+	}
 }

@@ -31,6 +31,12 @@ type SharedKeeper interface {
 	// This is used for historical session queries to ensure correct session boundaries.
 	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
+	// IterateParamsHistoryReverse walks the params history from fromHeight back.
+	IterateParamsHistoryReverse(
+		ctx context.Context,
+		fromHeight int64,
+		fn func(effectiveHeight int64, params sharedtypes.Params) (stop bool),
+	)
 }
 
 // ServiceKeeper defines the expected interface for the Service module.

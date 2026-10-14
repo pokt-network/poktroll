@@ -2160,3 +2160,67 @@ func (s *TestSuite) TestSettlePendingClaims_PrunedSessionConfig_FallsBackToCurre
 	require.Equal(t, uint64(1), settledResults.GetNumClaims())
 	require.Equal(t, uint64(0), numDiscarded)
 }
+
+// Claims of one supplier and service from different sessions settle with the
+// revenue share active at each claim's own session start, in either order.
+func (s *TestSuite) TestSettlementContext_SupplierRevShareResolvedPerSession() {
+	t := s.T()
+	ctx := cosmostypes.UnwrapSDKContext(s.ctx)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	claimOld := s.claims[0]
+	serviceId := claimOld.SessionHeader.ServiceId
+	supplierAddr := claimOld.SupplierOperatorAddress
+	oldStart := claimOld.SessionHeader.SessionStartBlockHeight
+	newStart := sharedtypes.GetNextSessionStartHeight(&sharedParams, claimOld.SessionHeader.SessionEndBlockHeight)
+
+	supplier, found := s.keepers.GetSupplier(ctx, supplierAddr)
+	require.True(t, found)
+
+	// Change the service's revenue share from the next session on.
+	newRevShareAddr := sample.AccAddressBech32()
+	history := make([]*sharedtypes.ServiceConfigUpdate, 0)
+	for _, cfg := range supplier.ServiceConfigHistory {
+		history = append(history, cfg)
+		if cfg.Service.ServiceId != serviceId {
+			continue
+		}
+		cfg.DeactivationHeight = newStart
+		history = append(history, &sharedtypes.ServiceConfigUpdate{
+			OperatorAddress: supplierAddr,
+			Service: &sharedtypes.SupplierServiceConfig{
+				ServiceId: serviceId,
+				RevShare:  []*sharedtypes.ServiceRevenueShare{{Address: newRevShareAddr, RevSharePercentage: 100}},
+			},
+			ActivationHeight: newStart,
+		})
+	}
+	supplier.ServiceConfigHistory = history
+	s.keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
+
+	claimNew := claimOld
+	headerNew := *claimOld.SessionHeader
+	headerNew.SessionStartBlockHeight = newStart
+	headerNew.SessionEndBlockHeight = sharedtypes.GetSessionEndHeight(&sharedParams, newStart)
+	headerNew.SessionId = "next_session"
+	claimNew.SessionHeader = &headerNew
+
+	settleCtx := ctx.WithBlockHeight(headerNew.SessionEndBlockHeight + 1)
+	revShareAddr := func(sctx interface {
+		GetSupplierForClaim(string, string, int64) (*sharedtypes.Supplier, error)
+	}, sessionStart int64) string {
+		claimSupplier, err := sctx.GetSupplierForClaim(supplierAddr, serviceId, sessionStart)
+		require.NoError(t, err)
+		require.Len(t, claimSupplier.Services, 1)
+		return claimSupplier.Services[0].RevShare[0].Address
+	}
+
+	for _, claims := range [][]*prooftypes.Claim{{&claimNew, &claimOld}, {&claimOld, &claimNew}} {
+		sctx := tokenomicskeeper.NewSettlementContext(settleCtx, s.keepers.Keeper, s.keepers.Logger())
+		for _, claim := range claims {
+			require.NoError(t, sctx.ClaimCacheWarmUp(settleCtx, claim))
+		}
+		require.Equal(t, supplier.OwnerAddress, revShareAddr(sctx, oldStart))
+		require.Equal(t, newRevShareAddr, revShareAddr(sctx, newStart))
+	}
+}

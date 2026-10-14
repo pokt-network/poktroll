@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	cosmoslog "cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -303,10 +304,17 @@ func (k Keeper) StakeSupplier(
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	// Update the Supplier in the store
-	k.SetAndIndexDehydratedSupplier(ctx, supplier)
-	if len(msg.Services) > 0 {
-		k.SetServicePriority(ctx, supplier.OperatorAddress, suppliertypes.ServicePriorityFromConfigs(msg.Services))
+	// Update the Supplier in the store. Without services in the message, the
+	// service config history is unchanged and needs no re-indexing.
+	if len(msg.Services) == 0 {
+		k.indexSupplierUnstakingHeight(ctx, supplier)
+		k.SetDehydratedSupplier(ctx, supplier)
+	} else {
+		k.SetAndIndexDehydratedSupplier(ctx, supplier)
+		servicePriority := suppliertypes.ServicePriorityFromConfigs(msg.Services)
+		if !slices.Equal(k.GetServicePriority(ctx, supplier.OperatorAddress), servicePriority) {
+			k.SetServicePriority(ctx, supplier.OperatorAddress, servicePriority)
+		}
 	}
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 

@@ -603,6 +603,9 @@ func TestRepairUnindexedUnbondingSuppliers(t *testing.T) {
 	beginEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, sdkCtx.EventManager().Events())
 	require.Len(t, beginEvents, 1)
 	require.Equal(t, stuckAddr, beginEvents[0].GetSupplier().GetOperatorAddress())
+	// The event carries the dehydrated supplier.
+	require.Empty(t, beginEvents[0].GetSupplier().GetServices())
+	require.Empty(t, beginEvents[0].GetSupplier().GetServiceConfigHistory())
 	require.Equal(t, int64(repairedSupplier.UnstakeSessionEndHeight), beginEvents[0].GetSessionEndHeight())
 	require.Equal(t, sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &repairedSupplier), beginEvents[0].GetUnbondingEndHeight())
 	require.Equal(t, uint64(sharedtypes.GetSessionEndHeight(&sharedParams, repairHeight)), repairedSupplier.UnstakeSessionEndHeight)

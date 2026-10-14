@@ -21,8 +21,8 @@ import (
 // sessions and change which suppliers they contain.
 //
 // supplier MAY be dehydrated (e.g. from the settlement context): the service
-// config history is always reloaded from the index, since re-indexing from an
-// empty history would delete every service config of the supplier.
+// config history is always reloaded from the index, and only the configs whose
+// deactivation height changes are rewritten.
 //
 // sharedParams MUST be the live shared params: the unstake session end and the
 // next session start are projected from the current block.
@@ -37,19 +37,26 @@ func (k Keeper) BeginSupplierUnbonding(
 
 	supplier.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
 
-	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, "")
-	for _, serviceConfig := range serviceConfigHistory {
-		if serviceConfig.DeactivationHeight == sharedtypes.NoDeactivationHeight ||
-			serviceConfig.DeactivationHeight > nextSessionStartHeight {
-			serviceConfig.DeactivationHeight = nextSessionStartHeight
+	for _, serviceConfig := range k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, "") {
+		if suppliertypes.IsCountedServiceConfig(serviceConfig, nextSessionStartHeight) {
+			k.rescheduleServiceConfigDeactivation(ctx, serviceConfig, nextSessionStartHeight)
 		}
 	}
 
-	supplierToIndex := *supplier
-	supplierToIndex.ServiceConfigHistory = serviceConfigHistory
-	k.SetAndIndexDehydratedSupplier(ctx, supplierToIndex)
+	k.indexSupplierUnstakingHeight(ctx, *supplier)
+	k.SetDehydratedSupplier(ctx, *supplier)
 
 	return unstakeSessionEndHeight
+}
+
+// GetSupplierUnbondingEndHeight returns the height at which EndBlockerUnbondSuppliers
+// unbonds the given unbonding supplier. It uses the shared params effective at the
+// supplier's unstake session end, NOT the live params: a later num_blocks_per_session
+// decrease would otherwise shrink the unbonding window and release the supplier's
+// stake before its in-flight claims settle (#543, F1).
+func (k Keeper) GetSupplierUnbondingEndHeight(ctx context.Context, supplier *sharedtypes.Supplier) int64 {
+	unstakeParams := k.sharedKeeper.GetParamsAtHeight(ctx, int64(supplier.GetUnstakeSessionEndHeight()))
+	return sharedtypes.GetSupplierUnbondingEndHeight(&unstakeParams, supplier)
 }
 
 // RepairUnindexedUnbondingSuppliers runs BeginSupplierUnbonding again for every
@@ -92,13 +99,15 @@ func (k Keeper) RepairUnindexedUnbondingSuppliers(ctx context.Context) (repaired
 		unstakeSessionEndHeight := k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams)
 		repaired = append(repaired, supplier.OperatorAddress)
 
-		// EndBlockerUnbondSuppliers unbonds with the params at the unstake session end.
-		unstakeSessionParams := k.sharedKeeper.GetParamsAtHeight(ctx, unstakeSessionEndHeight)
+		// The event carries the dehydrated supplier, like the other unbonding
+		// events: the hydrated copy predates the deactivations just stored.
+		supplier.Services = nil
+		supplier.ServiceConfigHistory = nil
 		event := &suppliertypes.EventSupplierUnbondingBegin{
 			Supplier:           &supplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   unstakeSessionEndHeight,
-			UnbondingEndHeight: sharedtypes.GetSupplierUnbondingEndHeight(&unstakeSessionParams, &supplier),
+			UnbondingEndHeight: k.GetSupplierUnbondingEndHeight(ctx, &supplier),
 		}
 		if err := cosmostypes.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(event); err != nil {
 			k.Logger().Error(fmt.Sprintf("failed to emit EventSupplierUnbondingBegin: %+v; %s", event, err))
@@ -147,12 +156,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			continue
 		}
 
-		// Compute the unbonding end height using the shared params that were effective when
-		// the supplier began unbonding (its unstake session end height), NOT the live params.
-		// A later num_blocks_per_session decrease would otherwise shrink the unbonding window
-		// and release the supplier's stake before its in-flight claims settle (#543, F1).
-		unstakeParams := k.sharedKeeper.GetParamsAtHeight(ctx, int64(supplier.GetUnstakeSessionEndHeight()))
-		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&unstakeParams, &supplier)
+		unbondingEndHeight := k.GetSupplierUnbondingEndHeight(ctx, &supplier)
 
 		// If the unbonding height is ahead of the current height, the supplier
 		// stays in the unbonding state.

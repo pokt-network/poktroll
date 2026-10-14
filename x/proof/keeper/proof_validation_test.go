@@ -21,6 +21,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	"github.com/pokt-network/poktroll/testutil/testtree"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -482,12 +483,11 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				)
 			},
 			// The size check runs before deserializing: the first 4 bytes are
-			// read as the member count, which the length does not match.
+			// read as the member count, which is out of bounds.
 			expectedErr: prooftypes.ErrProofInvalidRelayRequest.Wrapf(
-				"ring signature is %d bytes, expected %d for %d members",
-				len(invalidSignatureBz),
-				4+32+33+65*uint64(binary.BigEndian.Uint32(invalidSignatureBz[:4])),
+				"ring signature has %d members, expected between 2 and %d",
 				binary.BigEndian.Uint32(invalidSignatureBz[:4]),
+				1+2*apptypes.DefaultMaxDelegatedGateways,
 			),
 		},
 		{

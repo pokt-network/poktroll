@@ -12,8 +12,9 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// queryAndValidateSessionHeader ensures that a session with the sessionID of the given session
-// header exists and that this session includes the supplier with the given operator address.
+// queryAndValidateSessionHeader ensures that a session with the sessionID and the
+// start and end heights of the given session header exists, and that this session
+// includes the supplier with the given operator address.
 // It returns a session which is hydrated with the onchain session data.
 func (k Keeper) queryAndValidateSessionHeader(
 	ctx context.Context,
@@ -52,6 +53,24 @@ func (k Keeper) queryAndValidateSessionHeader(
 			"session ID does not match onchain session ID; expected %q, got %q",
 			onChainSession.GetSessionId(),
 			sessionHeader.GetSessionId(),
+		)
+	}
+
+	// Claims and proofs store the given header: its heights must be the onchain
+	// session's.
+	onChainSessionHeader := onChainSession.GetHeader()
+	if sessionHeader.GetSessionStartBlockHeight() != onChainSessionHeader.GetSessionStartBlockHeight() {
+		return nil, types.ErrProofInvalidSessionStartHeight.Wrapf(
+			"session start height does not match onchain session; expected %d, got %d",
+			onChainSessionHeader.GetSessionStartBlockHeight(),
+			sessionHeader.GetSessionStartBlockHeight(),
+		)
+	}
+	if sessionHeader.GetSessionEndBlockHeight() != onChainSessionHeader.GetSessionEndBlockHeight() {
+		return nil, types.ErrProofInvalidSessionEndHeight.Wrapf(
+			"session end height does not match onchain session; expected %d, got %d",
+			onChainSessionHeader.GetSessionEndBlockHeight(),
+			sessionHeader.GetSessionEndBlockHeight(),
 		)
 	}
 

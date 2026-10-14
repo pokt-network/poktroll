@@ -831,9 +831,6 @@ func (k Keeper) slashSupplierStake(
 		// supplierToSlash is dehydrated; BeginSupplierUnbonding reloads its history.
 		liveSharedParams := settlementContext.GetSharedParams()
 		unstakeSessionEndHeight := k.supplierKeeper.BeginSupplierUnbonding(ctx, supplierToSlash, &liveSharedParams)
-		// EndBlockerUnbondSuppliers unbonds with the params at the unstake session
-		// end; use the same params so the event reports the height it will happen.
-		unstakeSessionParams := settlementContext.GetSharedParamsAtHeight(ctx, unstakeSessionEndHeight)
 
 		// Handling unbonding for slashed suppliers:
 		// - Initiate unbonding at the current session end height (earliest possible time)
@@ -844,7 +841,7 @@ func (k Keeper) slashSupplierStake(
 			Supplier:           supplierToSlash,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   unstakeSessionEndHeight,
-			UnbondingEndHeight: sharedtypes.GetSupplierUnbondingEndHeight(&unstakeSessionParams, supplierToSlash),
+			UnbondingEndHeight: k.supplierKeeper.GetSupplierUnbondingEndHeight(ctx, supplierToSlash),
 		})
 	} else {
 		// This is the only write of the reduced stake: the settlement flush has

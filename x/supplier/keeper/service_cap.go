@@ -143,10 +143,10 @@ func (k Keeper) getServicePriorityStore(ctx context.Context) storetypes.KVStore 
 // ponytail: fixed batch; tune from a mainnet-state measurement before the cap is enabled.
 const ServiceCapSweepBatchSize = 200
 
-// ScheduleServiceCapSweep starts (or restarts) a sweep over all suppliers.
-// Call it whenever min_stake, min_stake_included_services or
-// stake_per_additional_service changes, including from upgrade handlers.
-func (k Keeper) ScheduleServiceCapSweep(ctx context.Context) {
+// scheduleServiceCapSweep starts (or restarts) a sweep over all suppliers.
+// setParams calls it when the cap is enabled and its params change, so every
+// params write (genesis, upgrade handlers, governance) schedules it as needed.
+func (k Keeper) scheduleServiceCapSweep(ctx context.Context) {
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store.Set(suppliertypes.ServiceCapSweepKey, []byte{})
 }

@@ -109,6 +109,11 @@ type settlementContext struct {
 	supplierMap      map[string]int
 	settledSuppliers []*sharedtypes.Supplier
 
+	// supplierServiceConfigMap holds each claim's supplier service configuration,
+	// keyed by supplier, service and session start: claims of one pair from
+	// different sessions may settle in the same block with different configs.
+	supplierServiceConfigMap map[supplierServiceConfigKey][]*sharedtypes.SupplierServiceConfig
+
 	// Maintain both a map and a slice for applications to provide:
 	// 1. Fast O(1) lookup by address via the map during claim processing
 	// 2. Consistent ordering via the slice to ensure deterministic settlement results
@@ -201,8 +206,9 @@ func NewSettlementContext(
 		keeper: tokenomicsKeeper,
 		logger: logger.With("module", "settlement_context"),
 
-		supplierMap:      make(map[string]int, estimatedSuppliers),
-		settledSuppliers: make([]*sharedtypes.Supplier, 0, estimatedSuppliers),
+		supplierMap:              make(map[string]int, estimatedSuppliers),
+		settledSuppliers:         make([]*sharedtypes.Supplier, 0, estimatedSuppliers),
+		supplierServiceConfigMap: make(map[supplierServiceConfigKey][]*sharedtypes.SupplierServiceConfig),
 
 		applicationMap:             make(map[string]int, estimatedApplications),
 		settledApplications:        make([]*apptypes.Application, 0, estimatedApplications),
@@ -435,6 +441,31 @@ func (sctx *settlementContext) GetApplication(appAddress string) (*apptypes.Appl
 		"application with address %q not found", appAddress)
 }
 
+// supplierServiceConfigKey identifies a claim's supplier service configuration.
+type supplierServiceConfigKey struct {
+	supplierOperatorAddress string
+	serviceId               string
+	sessionStartHeight      int64
+}
+
+// GetSupplierForClaim returns a copy of the cached supplier whose Services hold
+// only the claim's service configuration, as active at the claim's session start.
+// Use it to read the claim's revenue share; changes to the copy are not persisted.
+func (sctx *settlementContext) GetSupplierForClaim(
+	supplierOperatorAddress string,
+	serviceId string,
+	sessionStartHeight int64,
+) (*sharedtypes.Supplier, error) {
+	supplier, err := sctx.GetSupplier(supplierOperatorAddress)
+	if err != nil {
+		return nil, err
+	}
+	key := supplierServiceConfigKey{supplierOperatorAddress, serviceId, sessionStartHeight}
+	claimSupplier := *supplier
+	claimSupplier.Services = sctx.supplierServiceConfigMap[key]
+	return &claimSupplier, nil
+}
+
 // GetSupplier retrieves a cached supplier by its operator address.
 func (sctx *settlementContext) GetSupplier(supplierOperatorAddress string) (*sharedtypes.Supplier, error) {
 	if idx, ok := sctx.supplierMap[supplierOperatorAddress]; ok {
@@ -468,80 +499,47 @@ func (sctx *settlementContext) GetSettledSuppliers() []*sharedtypes.Supplier {
 // The service configuration is the one active at the claim's session start, not
 // at the settlement height: a service deactivated since then (unstake, slash,
 // service cap) must not void the claims for sessions the supplier already served.
-// The cache is keyed by (supplier, service), so within one settlement the first
-// claim's configuration is used for every claim of that pair. That is deterministic,
-// and it only matters if the revenue share changed between two of those sessions.
+// It is cached per (supplier, service, session start); see GetSupplierForClaim.
 func (sctx *settlementContext) cacheSupplier(
 	ctx context.Context,
 	supplierOperatorAddress string,
 	serviceId string,
 	sessionStartHeight int64,
 ) error {
-	// Supplier service configuration handling:
-	// - Suppliers are hydrated with service configurations on demand (lazily)
-	// - Each new service ID in a claim is added to the supplier's configuration only once
-	// - This prevents unnecessary duplicate service configurations in memory
-	// - In the worst case, a supplier will have all its service configurations loaded
-	//   if claims are processed for all services the supplier supports
-	if idx, ok := sctx.supplierMap[supplierOperatorAddress]; ok {
-		cachedSupplier := sctx.settledSuppliers[idx]
+	idx, ok := sctx.supplierMap[supplierOperatorAddress]
+	if !ok {
+		// Retrieve the onchain staked dehydrated supplier record once, when the
+		// first claim from this supplier is processed. Service configurations are
+		// cached per claim below.
+		supplier, isSupplierFound := sctx.keeper.supplierKeeper.GetDehydratedSupplier(ctx, supplierOperatorAddress)
+		if !isSupplierFound {
+			sctx.logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierOperatorAddress))
+			return tokenomicstypes.ErrTokenomicsSupplierNotFound
+		}
 
-		// Supplier is cached, ensure that it has a service configuration corresponding
-		// to the claim's service ID.
-		sctx.cacheSupplierServiceConfig(ctx, cachedSupplier, serviceId, sessionStartHeight)
+		// Store supplier in cache for future claim processing
+		idx = len(sctx.settledSuppliers)
+		sctx.supplierMap[supplierOperatorAddress] = idx
+		sctx.settledSuppliers = append(sctx.settledSuppliers, &supplier)
+	}
 
-		// Supplier is already cached
+	key := supplierServiceConfigKey{supplierOperatorAddress, serviceId, sessionStartHeight}
+	if _, ok := sctx.supplierServiceConfigMap[key]; ok {
 		return nil
 	}
+	cachedSupplier := sctx.settledSuppliers[idx]
+	serviceConfigs := sctx.supplierServiceConfig(ctx, cachedSupplier, serviceId, sessionStartHeight)
+	sctx.supplierServiceConfigMap[key] = serviceConfigs
 
-	// Retrieve the onchain staked dehydrated supplier record:
-	// - We only fetch the dehydrated supplier (without all service configs)
-	// - This fetch happens only once - when we process the first claim from this supplier
-	// - Additional service configs will be hydrated on demand as needed
-	// - This optimizes memory usage and reduces redundant store lookups
-	supplier, isSupplierFound := sctx.keeper.supplierKeeper.GetDehydratedSupplier(ctx, supplierOperatorAddress)
-	if !isSupplierFound {
-		sctx.logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierOperatorAddress))
-		return tokenomicstypes.ErrTokenomicsSupplierNotFound
+	// The cached supplier's Services keep the first config seen per service, as
+	// carried by the events that embed it. Settlement reads GetSupplierForClaim.
+	if !slices.ContainsFunc(cachedSupplier.Services, func(s *sharedtypes.SupplierServiceConfig) bool {
+		return s.ServiceId == serviceId
+	}) {
+		cachedSupplier.Services = append(cachedSupplier.Services, serviceConfigs...)
 	}
-
-	// Hydrate the supplier service configuration with the claim's service ID.
-	// This is needed to ensure the dehydrated supplier has the correct service
-	// revenue share configuration for the claim settlement.
-	supplier.Services = sctx.supplierServiceConfig(ctx, &supplier, serviceId, sessionStartHeight)
-
-	// Store supplier in cache for future claim processing
-	idx := len(sctx.settledSuppliers)
-	sctx.supplierMap[supplierOperatorAddress] = idx
-	sctx.settledSuppliers = append(sctx.settledSuppliers, &supplier)
 
 	return nil
-}
-
-// cacheSupplierServiceConfig ensures the supplier service configuration for a claim
-// is cached in the settlement context.
-func (sctx *settlementContext) cacheSupplierServiceConfig(
-	ctx context.Context,
-	supplier *sharedtypes.Supplier,
-	serviceId string,
-	sessionStartHeight int64,
-) {
-	serviceConfigIdx := slices.IndexFunc(supplier.Services, func(s *sharedtypes.SupplierServiceConfig) bool {
-		return s.ServiceId == serviceId
-	})
-
-	// Service configuration already cached, no need to update
-	if serviceConfigIdx >= 0 {
-		return
-	}
-
-	// Hydrate the supplier service configuration with the claim's service ID.
-	// This is needed to ensure the dehydrated supplier has the correct service
-	// revenue share configuration for the claim settlement.
-	supplier.Services = append(
-		supplier.Services,
-		sctx.supplierServiceConfig(ctx, supplier, serviceId, sessionStartHeight)...,
-	)
 }
 
 // supplierServiceConfig returns the supplier's config for serviceId active at the

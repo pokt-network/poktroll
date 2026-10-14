@@ -262,3 +262,23 @@ func dumpSupplierModuleStore(t *testing.T, k keepertest.SupplierModuleKeepers, c
 	}
 	return dump
 }
+
+// BeginSupplierUnbonding rewrites only the changed configs; the result matches
+// re-indexing the whole supplier.
+func TestBeginSupplierUnbonding_IndexesMatchFullReindex(t *testing.T) {
+	// Cap one of three services first, so the history mixes deactivated and
+	// active configs.
+	k, ctx, supplier := stakeThenLower(t, 2, "sol", "eth", "base")
+	require.Len(t, k.EnforceServiceCap(ctx, &supplier, suppliertypes.ServiceCapReason_SERVICE_CAP_REASON_SLASH), 1)
+
+	sharedParams := k.SharedKeeper.GetParams(ctx)
+	k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams)
+	afterUnbonding := dumpSupplierModuleStore(t, k, ctx)
+	require.Empty(t, countedServiceIds(t, k, ctx, supplier.OperatorAddress))
+
+	hydrated, found := k.GetSupplier(ctx, supplier.OperatorAddress)
+	require.True(t, found)
+	require.True(t, hydrated.IsUnbonding())
+	k.SetAndIndexDehydratedSupplier(ctx, hydrated)
+	require.Equal(t, afterUnbonding, dumpSupplierModuleStore(t, k, ctx))
+}

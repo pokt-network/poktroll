@@ -205,3 +205,32 @@ func TestStakeSupplier_ServiceCap_StakeOnlyIncreaseAcceptedWhileOverCap(t *testi
 	_, err = srv.StakeSupplier(ctx, stakeOnly(capMinStake+capPrice+1))
 	require.NoError(t, err)
 }
+
+// A stake message without services leaves the service config indexes exactly as
+// a full re-index would, including when it cancels an unbonding.
+func TestStakeSupplier_StakeOnly_IndexesMatchFullReindex(t *testing.T) {
+	k, ctx := keepertest.SupplierKeeper(t)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(*k.Keeper)
+	ownerAddr, operatorAddr := sample.AccAddressBech32(), sample.AccAddressBech32()
+
+	msg := multiServiceStakeMsg(t, k, sdkCtx, ownerAddr, operatorAddr, 1_000_000, "sol", "eth", "base")
+	_, err := srv.StakeSupplier(ctx, msg)
+	require.NoError(t, err)
+	_, err = srv.UnstakeSupplier(ctx, &suppliertypes.MsgUnstakeSupplier{Signer: ownerAddr, OperatorAddress: operatorAddr})
+	require.NoError(t, err)
+
+	stakeOnly := &suppliertypes.MsgStakeSupplier{
+		Signer: ownerAddr, OwnerAddress: ownerAddr, OperatorAddress: operatorAddr,
+		Stake: &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(2_000_000)},
+	}
+	_, err = srv.StakeSupplier(ctx, stakeOnly)
+	require.NoError(t, err)
+	afterStake := dumpSupplierModuleStore(t, k, sdkCtx)
+
+	hydrated, found := k.GetSupplier(ctx, operatorAddr)
+	require.True(t, found)
+	require.False(t, hydrated.IsUnbonding())
+	k.SetAndIndexDehydratedSupplier(ctx, hydrated)
+	require.Equal(t, afterStake, dumpSupplierModuleStore(t, k, sdkCtx))
+}

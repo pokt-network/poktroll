@@ -37,7 +37,7 @@ func (k Keeper) setParams(ctx context.Context, paramsBefore, params types.Params
 	store.Set(types.ParamsKey, paramsBz)
 
 	if params.ServiceCapEnabled() && serviceCapParamsChanged(paramsBefore, params) {
-		k.ScheduleServiceCapSweep(ctx)
+		k.scheduleServiceCapSweep(ctx)
 	}
 
 	return nil

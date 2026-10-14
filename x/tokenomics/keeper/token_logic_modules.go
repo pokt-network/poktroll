@@ -131,7 +131,11 @@ func (k Keeper) ProcessTokenLogicModules(
 		return cosmostypes.Coin{}, err
 	}
 
-	supplier, err := settlementContext.GetSupplier(pendingResult.Claim.GetSupplierOperatorAddress())
+	supplier, err := settlementContext.GetSupplierForClaim(
+		pendingResult.Claim.GetSupplierOperatorAddress(),
+		sessionHeader.ServiceId,
+		sessionHeader.SessionStartBlockHeight,
+	)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}
@@ -241,11 +245,15 @@ func (k Keeper) ProcessTokenLogicModules(
 	// instead of calling distributeValidatorRewards per-claim. The accumulated totals
 	// are flushed once per settlement batch in SettlePendingClaims, achieving perfect
 	// precision via the Largest Remainder Method on the batched sum.
+	// A failed claim is discarded with its queued operations, so restore the
+	// application stake the TLMs reduced in the settlement cache.
+	appStakeBefore := *application.Stake
 	for _, tokenLogicModule := range k.tokenLogicModules {
 		tlmName := tokenLogicModule.GetId().String()
 		logger.Info(fmt.Sprintf("Starting processing TLM: %q", tlmName))
 
 		if err = tokenLogicModule.Process(ctx, logger, tlmCtx); err != nil {
+			application.Stake = &appStakeBefore
 			return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf("TLM %q: %s", tlmName, err)
 		}
 

@@ -94,10 +94,22 @@ func (rc *ringClient) GetRingForAddressAtHeight(
 	return GetRingFromPubKeys(ringPubKeys)
 }
 
+// maxRingSignatureMembers returns the most members a valid ring signature for an
+// application can have. A signer's ring holds the application, its delegated
+// gateways (at most max_delegated_gateways) and, for relays signed around a
+// delegation change, gateways undelegated since the session ended. The bound
+// allows max_delegated_gateways of each. It is never below the size of the
+// ring the verifier itself expects, since applications may hold more
+// delegations than a lowered max_delegated_gateways allows.
+func maxRingSignatureMembers(maxDelegatedGateways uint64, expectedRingSize int) uint64 {
+	return max(1+2*maxDelegatedGateways, uint64(expectedRingSize))
+}
+
 // validateRingSignatureSize checks a serialized ring signature against the
 // ring-go v0.2.0 layout: a 4-byte big-endian member count n, the challenge
-// scalar, the key image point, then n (scalar, point) pairs.
-func validateRingSignatureSize(signature []byte) error {
+// scalar, the key image point, then n (scalar, point) pairs. n must be between
+// 2 and maxMembers.
+func validateRingSignatureSize(signature []byte, maxMembers uint64) error {
 	const (
 		sizeLen   = 4
 		scalarLen = 32 // ring-go's fixed scalar length for secp256k1
@@ -109,9 +121,9 @@ func validateRingSignatureSize(signature []byte) error {
 	}
 
 	numRingMembers := uint64(binary.BigEndian.Uint32(signature[:sizeLen]))
-	if numRingMembers < 2 {
+	if numRingMembers < 2 || numRingMembers > maxMembers {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
-			"ring signature has %d members, expected at least 2", numRingMembers,
+			"ring signature has %d members, expected between 2 and %d", numRingMembers, maxMembers,
 		)
 	}
 
@@ -154,31 +166,57 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		return ErrRingClientInvalidRelayRequest.Wrap("missing signature from relay request")
 	}
 
-	// Check the signature's size before deserializing it: a ring has at least
-	// two members, and the length must match its member count exactly.
-	if err := validateRingSignatureSize(signature); err != nil {
-		return err
-	}
-
-	// Deserialize the request signature bytes back into a ring signature.
-	relayRequestRingSig := new(ring.RingSig)
-	if err := relayRequestRingSig.Deserialize(ringCurve, signature); err != nil {
-		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
-			"error deserializing ring signature: %s", err,
-		)
-	}
-
 	// Get the ring for the application address of the relay request.
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 	appAddress := sessionHeader.GetApplicationAddress()
-	expectedRelayRingPointsForApp, err := rc.getRingPointsForAddressAtHeight(
-		ctx,
-		appAddress,
-		sessionEndHeight,
-	)
+	expectedRingPubKeys, err := rc.getRingPubKeysForAddress(ctx, appAddress, sessionEndHeight)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
+		)
+	}
+	expectedRelayRingPointsForApp, err := ringPointsFromPubKeys(expectedRingPubKeys)
+	if err != nil {
+		return ErrRingClientInvalidRelayRequest.Wrapf(
+			"error getting ring for application address %s: %v", appAddress, err,
+		)
+	}
+	appParams, err := rc.applicationQuerier.GetParams(ctx)
+	if err != nil {
+		return ErrRingClientInvalidRelayRequest.Wrapf("error getting application params: %v", err)
+	}
+
+	// Check the signature's size before deserializing it: the member count must
+	// be within the bounds of a ring for this application, and the length must
+	// match the member count exactly.
+	maxMembers := maxRingSignatureMembers(appParams.GetMaxDelegatedGateways(), len(expectedRingPubKeys))
+	if err = validateRingSignatureSize(signature, maxMembers); err != nil {
+		return err
+	}
+
+	return verifyRingSignature(signature, expectedRelayRingPointsForApp, relayRequest, appAddress)
+}
+
+// verifyRingSignature deserializes the signature and verifies it against the
+// relay request, using only keys of the expected ring. A panic while handling
+// the signature bytes is returned as an invalid signature.
+func verifyRingSignature(
+	signature []byte,
+	expectedRelayRingPointsForApp map[string]ringtypes.Point,
+	relayRequest *types.RelayRequest,
+	appAddress string,
+) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = ErrRingClientInvalidRelayRequestSignature.Wrapf("panic verifying ring signature: %v", r)
+		}
+	}()
+
+	// Deserialize the request signature bytes back into a ring signature.
+	relayRequestRingSig := new(ring.RingSig)
+	if err = relayRequestRingSig.Deserialize(ringCurve, signature); err != nil {
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
+			"error deserializing ring signature: %s", err,
 		)
 	}
 
@@ -282,7 +320,12 @@ func (rc *ringClient) getRingPointsForAddressAtHeight(
 	if err != nil {
 		return nil, err
 	}
+	return ringPointsFromPubKeys(ringPubKeys)
+}
 
+// ringPointsFromPubKeys returns a map of encoded ring points to Point objects
+// for the given public keys.
+func ringPointsFromPubKeys(ringPubKeys []cryptotypes.PubKey) (map[string]ringtypes.Point, error) {
 	// Get the points on the secp256k1 curve for the public keys in the ring.
 	points, err := pointsFromPublicKeys(ringPubKeys...)
 	if err != nil {

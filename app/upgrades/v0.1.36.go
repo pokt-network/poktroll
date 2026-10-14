@@ -39,17 +39,27 @@ const (
 //     2026-10-07, but two suppliers sat at or 1 upokt above min stake with a
 //     1 upokt proof_missing_penalty, so one could get stuck before the upgrade.
 //     Each repaired supplier gets a new EventSupplierUnbondingBegin with its new
-//     heights.
+//     heights. Testnets were not checked; the handler logs every repaired address.
 //   - Settlement resolves a claim's supplier service config (revenue share) at the
 //     claim's session start, not at the settlement height. CONSENSUS-BREAKING
 //     (state): a claim for a session the supplier served now settles even when the
 //     service was deactivated since (unstake, slash below min stake, service cap);
-//     it was previously discarded.
+//     it was previously discarded. Claims of one supplier and service from
+//     different sessions settling in the same block each use their own session's
+//     config. A claim whose token logic modules fail leaves the application stake
+//     unchanged.
+//   - Deactivated supplier service configs are kept until the proof window of
+//     every session they served has closed, under the params of each session,
+//     including after a params change that shortens the claim and proof windows.
+//   - MsgCreateClaim and MsgSubmitProof: the session header's start and end
+//     heights must equal the onchain session's. CONSENSUS-BREAKING (state).
+//     RelayMiners already reject relays whose header differs from the onchain one.
 //   - Proof validation recovers from a panic only while decoding and verifying the
-//     submitted relay and proof (reported as an invalid proof); a panic elsewhere
-//     stops the node as before. Relay request ring signatures must have at least
-//     two members and a size that matches the member count.
-//     Testnets were not checked; the handler logs every repaired address.
+//     submitted relay and proof (reported as an invalid proof); chain state reads,
+//     including the application ring lookup, run outside it, so a panic there stops
+//     the node as before. Relay request ring signatures must have between two and
+//     1 + 2 * max_delegated_gateways members (or the size of the application's
+//     expected ring, if larger), and a size that matches the member count.
 //   - EventServiceMetadataUpdated (x/service, #2009): MsgAddService emits it whenever
 //     the stored card changes, including a service created with a card. CONSENSUS-
 //     BREAKING, state and gas: an update that changes nothing (same name, cupr and
@@ -76,17 +86,20 @@ const (
 // Gas changes (gas_used, hence LastResultsHash; no AppHash change):
 //   - MsgCreateClaim / MsgSubmitProof: lower on memo hits.
 //   - MsgUnstakeSupplier: reads the supplier dehydrated and its service config history
-//     once (in BeginSupplierUnbonding) instead of hydrating it up front.
+//     once (in BeginSupplierUnbonding), and rewrites only the service configs whose
+//     deactivation height changes instead of re-indexing every config (lower).
+//     The below-min-stake unbonding in settlement and the one-shot repair use the
+//     same path.
 //   - MsgAddService: lower on a no-op update, higher when a card is set or changed.
 //   - MsgUpdateParam / MsgUpdateParams (supplier): write the service cap sweep key
 //     when the cap is enabled and min_stake, min_stake_included_services or
 //     stake_per_additional_service changes.
 //   - MsgStakeSupplier and MsgClaimMorseSupplier (which stakes through
 //     StakeSupplier): read the supplier params once instead of twice, and write
-//     the service priority when the message lists services. The min stake re-check
-//     in the stake reconciliation is gone.
-//   - MsgUnstakeSupplier: unchanged params reads (BeginSupplierUnbonding takes the
-//     shared params the handler already read).
+//     the service priority when the message lists services in a new order. The
+//     min stake re-check in the stake reconciliation is gone. A message without
+//     services (stake top-up, unbonding cancel) no longer re-indexes the service
+//     config history (much lower for suppliers with many services).
 //
 // Event changes (not hashed, but visible to indexers such as pocketdex):
 //   - EventSupplierUnbondingBegin with reason BELOW_MIN_STAKE now reports the real
@@ -97,6 +110,8 @@ const (
 //   - New EventSupplierServicesCapped, one per deactivated service, primitives only.
 //   - EventSupplierServiceConfigActivated is no longer emitted for a config that is
 //     deactivated at or before its activation height (it never became active).
+//   - The repair's EventSupplierUnbondingBegin carries the dehydrated supplier, as
+//     the voluntary unstake does.
 //
 // Operators: blocks before the upgrade height MUST be replayed with the previous
 // binary (cosmovisor does this). The memo is not height-gated, so replaying old

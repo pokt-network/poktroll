@@ -341,9 +341,9 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 		return
 	}
 
-	if relayRequest.Meta.SessionHeader == nil {
+	if err := relayRequest.ValidateBasic(); err != nil {
 		b.serviceBackendConn.handleError(
-			ErrWebsocketsGatewayMessage.Wrap("relay request has no session header"),
+			ErrWebsocketsGatewayMessage.Wrapf("invalid relay request: %v", err),
 		)
 		return
 	}
@@ -360,12 +360,6 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 	}
 
 	serviceId := relayRequest.Meta.SessionHeader.ServiceId
-
-	// Store the latest relay request to guarantee that there is always a request/response.
-	// This is to guarantee that any mined Relay will contain a request/response pair
-	// which is a requirement for the protocol's proof verification.
-	// E.g. The latest eth_subscribe RelayRequest will be mapped to multiple responses.
-	b.setLatestRelayRequest(&relayRequest)
 
 	relayer.RelaysTotal.With(
 		"service_id", serviceId,
@@ -384,6 +378,13 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 	}
 
 	logger.Debug().Msg("relay request verified")
+
+	// Store the latest relay request to guarantee that there is always a request/response.
+	// This is to guarantee that any mined Relay will contain a request/response pair
+	// which is a requirement for the protocol's proof verification.
+	// E.g. The latest eth_subscribe RelayRequest will be mapped to multiple responses.
+	// Only a verified request is stored: backend messages are paired with it.
+	b.setLatestRelayRequest(&relayRequest)
 
 	// Forward the relay request payload to the service backend.
 	if err := b.serviceBackendConn.WriteMessage(msg.messageType, relayRequest.Payload); err != nil {

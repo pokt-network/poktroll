@@ -56,8 +56,9 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 		// was active is DeactivationHeight - 1, which falls within the last active session.
 		// We calculate the proof window for that session.
 		lastActiveHeight := serviceConfigUpdate.DeactivationHeight - 1
-		sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, lastActiveHeight)
-		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, lastActiveHeight)
+		proofWindowCloseHeight := k.lastProofWindowCloseHeight(
+			ctx, serviceConfigUpdate.ActivationHeight, lastActiveHeight,
+		)
 
 		if currentHeight <= proofWindowCloseHeight {
 			// Config is still needed for claim validation - skip pruning
@@ -79,4 +80,26 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 	}
 
 	return len(deactivatedConfigsSuppliers), nil
+}
+
+// lastProofWindowCloseHeight returns the latest proof window close height of the
+// sessions between activationHeight and lastActiveHeight. The last session
+// usually closes last, but an earlier session closes later when a params change
+// since then shortened the claim and proof windows.
+func (k Keeper) lastProofWindowCloseHeight(ctx context.Context, activationHeight, lastActiveHeight int64) int64 {
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, lastActiveHeight)
+	closeHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, lastActiveHeight)
+
+	// Params change at session starts: the session ending just before each
+	// change is the last one under the previous params.
+	k.sharedKeeper.IterateParamsHistoryReverse(ctx, lastActiveHeight, func(effectiveHeight int64, _ sharedtypes.Params) bool {
+		if effectiveHeight <= activationHeight {
+			return true
+		}
+		previousParams := k.sharedKeeper.GetParamsAtHeight(ctx, effectiveHeight-1)
+		closeHeight = max(closeHeight, sharedtypes.GetProofWindowCloseHeight(&previousParams, effectiveHeight-1))
+		return false
+	})
+
+	return closeHeight
 }
