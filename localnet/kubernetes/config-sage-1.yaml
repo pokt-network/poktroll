@@ -1,0 +1,25 @@
+# SAGE config for LocalNet gateway 1: the gateway1 identity from config-path-1.yaml,
+# in SAGE's top-level layout. SAGE signs every relay with the gateway key for the
+# owned apps below (each delegated onchain to gateway1) and ignores App-Address.
+full_node_config:
+  rpc_url: tcp://validator-pocket-validator:26657
+  grpc_config:
+    host_port: validator-pocket-validator:9090
+    insecure: true
+gateway_config:
+  # Required, but SAGE derives how to sign from the keys rather than the mode.
+  gateway_mode: centralized
+  gateway_address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4 # gateway1
+  gateway_private_key_hex: cf09805c952fa999e9a63a9f434147b0a5abfd10f268879694c6b5a70e1ae177
+  owned_apps_addresses:
+    - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 # app1 (anvil)
+    - pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm # app2 (rest)
+    - pokt1lqyu4v88vp8tzc86eaqr4lq8rwhssyn6rfwzex # app3 (anvilws)
+  # WebSocket upgrades are refused unless the service is listed with "websocket".
+  services:
+    - id: anvil
+      type: evm
+      rpc_types: ["json_rpc"]
+    - id: anvilws
+      type: evm
+      rpc_types: ["json_rpc", "websocket"]

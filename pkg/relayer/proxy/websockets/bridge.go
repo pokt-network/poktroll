@@ -53,6 +53,7 @@ type bridge struct {
 	ctx       context.Context
 	cancelCtx context.CancelFunc
 	logger    polylog.Logger
+	serviceId string
 
 	// Pre-derived per-handler loggers. NewBridge runs concurrently across
 	// websocket upgrades, so any per-message .With(...) on a shared parent
@@ -205,6 +206,7 @@ func NewBridge(
 		ctx:                ctx,
 		cancelCtx:          cancelCtx,
 		logger:             bridgeLogger,
+		serviceId:          session.Header.ServiceId,
 		gatewayMsgLogger:   bridgeLogger.With("message_source", string(messageSourceGateway)),
 		backendMsgLogger:   bridgeLogger.With("message_source", string(messageSourceServiceBackend)),
 		serviceBackendConn: serviceBackendConn,
@@ -250,7 +252,8 @@ func (b *bridge) Run(closeHeight int64) {
 		b.blockClient.CommittedBlocksSequence(b.ctx),
 		func(ctx context.Context, block client.Block) {
 			if block.Height() >= closeHeight {
-				b.logger.Info().Msg("session closing, bridge stopped")
+				b.logger.Info().Int64("height", block.Height()).Msg("session closing, bridge stopped")
+				relayer.WebsocketBridgeSessionCloseHeight.With("service_id", b.serviceId).Set(float64(block.Height()))
 				// TODO_MAINNET(@red-0ne) Propagate the session closing as a close message
 				// to the gateway so end user can be informed.
 				b.cancelCtx()

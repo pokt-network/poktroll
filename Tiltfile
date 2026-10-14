@@ -1,5 +1,4 @@
 # Load external extensions
-load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 load("ext://configmap", "configmap_create")
 load("ext://secret", "secret_create_generic")
@@ -184,22 +183,22 @@ if localnet_config["hot-reloading"]:
         env=CGO_DISABLED_ENV,
     )
 
-# Build an image with a pocketd binary
-docker_build_with_restart(
+# Build an image with a pocketd binary.
+# The binary is baked into the image (no live_update): syncing a new binary into
+# running containers raced with their startup, so pods could run a stale binary
+# or fail with "Text file busy". A binary change now rebuilds only the COPY layer
+# and rolls every pocketd pod onto the new image.
+docker_build(
     "pocketd",
     ".",
-    dockerfile_contents="""FROM golang:1.25.8
+    dockerfile_contents="""FROM golang:1.27.2
 RUN apt-get -q update && apt-get install -qyy curl jq less
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 COPY bin/pocketd /usr/local/bin/pocketd
 WORKDIR /
+ENTRYPOINT ["pocketd"]
 """,
     only=["./bin/pocketd"],
-    entrypoint=["pocketd"],
-    live_update=[
-        sync("bin/pocketd", "/usr/local/bin/pocketd"),
-        run("chmod +x /usr/local/bin/pocketd"),
-    ],
 )
 
 # Run data nodes & validators
@@ -223,6 +222,8 @@ helm_resource(
     ],
     image_deps=["pocketd"],
     image_keys=[("image.repository", "image.tag")],
+    # Build the image from a fresh binary: every other pocketd pod depends on the validator.
+    resource_deps=["hot-reload: pocketd (bin)"] if localnet_config["hot-reloading"] else [],
 )
 
 # Provision RelayMiners
@@ -324,93 +325,141 @@ if localnet_config["path_local_repo"]["enabled"]:
 # with PATH metrics (see the .json files)
 # Ref: https://github.com/buildwithgrove/path/pull/72
 
-# Provision PATH Gateway(s)
-actor_number = 0
-# Loop to configure and apply multiple PATH gateway deployments
-for x in range(localnet_config["path_gateways"]["count"]):
-    actor_number += 1
-
-    resource_flags = [
-        # PATH global values
-        "--set=fullnameOverride=path" + str(actor_number),
-        "--set=nameOverride=path" + str(actor_number),
-        "--set=global.serviceAccount.name=path" + str(actor_number),
-        "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
-        # PATH config values
-        "--set=config.fromConfigMap.enabled=true",
-        "--set=config.fromConfigMap.name=path-config-" + str(actor_number),
-        "--set=config.fromConfigMap.key=.config.yaml",
-        # GUARD values
-        "--set=guard.global.namespace=default", # Ensure GUARD runs in the default namespace
-        "--set=guard.global.serviceName=path" + str(actor_number) + "-http", # Override the default service name
-        "--set=guard.services[0].serviceId=anvil", # Ensure HTTPRoute resources are created for Anvil
-        "--set=observability.enabled=false",
-        # TODO_TECHDEBT(@okdas): Remove the need for an override that uses a pre-released version of RLS.
-        # See 'guard-overrides.yaml' for more details and TODOs.
-        "--values=./localnet/kubernetes/guard-overrides.yaml",
-    ]
-
-    if localnet_config["path_local_repo"]["enabled"]:
-        path_image_deps = ["path-local"]
-        path_image_keys = [("image.repository", "image.tag")]
-        path_deps=["path-local", "relayminer" + str(actor_number)]
-        resource_flags.append("--set=global.imagePullPolicy=Never")
-    else:
-        path_image_deps = []
-        path_image_keys = []
-        path_deps=["relayminer" + str(actor_number)]
-
+# Provision gateway(s): SAGE by default, PATH when gateway.type is "path".
+# SAGE loads localnet/kubernetes/config-sage-N.yaml, PATH config-path-N.yaml (same
+# keys, different layout). Both serve relays on localhost:3068+N (3069 for the
+# first gateway, used by E2E).
+def provision_sage_gateway(actor_number):
+    name = "sage" + str(actor_number)
     configmap_create(
-        "path-config-" + str(actor_number),
-        from_file=".config.yaml=./localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
+        "sage-config-" + str(actor_number),
+        from_file="config.yaml=./localnet/kubernetes/config-sage-" + str(actor_number) + ".yaml",
     )
-
-    helm_resource(
-        "path" + str(actor_number),
-        grove_chart_prefix + "path",
-        flags=resource_flags,
-        image_deps=path_image_deps,
-        image_keys=path_image_keys,
-        update_dependencies=localnet_config["path_local_repo"]["enabled"],
-    )
-
-    # Apply the deployment to Kubernetes using Tilt
+    k8s_yaml(encode_yaml({
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {"name": name, "labels": {"app": name}},
+        "spec": {
+            "replicas": 1,
+            "selector": {"matchLabels": {"app": name}},
+            "template": {
+                "metadata": {"labels": {"app": name}},
+                "spec": {
+                    "containers": [{
+                        "name": "sagegw",
+                        "image": localnet_config["gateway"]["sage_image"],
+                        "args": ["-config", "/etc/sage/config.yaml"],
+                        "ports": [
+                            {"name": "relay", "containerPort": 3069},
+                            {"name": "metrics", "containerPort": 9090},
+                        ],
+                        "volumeMounts": [{"name": "config", "mountPath": "/etc/sage", "readOnly": True}],
+                        "livenessProbe": {"httpGet": {"path": "/livez", "port": "relay"}, "periodSeconds": 10},
+                        "readinessProbe": {"httpGet": {"path": "/ready", "port": "relay"}, "periodSeconds": 5},
+                    }],
+                    "volumes": [{"name": "config", "configMap": {"name": "sage-config-" + str(actor_number)}}],
+                },
+            },
+        },
+    }))
     k8s_resource(
-        "path" + str(actor_number),
+        name,
         labels=["gateways"],
-        resource_deps=path_deps,
-        # TODO_IMPROVE(@okdas): Update this once PATH has grafana dashboards
-        # links=[
-        #     link(
-        #         "http://localhost:3003/d/path/protocol-path?orgId=1&refresh=5s&var-path=gateway"
-        #         + str(actor_number),
-        #         "Grafana dashboard",
-        #     ),
-        # ],
-        # TODO_IMPROVE(@okdas): Add port forwards to grafana, pprof, like the other resources
-        # TODO_TECHDEBT(@okdas): Enable using port `3070` for consistency with path_localnet.
-        # Changing this port will make E2E start failing.
-        # See the `envoy proxy` k8s resource below for in progress work.
-        port_forwards=[
-                # See PATH for the default port used by the gateway. As of PR #1026, it is :3069.
-                # https://github.com/buildwithgrove/path/blob/main/config/router.go
-                str(3068 + actor_number) + ":3069"
-        ],
-        extra_pod_selectors=[
-            {"app.kubernetes.io/instance": "path" + str(actor_number)},
-            {"app.kubernetes.io/name": "path" + str(actor_number)},
-        ],
-        discovery_strategy="selectors-only", # Extra pod selectors didn't work without this
+        resource_deps=["relayminer" + str(actor_number)],
+        port_forwards=[str(3068 + actor_number) + ":3069"],
     )
 
-    # DO NOT DELETE, this is an example of how we'll turn on envoy proxy in the future
-    # Envoy Proxy / Gateway. Endpoint that requires authorization header (unlike 3069 - accesses path directly)
-    # k8s_resource(
-    #     "path" + str(actor_number),
-    #     new_name="path-envoy-proxy",
-    #     extra_pod_selectors=[{"gateway.envoyproxy.io/owning-gateway-name": "guard-envoy-gateway", "app.kubernetes.io/component": "proxy"}],
-    #     port_forwards=["3070:3070"],
-    # )
+if localnet_config["gateway"]["type"] == "sage":
+    for x in range(localnet_config["path_gateways"]["count"]):
+        provision_sage_gateway(x + 1)
+else:
+    # Provision PATH Gateway(s)
+    actor_number = 0
+    # Loop to configure and apply multiple PATH gateway deployments
+    for x in range(localnet_config["path_gateways"]["count"]):
+        actor_number += 1
+
+        resource_flags = [
+            # PATH global values
+            "--set=fullnameOverride=path" + str(actor_number),
+            "--set=nameOverride=path" + str(actor_number),
+            "--set=global.serviceAccount.name=path" + str(actor_number),
+            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+            # PATH config values
+            "--set=config.fromConfigMap.enabled=true",
+            "--set=config.fromConfigMap.name=path-config-" + str(actor_number),
+            "--set=config.fromConfigMap.key=.config.yaml",
+            # GUARD values
+            "--set=guard.global.namespace=default", # Ensure GUARD runs in the default namespace
+            "--set=guard.global.serviceName=path" + str(actor_number) + "-http", # Override the default service name
+            "--set=guard.services[0].serviceId=anvil", # Ensure HTTPRoute resources are created for Anvil
+            "--set=observability.enabled=false",
+            # TODO_TECHDEBT(@okdas): Remove the need for an override that uses a pre-released version of RLS.
+            # See 'guard-overrides.yaml' for more details and TODOs.
+            "--values=./localnet/kubernetes/guard-overrides.yaml",
+        ]
+
+        if localnet_config["path_local_repo"]["enabled"]:
+            path_image_deps = ["path-local"]
+            path_image_keys = [("image.repository", "image.tag")]
+            path_deps=["path-local", "relayminer" + str(actor_number)]
+            resource_flags.append("--set=global.imagePullPolicy=Never")
+        else:
+            path_image_deps = []
+            path_image_keys = []
+            path_deps=["relayminer" + str(actor_number)]
+
+        configmap_create(
+            "path-config-" + str(actor_number),
+            from_file=".config.yaml=./localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
+        )
+
+        helm_resource(
+            "path" + str(actor_number),
+            grove_chart_prefix + "path",
+            flags=resource_flags,
+            image_deps=path_image_deps,
+            image_keys=path_image_keys,
+            update_dependencies=localnet_config["path_local_repo"]["enabled"],
+        )
+
+        # Apply the deployment to Kubernetes using Tilt
+        k8s_resource(
+            "path" + str(actor_number),
+            labels=["gateways"],
+            resource_deps=path_deps,
+            # TODO_IMPROVE(@okdas): Update this once PATH has grafana dashboards
+            # links=[
+            #     link(
+            #         "http://localhost:3003/d/path/protocol-path?orgId=1&refresh=5s&var-path=gateway"
+            #         + str(actor_number),
+            #         "Grafana dashboard",
+            #     ),
+            # ],
+            # TODO_IMPROVE(@okdas): Add port forwards to grafana, pprof, like the other resources
+            # TODO_TECHDEBT(@okdas): Enable using port `3070` for consistency with path_localnet.
+            # Changing this port will make E2E start failing.
+            # See the `envoy proxy` k8s resource below for in progress work.
+            port_forwards=[
+                    # See PATH for the default port used by the gateway. As of PR #1026, it is :3069.
+                    # https://github.com/buildwithgrove/path/blob/main/config/router.go
+                    str(3068 + actor_number) + ":3069"
+            ],
+            extra_pod_selectors=[
+                {"app.kubernetes.io/instance": "path" + str(actor_number)},
+                {"app.kubernetes.io/name": "path" + str(actor_number)},
+            ],
+            discovery_strategy="selectors-only", # Extra pod selectors didn't work without this
+        )
+
+        # DO NOT DELETE, this is an example of how we'll turn on envoy proxy in the future
+        # Envoy Proxy / Gateway. Endpoint that requires authorization header (unlike 3069 - accesses path directly)
+        # k8s_resource(
+        #     "path" + str(actor_number),
+        #     new_name="path-envoy-proxy",
+        #     extra_pod_selectors=[{"gateway.envoyproxy.io/owning-gateway-name": "guard-envoy-gateway", "app.kubernetes.io/component": "proxy"}],
+        #     port_forwards=["3070:3070"],
+        # )
 
 
 # Provision Validators
@@ -483,18 +532,45 @@ check_and_load_pocketdex(localnet_config["indexer"])
 
 
 ### Pocketd Faucet
+# Deployed inline rather than with the pocketd-faucet helm chart: the chart's
+# command passes `--log-level`, which pocketd no longer accepts (`--log_level`),
+# and probes port 80 while the faucet listens on 8080.
+# DEV_NOTE: LocalNet-only mnemonic. NEVER use a MainNet account here.
+FAUCET_MNEMONIC = "baby advance work soap slow exclude blur humble lucky rough teach wide chuckle captain rack laundry butter main very cannon donate armor dress follow"
 if localnet_config["faucet"]["enabled"]:
-    helm_resource(
-        "pocketd-faucet",
-        chart_prefix + "pocketd-faucet",
-        flags=[
-            "--values=./localnet/kubernetes/values-pocketd-faucet.yaml",
-            "--set=image.repository=pocketd",
-        ],
-        image_deps=["pocketd"],
-        image_keys=[("image.repository", "image.tag")],
-        resource_deps=["validator"],
-    )
+    k8s_yaml(encode_yaml({
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {"name": "pocketd-faucet", "labels": {"app": "pocketd-faucet"}},
+        "spec": {
+            "replicas": 1,
+            "selector": {"matchLabels": {"app": "pocketd-faucet"}},
+            "template": {
+                "metadata": {"labels": {"app": "pocketd-faucet"}},
+                "spec": {
+                    "containers": [{
+                        "name": "pocketd-faucet",
+                        "image": "pocketd",
+                        "command": ["sh", "-c", " ".join([
+                            'echo -n "$SIGNING_KEY_MNEMONIC" > /mnemonic.txt &&',
+                            "pocketd keys add faucet --recover --source=/mnemonic.txt --keyring-backend=test &&",
+                            "exec pocketd faucet serve --log_level=debug --network=local",
+                            "--node=tcp://validator-pocket-validator:26657 --keyring-backend=test",
+                        ])],
+                        "env": [
+                            {"name": "SIGNING_KEY_MNEMONIC", "value": FAUCET_MNEMONIC},
+                            {"name": "FAUCET_LISTEN_ADDRESS", "value": "0.0.0.0:8080"},
+                            {"name": "FAUCET_SIGNING_KEY_NAME", "value": "faucet"},
+                            {"name": "FAUCET_SUPPORTED_SEND_COINS", "value": "1mact,100000000000000upokt"},
+                            {"name": "FAUCET_CREATE_ACCOUNTS_ONLY", "value": "false"},
+                        ],
+                        "ports": [{"name": "http", "containerPort": 8080}],
+                        "readinessProbe": {"tcpSocket": {"port": "http"}, "periodSeconds": 5},
+                    }],
+                },
+            },
+        },
+    }))
 
     k8s_resource(
         "pocketd-faucet",

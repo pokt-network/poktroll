@@ -71,8 +71,11 @@ var (
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=pocket"
-	// pathUrl points to a local gateway using the PATH framework in centralized mode.
+	// pathUrl points to the local gateway (SAGE, or PATH).
 	pathUrl = "http://localhost:3069/v1" // localhost is kept as the default to streamline local development & testing.
+	// relayminerMetricsUrl points to relayminer1's Prometheus metrics on LocalNet.
+	// Override with the RELAYMINER_METRICS_URL env variable.
+	relayminerMetricsUrl = "http://localhost:9070/metrics"
 
 	// allFeaturesTags is a tag expression that filters out features (i.e. E2E tests)
 	// which SHOULD NOT be included in a wildcard/glob of feature files.
@@ -162,6 +165,8 @@ type suite struct {
 	// numEVMSubscriptionEvents is the number of eth subscription events received
 	// from the RelayMiner through the Gateway's websocket connection.
 	numEVMSubscriptionEvents atomic.Uint64
+	// wsServiceId is the service of the websocket connection.
+	wsServiceId string
 	// wsCloseHeight is the block height at which the websocket connection should be closed
 	// by the relay miner due to the end of the session.
 	wsCloseHeight int64
@@ -1138,12 +1143,6 @@ func (s *suite) getSupplierParams() suppliertypes.Params {
 func (s *suite) getCurrentBlockHeight() int64 {
 	blockRes := s.queryBlockResponse()
 	return blockRes.Header.Height
-}
-
-// getLastCommitBlockHeight returns the block height of the most recently committed block.
-func (s *suite) getLastCommitBlockHeight() int64 {
-	blockRes := s.queryBlockResponse()
-	return blockRes.LastCommit.Height
 }
 
 // queryBlock queries for the current block information.
