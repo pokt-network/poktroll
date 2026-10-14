@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	ringtypes "github.com/pokt-network/go-dleq/types"
 	ring "github.com/pokt-network/ring-go"
 	"github.com/stretchr/testify/require"
 
@@ -109,26 +110,20 @@ func TestValidateRingSignatureSize(t *testing.T) {
 	require.ErrorIs(t, validateRingSignatureSize(validSigBz, 2), ErrRingClientInvalidRelayRequestSignature)
 }
 
-// The maximum ring size admits every ring an honest signer can build.
-func TestMaxRingSignatureMembers(t *testing.T) {
-	tests := []struct {
-		desc                 string
-		maxDelegatedGateways uint64
-		honestRingSize       int
-	}{
-		{desc: "no delegations: the app twice", maxDelegatedGateways: 1, honestRingSize: 2},
-		{desc: "max delegations", maxDelegatedGateways: 7, honestRingSize: 1 + 7},
-		{desc: "max delegations plus as many undelegated since the session", maxDelegatedGateways: 7, honestRingSize: 1 + 2*7},
-		{desc: "more delegations than a lowered max", maxDelegatedGateways: 2, honestRingSize: 1 + 7},
+// Rebuilding a past ring must not write into the application's delegations.
+func TestGetRingAddressesAtSessionEndHeight_DoesNotModifyApplication(t *testing.T) {
+	delegations := make([]string, 1, 2)
+	delegations[0] = "gw_delegated"
+	app := &apptypes.Application{
+		DelegateeGatewayAddresses: delegations,
+		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
+			20: {GatewayAddresses: []string{"gw_undelegated"}},
+		},
 	}
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			// The verifier's expected ring is at least as large as the signer's.
-			maxMembers := maxRingSignatureMembers(test.maxDelegatedGateways, test.honestRingSize)
-			require.GreaterOrEqual(t, maxMembers, uint64(test.honestRingSize))
-		})
-	}
-	require.Equal(t, uint64(15), maxRingSignatureMembers(7, 2))
+
+	ringAddresses := GetRingAddressesAtSessionEndHeight(app, 10)
+	require.ElementsMatch(t, []string{"gw_delegated", "gw_undelegated"}, ringAddresses)
+	require.Empty(t, delegations[:cap(delegations)][1])
 }
 
 // newTestRingClient returns a ring client for an application with no delegated
@@ -141,8 +136,6 @@ func newTestRingClient(t *testing.T, appAddr string, appPubKey cryptotypes.PubKe
 		apptypes.Application{Address: appAddr}, // no DelegateeGatewayAddresses
 		nil,
 	).AnyTimes()
-	appParams := apptypes.DefaultParams()
-	appQuerier.EXPECT().GetParams(gomock.Any()).Return(&appParams, nil).AnyTimes()
 
 	acctQuerier := mockclient.NewMockAccountQueryClient(ctrl)
 	acctQuerier.EXPECT().GetPubKeyFromAddress(gomock.Any(), appAddr).Return(appPubKey, nil).AnyTimes()
@@ -174,4 +167,37 @@ func TestVerifyRelayRequestSignature_MalformedRequests(t *testing.T) {
 			require.Error(t, rc.VerifyRelayRequestSignature(context.Background(), relayRequest))
 		})
 	}
+}
+
+// Signature bytes that pass the size check but fail later are rejected with an
+// error, without panicking.
+func TestVerifyRingSignature_InvalidBytesReturnError(t *testing.T) {
+	curve := ring.Secp256k1()
+	priv := curve.NewRandomScalar()
+	keyRing, err := ring.NewKeyRing(curve, 2, priv, 0)
+	require.NoError(t, err)
+	msg := sha3.Sum256([]byte("m"))
+	sig, err := keyRing.Sign(msg, priv)
+	require.NoError(t, err)
+	validSigBz, err := sig.Serialize()
+	require.NoError(t, err)
+
+	garbageSigBz := make([]byte, len(validSigBz))
+	copy(garbageSigBz, validSigBz[:4])
+	for i := 4; i < len(garbageSigBz); i++ {
+		garbageSigBz[i] = 0xff
+	}
+	require.NoError(t, validateRingSignatureSize(garbageSigBz, MaxRingSignatureMembers))
+
+	ringPoints := make(map[string]ringtypes.Point)
+	for _, publicKey := range sig.PublicKeys() {
+		ringPoints[string(publicKey.Encode())] = publicKey
+	}
+
+	err = verifyRingSignature(garbageSigBz, ringPoints, &servicetypes.RelayRequest{}, "app")
+	require.ErrorIs(t, err, ErrRingClientInvalidRelayRequestSignature)
+
+	// A nil request panics while hashing the signable bytes.
+	err = verifyRingSignature(validSigBz, ringPoints, nil, "app")
+	require.ErrorContains(t, err, "panic verifying ring signature")
 }

@@ -95,7 +95,7 @@ func (k msgServer) UnstakeSupplier(
 	k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams)
 
 	// Emit an event signaling that the supplier has begun the unbonding process
-	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
+	unbondingEndHeight := k.GetSupplierUnbondingEndHeight(ctx, &supplier)
 	event := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &supplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,

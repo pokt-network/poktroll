@@ -94,16 +94,13 @@ func (rc *ringClient) GetRingForAddressAtHeight(
 	return GetRingFromPubKeys(ringPubKeys)
 }
 
-// maxRingSignatureMembers returns the most members a valid ring signature for an
-// application can have. A signer's ring holds the application, its delegated
-// gateways (at most max_delegated_gateways) and, for relays signed around a
-// delegation change, gateways undelegated since the session ended. The bound
-// allows max_delegated_gateways of each. It is never below the size of the
-// ring the verifier itself expects, since applications may hold more
-// delegations than a lowered max_delegated_gateways allows.
-func maxRingSignatureMembers(maxDelegatedGateways uint64, expectedRingSize int) uint64 {
-	return max(1+2*maxDelegatedGateways, uint64(expectedRingSize))
-}
+// MaxRingSignatureMembers is the most members a relay request ring signature
+// may have. It is a fixed protocol bound so that whether a signature is
+// accepted never depends on delegation state, which can change between signing
+// and verification. It is well above any ring an honest signer builds: the
+// application, its delegated gateways and the gateways undelegated since the
+// session.
+const MaxRingSignatureMembers = 64
 
 // validateRingSignatureSize checks a serialized ring signature against the
 // ring-go v0.2.0 layout: a 4-byte big-endian member count n, the challenge
@@ -166,34 +163,21 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		return ErrRingClientInvalidRelayRequest.Wrap("missing signature from relay request")
 	}
 
-	// Get the ring for the application address of the relay request.
-	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
-	appAddress := sessionHeader.GetApplicationAddress()
-	expectedRingPubKeys, err := rc.getRingPubKeysForAddress(ctx, appAddress, sessionEndHeight)
-	if err != nil {
-		return ErrRingClientInvalidRelayRequest.Wrapf(
-			"error getting ring for application address %s: %v", appAddress, err,
-		)
-	}
-	expectedRelayRingPointsForApp, err := ringPointsFromPubKeys(expectedRingPubKeys)
-	if err != nil {
-		return ErrRingClientInvalidRelayRequest.Wrapf(
-			"error getting ring for application address %s: %v", appAddress, err,
-		)
-	}
-	appParams, err := rc.applicationQuerier.GetParams(ctx)
-	if err != nil {
-		return ErrRingClientInvalidRelayRequest.Wrapf("error getting application params: %v", err)
-	}
-
 	// Check the signature's size before deserializing it: the member count must
-	// be within the bounds of a ring for this application, and the length must
-	// match the member count exactly.
-	maxMembers := maxRingSignatureMembers(appParams.GetMaxDelegatedGateways(), len(expectedRingPubKeys))
-	if err = validateRingSignatureSize(signature, maxMembers); err != nil {
+	// be within bounds, and the length must match the member count exactly.
+	if err := validateRingSignatureSize(signature, MaxRingSignatureMembers); err != nil {
 		return err
 	}
 
+	// Get the ring for the application address of the relay request.
+	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+	appAddress := sessionHeader.GetApplicationAddress()
+	expectedRelayRingPointsForApp, err := rc.getRingPointsForAddressAtHeight(ctx, appAddress, sessionEndHeight)
+	if err != nil {
+		return ErrRingClientInvalidRelayRequest.Wrapf(
+			"error getting ring for application address %s: %v", appAddress, err,
+		)
+	}
 	return verifyRingSignature(signature, expectedRelayRingPointsForApp, relayRequest, appAddress)
 }
 
@@ -320,12 +304,7 @@ func (rc *ringClient) getRingPointsForAddressAtHeight(
 	if err != nil {
 		return nil, err
 	}
-	return ringPointsFromPubKeys(ringPubKeys)
-}
 
-// ringPointsFromPubKeys returns a map of encoded ring points to Point objects
-// for the given public keys.
-func ringPointsFromPubKeys(ringPubKeys []cryptotypes.PubKey) (map[string]ringtypes.Point, error) {
 	// Get the points on the secp256k1 curve for the public keys in the ring.
 	points, err := pointsFromPublicKeys(ringPubKeys...)
 	if err != nil {
@@ -396,8 +375,10 @@ func GetRingAddressesAtSessionEndHeight(
 	app *apptypes.Application,
 	targetSessionEndHeight uint64,
 ) []string {
-	// Get the current active delegations for the application and use them as a base.
-	activeDelegationsAtHeight := app.DelegateeGatewayAddresses
+	// Get the current active delegations for the application and use them as a
+	// base. Clone them: appending below must not write into the application's
+	// slice, which callers may share.
+	activeDelegationsAtHeight := slices.Clone(app.DelegateeGatewayAddresses)
 
 	// Use a map to keep track of the gateways addresses that have been added to
 	// the active delegations slice to avoid duplicates.

@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"maps"
 	"math/big"
 
 	"cosmossdk.io/log"
@@ -246,14 +247,18 @@ func (k Keeper) ProcessTokenLogicModules(
 	// are flushed once per settlement batch in SettlePendingClaims, achieving perfect
 	// precision via the Largest Remainder Method on the batched sum.
 	// A failed claim is discarded with its queued operations, so restore the
-	// application stake the TLMs reduced in the settlement cache.
+	// application stake and the validator rewards the TLMs changed in the
+	// settlement cache.
 	appStakeBefore := *application.Stake
+	validatorRewardsBefore := maps.Clone(tlmCtx.ValidatorRewardAccumulator)
 	for _, tokenLogicModule := range k.tokenLogicModules {
 		tlmName := tokenLogicModule.GetId().String()
 		logger.Info(fmt.Sprintf("Starting processing TLM: %q", tlmName))
 
 		if err = tokenLogicModule.Process(ctx, logger, tlmCtx); err != nil {
 			application.Stake = &appStakeBefore
+			clear(tlmCtx.ValidatorRewardAccumulator)
+			maps.Copy(tlmCtx.ValidatorRewardAccumulator, validatorRewardsBefore)
 			return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf("TLM %q: %s", tlmName, err)
 		}
 
@@ -288,7 +293,10 @@ func (k Keeper) ProcessTokenLogicModules(
 	if tlmCtx.Application.Stake.Amount.LT(minStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		tlmCtx.Application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, tlmCtx.Application)
+		// Report the unbonding end height EndBlockerUnbondApplications will use:
+		// params at the unstake session end.
+		unstakeParams := settlementContext.GetSharedParamsAtHeight(ctx, sessionEndHeight)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&unstakeParams, tlmCtx.Application)
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			Application:        tlmCtx.Application,

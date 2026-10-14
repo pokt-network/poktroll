@@ -99,8 +99,8 @@ func (k Keeper) RepairUnindexedUnbondingSuppliers(ctx context.Context) (repaired
 		unstakeSessionEndHeight := k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams)
 		repaired = append(repaired, supplier.OperatorAddress)
 
-		// The event carries the dehydrated supplier, like the other unbonding
-		// events: the hydrated copy predates the deactivations just stored.
+		// The event carries the dehydrated supplier, like the voluntary unbonding
+		// event: the hydrated copy predates the deactivations just stored.
 		supplier.Services = nil
 		supplier.ServiceConfigHistory = nil
 		event := &suppliertypes.EventSupplierUnbondingBegin{

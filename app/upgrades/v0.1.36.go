@@ -47,19 +47,20 @@ const (
 //     it was previously discarded. Claims of one supplier and service from
 //     different sessions settling in the same block each use their own session's
 //     config. A claim whose token logic modules fail leaves the application stake
-//     unchanged.
+//     and the validator rewards of the settlement unchanged.
 //   - Deactivated supplier service configs are kept until the proof window of
 //     every session they served has closed, under the params of each session,
 //     including after a params change that shortens the claim and proof windows.
+//     CONSENSUS-BREAKING (state): configs can be pruned later than before.
 //   - MsgCreateClaim and MsgSubmitProof: the session header's start and end
 //     heights must equal the onchain session's. CONSENSUS-BREAKING (state).
 //     RelayMiners already reject relays whose header differs from the onchain one.
 //   - Proof validation recovers from a panic only while decoding and verifying the
 //     submitted relay and proof (reported as an invalid proof); chain state reads,
 //     including the application ring lookup, run outside it, so a panic there stops
-//     the node as before. Relay request ring signatures must have between two and
-//     1 + 2 * max_delegated_gateways members (or the size of the application's
-//     expected ring, if larger), and a size that matches the member count.
+//     the node as before. CONSENSUS-BREAKING (state): relay request ring
+//     signatures must have between 2 and 64 members (MaxRingSignatureMembers, a
+//     fixed protocol constant), and a size that matches the member count.
 //   - EventServiceMetadataUpdated (x/service, #2009): MsgAddService emits it whenever
 //     the stored card changes, including a service created with a card. CONSENSUS-
 //     BREAKING, state and gas: an update that changes nothing (same name, cupr and
@@ -95,8 +96,9 @@ const (
 //     when the cap is enabled and min_stake, min_stake_included_services or
 //     stake_per_additional_service changes.
 //   - MsgStakeSupplier and MsgClaimMorseSupplier (which stakes through
-//     StakeSupplier): read the supplier params once instead of twice, and write
-//     the service priority when the message lists services in a new order. The
+//     StakeSupplier): read the supplier params once instead of twice; a message
+//     that lists services reads the service priority and writes it only when the
+//     order changes. The
 //     min stake re-check in the stake reconciliation is gone. A message without
 //     services (stake top-up, unbonding cancel) no longer re-indexes the service
 //     config history (much lower for suppliers with many services).
@@ -105,7 +107,11 @@ const (
 //   - EventSupplierUnbondingBegin with reason BELOW_MIN_STAKE now reports the real
 //     UnbondingEndHeight (unstake session end + unbonding period, with the params
 //     at the unstake session end, as the unbonding itself uses), not the unstake
-//     session end height.
+//     session end height. The VOLUNTARY reason and EventApplicationUnbondingBegin
+//     with reason BELOW_MIN_STAKE also use the params at the unstake session end.
+//     The repair's EventSupplierUnbondingBegin carries the dehydrated supplier
+//     (no services), like the VOLUNTARY one; the settlement one still carries the
+//     claim's service configs.
 //   - New EventServiceMetadataUpdated.
 //   - New EventSupplierServicesCapped, one per deactivated service, primitives only.
 //   - EventSupplierServiceConfigActivated is no longer emitted for a config that is
