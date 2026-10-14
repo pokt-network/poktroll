@@ -33,7 +33,8 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 	}
 
 	params := k.GetParams(ctx)
-	paramsBefore := k.GetParams(ctx)
+	// The switch below only replaces pointer fields, so this copy is unaffected.
+	paramsBefore := params
 
 	switch msg.Name {
 	case suppliertypes.ParamMinStake:
@@ -61,14 +62,10 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := k.SetParams(ctx, params); err != nil {
+	if err := k.setParams(ctx, paramsBefore, params); err != nil {
 		err = fmt.Errorf("unable to set params: %v", err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	if serviceCapParamsChanged(paramsBefore, params) {
-		k.ScheduleServiceCapSweep(ctx)
 	}
 
 	return &suppliertypes.MsgUpdateParamResponse{}, nil

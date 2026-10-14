@@ -33,10 +33,6 @@ message Supplier {
   // List of historical service configuration updates, tracking the suppliers
   // services update and corresponding activation heights.
   repeated ServiceConfigUpdate service_config_history = 6;
-
-  // Service IDs of the supplier's most recent stake message, in message order.
-  // When stake does not cover every service, services earlier in this list are kept.
-  repeated string service_priority = 7;
 }
 
 // ServiceConfigUpdate tracks a change in a supplier's service configurations

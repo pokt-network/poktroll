@@ -110,12 +110,12 @@ type SupplierKeeper interface {
 	GetParams(ctx context.Context) suppliertypes.Params
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetDehydratedSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
-	GetSupplierActiveServiceConfig(ctx context.Context, supplier *sharedtypes.Supplier, serviceId string) (activeServiceConfigs []*sharedtypes.SupplierServiceConfig)
+	GetSupplierActiveServiceConfig(ctx context.Context, supplier *sharedtypes.Supplier, serviceId string, height int64) (activeServiceConfigs []*sharedtypes.SupplierServiceConfig)
 
 	// Setters
 	SetAndIndexDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 	SetDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
-	BeginSupplierUnbonding(ctx context.Context, supplier *sharedtypes.Supplier) (unstakeSessionEndHeight int64)
+	BeginSupplierUnbonding(ctx context.Context, supplier *sharedtypes.Supplier, sharedParams *sharedtypes.Params) (unstakeSessionEndHeight int64)
 	EnforceServiceCap(ctx context.Context, supplier *sharedtypes.Supplier, reason suppliertypes.ServiceCapReason) (deactivatedServiceIds []string)
 }
 

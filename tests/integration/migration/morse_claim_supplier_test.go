@@ -77,7 +77,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 				Stake:                   &expectedStake,
 				UnstakeSessionEndHeight: 0,
 				ServiceConfigHistory:    serviceConfigHistory,
-				ServicePriority:         suppliertypes.ServicePriorityFromConfigs(s.supplierServices),
 			}
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{}
 			s.Equal(expectedClaimSupplierRes, claimSupplierRes)
@@ -231,7 +230,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				Stake:                   &expectedFinalSupplierStake,
 				ServiceConfigHistory:    expectedServiceConfigUpdateHistory,
 				UnstakeSessionEndHeight: 0,
-				ServicePriority:         suppliertypes.ServicePriorityFromConfigs(s.supplierServices),
 				// Services:             Intentionally omitted because it will be
 				//                       dehydrated from the MsgStakeSupplierResponse.
 			}
@@ -472,8 +470,6 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 			},
 			// DEV_NOTE: The services field will be empty until a service activation height elapses.
 			Services: make([]*sharedtypes.SupplierServiceConfig, 0),
-			// The claim stakes with the services in order.
-			ServicePriority: suppliertypes.ServicePriorityFromConfigs(s.supplierServices[:1]),
 		}
 
 		// Claim a Morse claimable account.
@@ -823,8 +819,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 			},
 			// DEV_NOTE: The services field will be empty until a service activation height elapses.
 			Services: make([]*sharedtypes.SupplierServiceConfig, 0),
-			// The claim stakes with the services in order.
-			ServicePriority: suppliertypes.ServicePriorityFromConfigs(s.supplierServices[:1]),
 		}
 
 		// Claim a Morse claimable account.
@@ -879,8 +873,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 				},
 			},
 			// DEV_NOTE: The services field will be empty until a service activation height elapses.
-			Services:        nil,
-			ServicePriority: suppliertypes.ServicePriorityFromConfigs(s.supplierServices[:1]),
+			Services: nil,
 		}
 
 		// Prepare clients for queries.

@@ -8,6 +8,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
@@ -592,11 +593,18 @@ func TestRepairUnindexedUnbondingSuppliers(t *testing.T) {
 
 	// The upgrade runs mid-session, some sessions later.
 	repairHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, slashSessionEndHeight) + 1
-	sdkCtx = sdkCtx.WithBlockHeight(repairHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(repairHeight).WithEventManager(cosmostypes.NewEventManager())
 	require.Equal(t, []string{stuckAddr}, supplierModuleKeepers.RepairUnindexedUnbondingSuppliers(sdkCtx))
 
 	repairedSupplier, found := supplierModuleKeepers.GetSupplier(sdkCtx, stuckAddr)
 	require.True(t, found)
+
+	// The restarted unbonding is announced with its new heights.
+	beginEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, sdkCtx.EventManager().Events())
+	require.Len(t, beginEvents, 1)
+	require.Equal(t, stuckAddr, beginEvents[0].GetSupplier().GetOperatorAddress())
+	require.Equal(t, int64(repairedSupplier.UnstakeSessionEndHeight), beginEvents[0].GetSessionEndHeight())
+	require.Equal(t, sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &repairedSupplier), beginEvents[0].GetUnbondingEndHeight())
 	require.Equal(t, uint64(sharedtypes.GetSessionEndHeight(&sharedParams, repairHeight)), repairedSupplier.UnstakeSessionEndHeight)
 	require.NotEmpty(t, repairedSupplier.ServiceConfigHistory)
 	for _, serviceConfig := range repairedSupplier.ServiceConfigHistory {

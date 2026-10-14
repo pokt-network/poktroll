@@ -28,6 +28,9 @@ func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisSta
 
 		k.SetAndIndexDehydratedSupplier(ctx, supplier)
 	}
+	for _, priority := range genState.ServicePriorityList {
+		k.SetServicePriority(ctx, priority.OperatorAddress, priority.ServiceIds)
+	}
 	// this line is used by starport scaffolding # genesis/module/init
 	if err := k.SetParams(ctx, genState.Params); err != nil {
 		panic(err)
@@ -40,6 +43,7 @@ func ExportGenesis(ctx context.Context, k keeper.Keeper) *types.GenesisState {
 	genesis.Params = k.GetParams(ctx)
 
 	genesis.SupplierList = k.GetAllSuppliers(ctx)
+	genesis.ServicePriorityList = k.GetAllServicePriorities(ctx)
 	// this line is used by starport scaffolding # genesis/module/export
 
 	return genesis

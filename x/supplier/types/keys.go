@@ -31,6 +31,9 @@ package types
 // │                                             <ServiceID>/                           │
 // │                                             <SupplierAddr>/                        │
 // │                                             <ActHeight>/                           │
+// │                                                                                    │
+// │ ServicePriorityKeyPrefix +               ServicePriority/operator_address/         │
+// │                                         └── <SupplierAddr>/                        │
 // └────────────────────────────────────────────────────────────────────────────────────┘
 //
 // Legend
@@ -85,6 +88,9 @@ const (
 
 	// ServiceConfigUpdateDeactivationHeightKeyPrefix is the prefix for indexing service configs by deactivation height
 	ServiceConfigUpdateDeactivationHeightKeyPrefix = "ServiceConfigUpdate/deactivation_height/"
+
+	// ServicePriorityKeyPrefix is the prefix for each supplier's SupplierServicePriority, by operator address
+	ServicePriorityKeyPrefix = "ServicePriority/operator_address/"
 )
 
 // SupplierOperatorKey returns the store key to retrieve a Supplier from the index fields

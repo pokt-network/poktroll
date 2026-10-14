@@ -288,8 +288,6 @@ func (k Keeper) getServiceConfigsSuppliers(
 			continue
 		}
 		supplier.Services = []*sharedtypes.SupplierServiceConfig{serviceConfigUpdate.Service}
-		// Session consumers (gateways, RelayMiners) do not need the priority list.
-		supplier.ServicePriority = nil
 		suppliers = append(suppliers, &supplier)
 	}
 	return suppliers

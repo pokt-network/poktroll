@@ -1023,7 +1023,6 @@ func newSupplierStakeMsg(
 		Stake:                &initialStake,
 		Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
 		ServiceConfigHistory: serviceConfigHistory,
-		ServicePriority:      serviceIds,
 	}
 
 	return msg, expectedSupplier

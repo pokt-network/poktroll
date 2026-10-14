@@ -829,8 +829,11 @@ func (k Keeper) slashSupplierStake(
 		// deactivate its services from the next session on, and persist it WITH its
 		// indexes, so it leaves future sessions and EndBlockerUnbondSuppliers unbonds it.
 		// supplierToSlash is dehydrated; BeginSupplierUnbonding reloads its history.
-		unstakeSessionEndHeight := k.supplierKeeper.BeginSupplierUnbonding(ctx, supplierToSlash)
-		sharedParams := settlementContext.GetSharedParams()
+		liveSharedParams := settlementContext.GetSharedParams()
+		unstakeSessionEndHeight := k.supplierKeeper.BeginSupplierUnbonding(ctx, supplierToSlash, &liveSharedParams)
+		// EndBlockerUnbondSuppliers unbonds with the params at the unstake session
+		// end; use the same params so the event reports the height it will happen.
+		unstakeSessionParams := settlementContext.GetSharedParamsAtHeight(ctx, unstakeSessionEndHeight)
 
 		// Handling unbonding for slashed suppliers:
 		// - Initiate unbonding at the current session end height (earliest possible time)
@@ -841,13 +844,14 @@ func (k Keeper) slashSupplierStake(
 			Supplier:           supplierToSlash,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   unstakeSessionEndHeight,
-			UnbondingEndHeight: sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, supplierToSlash),
+			UnbondingEndHeight: sharedtypes.GetSupplierUnbondingEndHeight(&unstakeSessionParams, supplierToSlash),
 		})
 	} else {
+		// This is the only write of the reduced stake: the settlement flush has
+		// already run when slashing happens.
 		k.supplierKeeper.SetDehydratedSupplier(ctx, *supplierToSlash)
 		// The lower stake may no longer cover every service: deactivate the excess
-		// from the next session on. Uses the cached pointer, which the settlement
-		// flush writes back later; the flush does not touch the service config indexes.
+		// from the next session on.
 		k.supplierKeeper.EnforceServiceCap(ctx, supplierToSlash, suppliertypes.ServiceCapReason_SERVICE_CAP_REASON_SLASH)
 	}
 

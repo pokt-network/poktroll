@@ -27,7 +27,11 @@ func (p Params) minStakeOrDefault() cosmostypes.Coin {
 
 // AllowedServices returns how many services the given stake covers.
 // limited is false when the cap is disabled, in which case allowed is meaningless.
-// A stake below min_stake covers no services.
+//
+// A stake below min_stake covers min_stake_included_services, the same as
+// min_stake itself. Such a stake is rejected by staking and unbonded by
+// settlement; when min_stake is raised it is left alone, and the cap must not
+// treat it better (all services kept) or worse than a stake at the new minimum.
 func AllowedServices(stake cosmostypes.Coin, params Params) (allowed uint64, limited bool) {
 	if !params.ServiceCapEnabled() {
 		return 0, false
@@ -35,7 +39,7 @@ func AllowedServices(stake cosmostypes.Coin, params Params) (allowed uint64, lim
 
 	minStake := params.minStakeOrDefault()
 	if stake.Amount.LT(minStake.Amount) {
-		return 0, true
+		return params.MinStakeIncludedServices, true
 	}
 
 	additional := stake.Amount.Sub(minStake.Amount).Quo(params.StakePerAdditionalService.Amount)

@@ -232,6 +232,9 @@ type serviceEdit struct {
 	// it must always be set or the service would be renamed to "".
 	name                                  string
 	nameChanged, cuprChanged, cardChanged bool
+	// The on-chain values and the new cupr, for describe.
+	onChainName          string
+	onChainCupr, newCupr uint64
 }
 
 // decideServiceEdit compares a config entry with the on-chain service.
@@ -247,6 +250,9 @@ func decideServiceEdit(
 ) serviceEdit {
 	edit := serviceEdit{
 		name:        onChain.Name,
+		onChainName: onChain.Name,
+		onChainCupr: onChain.ComputeUnitsPerRelay,
+		newCupr:     entry.ComputeUnitsPerRelay,
 		cuprChanged: onChain.ComputeUnitsPerRelay != entry.ComputeUnitsPerRelay,
 		cardChanged: desiredCard != nil && !bytes.Equal(onChain.GetMetadata().GetCard(), desiredCard),
 	}
@@ -266,10 +272,10 @@ func (e serviceEdit) any() bool {
 func (e serviceEdit) describe() string {
 	fields := make([]string, 0, 3)
 	if e.nameChanged {
-		fields = append(fields, "service_name")
+		fields = append(fields, fmt.Sprintf("service_name %q -> %q", e.onChainName, e.name))
 	}
 	if e.cuprChanged {
-		fields = append(fields, "compute_units_per_relay")
+		fields = append(fields, fmt.Sprintf("compute_units_per_relay %d -> %d", e.onChainCupr, e.newCupr))
 	}
 	if e.cardChanged {
 		fields = append(fields, "card")

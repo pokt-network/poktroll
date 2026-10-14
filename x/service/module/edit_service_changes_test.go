@@ -45,7 +45,7 @@ func TestEditService_NameOnlyChangeIsNotSkipped(t *testing.T) {
 	require.True(t, edit.nameChanged)
 	require.True(t, edit.any(), "a name-only change MUST NOT be treated as up to date")
 	require.Equal(t, "New name", edit.name)
-	require.Equal(t, "service_name", edit.describe())
+	require.Equal(t, `service_name "Old name" -> "New name"`, edit.describe())
 }
 
 func TestEditService_ChangeDecision(t *testing.T) {
@@ -79,7 +79,7 @@ func TestEditService_ChangeDecision(t *testing.T) {
 			onChain:      onChain,
 			entryCupr:    20,
 			wantName:     "Service One",
-			wantDescribe: "compute_units_per_relay",
+			wantDescribe: "compute_units_per_relay 10 -> 20",
 			wantAny:      true,
 		},
 		{
@@ -112,7 +112,7 @@ func TestEditService_ChangeDecision(t *testing.T) {
 			entryCupr:    20,
 			desiredCard:  newCard,
 			wantName:     "Renamed",
-			wantDescribe: "service_name, compute_units_per_relay, card",
+			wantDescribe: `service_name "Service One" -> "Renamed", compute_units_per_relay 10 -> 20, card`,
 			wantAny:      true,
 		},
 		{

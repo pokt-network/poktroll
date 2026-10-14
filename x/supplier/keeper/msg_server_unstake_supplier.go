@@ -92,7 +92,7 @@ func (k msgServer) UnstakeSupplier(
 	// Removing it right away could have undesired effects on the network
 	// (e.g. a session with less than the minimum or 0 number of suppliers,
 	// offchain actors that need to listen to session supplier's change mid-session, etc).
-	k.BeginSupplierUnbonding(ctx, &supplier)
+	k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams)
 
 	// Emit an event signaling that the supplier has begun the unbonding process
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)

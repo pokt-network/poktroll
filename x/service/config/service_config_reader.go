@@ -28,9 +28,8 @@ type YAMLServiceEntry struct {
 
 // ParseEditServiceConfig parses the YAML config content into a YAMLEditServiceConfig.
 // It validates that each entry has a non-empty service_id and compute_units_per_relay > 0.
-// The service_name field is optional; when omitted the CLI will use the on-chain name
-// since the chain does not support updating service names for existing services.
-// Ref: x/service/keeper/msg_server_add_service.go:55-65
+// The service_name field is optional; when omitted the CLI keeps the on-chain name.
+// When set and different from the on-chain name, the service is renamed.
 func ParseEditServiceConfig(configContent []byte) (*YAMLEditServiceConfig, error) {
 	if len(configContent) == 0 {
 		return nil, ErrServiceConfigEmptyContent

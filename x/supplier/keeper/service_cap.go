@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
@@ -14,18 +15,15 @@ import (
 )
 
 // EnforceServiceCap schedules deactivation, at the next session start, of the
-// supplier's services beyond what its stake covers, keeping services in
-// service_priority order. It never unbonds a supplier: a stake below min_stake
-// is left to the existing unbonding path. It never panics or returns an error.
+// supplier's services beyond what its stake covers, keeping services in the
+// supplier's service priority order. It never unbonds a supplier: a stake below
+// min_stake is left to the existing unbonding path. It never panics or returns
+// an error.
 //
-// supplier must be the caller's live copy (in settlement, the settlement
-// context's cached pointer), since callers may write it again afterwards.
-//
-// The new service config history is written to the store through a copy, and the
-// caller's supplier.ServiceConfigHistory is left unchanged. Callers must only
-// write the supplier back with SetDehydratedSupplier, never re-index it with
-// SetAndIndexDehydratedSupplier from a hydrated copy, which would undo the
-// deactivation.
+// It writes only the rescheduled service configs; the supplier record itself is
+// unchanged. A caller holding a hydrated copy of this supplier must not re-index
+// it with SetAndIndexDehydratedSupplier afterwards, which would undo the
+// deactivation; writing it back with SetDehydratedSupplier is safe.
 func (k Keeper) EnforceServiceCap(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
@@ -36,7 +34,7 @@ func (k Keeper) EnforceServiceCap(
 	}
 
 	allowed, limited := suppliertypes.AllowedServices(*supplier.Stake, k.GetParams(ctx))
-	if !limited || allowed == 0 {
+	if !limited {
 		return nil
 	}
 
@@ -55,31 +53,90 @@ func (k Keeper) EnforceServiceCap(
 		return nil
 	}
 
-	// Ranked holds the same pointers as serviceConfigHistory.
-	ranked := suppliertypes.RankServiceConfigs(counted, supplier.ServicePriority)
+	ranked := suppliertypes.RankServiceConfigs(counted, k.GetServicePriority(ctx, supplier.OperatorAddress))
+	stake := supplier.Stake.String()
 	for _, config := range ranked[allowed:] {
-		config.DeactivationHeight = nextSessionStartHeight
+		k.rescheduleServiceConfigDeactivation(ctx, config, nextSessionStartHeight)
 		deactivatedServiceIds = append(deactivatedServiceIds, config.Service.ServiceId)
-	}
 
-	supplierToIndex := *supplier
-	supplierToIndex.ServiceConfigHistory = serviceConfigHistory
-	k.SetAndIndexDehydratedSupplier(ctx, supplierToIndex)
-
-	event := &suppliertypes.EventSupplierServicesCapped{
-		OperatorAddress:       supplier.OperatorAddress,
-		OwnerAddress:          supplier.OwnerAddress,
-		Stake:                 supplier.Stake,
-		AllowedServices:       allowed,
-		DeactivatedServiceIds: deactivatedServiceIds,
-		Reason:                reason,
-		EffectiveHeight:       nextSessionStartHeight,
-	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
-		k.Logger().Error(fmt.Sprintf("failed to emit EventSupplierServicesCapped: %+v; %s", event, err))
+		event := &suppliertypes.EventSupplierServicesCapped{
+			OperatorAddress:      supplier.OperatorAddress,
+			OwnerAddress:         supplier.OwnerAddress,
+			Stake:                stake,
+			AllowedServices:      allowed,
+			DeactivatedServiceId: config.Service.ServiceId,
+			Reason:               reason,
+			EffectiveHeight:      nextSessionStartHeight,
+		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
+			k.Logger().Error(fmt.Sprintf("failed to emit EventSupplierServicesCapped: %+v; %s", event, err))
+		}
 	}
 
 	return deactivatedServiceIds
+}
+
+// rescheduleServiceConfigDeactivation sets one stored service config's deactivation
+// height, rewriting only its primary record and its deactivation-height index
+// entry. The other indexes do not depend on the deactivation height.
+func (k Keeper) rescheduleServiceConfigDeactivation(
+	ctx context.Context,
+	config *sharedtypes.ServiceConfigUpdate,
+	deactivationHeight int64,
+) {
+	deactivationHeightStore := k.getServiceConfigUpdateDeactivationHeightStore(ctx)
+	if config.DeactivationHeight != sharedtypes.NoDeactivationHeight {
+		deactivationHeightStore.Delete(suppliertypes.ServiceConfigUpdateDeactivationHeightKey(*config))
+	}
+
+	config.DeactivationHeight = deactivationHeight
+	primaryKey := suppliertypes.ServiceConfigUpdateKey(*config)
+	k.getServiceConfigUpdatesStore(ctx).Set(primaryKey, k.cdc.MustMarshal(config))
+	if deactivationHeight != sharedtypes.NoDeactivationHeight {
+		deactivationHeightStore.Set(suppliertypes.ServiceConfigUpdateDeactivationHeightKey(*config), primaryKey)
+	}
+}
+
+// SetServicePriority stores the service IDs of the supplier's latest stake
+// message that listed services, in message order.
+func (k Keeper) SetServicePriority(ctx context.Context, operatorAddress string, serviceIds []string) {
+	priority := suppliertypes.SupplierServicePriority{OperatorAddress: operatorAddress, ServiceIds: serviceIds}
+	k.getServicePriorityStore(ctx).Set(suppliertypes.SupplierOperatorKey(operatorAddress), k.cdc.MustMarshal(&priority))
+}
+
+// GetServicePriority returns the supplier's service priority, or nil if it has
+// none (suppliers that have not staked with services since the priority existed).
+func (k Keeper) GetServicePriority(ctx context.Context, operatorAddress string) []string {
+	priorityBz := k.getServicePriorityStore(ctx).Get(suppliertypes.SupplierOperatorKey(operatorAddress))
+	if priorityBz == nil {
+		return nil
+	}
+	var priority suppliertypes.SupplierServicePriority
+	k.cdc.MustUnmarshal(priorityBz, &priority)
+	return priority.ServiceIds
+}
+
+// GetAllServicePriorities returns every stored service priority, in store key order.
+func (k Keeper) GetAllServicePriorities(ctx context.Context) []suppliertypes.SupplierServicePriority {
+	iterator := k.getServicePriorityStore(ctx).Iterator(nil, nil)
+	defer iterator.Close()
+
+	priorities := make([]suppliertypes.SupplierServicePriority, 0)
+	for ; iterator.Valid(); iterator.Next() {
+		var priority suppliertypes.SupplierServicePriority
+		k.cdc.MustUnmarshal(iterator.Value(), &priority)
+		priorities = append(priorities, priority)
+	}
+	return priorities
+}
+
+func (k Keeper) removeServicePriority(ctx context.Context, operatorAddress string) {
+	k.getServicePriorityStore(ctx).Delete(suppliertypes.SupplierOperatorKey(operatorAddress))
+}
+
+func (k Keeper) getServicePriorityStore(ctx context.Context) storetypes.KVStore {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, suppliertypes.KeyPrefix(suppliertypes.ServicePriorityKeyPrefix))
 }
 
 // ServiceCapSweepBatchSize bounds the suppliers visited per block by the sweep.

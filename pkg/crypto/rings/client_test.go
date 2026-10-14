@@ -89,3 +89,36 @@ func TestGetRingForAddress_NoGateway_RingIsAppKeyOnly(t *testing.T) {
 	require.Contains(t, expectedPoints, string(appPoints[0].Encode()))
 	require.Len(t, expectedPoints, 1)
 }
+
+// A serialized ring signature must match the ring-go layout for its member count.
+func TestValidateRingSignatureSize(t *testing.T) {
+	curve := ring.Secp256k1()
+	priv := curve.NewRandomScalar()
+	keyRing, err := ring.NewKeyRing(curve, 3, priv, 0)
+	require.NoError(t, err)
+	msg := sha3.Sum256([]byte("m"))
+	sig, err := keyRing.Sign(msg, priv)
+	require.NoError(t, err)
+	validSigBz, err := sig.Serialize()
+	require.NoError(t, err)
+	require.NoError(t, validateRingSignatureSize(validSigBz))
+
+	oneMemberSigBz := make([]byte, 4+32+33+(32+33))
+	binary.BigEndian.PutUint32(oneMemberSigBz[:4], 1)
+
+	tests := map[string][]byte{
+		"empty":           {},
+		"one byte":        {0x00},
+		"three bytes":     {0x00, 0x00, 0x02},
+		"size only":       validSigBz[:4],
+		"one member":      oneMemberSigBz,
+		"truncated":       validSigBz[:len(validSigBz)-1],
+		"trailing byte":   append(append([]byte{}, validSigBz...), 0x00),
+		"huge member set": append([]byte{0xff, 0xff, 0xff, 0xff}, validSigBz[4:]...),
+	}
+	for name, sigBz := range tests {
+		t.Run(name, func(t *testing.T) {
+			require.ErrorIs(t, validateRingSignatureSize(sigBz), ErrRingClientInvalidRelayRequestSignature)
+		})
+	}
+}

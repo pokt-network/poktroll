@@ -29,7 +29,7 @@ func TestAllowedServices(t *testing.T) {
 	}{
 		{"price 0 disables the cap", 10, capParams(10, 0, 1), 0, false},
 		{"nil price disables the cap", 10, Params{MinStake: &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: sdkmath.NewInt(10)}, MinStakeIncludedServices: 1}, 0, false},
-		{"below min stake allows none", 9, capParams(10, 5, 1), 0, true},
+		{"below min stake allows included", 9, capParams(10, 5, 3), 3, true},
 		{"exactly min stake allows included", 10, capParams(10, 5, 3), 3, true},
 		{"one upokt short of the next step", 14, capParams(10, 5, 3), 3, true},
 		{"exactly the next step", 15, capParams(10, 5, 3), 4, true},

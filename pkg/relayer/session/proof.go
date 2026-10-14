@@ -157,6 +157,14 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// waiting for it to be received before proceeding.
 	proofPathSeedBlockHeight := earliestSupplierProofsCommitHeight - 1
 	proofPathSeedBlock := rs.waitForBlock(ctx, proofPathSeedBlockHeight)
+	if proofPathSeedBlock == nil {
+		// Same handling as the proof window open block above.
+		if !rs.stopping.Load() {
+			logger.Error().Msg("❌️ Failed to observe the proof path seed block. ❗Check node connectivity and sync status. ❗These session proofs cannot be processed, rewards may be lost and supplier may be slashed.")
+			failedSubmitProofsSessionsCh <- sessionTrees
+		}
+		return nil
+	}
 
 	logger = logger.With("proof_path_seed_block", fmt.Sprintf("%x", proofPathSeedBlock.Hash()))
 	logger.Info().Msg(

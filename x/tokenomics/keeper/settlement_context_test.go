@@ -975,8 +975,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// DEV_NOTE: The slashing flow skips populating all the supplier's history for performance reasons.
 	// The slashed supplier Services property already has the relevant active service configs at the time of the claimed session end height.
 	slashedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
-	// The emitted event carries an empty (non-nil) service priority.
-	slashedSupplier.ServicePriority = []string{}
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
@@ -1128,9 +1126,9 @@ func (s *TestSuite) setupSlashCapScenario(price int64, extraServiceIds []string,
 		})
 	}
 	supplier.Services = configs
-	supplier.ServicePriority = serviceIds
 	supplier.ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, configs, 1, 0)
 	s.keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
+	s.keepers.SupplierKeeper.(*supplierkeeper.Keeper).SetServicePriority(ctx, supplierOperatorAddr, serviceIds)
 
 	if capEnabled {
 		supplierKeeper := s.keepers.SupplierKeeper.(*supplierkeeper.Keeper)
@@ -1251,8 +1249,8 @@ func (s *TestSuite) TestSettlePendingClaims_TwoSlashesSameBlock_CapsTwice() {
 
 	capped := testutilevents.FilterEvents[*suppliertypes.EventSupplierServicesCapped](t, sdkCtx.EventManager().Events())
 	require.Len(t, capped, 2)
-	require.Equal(t, []string{"svc_extra_2"}, capped[0].GetDeactivatedServiceIds())
-	require.Equal(t, []string{"svc_extra_1"}, capped[1].GetDeactivatedServiceIds())
+	require.Equal(t, "svc_extra_2", capped[0].GetDeactivatedServiceId())
+	require.Equal(t, "svc_extra_1", capped[1].GetDeactivatedServiceId())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_Slash_UnderCap_Unchanged() {
@@ -2041,4 +2039,124 @@ func (s *TestSuite) TestSettlePendingClaims_FlushBatchedValidatorRewards_EmptyAc
 	result, err := s.keepers.FlushBatchedValidatorRewards(ctx, sctx, int64(0))
 	require.NoError(t, err, "flushing an empty accumulator should not return an error")
 	require.Nil(t, result, "flushing an empty accumulator should return a nil result")
+}
+
+// A claim for a session the supplier served settles even when the claimed service
+// is deactivated before the settlement height.
+func (s *TestSuite) TestSettlePendingClaims_ServiceDeactivatedAfterSession_StillSettles() {
+	t := s.T()
+	ctx := s.ctx
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	claim := s.claims[0]
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
+
+	// No proof required.
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	require.NoError(t, err)
+	proofRequirementThreshold = proofRequirementThreshold.Add(uPOKTCoin(1))
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	require.NoError(t, s.keepers.ProofKeeper.SetParams(ctx, proofParams))
+
+	s.keepers.UpsertClaim(ctx, claim)
+
+	// Deactivate the claimed service from the session after the claimed one.
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	supplier, found := s.keepers.GetSupplier(ctx, claim.SupplierOperatorAddress)
+	require.True(t, found)
+	for _, config := range supplier.ServiceConfigHistory {
+		if config.Service.ServiceId == claim.SessionHeader.ServiceId {
+			config.DeactivationHeight = sessionEndHeight + 1
+		}
+	}
+	s.keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
+
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	settledResults, expiredResults, numDiscarded, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), settledResults.GetNumClaims())
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims())
+	require.Equal(t, uint64(0), numDiscarded)
+}
+
+// A claim for a service the service cap deactivated during the claimed session
+// still settles: the supplier served that session.
+func (s *TestSuite) TestSettlePendingClaims_ServiceCappedDuringSession_StillSettles() {
+	t := s.T()
+	price := supplierStakeAmt / 10
+	settleHeight, _, supplierOperatorAddr := s.setupSlashCapScenario(price, []string{"svc_extra_1", "svc_extra_2"}, true)
+
+	// The stake covers only 2 of the 3 services.
+	supplierKeeper := s.keepers.SupplierKeeper.(*supplierkeeper.Keeper)
+	supplierParams := supplierKeeper.GetParams(s.ctx)
+	minStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, supplierStakeAmt-price)
+	supplierParams.MinStake = &minStake
+	require.NoError(t, supplierKeeper.SetParams(s.ctx, supplierParams))
+
+	// A claim for svc_extra_2 in the first session, no proof required.
+	s.upsertMissingProofClaim("svc_extra_2", supplierOperatorAddr)
+	proofParams := s.keepers.ProofKeeper.GetParams(s.ctx)
+	huge := uPOKTCoin(1_000_000_000_000)
+	proofParams.ProofRequirementThreshold = &huge
+	proofParams.ProofRequestProbability = 0
+	require.NoError(t, s.keepers.ProofKeeper.SetParams(s.ctx, proofParams))
+
+	// The cap is enforced mid-session.
+	capCtx := cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(5)
+	supplier, found := supplierKeeper.GetDehydratedSupplier(capCtx, supplierOperatorAddr)
+	require.True(t, found)
+	deactivated := supplierKeeper.EnforceServiceCap(capCtx, &supplier, suppliertypes.ServiceCapReason_SERVICE_CAP_REASON_PARAMS)
+	require.Equal(t, []string{"svc_extra_2"}, deactivated)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(settleHeight)
+	settledResults, _, numDiscarded, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), settledResults.GetNumClaims())
+	require.Equal(t, uint64(0), numDiscarded)
+}
+
+// If the config active at the claim's session start was already pruned, settlement
+// falls back to the supplier's config for that service active now.
+func (s *TestSuite) TestSettlePendingClaims_PrunedSessionConfig_FallsBackToCurrent() {
+	t := s.T()
+	ctx := s.ctx
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	claim := s.claims[0]
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulties[0])
+	require.NoError(t, err)
+	proofRequirementThreshold = proofRequirementThreshold.Add(uPOKTCoin(1))
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	require.NoError(t, s.keepers.ProofKeeper.SetParams(ctx, proofParams))
+	s.keepers.UpsertClaim(ctx, claim)
+
+	// Replace the claimed service's config with one active only from the next
+	// session on, dropping the old config from the history (as pruning does).
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	supplier, found := s.keepers.GetSupplier(ctx, claim.SupplierOperatorAddress)
+	require.True(t, found)
+	history := make([]*sharedtypes.ServiceConfigUpdate, 0, len(supplier.ServiceConfigHistory))
+	for _, config := range supplier.ServiceConfigHistory {
+		if config.Service.ServiceId == claim.SessionHeader.ServiceId {
+			replacement := *config
+			replacement.ActivationHeight = sessionEndHeight + 1
+			replacement.DeactivationHeight = sharedtypes.NoDeactivationHeight
+			config = &replacement
+		}
+		history = append(history, config)
+	}
+	supplier.ServiceConfigHistory = history
+	s.keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
+
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	settledResults, _, numDiscarded, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), settledResults.GetNumClaims())
+	require.Equal(t, uint64(0), numDiscarded)
 }

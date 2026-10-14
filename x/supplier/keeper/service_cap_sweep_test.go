@@ -68,6 +68,10 @@ func TestServiceCapSweep_ScheduledByCapParamUpdateOnly(t *testing.T) {
 func TestServiceCapSweep_BulkUpdateSchedulesOnlyOnCapChange(t *testing.T) {
 	k, ctx, _ := stakeNSuppliers(t, 1)
 	srv := keeper.NewMsgServerImpl(*k.Keeper)
+	updatePrice(t, k, ctx, capPrice)
+	for k.IsServiceCapSweepPending(ctx) {
+		k.EndBlockerServiceCapSweep(ctx)
+	}
 	params := k.Keeper.GetParams(ctx)
 
 	fee := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 3)

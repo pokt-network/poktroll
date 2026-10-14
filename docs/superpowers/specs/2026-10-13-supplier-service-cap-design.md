@@ -4,6 +4,17 @@ Date: 2026-10-13
 Status: design approved in discussion, pending spec review
 Target: v0.1.36 (ships disabled), enabled and tightened later by governance
 
+> **Revised 2026-10-14 (after review), superseding the text below where they differ:**
+> - The service priority is stored under its own key (`ServicePriority/operator_address/<addr>`,
+>   message `SupplierServicePriority`, exported in genesis), not as `Supplier.service_priority`:
+>   Supplier records are read on every claim and proof, the priority only by the cap.
+> - A stake below `min_stake` counts as covering `min_stake_included_services`, so a `min_stake`
+>   raise caps suppliers left below it like suppliers at the new minimum.
+> - `SetParams` schedules the sweep (when the cap is enabled and a cap param changed), so
+>   genesis and upgrade handlers are covered too.
+> - `EventSupplierServicesCapped` is emitted once per deactivated service, with primitive fields.
+> - Enforcement rewrites only the rescheduled configs, not the supplier's whole index.
+
 ## Goal
 
 Tie the number of services a supplier can serve to its stake. Today a supplier at

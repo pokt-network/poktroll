@@ -38,6 +38,17 @@ const (
 //     this session, so it leaves sessions and is unbonded. Mainnet had none on
 //     2026-10-07, but two suppliers sat at or 1 upokt above min stake with a
 //     1 upokt proof_missing_penalty, so one could get stuck before the upgrade.
+//     Each repaired supplier gets a new EventSupplierUnbondingBegin with its new
+//     heights.
+//   - Settlement resolves a claim's supplier service config (revenue share) at the
+//     claim's session start, not at the settlement height. CONSENSUS-BREAKING
+//     (state): a claim for a session the supplier served now settles even when the
+//     service was deactivated since (unstake, slash below min stake, service cap);
+//     it was previously discarded.
+//   - Proof validation recovers from a panic only while decoding and verifying the
+//     submitted relay and proof (reported as an invalid proof); a panic elsewhere
+//     stops the node as before. Relay request ring signatures must have at least
+//     two members and a size that matches the member count.
 //     Testnets were not checked; the handler logs every repaired address.
 //   - EventServiceMetadataUpdated (x/service, #2009): MsgAddService emits it whenever
 //     the stored card changes, including a service created with a card. CONSENSUS-
@@ -48,12 +59,14 @@ const (
 //     No handler code needed.
 //   - Supplier service cap (x/supplier). CONSENSUS-BREAKING (state): two new params,
 //     min_stake_included_services = 1 and stake_per_additional_service = 0upokt
-//     (cap disabled), a new Supplier.service_priority field written by every stake
-//     message that lists services, a slash-path call that is a no-op while the cap
-//     is disabled, and a param-change sweep. Behavior is unchanged until governance
-//     sets a price. An upgrade handler that later changes min_stake,
-//     min_stake_included_services or stake_per_additional_service with SetParams
-//     MUST also call SupplierKeeper.ScheduleServiceCapSweep.
+//     (cap disabled), a new ServicePriority/ store prefix in x/supplier (each
+//     supplier's service order, written by every stake message that lists services;
+//     not on the Supplier record, which claims and proofs read), a slash-path call
+//     that is a no-op while the cap is disabled, and a param-change sweep. Behavior
+//     is unchanged until governance sets a price. SetParams schedules the sweep
+//     whenever the cap is enabled and a cap param changes, including from genesis
+//     and upgrade handlers. New store prefixes in an existing store need no
+//     StoreUpgrades.
 //   - MsgStakeSupplier can no longer lower a supplier's stake. CONSENSUS-BREAKING
 //     (state): this reverts the immediate downstake (stake decrease returned to the
 //     owner at once) that a lower stake at or above min_stake used to trigger.
@@ -65,23 +78,25 @@ const (
 //   - MsgUnstakeSupplier: reads the supplier dehydrated and its service config history
 //     once (in BeginSupplierUnbonding) instead of hydrating it up front.
 //   - MsgAddService: lower on a no-op update, higher when a card is set or changed.
-//   - MsgUpdateParam / MsgUpdateParams (supplier): read the params an extra time,
-//     and write the service cap sweep key when min_stake,
-//     min_stake_included_services or stake_per_additional_service changes.
+//   - MsgUpdateParam / MsgUpdateParams (supplier): write the service cap sweep key
+//     when the cap is enabled and min_stake, min_stake_included_services or
+//     stake_per_additional_service changes.
 //   - MsgStakeSupplier and MsgClaimMorseSupplier (which stakes through
-//     StakeSupplier): read the supplier params once more when the message lists
-//     services (service cap check), and once less when the stake is unchanged (the
-//     min stake re-check in the stake reconciliation is gone).
-//   - Supplier records grow by service_priority on every stake message that lists
-//     services, including new suppliers, so both those writes and later reads of
-//     the records (claims, proofs, settlement) cost slightly more gas.
+//     StakeSupplier): read the supplier params once instead of twice, and write
+//     the service priority when the message lists services. The min stake re-check
+//     in the stake reconciliation is gone.
+//   - MsgUnstakeSupplier: unchanged params reads (BeginSupplierUnbonding takes the
+//     shared params the handler already read).
 //
 // Event changes (not hashed, but visible to indexers such as pocketdex):
 //   - EventSupplierUnbondingBegin with reason BELOW_MIN_STAKE now reports the real
-//     UnbondingEndHeight (unstake session end + unbonding period), not the unstake
+//     UnbondingEndHeight (unstake session end + unbonding period, with the params
+//     at the unstake session end, as the unbonding itself uses), not the unstake
 //     session end height.
 //   - New EventServiceMetadataUpdated.
-//   - New EventSupplierServicesCapped.
+//   - New EventSupplierServicesCapped, one per deactivated service, primitives only.
+//   - EventSupplierServiceConfigActivated is no longer emitted for a config that is
+//     deactivated at or before its activation height (it never became active).
 //
 // Operators: blocks before the upgrade height MUST be replayed with the previous
 // binary (cosmovisor does this). The memo is not height-gated, so replaying old

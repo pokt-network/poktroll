@@ -33,6 +33,8 @@ import (
 	"context"
 	"fmt"
 
+	cosmoslog "cosmossdk.io/log"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/pokt-network/smt"
 
@@ -238,47 +240,13 @@ func (k Keeper) EnsureValidProofSignaturesAndClosestPath(
 		return err
 	}
 
-	// Unmarshal the sparse compact merkle closest proof from the message.
-	sparseCompactMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
-	if err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
-		logger.Error(fmt.Sprintf("failed to unmarshal sparse compact merkle closest proof due to error: %v", err))
-		return types.ErrProofInvalidProof.Wrapf("failed to unmarshal sparse compact merkle closest proof: %s", err)
-	}
-
-	// SparseCompactMerkeClosestProof was intentionally compacted to reduce its onchain state size
-	// so it must be decompacted rather than just retrieving the value via GetValueHash (not implemented).
-	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
+	// Parse and verify the relay the supplier submitted.
+	var sparseMerkleClosestProof *smt.SparseMerkleClosestProof
+	err = recoverAsInvalidProof("relay verification", func() (err error) {
+		sparseMerkleClosestProof, err = k.verifySubmittedRelay(ctx, logger, proof, supplierOperatorPubKey)
+		return err
+	})
 	if err != nil {
-		logger.Error(fmt.Sprintf("failed to decompact sparse merkle closest proof due to error: %v", err))
-		return types.ErrProofInvalidProof.Wrapf("failed to decompact sparse merkle closest proof: %s", err)
-	}
-
-	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
-	relay := &servicetypes.Relay{}
-	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
-		logger.Error(fmt.Sprintf("failed to unmarshal relay due to error: %v", err))
-		return types.ErrProofInvalidRelay.Wrapf("failed to unmarshal relay: %s", err)
-	}
-
-	// Verify the relay request's signature.
-	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relay.GetReq()); err != nil {
-		logger.Error(fmt.Sprintf("failed to verify relay request signature due to error: %v", err))
-		return err
-	}
-	logger.Debug("successfully verified relay request signature")
-
-	// Verify the relay response's signature.
-	if err = relay.GetRes().VerifySupplierOperatorSignature(supplierOperatorPubKey); err != nil {
-		logger.Error(fmt.Sprintf("failed to verify relay response signature due to error: %v", err))
-		return err
-	}
-	logger.Debug("successfully verified relay response signature")
-
-	// Ensure the relay is proven at the position its content determines, so a
-	// relay cannot be inserted more than once at arbitrary positions.
-	if err = ensureRelayAtCanonicalPath(sparseMerkleClosestProof, relayBz); err != nil {
-		logger.Error(fmt.Sprintf("failed to validate proof path due to error: %v", err))
 		return err
 	}
 
@@ -291,13 +259,85 @@ func (k Keeper) EnsureValidProofSignaturesAndClosestPath(
 
 	// Verify the proof is for the leaf the seed selects, weighted by relay count,
 	// and that it is included in the claimed root.
-	if err = verifyWeightedProof(sparseMerkleClosestProof, claim.GetRootHash(), proofSeed); err != nil {
+	err = recoverAsInvalidProof("weighted proof verification", func() error {
+		return verifyWeightedProof(sparseMerkleClosestProof, claim.GetRootHash(), proofSeed)
+	})
+	if err != nil {
 		logger.Error(fmt.Sprintf("failed to verify weighted merkle proof due to error: %v", err))
 		return err
 	}
 	logger.Debug("successfully verified weighted merkle proof")
 
 	return nil
+}
+
+// recoverAsInvalidProof runs fn, which parses or verifies bytes the supplier
+// submitted, and reports a panic in it as an invalid proof. Only such steps run
+// through it: a panic anywhere else (e.g. reading chain state) must still stop
+// the node rather than mark an honest proof invalid and slash its supplier.
+func recoverAsInvalidProof(step string, fn func() error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = types.ErrProofInvalidProof.Wrapf("panic during %s: %v", step, r)
+		}
+	}()
+	return fn()
+}
+
+// verifySubmittedRelay decodes the proof's closest merkle proof and the relay it
+// carries, and verifies the relay's signatures and its position in the tree.
+// The relay request check also reads the application's ring from chain state.
+func (k Keeper) verifySubmittedRelay(
+	ctx context.Context,
+	logger cosmoslog.Logger,
+	proof *types.Proof,
+	supplierOperatorPubKey cryptotypes.PubKey,
+) (*smt.SparseMerkleClosestProof, error) {
+	// Unmarshal the sparse compact merkle closest proof from the message.
+	sparseCompactMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
+	if err := sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
+		logger.Error(fmt.Sprintf("failed to unmarshal sparse compact merkle closest proof due to error: %v", err))
+		return nil, types.ErrProofInvalidProof.Wrapf("failed to unmarshal sparse compact merkle closest proof: %s", err)
+	}
+
+	// SparseCompactMerkeClosestProof was intentionally compacted to reduce its onchain state size
+	// so it must be decompacted rather than just retrieving the value via GetValueHash (not implemented).
+	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
+	if err != nil {
+		logger.Error(fmt.Sprintf("failed to decompact sparse merkle closest proof due to error: %v", err))
+		return nil, types.ErrProofInvalidProof.Wrapf("failed to decompact sparse merkle closest proof: %s", err)
+	}
+
+	// Get the relay request and response from the proof.GetClosestMerkleProof.
+	relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
+	relay := &servicetypes.Relay{}
+	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
+		logger.Error(fmt.Sprintf("failed to unmarshal relay due to error: %v", err))
+		return nil, types.ErrProofInvalidRelay.Wrapf("failed to unmarshal relay: %s", err)
+	}
+
+	// Verify the relay request's signature.
+	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relay.GetReq()); err != nil {
+		logger.Error(fmt.Sprintf("failed to verify relay request signature due to error: %v", err))
+		return nil, err
+	}
+	logger.Debug("successfully verified relay request signature")
+
+	// Verify the relay response's signature.
+	if err = relay.GetRes().VerifySupplierOperatorSignature(supplierOperatorPubKey); err != nil {
+		logger.Error(fmt.Sprintf("failed to verify relay response signature due to error: %v", err))
+		return nil, err
+	}
+	logger.Debug("successfully verified relay response signature")
+
+	// Ensure the relay is proven at the position its content determines, so a
+	// relay cannot be inserted more than once at arbitrary positions.
+	if err = ensureRelayAtCanonicalPath(sparseMerkleClosestProof, relayBz); err != nil {
+		logger.Error(fmt.Sprintf("failed to validate proof path due to error: %v", err))
+		return nil, err
+	}
+
+	return sparseMerkleClosestProof, nil
 }
 
 // getProofSeed returns the seed that selects the leaf to be proven.

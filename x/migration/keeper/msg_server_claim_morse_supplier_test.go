@@ -74,7 +74,6 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		Services:                testSupplierServices,
 		ServiceConfigHistory:    sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(shannonDestAddr, testSupplierServices, 1, 0),
 		UnstakeSessionEndHeight: 0,
-		ServicePriority:         []string{},
 	}
 
 	ctrl := gomock.NewController(t)

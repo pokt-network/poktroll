@@ -1,5 +1,16 @@
 # Supplier Service Cap Implementation Plan
 
+> **Revised 2026-10-14 (after review), superseding the text below where they differ:**
+> - The service priority is stored under its own key (`ServicePriority/operator_address/<addr>`,
+>   message `SupplierServicePriority`, exported in genesis), not as `Supplier.service_priority`:
+>   Supplier records are read on every claim and proof, the priority only by the cap.
+> - A stake below `min_stake` counts as covering `min_stake_included_services`, so a `min_stake`
+>   raise caps suppliers left below it like suppliers at the new minimum.
+> - `SetParams` schedules the sweep (when the cap is enabled and a cap param changed), so
+>   genesis and upgrade handlers are covered too.
+> - `EventSupplierServicesCapped` is emitted once per deactivated service, with primitive fields.
+> - Enforcement rewrites only the rescheduled configs, not the supplier's whole index.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Cap how many services a supplier can serve by its stake, shipped disabled (price 0) and tightened later by governance.

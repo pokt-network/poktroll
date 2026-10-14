@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/hex"
 	"testing"
 
@@ -9,8 +10,6 @@ import (
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	ring_secp256k1 "github.com/pokt-network/go-dleq/secp256k1"
-	"github.com/pokt-network/ring-go"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
@@ -482,9 +481,13 @@ func TestEnsureValidProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
+			// The size check runs before deserializing: the first 4 bytes are
+			// read as the member count, which the length does not match.
 			expectedErr: prooftypes.ErrProofInvalidRelayRequest.Wrapf(
-				"error deserializing ring signature: %s",
-				new(ring.RingSig).Deserialize(ring_secp256k1.NewCurve(), invalidSignatureBz),
+				"ring signature is %d bytes, expected %d for %d members",
+				len(invalidSignatureBz),
+				4+32+33+65*uint64(binary.BigEndian.Uint32(invalidSignatureBz[:4])),
+				binary.BigEndian.Uint32(invalidSignatureBz[:4]),
 			),
 		},
 		{

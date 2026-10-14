@@ -240,8 +240,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(sharedtypes.Supplier{}, false).
 		AnyTimes()
 	mockSupplierKeeper.EXPECT().
-		GetSupplierActiveServiceConfig(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, supplierInstance *sharedtypes.Supplier, serviceId string) []*sharedtypes.SupplierServiceConfig {
+		GetSupplierActiveServiceConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, supplierInstance *sharedtypes.Supplier, serviceId string, _ int64) []*sharedtypes.SupplierServiceConfig {
 			if supplier.OperatorAddress != supplierInstance.OperatorAddress {
 				return []*sharedtypes.SupplierServiceConfig{}
 			}

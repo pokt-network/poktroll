@@ -74,7 +74,6 @@ func (k Keeper) createSupplier(
 		Services:                make([]*sharedtypes.SupplierServiceConfig, 0),
 		ServiceConfigHistory:    make([]*sharedtypes.ServiceConfigUpdate, 0),
 		UnstakeSessionEndHeight: sharedtypes.SupplierNotUnstaking,
-		ServicePriority:         suppliertypes.ServicePriorityFromConfigs(msg.Services),
 	}
 
 	// Store the service configurations details of the newly created supplier.
@@ -251,8 +250,10 @@ func (k Keeper) StakeSupplier(
 		}
 	}
 
+	supplierParams := k.GetParams(ctx)
+
 	// MUST ALWAYS have at least minimum stake.
-	minStake := k.GetParams(ctx).MinStake
+	minStake := supplierParams.MinStake
 	if msg.Stake.Amount.LT(minStake.Amount) {
 		err = suppliertypes.ErrSupplierInvalidStake.Wrapf(
 			"supplier with owner %q must stake at least %s",
@@ -275,7 +276,7 @@ func (k Keeper) StakeSupplier(
 
 	// The stake must cover the supplier's services. msg.Stake is the stake that
 	// will apply: updateSupplier filled it in when the message carried none.
-	if err = k.checkServiceCap(ctx, msg); err != nil {
+	if err = checkServiceCap(msg, supplierParams); err != nil {
 		logger.Info(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -287,7 +288,7 @@ func (k Keeper) StakeSupplier(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	supplierStakingFee := k.GetParams(ctx).StakingFee
+	supplierStakingFee := supplierParams.StakingFee
 
 	if err = k.reconcileSupplierStakeDiff(ctx, msg, supplierCurrentStake); err != nil {
 		logger.Error(fmt.Sprintf("Could not transfer supplier stake difference due to %s", err))
@@ -304,6 +305,9 @@ func (k Keeper) StakeSupplier(
 
 	// Update the Supplier in the store
 	k.SetAndIndexDehydratedSupplier(ctx, supplier)
+	if len(msg.Services) > 0 {
+		k.SetServicePriority(ctx, supplier.OperatorAddress, suppliertypes.ServicePriorityFromConfigs(msg.Services))
+	}
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -362,8 +366,6 @@ func (k Keeper) updateSupplier(
 	if len(msg.Services) == 0 {
 		return nil
 	}
-
-	supplier.ServicePriority = suppliertypes.ServicePriorityFromConfigs(msg.Services)
 
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -471,16 +473,12 @@ func (k Keeper) reconcileSupplierStakeDiff(
 // checkServiceCap returns an error if msg.Stake does not cover the services in
 // the message. A stake-only update carries no services; it can only keep or raise
 // the stake, so it never reduces coverage and is always accepted.
-func (k Keeper) checkServiceCap(
-	ctx context.Context,
-	msg *suppliertypes.MsgStakeSupplier,
-) error {
+func checkServiceCap(msg *suppliertypes.MsgStakeSupplier, params suppliertypes.Params) error {
 	numServices := uint64(len(msg.Services))
 	if numServices == 0 {
 		return nil
 	}
 
-	params := k.GetParams(ctx)
 	allowed, limited := suppliertypes.AllowedServices(*msg.Stake, params)
 	if !limited || numServices <= allowed {
 		return nil

@@ -397,8 +397,11 @@ services:
 ```
 
 - An entry that names no `card_file` leaves that service's stored card untouched.
-- A service is skipped only when **both** its `compute_units_per_relay` and its card already
-  match what is on-chain.
+- An entry that sets `service_name` to a name different from the on-chain one **renames** the
+  service. Omit `service_name` to keep the on-chain name.
+- A service is skipped only when its name (if set), its `compute_units_per_relay` and its card
+  all already match what is on-chain. The command prints what each update changes, with the old
+  and new values.
 - Card comparison is **byte-exact**, so reformatting a card file counts as a change even when the
   JSON is semantically identical.
 - `--disable-batch-msgs` sends one transaction per service instead of one batched transaction.

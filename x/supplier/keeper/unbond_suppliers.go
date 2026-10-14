@@ -23,11 +23,17 @@ import (
 // supplier MAY be dehydrated (e.g. from the settlement context): the service
 // config history is always reloaded from the index, since re-indexing from an
 // empty history would delete every service config of the supplier.
-func (k Keeper) BeginSupplierUnbonding(ctx context.Context, supplier *sharedtypes.Supplier) (unstakeSessionEndHeight int64) {
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+//
+// sharedParams MUST be the live shared params: the unstake session end and the
+// next session start are projected from the current block.
+func (k Keeper) BeginSupplierUnbonding(
+	ctx context.Context,
+	supplier *sharedtypes.Supplier,
+	sharedParams *sharedtypes.Params,
+) (unstakeSessionEndHeight int64) {
 	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
-	unstakeSessionEndHeight = sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
-	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	unstakeSessionEndHeight = sharedtypes.GetSessionEndHeight(sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(sharedParams, currentHeight)
 
 	supplier.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
 
@@ -62,7 +68,8 @@ func (k Keeper) BeginSupplierUnbonding(ctx context.Context, supplier *sharedtype
 // mid-session and orphan the claims of the sessions it serves.
 //
 // Suppliers already in the index (voluntary unstakes, Morse claims) are left
-// untouched.
+// untouched. Each repaired supplier gets a new EventSupplierUnbondingBegin, since
+// its unbonding restarts with new heights.
 func (k Keeper) RepairUnindexedUnbondingSuppliers(ctx context.Context) (repaired []string) {
 	indexed := make(map[string]struct{})
 	unstakingIterator := k.GetAllUnstakingSuppliersIterator(ctx)
@@ -70,6 +77,8 @@ func (k Keeper) RepairUnindexedUnbondingSuppliers(ctx context.Context) (repaired
 		indexed[string(unstakingIterator.Value())] = struct{}{}
 	}
 	unstakingIterator.Close()
+
+	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// GetAllSuppliers returns a slice, so the writes below never run while a
 	// supplier store iterator is open.
@@ -80,8 +89,20 @@ func (k Keeper) RepairUnindexedUnbondingSuppliers(ctx context.Context) (repaired
 		if _, ok := indexed[supplier.OperatorAddress]; ok {
 			continue
 		}
-		k.BeginSupplierUnbonding(ctx, &supplier)
+		unstakeSessionEndHeight := k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams)
 		repaired = append(repaired, supplier.OperatorAddress)
+
+		// EndBlockerUnbondSuppliers unbonds with the params at the unstake session end.
+		unstakeSessionParams := k.sharedKeeper.GetParamsAtHeight(ctx, unstakeSessionEndHeight)
+		event := &suppliertypes.EventSupplierUnbondingBegin{
+			Supplier:           &supplier,
+			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+			SessionEndHeight:   unstakeSessionEndHeight,
+			UnbondingEndHeight: sharedtypes.GetSupplierUnbondingEndHeight(&unstakeSessionParams, &supplier),
+		}
+		if err := cosmostypes.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(event); err != nil {
+			k.Logger().Error(fmt.Sprintf("failed to emit EventSupplierUnbondingBegin: %+v; %s", event, err))
+		}
 	}
 	return repaired
 }

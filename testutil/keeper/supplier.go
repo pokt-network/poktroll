@@ -36,6 +36,8 @@ type SupplierModuleKeepers struct {
 	ServiceKeeper servicekeeper.Keeper
 	// Tracks the amount of funds returned to the supplier owner when the supplier is unbonded.
 	SupplierBalanceMap map[string]int64
+	// StoreKey is the supplier module store, for tests that inspect raw state.
+	StoreKey storetypes.StoreKey
 }
 
 func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
@@ -116,6 +118,7 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 		SharedKeeper:       sharedKeeper,
 		ServiceKeeper:      serviceKeeper,
 		SupplierBalanceMap: supplierBalanceMap,
+		StoreKey:           storeKey,
 	}
 
 	return supplierModuleKeepers, ctx

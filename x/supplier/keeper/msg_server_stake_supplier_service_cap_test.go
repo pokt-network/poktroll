@@ -93,10 +93,7 @@ func TestStakeSupplier_ServiceCap_WritesServicePriorityInMessageOrder(t *testing
 	_, err := srv.StakeSupplier(ctx, msg)
 	require.NoError(t, err)
 
-	// Reloaded from the store, not the in-memory supplier.
-	stored, found := k.GetDehydratedSupplier(ctx, operatorAddr)
-	require.True(t, found)
-	require.Equal(t, []string{"sol", "eth", "base"}, stored.ServicePriority)
+	require.Equal(t, []string{"sol", "eth", "base"}, k.GetServicePriority(ctx, operatorAddr))
 
 	// A stake-only update keeps the priority.
 	stakeOnly := &suppliertypes.MsgStakeSupplier{
@@ -105,8 +102,7 @@ func TestStakeSupplier_ServiceCap_WritesServicePriorityInMessageOrder(t *testing
 	}
 	_, err = srv.StakeSupplier(ctx, stakeOnly)
 	require.NoError(t, err)
-	stored, _ = k.GetDehydratedSupplier(ctx, operatorAddr)
-	require.Equal(t, []string{"sol", "eth", "base"}, stored.ServicePriority)
+	require.Equal(t, []string{"sol", "eth", "base"}, k.GetServicePriority(ctx, operatorAddr))
 }
 
 func TestStakeSupplier_ServiceCap_NonCustodialFlow(t *testing.T) {

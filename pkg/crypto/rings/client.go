@@ -2,6 +2,7 @@ package rings
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"slices"
 
@@ -93,6 +94,38 @@ func (rc *ringClient) GetRingForAddressAtHeight(
 	return GetRingFromPubKeys(ringPubKeys)
 }
 
+// validateRingSignatureSize checks a serialized ring signature against the
+// ring-go v0.2.0 layout: a 4-byte big-endian member count n, the challenge
+// scalar, the key image point, then n (scalar, point) pairs.
+func validateRingSignatureSize(signature []byte) error {
+	const (
+		sizeLen   = 4
+		scalarLen = 32 // ring-go's fixed scalar length for secp256k1
+	)
+	if len(signature) < sizeLen {
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
+			"ring signature is %d bytes, too short", len(signature),
+		)
+	}
+
+	numRingMembers := uint64(binary.BigEndian.Uint32(signature[:sizeLen]))
+	if numRingMembers < 2 {
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
+			"ring signature has %d members, expected at least 2", numRingMembers,
+		)
+	}
+
+	pointLen := uint64(ringCurve.CompressedPointSize())
+	expectedLen := sizeLen + scalarLen + pointLen + numRingMembers*(scalarLen+pointLen)
+	if uint64(len(signature)) != expectedLen {
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
+			"ring signature is %d bytes, expected %d for %d members",
+			len(signature), expectedLen, numRingMembers,
+		)
+	}
+	return nil
+}
+
 // VerifyRelayRequestSignature verifies the signature of the relay request
 // provided against the corresponding ring for the application address in
 // the same request.
@@ -121,18 +154,17 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		return ErrRingClientInvalidRelayRequest.Wrap("missing signature from relay request")
 	}
 
+	// Check the signature's size before deserializing it: a ring has at least
+	// two members, and the length must match its member count exactly.
+	if err := validateRingSignatureSize(signature); err != nil {
+		return err
+	}
+
 	// Deserialize the request signature bytes back into a ring signature.
 	relayRequestRingSig := new(ring.RingSig)
 	if err := relayRequestRingSig.Deserialize(ringCurve, signature); err != nil {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
 			"error deserializing ring signature: %s", err,
-		)
-	}
-
-	// A ring has at least two members.
-	if numRingMembers := len(relayRequestRingSig.PublicKeys()); numRingMembers < 2 {
-		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
-			"ring signature has %d members, expected at least 2", numRingMembers,
 		)
 	}
 

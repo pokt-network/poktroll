@@ -112,8 +112,9 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	ctx = setBlockHeightToNextSessionStart(ctx, supplierModuleKeepers.SharedKeeper)
 	numSuppliersWithServicesActivation, err := supplierModuleKeepers.BeginBlockerActivateSupplierServices(ctx)
 	require.NoError(t, err)
-	// Services for both suppliers are activated at the start of the session.
-	require.Equal(t, 2, numSuppliersWithServicesActivation)
+	// Only the staked supplier's services are activated: the unstaking supplier's
+	// services are deactivated at the same height they would have activated.
+	require.Equal(t, 1, numSuppliersWithServicesActivation)
 
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetDehydratedSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)

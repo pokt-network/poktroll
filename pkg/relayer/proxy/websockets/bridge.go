@@ -341,6 +341,13 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 		return
 	}
 
+	if relayRequest.Meta.SessionHeader == nil {
+		b.serviceBackendConn.handleError(
+			ErrWebsocketsGatewayMessage.Wrap("relay request has no session header"),
+		)
+		return
+	}
+
 	// Ensure that the relay request is for the session that the bridge is serving.
 	if relayRequest.Meta.SessionHeader.SessionId != b.session.Header.SessionId {
 		b.serviceBackendConn.handleError(
