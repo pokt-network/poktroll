@@ -25,6 +25,16 @@ func (p Params) minStakeOrDefault() cosmostypes.Coin {
 	return *p.MinStake
 }
 
+// minStakeIncludedServicesOrDefault returns min_stake_included_services, or its
+// default (1) if it is zero. Validation never lets it be zero; the fallback keeps
+// a zero in state from allowing no services at all.
+func (p Params) minStakeIncludedServicesOrDefault() uint64 {
+	if p.MinStakeIncludedServices == 0 {
+		return DefaultMinStakeIncludedServices
+	}
+	return p.MinStakeIncludedServices
+}
+
 // AllowedServices returns how many services the given stake covers.
 // limited is false when the cap is disabled, in which case allowed is meaningless.
 //
@@ -38,27 +48,29 @@ func AllowedServices(stake cosmostypes.Coin, params Params) (allowed uint64, lim
 	}
 
 	minStake := params.minStakeOrDefault()
+	included := params.minStakeIncludedServicesOrDefault()
 	if stake.Amount.LT(minStake.Amount) {
-		return params.MinStakeIncludedServices, true
+		return included, true
 	}
 
 	additional := stake.Amount.Sub(minStake.Amount).Quo(params.StakePerAdditionalService.Amount)
-	if !additional.IsUint64() || additional.Uint64() > math.MaxUint64-params.MinStakeIncludedServices {
+	if !additional.IsUint64() || additional.Uint64() > math.MaxUint64-included {
 		return math.MaxUint64, true
 	}
 
-	return params.MinStakeIncludedServices + additional.Uint64(), true
+	return included + additional.Uint64(), true
 }
 
 // RequiredStake returns the stake needed to serve numServices services.
 // With the cap disabled it is min_stake.
 func RequiredStake(numServices uint64, params Params) cosmostypes.Coin {
 	minStake := params.minStakeOrDefault()
-	if !params.ServiceCapEnabled() || numServices <= params.MinStakeIncludedServices {
+	included := params.minStakeIncludedServicesOrDefault()
+	if !params.ServiceCapEnabled() || numServices <= included {
 		return minStake
 	}
 
-	additional := sdkmath.NewIntFromUint64(numServices - params.MinStakeIncludedServices)
+	additional := sdkmath.NewIntFromUint64(numServices - included)
 	return cosmostypes.NewCoin(minStake.Denom, minStake.Amount.Add(additional.Mul(params.StakePerAdditionalService.Amount)))
 }
 

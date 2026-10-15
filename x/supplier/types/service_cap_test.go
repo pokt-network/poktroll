@@ -34,6 +34,8 @@ func TestAllowedServices(t *testing.T) {
 		{"one upokt short of the next step", 14, capParams(10, 5, 3), 3, true},
 		{"exactly the next step", 15, capParams(10, 5, 3), 4, true},
 		{"many steps", 60, capParams(10, 5, 1), 11, true},
+		{"zero included counts as one", 10, capParams(10, 5, 0), 1, true},
+		{"zero included counts as one, below min stake", 9, capParams(10, 5, 0), 1, true},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
@@ -62,6 +64,13 @@ func TestRequiredStake(t *testing.T) {
 		allowed, _ := AllowedServices(RequiredStake(n, params), params)
 		require.GreaterOrEqual(t, allowed, n)
 	}
+}
+
+// A zero min_stake_included_services counts as one service, like its default.
+func TestRequiredStake_ZeroIncludedCountsAsOne(t *testing.T) {
+	params := capParams(10, 5, 0)
+	require.Equal(t, upokt(10), RequiredStake(1, params))
+	require.Equal(t, upokt(15), RequiredStake(2, params))
 }
 
 func cfg(serviceId string, deactivationHeight int64) *sharedtypes.ServiceConfigUpdate {

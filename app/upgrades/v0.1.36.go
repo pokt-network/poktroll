@@ -94,6 +94,8 @@ const (
 //     whenever the cap is enabled and a cap param changes, including from genesis
 //     and upgrade handlers. New store prefixes in an existing store need no
 //     StoreUpgrades.
+//     A min_stake_included_services of 0 in state (never accepted by validation)
+//     counts as 1, so the cap can never allow a supplier no services.
 //   - MsgStakeSupplier can no longer lower a supplier's stake. CONSENSUS-BREAKING
 //     (state): this reverts the immediate downstake (stake decrease returned to the
 //     owner at once) that a lower stake at or above min_stake used to trigger.
