@@ -33,10 +33,14 @@ const (
 //     next one on and is unbonded (it previously stayed selectable and never
 //     unbonded); unstaking no longer pushes an already-deactivated service config's
 //     deactivation later (which reactivated it for past sessions).
-//     OPERATOR NOTE: as after a voluntary unstake, the services of a supplier
-//     unbonded by settlement stay deactivated when its owner cancels the unbonding
-//     with a stake-only top-up. The operator must stake again with its services.
-//     Before, the settlement path deactivated nothing, so a top-up alone restored it.
+//     The operator may now cancel the unbonding of a supplier whose stake is below
+//     min_stake (as after a slash in settlement), by staking again with its
+//     services and at least min_stake, paid by the operator. An unbonding at or
+//     above min_stake (an owner's unstake) can still be cancelled only by the
+//     owner. An owner's stake-only top-up still cancels any unbonding, but leaves
+//     the deactivated services deactivated: the operator must stake again with
+//     them. Before, the settlement path deactivated nothing, so a top-up alone
+//     restored the supplier. CONSENSUS-BREAKING (state).
 //   - One-shot repair (RepairUnindexedUnbondingSuppliers): every supplier the old
 //     settlement code left unbonding but unindexed starts unbonding again from
 //     this session, so it leaves sessions and is unbonded. Mainnet had none on

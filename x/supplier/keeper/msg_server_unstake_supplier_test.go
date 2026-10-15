@@ -7,6 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/pocket"
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -569,4 +570,44 @@ func TestMsgServer_UnstakeSupplier_KeepsDeactivatedServiceConfigs(t *testing.T) 
 			require.False(t, serviceConfig.IsActive(serviceIDDeactivationHeight))
 		}
 	}
+}
+
+// The operator can cancel the unbonding of a supplier below min stake, as after
+// a slash in settlement, by restoring the stake to min stake with its services.
+func TestMsgServer_StakeSupplier_OperatorCancelsBelowMinStakeUnbonding(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
+	minStake := suppliertypes.DefaultMinStake.Amount.Int64()
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, serviceID)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Settlement slashes the supplier below min stake and starts its unbonding.
+	supplier, isSupplierFound := supplierModuleKeepers.GetDehydratedSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	slashedStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, minStake-1)
+	supplier.Stake = &slashedStake
+	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
+	supplierModuleKeepers.BeginSupplierUnbonding(ctx, &supplier, &sharedParams)
+	require.Empty(t, countedServiceIds(t, supplierModuleKeepers, cosmostypes.UnwrapSDKContext(ctx), operatorAddr))
+
+	// The operator cannot cancel without restoring min stake.
+	operatorRestakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake-1, serviceID)
+	setStakeMsgSigner(operatorRestakeMsg, operatorAddr)
+	_, err = srv.StakeSupplier(ctx, operatorRestakeMsg)
+	require.ErrorContains(t, err, "only the owner can cancel an in-progress unstake")
+
+	// Restoring min stake with its services cancels the unbonding and restores them.
+	operatorRestakeMsg, _ = newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, serviceID)
+	setStakeMsgSigner(operatorRestakeMsg, operatorAddr)
+	_, err = srv.StakeSupplier(ctx, operatorRestakeMsg)
+	require.NoError(t, err)
+
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.False(t, foundSupplier.IsUnbonding())
+	require.Equal(t, []string{serviceID}, countedServiceIds(t, supplierModuleKeepers, cosmostypes.UnwrapSDKContext(ctx), operatorAddr))
 }

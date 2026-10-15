@@ -237,9 +237,16 @@ func (k Keeper) StakeSupplier(
 			// re-stake (paying only the staking fee, since the stake amount is unchanged)
 			// to cancel an owner-initiated unstake, preventing the owner from ever
 			// reclaiming their escrowed stake.
-			if !msg.IsSigner(storedOwnerAddress) {
+			//
+			// Exception: the operator may cancel an unbonding of a supplier whose
+			// stake is below min_stake (as when settlement slashed it below min stake),
+			// by bringing the stake back to at least min_stake, paid by the operator.
+			// The owner can unstake again at any time, and an unbonding at or above
+			// min_stake stays owner-only, so this cannot be repeated to keep the
+			// owner's stake escrowed.
+			if !msg.IsSigner(storedOwnerAddress) && !isOperatorRescue(msg, supplier, supplierCurrentStake, k.GetParams(ctx).MinStake) {
 				err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-					"signer %q is not allowed to cancel the unbonding of supplier with owner %q; only the owner can cancel an in-progress unstake",
+					"signer %q is not allowed to cancel the unbonding of supplier with owner %q; only the owner can cancel an in-progress unstake, or the operator when the stake is below min stake and the message restores it",
 					msg.Signer, storedOwnerAddress,
 				)
 				logger.Info(fmt.Sprintf("ERROR: %s", err))
@@ -496,4 +503,18 @@ func checkServiceCap(msg *suppliertypes.MsgStakeSupplier, params suppliertypes.P
 		"%d services require %s; supplier stake is %s",
 		numServices, suppliertypes.RequiredStake(numServices, params), msg.Stake,
 	)
+}
+
+// isOperatorRescue reports whether the message is the supplier's operator
+// bringing a stake below min stake back to at least min stake.
+func isOperatorRescue(
+	msg *suppliertypes.MsgStakeSupplier,
+	supplier sharedtypes.Supplier,
+	currentStake sdk.Coin,
+	minStake *sdk.Coin,
+) bool {
+	if minStake == nil || msg.Stake == nil || !msg.IsSigner(supplier.OperatorAddress) {
+		return false
+	}
+	return currentStake.Amount.LT(minStake.Amount) && msg.Stake.Amount.GTE(minStake.Amount)
 }
