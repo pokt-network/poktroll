@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	storetypes "cosmossdk.io/store/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -87,20 +88,30 @@ func (k Keeper) RepairUnindexedUnbondingSuppliers(ctx context.Context) (repaired
 
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
-	// GetAllSuppliers returns a slice, so the writes below never run while a
-	// supplier store iterator is open.
-	for _, supplier := range k.GetAllSuppliers(ctx) {
+	// Collect the suppliers to repair first, so the writes below never run while
+	// the supplier store iterator is open. The records are read dehydrated:
+	// BeginSupplierUnbonding reads the service config history itself.
+	var toRepair []sharedtypes.Supplier
+	supplierIterator := storetypes.KVStorePrefixIterator(k.getSupplierStore(ctx), []byte{})
+	for ; supplierIterator.Valid(); supplierIterator.Next() {
+		var supplier sharedtypes.Supplier
+		k.cdc.MustUnmarshal(supplierIterator.Value(), &supplier)
 		if !supplier.IsUnbonding() {
 			continue
 		}
 		if _, ok := indexed[supplier.OperatorAddress]; ok {
 			continue
 		}
+		toRepair = append(toRepair, supplier)
+	}
+	supplierIterator.Close()
+
+	for _, supplier := range toRepair {
 		unstakeSessionEndHeight := k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams)
 		repaired = append(repaired, supplier.OperatorAddress)
 
 		// The event carries the dehydrated supplier, like the voluntary unbonding
-		// event: the hydrated copy predates the deactivations just stored.
+		// event.
 		supplier.Services = nil
 		supplier.ServiceConfigHistory = nil
 		event := &suppliertypes.EventSupplierUnbondingBegin{

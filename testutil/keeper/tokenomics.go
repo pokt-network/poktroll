@@ -210,6 +210,14 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		EndBlockerUnbondApplications(gomock.Any()).
 		Return(nil).
 		AnyTimes()
+	// With no params history, the unbonding end height uses the default shared params.
+	mockApplicationKeeper.EXPECT().
+		GetApplicationUnbondingEndHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, app *apptypes.Application) int64 {
+			sharedParams := sharedtypes.DefaultParams()
+			return apptypes.GetApplicationUnbondingHeight(&sharedParams, app)
+		}).
+		AnyTimes()
 
 	// Return DefaultParams (non-nil MinStake) so the settlement auto-unstake check
 	// in ProcessTokenLogicModules reads a valid min_stake. An empty Params{} has a

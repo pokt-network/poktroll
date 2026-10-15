@@ -66,7 +66,7 @@ func TestGetRingForAddress_NoGateway_RingIsAppKeyOnly(t *testing.T) {
 
 	rc := newTestRingClient(t, appAddr, appPubKey)
 
-	expectedPoints, err := rc.getRingPointsForAddressAtSessionEndHeight(context.Background(), appAddr, 1)
+	expectedPoints, _, err := rc.getRingPointsForAddressAtSessionEndHeight(context.Background(), appAddr, 1)
 	require.NoError(t, err)
 
 	// The ring contains exactly the app's own key.
@@ -242,7 +242,7 @@ func TestGetRingPointsForAddressAtSessionEndHeight_UsesSessionEndHeight(t *testi
 		sharedQuerier:      sharedQuerier,
 	}
 
-	ringPoints, err := rc.getRingPointsForAddressAtSessionEndHeight(context.Background(), appAddr, sessionEndHeight)
+	ringPoints, _, err := rc.getRingPointsForAddressAtSessionEndHeight(context.Background(), appAddr, sessionEndHeight)
 	require.NoError(t, err)
 	gatewayPoints, err := pointsFromPublicKeys(gatewayPubKey)
 	require.NoError(t, err)
@@ -293,4 +293,59 @@ func TestVerifyRelayRequestSignature_RejectsMoreMembersThanExpectedRing(t *testi
 
 	err = rc.VerifyRelayRequestSignature(context.Background(), signRelayRequest(4))
 	require.ErrorIs(t, err, ErrRingClientInvalidRelayRequestSignature)
+}
+
+// A ring that lists a key more than once, as built by the ring client itself,
+// is accepted: here the application is also one of its own delegated gateways.
+func TestVerifyRelayRequestSignature_AcceptsRingWithRepeatedKey(t *testing.T) {
+	appPrivKey := secp256k1.GenPrivKey()
+	appPubKey := appPrivKey.PubKey()
+	appAddr := cosmostypes.AccAddress(appPubKey.Address()).String()
+	appScalar, err := ring.Secp256k1().DecodeToScalar(appPrivKey.Bytes())
+	require.NoError(t, err)
+	gatewayAddr, gatewayPubKey := sample.AccAddressAndPubKey()
+
+	ctrl := gomock.NewController(t)
+	appQuerier := mockclient.NewMockApplicationQueryClient(ctrl)
+	appQuerier.EXPECT().GetApplication(gomock.Any(), appAddr).Return(
+		apptypes.Application{Address: appAddr, DelegateeGatewayAddresses: []string{appAddr, gatewayAddr}},
+		nil,
+	).AnyTimes()
+	acctQuerier := mockclient.NewMockAccountQueryClient(ctrl)
+	acctQuerier.EXPECT().GetPubKeyFromAddress(gomock.Any(), appAddr).Return(appPubKey, nil).AnyTimes()
+	acctQuerier.EXPECT().GetPubKeyFromAddress(gomock.Any(), gatewayAddr).Return(gatewayPubKey, nil).AnyTimes()
+	sharedParams := sharedtypes.DefaultParams()
+	sharedQuerier := mockclient.NewMockSharedQueryClient(ctrl)
+	sharedQuerier.EXPECT().GetParams(gomock.Any()).Return(&sharedParams, nil).AnyTimes()
+	rc := &ringClient{
+		logger:             polyzero.NewLogger(),
+		applicationQuerier: appQuerier,
+		accountQuerier:     acctQuerier,
+		sharedQuerier:      sharedQuerier,
+	}
+
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, 1)
+	signingRing, err := rc.GetRingForAddressAtHeight(context.Background(), appAddr, sessionEndHeight)
+	require.NoError(t, err)
+	require.Equal(t, 3, signingRing.Size())
+
+	relayRequest := &servicetypes.RelayRequest{
+		Meta: servicetypes.RelayRequestMetadata{
+			SessionHeader: &sessiontypes.SessionHeader{
+				ApplicationAddress:      appAddr,
+				SessionId:               "session",
+				ServiceId:               "svc",
+				SessionStartBlockHeight: 1,
+				SessionEndBlockHeight:   sessionEndHeight,
+			},
+		},
+	}
+	signableBz, err := relayRequest.GetSignableBytesHash()
+	require.NoError(t, err)
+	sig, err := signingRing.Sign(signableBz, appScalar)
+	require.NoError(t, err)
+	relayRequest.Meta.Signature, err = sig.Serialize()
+	require.NoError(t, err)
+
+	require.NoError(t, rc.VerifyRelayRequestSignature(context.Background(), relayRequest))
 }

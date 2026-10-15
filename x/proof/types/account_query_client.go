@@ -28,6 +28,10 @@ type AccountKeeperQueryClient struct {
 // provided address.
 // It should be injected into the PubKeyClient when initialized from within the a keeper.
 func NewAccountKeeperQueryClient(accountKeeper AccountKeeper, logger log.Logger) client.AccountQueryClient {
+	// The logger is used inside a recover: it must never be nil.
+	if logger == nil {
+		logger = log.NewNopLogger()
+	}
 	return &AccountKeeperQueryClient{keeper: accountKeeper, logger: logger}
 }
 

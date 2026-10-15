@@ -33,6 +33,10 @@ const (
 //     next one on and is unbonded (it previously stayed selectable and never
 //     unbonded); unstaking no longer pushes an already-deactivated service config's
 //     deactivation later (which reactivated it for past sessions).
+//     OPERATOR NOTE: as after a voluntary unstake, the services of a supplier
+//     unbonded by settlement stay deactivated when its owner cancels the unbonding
+//     with a stake-only top-up. The operator must stake again with its services.
+//     Before, the settlement path deactivated nothing, so a top-up alone restored it.
 //   - One-shot repair (RepairUnindexedUnbondingSuppliers): every supplier the old
 //     settlement code left unbonding but unindexed starts unbonding again from
 //     this session, so it leaves sessions and is unbonded. Mainnet had none on
@@ -64,15 +68,22 @@ const (
 //     CONSENSUS-BREAKING (state): relay request ring
 //     signatures must have between 2 and 64 members (MaxRingSignatureMembers, a
 //     fixed protocol constant), and a size that matches the member count. A
-//     signature may not have more members than the application's expected ring
-//     (two when it has no delegated gateways). The expected ring is now read at
-//     the session end height of the relay's header, not at the session end
-//     computed from the live session length. Proof validation no longer reads the
-//     shared params for it (gas).
+//     signature may not have more members than the application's expected ring,
+//     counted as signers build it: the application, its delegated gateways and the
+//     gateways undelegated since the session, a key listed twice counted twice (the
+//     application key twice when it has no gateways). SDKs and gateways building
+//     rings must not drop repeated keys. The expected ring is now read at the
+//     session end height of the relay's header, not at the session end computed
+//     from the live session length. RelayMiners compare the relay's session header
+//     with the onchain session before checking its signature.
 //   - x/application: max_delegated_gateways must be at most 31
 //     (MaxDelegatedGatewaysLimit; mainnet uses 7). A transfer into an existing
 //     application fails, with EventTransferError, when the merged delegations
-//     would exceed max_delegated_gateways. CONSENSUS-BREAKING (state). No handler
+//     would exceed max_delegated_gateways. MsgDelegateToGateway, and a transfer
+//     merge, are also rejected when the application's ring (the application, its
+//     delegated gateways and the gateways undelegated in the current session)
+//     would exceed 64 members. MsgDelegateToGateway reads the shared params once
+//     more for it (gas). CONSENSUS-BREAKING (state). No handler
 //     code needed.
 //   - Settlement no longer moves the unbonding height of an application that is
 //     already unbonding when its stake is below the minimum. CONSENSUS-BREAKING
@@ -96,6 +107,8 @@ const (
 //     StoreUpgrades.
 //     A min_stake_included_services of 0 in state (never accepted by validation)
 //     counts as 1, so the cap can never allow a supplier no services.
+//     Cap deactivations use the shared params effective at the current height,
+//     so at the block a new session length takes effect they follow the new grid.
 //   - MsgStakeSupplier can no longer lower a supplier's stake. CONSENSUS-BREAKING
 //     (state): this reverts the immediate downstake (stake decrease returned to the
 //     owner at once) that a lower stake at or above min_stake used to trigger.
@@ -144,6 +157,15 @@ const (
 //   - New EventSupplierServicesCapped, one per deactivated service, primitives only.
 //   - EventSupplierServiceConfigActivated is no longer emitted for a config that is
 //     deactivated at or before its activation height (it never became active).
+//
+// CometBFT (pokt-network fork, upstream v0.38.21 -> v0.38.26): validators MUST
+// check `double_sign_check_height` in config.toml before the upgrade. A value of 1
+// was a no-op before and now checks the previous block, so a validator restarting
+// at the upgrade height with 1 finds its own signature and refuses to start. Set it
+// to 0 (the default) for the upgrade restart. Other engine changes: the new
+// `event_bus_buffer_capacity` setting (0, the default, keeps the previous
+// unbuffered event bus), stricter blocksync response validation, a mempool message
+// size filter, and a 256-character limit on the consensus params authority field.
 //
 // Operators: blocks before the upgrade height MUST be replayed with the previous
 // binary (cosmovisor does this). The memo is not height-gated, so replaying old

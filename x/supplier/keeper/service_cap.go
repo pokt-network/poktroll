@@ -38,8 +38,11 @@ func (k Keeper) EnforceServiceCap(
 		return nil
 	}
 
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	// The params effective at this height describe the current session: at the
+	// block where a session length change takes effect, the live params still
+	// hold the previous grid until the shared EndBlocker promotes the new one.
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sdkCtx.BlockHeight())
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
 
 	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, "")

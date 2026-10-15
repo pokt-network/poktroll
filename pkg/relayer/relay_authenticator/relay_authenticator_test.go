@@ -207,6 +207,33 @@ func (s *RelayAuthenticatorTestSuite) TestVerifyRelayRequest_ForgedSessionHeader
 	}
 }
 
+// A relay whose header differs from the onchain session is rejected for the
+// header, before its signature is checked.
+func (s *RelayAuthenticatorTestSuite) TestVerifyRelayRequest_ChecksHeaderBeforeSignature() {
+	auth, err := relay_authenticator.NewRelayAuthenticator(
+		s.deps,
+		relay_authenticator.WithSigningKeyNames([]string{s.supplierKeyName}),
+	)
+	require.NoError(s.T(), err)
+
+	relayReq := &servicetypes.RelayRequest{
+		Meta: servicetypes.RelayRequestMetadata{
+			SupplierOperatorAddress: s.supplierAddress,
+			SessionHeader: &sessiontypes.SessionHeader{
+				ApplicationAddress:      s.appAddress,
+				SessionId:               s.session.SessionId,
+				SessionStartBlockHeight: s.session.Header.SessionStartBlockHeight,
+				SessionEndBlockHeight:   s.session.Header.SessionEndBlockHeight + 1,
+				ServiceId:               serviceId,
+			},
+			Signature: []byte("not a ring signature"),
+		},
+	}
+
+	err = auth.VerifyRelayRequest(s.ctx, relayReq, serviceId)
+	require.ErrorContains(s.T(), err, "session end height mismatch")
+}
+
 func (s *RelayAuthenticatorTestSuite) TestSignRelayResponse_Success() {
 	// Create authenticator with valid key name
 	auth, err := relay_authenticator.NewRelayAuthenticator(

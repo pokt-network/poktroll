@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	pocket "github.com/pokt-network/poktroll/app/pocket"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -467,4 +468,61 @@ func TestMsgServer_TransferApplication_MergeRespectsMaxDelegatedGateways(t *test
 	require.True(t, isFound)
 	require.Equal(t, dstApp.DelegateeGatewayAddresses, gotDstApp.DelegateeGatewayAddresses)
 	require.True(t, dstApp.Stake.Equal(*gotDstApp.Stake))
+}
+
+// A transfer into an existing application fails when the merged ring, with the
+// gateways undelegated in the current session, would exceed the ring signature
+// member limit.
+func TestMsgServer_TransferApplication_MergeRespectsRingMemberLimit(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := appkeeper.NewMsgServerImpl(k)
+	sharedParams := sharedtypes.DefaultParams()
+
+	srcBech32 := sample.AccAddressBech32()
+	dstBech32 := sample.AccAddressBech32()
+	svcConfigs := []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}}
+
+	_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address: srcBech32, Stake: &apptypes.DefaultMinStake, Services: svcConfigs,
+	})
+	require.NoError(t, err)
+	_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, dstBech32))
+	require.NoError(t, err)
+	_, err = srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address: dstBech32, Stake: &apptypes.DefaultMinStake, Services: svcConfigs,
+	})
+	require.NoError(t, err)
+
+	srcApp, isFound := k.GetApplication(ctx, srcBech32)
+	require.True(t, isFound)
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+	completionHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight)
+
+	// Each application alone fits; merged they hold one gateway too many.
+	undelegate := func(appBech32 string, numGateways int) apptypes.Application {
+		app, found := k.GetApplication(ctx, appBech32)
+		require.True(t, found)
+		undelegated := make([]string, numGateways)
+		for i := range undelegated {
+			undelegated[i] = sample.AccAddressBech32()
+		}
+		app.PendingUndelegations = map[uint64]apptypes.UndelegatingGatewayList{
+			uint64(completionHeight): {GatewayAddresses: undelegated},
+		}
+		k.SetApplication(ctx, app)
+		return app
+	}
+	srcApp = undelegate(srcBech32, rings.MaxRingSignatureMembers/2)
+	dstApp := undelegate(dstBech32, rings.MaxRingSignatureMembers/2)
+
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(completionHeight)
+	require.NoError(t, k.EndBlockerTransferApplication(ctx))
+
+	gotSrcApp, isFound := k.GetApplication(ctx, srcBech32)
+	require.True(t, isFound)
+	require.Nil(t, gotSrcApp.PendingTransfer)
+	require.Equal(t, srcApp.PendingUndelegations, gotSrcApp.PendingUndelegations)
+	gotDstApp, isFound := k.GetApplication(ctx, dstBech32)
+	require.True(t, isFound)
+	require.Equal(t, dstApp.PendingUndelegations, gotDstApp.PendingUndelegations)
 }

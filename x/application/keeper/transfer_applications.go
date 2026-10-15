@@ -7,6 +7,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -182,6 +183,17 @@ func (k Keeper) transferApplication(
 			)
 		}
 		mergeAppPendingUndelegations(&srcApp, &dstApp)
+		// The relay request ring includes the gateways undelegated in the current
+		// session. Keep the merged ring within the ring signature member limit.
+		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+		sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
+		ringAddresses := rings.GetRingAddressesAtSessionEndHeight(&dstApp, uint64(sessionEndHeight))
+		if ringSize := 1 + len(ringAddresses); ringSize > rings.MaxRingSignatureMembers {
+			return apptypes.ErrAppMaxDelegatedGateways.Wrapf(
+				"merged application would have %d ring members, more than %d",
+				ringSize, rings.MaxRingSignatureMembers,
+			)
+		}
 		// NB: do NOT mutate dstApp.ServiceConfigs here — the merged union is passed
 		// to recordApplicationServiceConfigChange, which needs dstApp to still hold
 		// the prior set to detect the change and append history entries.

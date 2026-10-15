@@ -314,10 +314,8 @@ func (k Keeper) processTokenLogicModules(
 	if tlmCtx.Application.Stake.Amount.LT(minStake.Amount) && !tlmCtx.Application.IsUnbonding() {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		tlmCtx.Application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
-		// Report the unbonding end height EndBlockerUnbondApplications will use:
-		// params at the unstake session end.
-		unstakeParams := settlementContext.GetSharedParamsAtHeight(ctx, sessionEndHeight)
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&unstakeParams, tlmCtx.Application)
+		// Report the unbonding end height EndBlockerUnbondApplications will use.
+		unbondingEndHeight := k.applicationKeeper.GetApplicationUnbondingEndHeight(ctx, tlmCtx.Application)
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			Application:        tlmCtx.Application,

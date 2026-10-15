@@ -23,21 +23,15 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 		return err
 	}
 
-	// Verify the relayRequest metadata, signature, session header and other
-	// basic validation.
-	if err = ra.ringClient.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
+	// Check the request's metadata and session header before using them.
+	if err = relayRequest.ValidateBasic(); err != nil {
 		return err
 	}
 
 	meta := relayRequest.GetMeta()
 
-	// Extract the session header for usage below.
-	// ringClient.VerifyRelayRequestSignature already verified the header's validity.
+	// Extract the session header for usage below; ValidateBasic checked it.
 	sessionHeader := meta.SessionHeader
-
-	// Application address is used to verify the relayRequest signature.
-	// It is guaranteed to be present in the relayRequest since the signature
-	// has already been verified.
 	appAddress := sessionHeader.GetApplicationAddress()
 
 	ra.logger.Debug().
@@ -103,6 +97,12 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	// So enforce here exactly the equality the chain enforces at proof time. The onchain
 	// session was already fetched above, so this costs NO additional query.
 	if err = compareSessionHeaders(session.GetHeader(), sessionHeader); err != nil {
+		return err
+	}
+
+	// Verify the signature only once the header is known to be the onchain
+	// session's: the ring is looked up at the header's session end height.
+	if err = ra.ringClient.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
 		return err
 	}
 

@@ -249,12 +249,14 @@ func (b *bridge) Run(closeHeight int64) {
 	}()
 
 	var lastHeight atomic.Int64
+	var reachedCloseHeight atomic.Bool
 	channel.ForEach(
 		b.ctx,
 		b.blockClient.CommittedBlocksSequence(b.ctx),
 		func(ctx context.Context, block client.Block) {
 			lastHeight.Store(block.Height())
 			if block.Height() >= closeHeight {
+				reachedCloseHeight.Store(true)
 				b.logger.Info().Int64("height", block.Height()).Msg("session closing, bridge stopped")
 				// TODO_MAINNET(@red-0ne) Propagate the session closing as a close message
 				// to the gateway so end user can be informed.
@@ -280,8 +282,10 @@ func (b *bridge) Run(closeHeight int64) {
 	b.stopChanCloseOnce.Do(func() { close(b.stopChan) })
 
 	height := lastHeight.Load()
+	// The bridge stopped at its session's end only if it saw the close height
+	// before either side disconnected.
 	reason := "disconnect"
-	if height >= closeHeight {
+	if reachedCloseHeight.Load() {
 		reason = "session_end"
 	}
 	if height > 0 {

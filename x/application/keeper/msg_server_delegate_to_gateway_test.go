@@ -6,9 +6,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -432,4 +434,47 @@ func TestMsgServer_DelegateToGateway_UnbondingButActive_Success(t *testing.T) {
 	foundApp, isAppFound := k.GetApplication(sdkCtx, appAddr)
 	require.True(t, isAppFound)
 	require.Contains(t, foundApp.DelegateeGatewayAddresses, gatewayAddr)
+}
+
+// A delegation is rejected when, with the gateways undelegated in the current
+// session, the application's ring would exceed the ring signature member limit.
+func TestMsgServer_DelegateToGateway_FailRingTooLarge(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	appAddr := sample.AccAddressBech32()
+	gatewayAddr := sample.AccAddressBech32()
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gatewaytypes.GatewayNotUnstaking)
+
+	_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address:  appAddr,
+		Stake:    &apptypes.DefaultMinStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+	})
+	require.NoError(t, err)
+
+	// Fill the ring with gateways undelegated in the current session, leaving
+	// room for numFree more members.
+	setUndelegated := func(numFree int) {
+		app, found := k.GetApplication(ctx, appAddr)
+		require.True(t, found)
+		undelegated := make([]string, rings.MaxRingSignatureMembers-1-numFree)
+		for i := range undelegated {
+			undelegated[i] = sample.AccAddressBech32()
+		}
+		sessionEndHeight := testsession.GetSessionEndHeightWithDefaultParams(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		app.PendingUndelegations = map[uint64]apptypes.UndelegatingGatewayList{
+			uint64(sessionEndHeight): {GatewayAddresses: undelegated},
+		}
+		k.SetApplication(ctx, app)
+	}
+	delegateMsg := &apptypes.MsgDelegateToGateway{AppAddress: appAddr, GatewayAddress: gatewayAddr}
+
+	setUndelegated(0)
+	_, err = srv.DelegateToGateway(ctx, delegateMsg)
+	require.ErrorContains(t, err, apptypes.ErrAppMaxDelegatedGateways.Error())
+
+	setUndelegated(1)
+	_, err = srv.DelegateToGateway(ctx, delegateMsg)
+	require.NoError(t, err)
 }

@@ -182,16 +182,18 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	// end height of the request's session.
 	sessionEndHeight := uint64(sessionHeader.GetSessionEndBlockHeight())
 	appAddress := sessionHeader.GetApplicationAddress()
-	expectedRelayRingPointsForApp, err := rc.getRingPointsForAddressAtSessionEndHeight(ctx, appAddress, sessionEndHeight)
+	expectedRelayRingPointsForApp, numExpectedRingMembers, err := rc.getRingPointsForAddressAtSessionEndHeight(ctx, appAddress, sessionEndHeight)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
 		)
 	}
 
-	// The signature cannot have more members than the expected ring. A ring
-	// without gateways lists the application key twice, so it has two members.
-	if err := validateRingSignatureSize(signature, uint64(max(len(expectedRelayRingPointsForApp), 2))); err != nil {
+	// The signature cannot have more members than the expected ring. Signers
+	// build the same list of ring members, which can name a key more than once
+	// (e.g. the application key twice when it has no gateways), so the bound is
+	// the member count, not the number of distinct keys.
+	if err := validateRingSignatureSize(signature, uint64(numExpectedRingMembers)); err != nil {
 		return err
 	}
 	return verifyRingSignature(signature, expectedRelayRingPointsForApp, relayRequest, appAddress)
@@ -305,23 +307,24 @@ func (rc *ringClient) addressesToPubKeys(
 }
 
 // getRingPointsForAddressAtSessionEndHeight returns a map of the ring points for
-// the given application in the session ending at the given height. It takes into account the application itself
+// the given application in the session ending at the given height, and the
+// number of ring members, counting a key listed more than once each time. It takes into account the application itself
 // as well as all the addresses it delegated to. It returns a map of encoded
 // ring points to Point objects (i.e. public keys).
 func (rc *ringClient) getRingPointsForAddressAtSessionEndHeight(
 	ctx context.Context,
 	appAddress string,
 	sessionEndHeight uint64,
-) (map[string]ringtypes.Point, error) {
+) (map[string]ringtypes.Point, int, error) {
 	ringPubKeys, err := rc.getRingPubKeysForAddress(ctx, appAddress, sessionEndHeight)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// Get the points on the secp256k1 curve for the public keys in the ring.
 	points, err := pointsFromPublicKeys(ringPubKeys...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	ringPoints := make(map[string]ringtypes.Point, len(points))
@@ -335,7 +338,7 @@ func (rc *ringClient) getRingPointsForAddressAtSessionEndHeight(
 	}
 
 	// Return the ring the constructed from the points retrieved above.
-	return ringPoints, nil
+	return ringPoints, len(points), nil
 }
 
 // GetRingAddressesAtBlock returns the active gateway addresses that need to be

@@ -11,6 +11,7 @@ import (
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliermodule "github.com/pokt-network/poktroll/x/supplier/module"
@@ -281,4 +282,32 @@ func TestBeginSupplierUnbonding_IndexesMatchFullReindex(t *testing.T) {
 	require.True(t, hydrated.IsUnbonding())
 	k.SetAndIndexDehydratedSupplier(ctx, hydrated)
 	require.Equal(t, afterUnbonding, dumpSupplierModuleStore(t, k, ctx))
+}
+
+// At the block where a new session length takes effect, a capped service is
+// deactivated at the end of the new, longer session, not mid-session.
+func TestEnforceServiceCap_UsesSessionLengthEffectiveAtCurrentHeight(t *testing.T) {
+	k, ctx, supplier := stakeThenLower(t, 1, "sol", "eth")
+
+	oldParams := k.SharedKeeper.GetParams(ctx)
+	oldParams.SessionGridAnchorHeight = 1
+	oldParams.SessionNumberAtAnchor = 1
+	anchorHeight := sharedtypes.GetNextSessionStartHeight(&oldParams, ctx.BlockHeight())
+	newParams := oldParams
+	newParams.NumBlocksPerSession = oldParams.NumBlocksPerSession + 2
+	newParams.SessionGridAnchorHeight = uint64(anchorHeight)
+	newParams.SessionNumberAtAnchor = uint64(sharedtypes.GetSessionNumber(&oldParams, anchorHeight))
+
+	// The new session length is in the params history from anchorHeight on; the
+	// live params keep the old one until the shared EndBlocker promotes it.
+	sharedKeeper := k.SharedKeeper.(sharedkeeper.Keeper)
+	require.NoError(t, sharedKeeper.SetParamsAtHeight(ctx, 1, oldParams))
+	require.NoError(t, sharedKeeper.SetParamsAtHeight(ctx, anchorHeight, newParams))
+	ctx = ctx.WithBlockHeight(anchorHeight).WithEventManager(cosmostypes.NewEventManager())
+
+	require.Len(t, k.EnforceServiceCap(ctx, &supplier, suppliertypes.ServiceCapReason_SERVICE_CAP_REASON_PARAMS), 1)
+
+	events := testutilevents.FilterEvents[*suppliertypes.EventSupplierServicesCapped](t, ctx.EventManager().Events())
+	require.Len(t, events, 1)
+	require.Equal(t, anchorHeight+int64(newParams.NumBlocksPerSession), events[0].GetEffectiveHeight())
 }

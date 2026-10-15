@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -98,6 +99,21 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 				).Error(),
 			)
 		}
+	}
+
+	// The relay request ring also includes the gateways undelegated in the current
+	// session. Keep it within the ring signature member limit.
+	currentSessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
+	ringAddresses := rings.GetRingAddressesAtSessionEndHeight(&app, uint64(currentSessionEndHeight))
+	if ringSize := 1 + len(ringAddresses) + 1; ringSize > rings.MaxRingSignatureMembers {
+		logger.Info(fmt.Sprintf("Application ring would have %d members, more than %d", ringSize, rings.MaxRingSignatureMembers))
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			apptypes.ErrAppMaxDelegatedGateways.Wrapf(
+				"application with address %q would have %d ring members (gateways undelegated this session included), more than %d",
+				msg.GetAppAddress(), ringSize, rings.MaxRingSignatureMembers,
+			).Error(),
+		)
 	}
 
 	// Update the application with the new delegatee public key

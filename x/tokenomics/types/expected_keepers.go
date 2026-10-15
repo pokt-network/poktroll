@@ -46,6 +46,7 @@ type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	GetParams(ctx context.Context) (params apptypes.Params)
+	GetApplicationUnbondingEndHeight(ctx context.Context, application *apptypes.Application) int64
 
 	// Setters
 	SetApplication(ctx context.Context, app apptypes.Application)
