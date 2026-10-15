@@ -156,7 +156,7 @@ var (
 			QueryParamsResponse:     apptypes.QueryParamsResponse{},
 		},
 		ValidParams: apptypes.Params{
-			MaxDelegatedGateways: 999,
+			MaxDelegatedGateways: 20,
 			MinStake:             &ValidActorMinStake,
 		},
 		ParamTypes: map[ParamType]any{

@@ -6,7 +6,9 @@ import (
 	"encoding/binary"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	ringtypes "github.com/pokt-network/go-dleq/types"
 	ring "github.com/pokt-network/ring-go"
 	"github.com/stretchr/testify/require"
@@ -64,7 +66,7 @@ func TestGetRingForAddress_NoGateway_RingIsAppKeyOnly(t *testing.T) {
 
 	rc := newTestRingClient(t, appAddr, appPubKey)
 
-	expectedPoints, err := rc.getRingPointsForAddressAtHeight(context.Background(), appAddr, 1)
+	expectedPoints, err := rc.getRingPointsForAddressAtSessionEndHeight(context.Background(), appAddr, 1)
 	require.NoError(t, err)
 
 	// The ring contains exactly the app's own key.
@@ -200,4 +202,95 @@ func TestVerifyRingSignature_InvalidBytesReturnError(t *testing.T) {
 	// A nil request panics while hashing the signable bytes.
 	err = verifyRingSignature(validSigBz, ringPoints, nil, "app")
 	require.ErrorContains(t, err, "panic verifying ring signature")
+}
+
+// The ring for a relay request is the one of the request's session, at its
+// session end height, whatever the current session length is.
+func TestGetRingPointsForAddressAtSessionEndHeight_UsesSessionEndHeight(t *testing.T) {
+	appAddr, appPubKey := sample.AccAddressAndPubKey()
+	gatewayAddr, gatewayPubKey := sample.AccAddressAndPubKey()
+	const sessionEndHeight = 10
+
+	// The gateway was undelegated in the session ending at sessionEndHeight,
+	// so it is still part of that session's ring.
+	ctrl := gomock.NewController(t)
+	appQuerier := mockclient.NewMockApplicationQueryClient(ctrl)
+	appQuerier.EXPECT().GetApplication(gomock.Any(), appAddr).Return(
+		apptypes.Application{
+			Address: appAddr,
+			PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
+				sessionEndHeight: {GatewayAddresses: []string{gatewayAddr}},
+			},
+		},
+		nil,
+	).AnyTimes()
+	acctQuerier := mockclient.NewMockAccountQueryClient(ctrl)
+	acctQuerier.EXPECT().GetPubKeyFromAddress(gomock.Any(), appAddr).Return(appPubKey, nil).AnyTimes()
+	acctQuerier.EXPECT().GetPubKeyFromAddress(gomock.Any(), gatewayAddr).Return(gatewayPubKey, nil).AnyTimes()
+
+	// The current session length puts sessionEndHeight inside a later session.
+	liveParams := sharedtypes.DefaultParams()
+	liveParams.NumBlocksPerSession = 4
+	require.Greater(t, sharedtypes.GetSessionEndHeight(&liveParams, sessionEndHeight), int64(sessionEndHeight))
+	sharedQuerier := mockclient.NewMockSharedQueryClient(ctrl)
+	sharedQuerier.EXPECT().GetParams(gomock.Any()).Return(&liveParams, nil).AnyTimes()
+
+	rc := &ringClient{
+		logger:             polyzero.NewLogger(),
+		applicationQuerier: appQuerier,
+		accountQuerier:     acctQuerier,
+		sharedQuerier:      sharedQuerier,
+	}
+
+	ringPoints, err := rc.getRingPointsForAddressAtSessionEndHeight(context.Background(), appAddr, sessionEndHeight)
+	require.NoError(t, err)
+	gatewayPoints, err := pointsFromPublicKeys(gatewayPubKey)
+	require.NoError(t, err)
+	require.Contains(t, ringPoints, string(gatewayPoints[0].Encode()))
+}
+
+// A relay request signature cannot have more members than the expected ring.
+func TestVerifyRelayRequestSignature_RejectsMoreMembersThanExpectedRing(t *testing.T) {
+	appPrivKey := secp256k1.GenPrivKey()
+	appPubKey := appPrivKey.PubKey()
+	appAddr := cosmostypes.AccAddress(appPubKey.Address()).String()
+	appScalar, err := ring.Secp256k1().DecodeToScalar(appPrivKey.Bytes())
+	require.NoError(t, err)
+
+	rc := newTestRingClient(t, appAddr, appPubKey)
+
+	signRelayRequest := func(numMembers int) *servicetypes.RelayRequest {
+		pubKeys := make([]cryptotypes.PubKey, numMembers)
+		for i := range pubKeys {
+			pubKeys[i] = appPubKey
+		}
+		signingRing, ringErr := GetRingFromPubKeys(pubKeys)
+		require.NoError(t, ringErr)
+
+		relayRequest := &servicetypes.RelayRequest{
+			Meta: servicetypes.RelayRequestMetadata{
+				SessionHeader: &sessiontypes.SessionHeader{
+					ApplicationAddress:      appAddr,
+					SessionId:               "session",
+					ServiceId:               "svc",
+					SessionStartBlockHeight: 1,
+					SessionEndBlockHeight:   2,
+				},
+			},
+		}
+		signableBz, hashErr := relayRequest.GetSignableBytesHash()
+		require.NoError(t, hashErr)
+		sig, signErr := signingRing.Sign(signableBz, appScalar)
+		require.NoError(t, signErr)
+		sigBz, serializeErr := sig.Serialize()
+		require.NoError(t, serializeErr)
+		relayRequest.Meta.Signature = sigBz
+		return relayRequest
+	}
+
+	// The ring of an application without gateways has two members.
+	require.NoError(t, rc.VerifyRelayRequestSignature(context.Background(), signRelayRequest(2)))
+
+	err = rc.VerifyRelayRequestSignature(context.Background(), signRelayRequest(4))
+	require.ErrorIs(t, err, ErrRingClientInvalidRelayRequestSignature)
 }

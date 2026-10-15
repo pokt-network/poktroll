@@ -279,10 +279,15 @@ func (b *bridge) Run(closeHeight int64) {
 	b.gatewayConn.waitSenders()
 	b.stopChanCloseOnce.Do(func() { close(b.stopChan) })
 
-	if height := lastHeight.Load(); height > 0 {
-		relayer.WebsocketBridgeCloseHeight.With("service_id", b.serviceId).Set(float64(height))
+	height := lastHeight.Load()
+	reason := "disconnect"
+	if height >= closeHeight {
+		reason = "session_end"
 	}
-	b.logger.Info().Int64("last_height", lastHeight.Load()).Msg("bridge stopped")
+	if height > 0 {
+		relayer.WebsocketBridgeCloseHeight.With("service_id", b.serviceId, "reason", reason).Set(float64(height))
+	}
+	b.logger.Info().Int64("last_height", height).Str("reason", reason).Msg("bridge stopped")
 }
 
 // goCancelBridgeOnStop cancels the bridge context as soon as the stop observable

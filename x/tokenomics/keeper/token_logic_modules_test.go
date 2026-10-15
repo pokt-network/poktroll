@@ -1311,6 +1311,25 @@ func TestProcessTokenLogicModules_AppStakeDropsBelowMinStakeAfterSession(t *test
 		unbondingBeginEvents[0].GetReason(),
 	)
 	require.Equal(t, app.Address, unbondingBeginEvents[0].GetApplication().GetAddress())
+
+	// Settling another claim in a later session keeps the unbonding height and
+	// emits no new unbonding event.
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(expectedSessionEndHeight + 1)
+	nextClaim := prepareTestClaim(numRelays, service, &gotApp, &supplier)
+	nextClaim.SessionHeader.SessionId = "next_session"
+	settlementContext = tokenomicskeeper.NewSettlementContext(ctx, keepers.Keeper, keepers.Logger())
+	require.NoError(t, settlementContext.ClaimCacheWarmUp(ctx, &nextClaim))
+	settlementContext.IncrementSupplierCount(nextClaim.SessionHeader.ApplicationAddress, nextClaim.SessionHeader.SessionId)
+
+	ctx, _ = testutilevents.ResetEventManager(ctx)
+	_, err = keepers.ProcessTokenLogicModules(ctx, settlementContext, tlm.NewClaimSettlementResult(nextClaim))
+	require.NoError(t, err)
+
+	gotApp, found = keepers.GetApplication(ctx, app.Address)
+	require.True(t, found)
+	require.Equal(t, uint64(expectedSessionEndHeight), gotApp.GetUnstakeSessionEndHeight())
+	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	require.Empty(t, testutilevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events))
 }
 
 // prepareTestClaim uses the given number of relays and compute unit per relay in the

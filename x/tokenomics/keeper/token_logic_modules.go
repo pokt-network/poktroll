@@ -290,7 +290,9 @@ func (k Keeper) ProcessTokenLogicModules(
 		minStake = *appMinStake
 	}
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
-	if tlmCtx.Application.Stake.Amount.LT(minStake.Amount) {
+	// An application that is already unbonding keeps its unbonding height:
+	// moving it to a later session would keep the application in sessions.
+	if tlmCtx.Application.Stake.Amount.LT(minStake.Amount) && !tlmCtx.Application.IsUnbonding() {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		tlmCtx.Application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 		// Report the unbonding end height EndBlockerUnbondApplications will use:

@@ -14,8 +14,14 @@ var (
 	ParamMaxDelegatedGateways = "max_delegated_gateways"
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value
 	DefaultMaxDelegatedGateways uint64 = 7
-	KeyMinStake                        = []byte("MinStake")
-	ParamMinStake                      = "min_stake"
+
+	// MaxDelegatedGatewaysLimit is the highest allowed max_delegated_gateways.
+	// It keeps the relay request ring (the application, its delegated gateways
+	// and the gateways undelegated since the session) well under the ring
+	// signature member limit (rings.MaxRingSignatureMembers = 64).
+	MaxDelegatedGatewaysLimit uint64 = 31
+	KeyMinStake                      = []byte("MinStake")
+	ParamMinStake                    = "min_stake"
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value
 	DefaultMinStake = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000) // 1 POKT
 
@@ -75,6 +81,12 @@ func ValidateMaxDelegatedGateways(maxDelegatedGatewaysAny any) error {
 	// If an application chooses to delegate, at least one is required.
 	if maxDelegatedGateways < 1 {
 		return ErrAppParamInvalid.Wrapf("max_delegated_gateways must be greater than 0: got %d", maxDelegatedGateways)
+	}
+	if maxDelegatedGateways > MaxDelegatedGatewaysLimit {
+		return ErrAppParamInvalid.Wrapf(
+			"max_delegated_gateways must be at most %d: got %d",
+			MaxDelegatedGatewaysLimit, maxDelegatedGateways,
+		)
 	}
 
 	return nil

@@ -233,13 +233,14 @@ var (
 	}, []string{})
 
 	// WebsocketBridgeCloseHeight is a Gauge metric for the last block height a
-	// websocket bridge saw before it stopped, at its session's end or when either
-	// side disconnected, labeled by service ID. A bridge never relays past its
-	// session's close height.
+	// websocket bridge saw before it stopped, labeled by service ID and by the
+	// stop reason: "session_end" when the bridge reached its session's close
+	// height, "disconnect" when either side disconnected first. A bridge never
+	// relays past its session's close height.
 	WebsocketBridgeCloseHeight = prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 		Subsystem: relayMinerProcess,
 		Name:      websocketBridgeCloseHeight,
-		Help:      "Last block height seen by a websocket bridge before it stopped, labeled by service ID."}, []string{"service_id"})
+		Help:      "Last block height seen by a websocket bridge before it stopped, labeled by service ID and stop reason."}, []string{"service_id", "reason"})
 
 	// InstructionTimeSeconds is a Histogram metric for tracking the duration of individual
 	// instructions during relay processing. It measures the time between consecutive

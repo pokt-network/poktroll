@@ -417,3 +417,54 @@ func TestMsgServer_TransferApplication_NewAddressRewritesHistoryAppAddress(t *te
 	_, isSrcFound := k.GetApplication(ctx, srcBech32)
 	require.False(t, isSrcFound, "src must be removed after a completed transfer")
 }
+
+// A transfer into an existing application fails when the merged delegations
+// would exceed max_delegated_gateways. Both applications stay unchanged.
+func TestMsgServer_TransferApplication_MergeRespectsMaxDelegatedGateways(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := appkeeper.NewMsgServerImpl(k)
+	sharedParams := sharedtypes.DefaultParams()
+	maxDelegatedGateways := int(k.GetParams(ctx).MaxDelegatedGateways)
+
+	srcBech32 := sample.AccAddressBech32()
+	dstBech32 := sample.AccAddressBech32()
+	svcConfigs := []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}}
+
+	_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address: srcBech32, Stake: &apptypes.DefaultMinStake, Services: svcConfigs,
+	})
+	require.NoError(t, err)
+	_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, dstBech32))
+	require.NoError(t, err)
+	_, err = srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address: dstBech32, Stake: &apptypes.DefaultMinStake, Services: svcConfigs,
+	})
+	require.NoError(t, err)
+
+	// Together the two applications delegate to one more gateway than allowed.
+	delegate := func(appBech32 string, numGateways int) apptypes.Application {
+		app, isFound := k.GetApplication(ctx, appBech32)
+		require.True(t, isFound)
+		for range numGateways {
+			app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, sample.AccAddressBech32())
+		}
+		k.SetApplication(ctx, app)
+		return app
+	}
+	srcApp := delegate(srcBech32, maxDelegatedGateways/2+1)
+	dstApp := delegate(dstBech32, maxDelegatedGateways-maxDelegatedGateways/2)
+
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight))
+	require.NoError(t, k.EndBlockerTransferApplication(ctx))
+
+	gotSrcApp, isFound := k.GetApplication(ctx, srcBech32)
+	require.True(t, isFound)
+	require.Nil(t, gotSrcApp.PendingTransfer)
+	require.Equal(t, srcApp.DelegateeGatewayAddresses, gotSrcApp.DelegateeGatewayAddresses)
+
+	gotDstApp, isFound := k.GetApplication(ctx, dstBech32)
+	require.True(t, isFound)
+	require.Equal(t, dstApp.DelegateeGatewayAddresses, gotDstApp.DelegateeGatewayAddresses)
+	require.True(t, dstApp.Stake.Equal(*gotDstApp.Stake))
+}

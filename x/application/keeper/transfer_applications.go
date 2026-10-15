@@ -174,6 +174,13 @@ func (k Keeper) transferApplication(
 		dstApp.Stake = &srcStakeSumCoin
 
 		mergeAppDelegatees(&srcApp, &dstApp)
+		maxDelegatedGateways := k.GetParams(ctx).MaxDelegatedGateways
+		if uint64(len(dstApp.DelegateeGatewayAddresses)) > maxDelegatedGateways {
+			return apptypes.ErrAppMaxDelegatedGateways.Wrapf(
+				"merged application would delegate to %d gateways, more than the maximum of %d",
+				len(dstApp.DelegateeGatewayAddresses), maxDelegatedGateways,
+			)
+		}
 		mergeAppPendingUndelegations(&srcApp, &dstApp)
 		// NB: do NOT mutate dstApp.ServiceConfigs here — the merged union is passed
 		// to recordApplicationServiceConfigChange, which needs dstApp to still hold

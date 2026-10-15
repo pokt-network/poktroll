@@ -60,7 +60,20 @@ const (
 //     including the application ring lookup, run outside it, so a panic there stops
 //     the node as before. CONSENSUS-BREAKING (state): relay request ring
 //     signatures must have between 2 and 64 members (MaxRingSignatureMembers, a
-//     fixed protocol constant), and a size that matches the member count.
+//     fixed protocol constant), and a size that matches the member count. A
+//     signature may not have more members than the application's expected ring
+//     (two when it has no delegated gateways). The expected ring is now read at
+//     the session end height of the relay's header, not at the session end
+//     computed from the live session length. Proof validation no longer reads the
+//     shared params for it (gas).
+//   - x/application: max_delegated_gateways must be at most 31
+//     (MaxDelegatedGatewaysLimit; mainnet uses 7). A transfer into an existing
+//     application fails, with EventTransferError, when the merged delegations
+//     would exceed max_delegated_gateways. CONSENSUS-BREAKING (state). No handler
+//     code needed.
+//   - Settlement no longer moves the unbonding height of an application that is
+//     already unbonding when its stake is below the minimum. CONSENSUS-BREAKING
+//     (state).
 //   - EventServiceMetadataUpdated (x/service, #2009): MsgAddService emits it whenever
 //     the stored card changes, including a service created with a card. CONSENSUS-
 //     BREAKING, state and gas: an update that changes nothing (same name, cupr and

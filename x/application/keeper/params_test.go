@@ -37,6 +37,18 @@ func TestParams_ValidateMaxDelegatedGateways(t *testing.T) {
 			expectedErr:          types.ErrAppParamInvalid.Wrapf("max_delegated_gateways must be greater than 0: got %d", 0),
 		},
 		{
+			desc:                 "MaxDelegatedGateways above the limit",
+			maxDelegatedGateways: types.MaxDelegatedGatewaysLimit + 1,
+			expectedErr: types.ErrAppParamInvalid.Wrapf(
+				"max_delegated_gateways must be at most %d: got %d",
+				types.MaxDelegatedGatewaysLimit, types.MaxDelegatedGatewaysLimit+1,
+			),
+		},
+		{
+			desc:                 "MaxDelegatedGateways at the limit",
+			maxDelegatedGateways: types.MaxDelegatedGatewaysLimit,
+		},
+		{
 			desc:                 "valid MaxDelegatedGateways",
 			maxDelegatedGateways: types.DefaultMaxDelegatedGateways,
 		},
