@@ -58,7 +58,10 @@ const (
 //   - Proof validation recovers from a panic only while decoding and verifying the
 //     submitted relay and proof (reported as an invalid proof); chain state reads,
 //     including the application ring lookup, run outside it, so a panic there stops
-//     the node as before. CONSENSUS-BREAKING (state): relay request ring
+//     the node as before. The one exception is unchanged from v0.1.35: x/proof's
+//     account reads recover a panic (only possible for an account that cannot be
+//     decoded) and report it as an invalid proof; it is now logged at error level.
+//     CONSENSUS-BREAKING (state): relay request ring
 //     signatures must have between 2 and 64 members (MaxRingSignatureMembers, a
 //     fixed protocol constant), and a size that matches the member count. A
 //     signature may not have more members than the application's expected ring
@@ -103,7 +106,11 @@ const (
 //     once (in BeginSupplierUnbonding), and rewrites only the service configs whose
 //     deactivation height changes instead of re-indexing every config (lower).
 //     The below-min-stake unbonding in settlement and the one-shot repair use the
-//     same path.
+//     same path. Its EventSupplierUnbondingBegin now reads the params history once
+//     for the unbonding end height (higher).
+//   - MsgUnstakeApplication / MsgUnstakeGateway: the unbonding begin event reads the
+//     params history once for the unbonding end height instead of the live params.
+//     Do NOT backport these event changes alone as a patch: the reads change gas_used.
 //   - MsgAddService: lower on a no-op update, higher when a card is set or changed.
 //   - MsgUpdateParam / MsgUpdateParams (supplier): write the service cap sweep key
 //     when the cap is enabled and min_stake, min_stake_included_services or
@@ -123,14 +130,18 @@ const (
 //     session end height. The VOLUNTARY reason and EventApplicationUnbondingBegin
 //     with reason BELOW_MIN_STAKE also use the params at the unstake session end.
 //     The repair's EventSupplierUnbondingBegin carries the dehydrated supplier
-//     (no services), like the VOLUNTARY one; the settlement one still carries the
-//     claim's service configs.
+//     (no services), like the VOLUNTARY one; the settlement one carries the
+//     supplier cached for the settlement batch, with the first service config seen
+//     per service across that supplier's claims in the block.
+//   - EventApplicationUnbondingBegin (ELECTIVE) and EventGatewayUnbondingBegin
+//     report the unbonding end height with the params at the unstake session end,
+//     the height at which the unbonding EndBlockers release them.
+//   - Events emitted while settling a claim are dropped when its token logic
+//     modules fail and the claim is discarded (EventClaimDiscarded remains).
 //   - New EventServiceMetadataUpdated.
 //   - New EventSupplierServicesCapped, one per deactivated service, primitives only.
 //   - EventSupplierServiceConfigActivated is no longer emitted for a config that is
 //     deactivated at or before its activation height (it never became active).
-//   - The repair's EventSupplierUnbondingBegin carries the dehydrated supplier, as
-//     the voluntary unstake does.
 //
 // Operators: blocks before the upgrade height MUST be replayed with the previous
 // binary (cosmovisor does this). The memo is not height-gated, so replaying old

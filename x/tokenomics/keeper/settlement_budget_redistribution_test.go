@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/pocket"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
@@ -360,12 +361,16 @@ func sum(xs []int64) int64 {
 	return total
 }
 
-// failingTLM is a token logic module whose processing always fails.
+// failingTLM is a token logic module whose processing emits an event, then
+// fails.
 type failingTLM struct{}
 
 func (failingTLM) GetId() tlm.TokenLogicModuleId { return tlm.TLMGlobalMint }
 
-func (failingTLM) Process(context.Context, cosmoslog.Logger, tlm.TLMContext) error {
+func (failingTLM) Process(ctx context.Context, _ cosmoslog.Logger, _ tlm.TLMContext) error {
+	if err := cosmostypes.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&tokenomicstypes.EventApplicationOverserviced{}); err != nil {
+		return err
+	}
 	return errors.New("failing TLM")
 }
 
@@ -388,8 +393,10 @@ func TestProcessTokenLogicModules_FailedClaimLeavesSettlementCacheUnchanged(t *t
 	sctx.IncrementSupplierCount(claim.SessionHeader.ApplicationAddress, claim.SessionHeader.SessionId)
 	require.NoError(t, sctx.AccumulateClaimBudget(f.ctx, &claim))
 
-	_, err := f.keepers.ProcessTokenLogicModules(f.ctx, sctx, tlm.NewClaimSettlementResult(claim))
+	ctx, _ := testevents.ResetEventManager(f.ctx)
+	_, err := f.keepers.ProcessTokenLogicModules(ctx, sctx, tlm.NewClaimSettlementResult(claim))
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsProcessingTLM)
+	require.Empty(t, cosmostypes.UnwrapSDKContext(ctx).EventManager().Events())
 
 	app, err := sctx.GetApplication(f.app.Address)
 	require.NoError(t, err)

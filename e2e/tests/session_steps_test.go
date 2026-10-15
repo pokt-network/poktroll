@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -425,14 +424,10 @@ func (s *suite) TheRelayminerStopsTheWebsocketBridgeBeforeClaimWindowOpenHeightI
 	// earlier runs, so the height must also be in this session.
 	defer func() { _ = s.wsConn.Close() }()
 	claimWindowOpenHeight := s.wsCloseHeight + 1
-	metricsUrl := relayminerMetricsUrl
-	if url := os.Getenv("RELAYMINER_METRICS_URL"); url != "" {
-		metricsUrl = url
-	}
 	metricLine := fmt.Sprintf("relayminer_websocket_bridge_close_height{reason=\"session_end\",service_id=%q} ", s.wsServiceId)
 
 	require.Eventually(s, func() bool {
-		res, err := http.Get(metricsUrl)
+		res, err := http.Get(relayminerMetricsUrl)
 		if err != nil {
 			return false
 		}

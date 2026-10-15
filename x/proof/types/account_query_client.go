@@ -2,6 +2,9 @@ package types
 
 import (
 	"context"
+	"fmt"
+
+	"cosmossdk.io/log"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -16,6 +19,7 @@ var _ client.AccountQueryClient = (*AccountKeeperQueryClient)(nil)
 // network requests as in the offchain implementation.
 type AccountKeeperQueryClient struct {
 	keeper AccountKeeper
+	logger log.Logger
 }
 
 // NewAccountKeeperQueryClient returns a new AccountQueryClient that is backed
@@ -23,8 +27,8 @@ type AccountKeeperQueryClient struct {
 // It is used by the PubKeyClient to get the public key that corresponds to the
 // provided address.
 // It should be injected into the PubKeyClient when initialized from within the a keeper.
-func NewAccountKeeperQueryClient(accountKeeper AccountKeeper) client.AccountQueryClient {
-	return &AccountKeeperQueryClient{keeper: accountKeeper}
+func NewAccountKeeperQueryClient(accountKeeper AccountKeeper, logger log.Logger) client.AccountQueryClient {
+	return &AccountKeeperQueryClient{keeper: accountKeeper, logger: logger}
 }
 
 // GetAccount returns the account associated with the provided address.
@@ -37,11 +41,15 @@ func (accountQueryClient *AccountKeeperQueryClient) GetAccount(
 		return nil, err
 	}
 
-	// keeper.GetAccount panics if the account is not found.
-	// Capture the panic and return an error if one occurs.
+	// keeper.GetAccount returns nil for an account that does not exist. It
+	// panics only when a stored account cannot be read, which means corrupt
+	// state. Proof validation runs in the EndBlocker, where a panic would halt
+	// the chain, so it is reported as an error (the proof is then invalid) and
+	// logged at error level for operators to investigate.
 	defer func() {
 		if r := recover(); r != nil {
-			err = ErrProofPubKeyNotFound
+			err = ErrProofPubKeyNotFound.Wrapf("failed to read account %s: %v", addr, r)
+			accountQueryClient.logger.Error(fmt.Sprintf("recovered from a panic reading account %s: %v", addr, r))
 			account = nil
 		}
 	}()

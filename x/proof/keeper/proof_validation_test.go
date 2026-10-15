@@ -112,7 +112,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
-		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper, log.NewNopLogger()),
 		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 	))
 	require.NoError(t, err)

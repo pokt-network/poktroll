@@ -29,7 +29,25 @@ import (
 // amount to the actual settlement amount and handling the case for overserviced applications.
 //
 // IMPORTANT: It is assumed that the proof for the claim has been validated BEFORE calling this function.
+//
+// The events emitted while processing the claim are kept only if it succeeds:
+// a failed claim is discarded, so its events are dropped with it.
 func (k Keeper) ProcessTokenLogicModules(
+	ctx context.Context,
+	settlementContext *settlementContext,
+	pendingResult *tokenomicstypes.ClaimSettlementResult,
+) (cosmostypes.Coin, error) {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	claimEvents := cosmostypes.NewEventManager()
+	settlementCoin, err := k.processTokenLogicModules(sdkCtx.WithEventManager(claimEvents), settlementContext, pendingResult)
+	if err != nil {
+		return settlementCoin, err
+	}
+	sdkCtx.EventManager().EmitEvents(claimEvents.Events())
+	return settlementCoin, nil
+}
+
+func (k Keeper) processTokenLogicModules(
 	ctx context.Context,
 	settlementContext *settlementContext,
 	pendingResult *tokenomicstypes.ClaimSettlementResult,
@@ -107,10 +125,11 @@ func (k Keeper) ProcessTokenLogicModules(
 	// DEV_NOTE: two distinct shared params epochs are in play here, and they are NOT
 	// interchangeable:
 	//
-	//   - sharedParams (LIVE) is used further below to project FUTURE heights from the
-	//     CURRENT block (session end height, application unbonding height). Those must use
-	//     the session grid in effect now; resolving them at session start would schedule
-	//     unbonding against a stale num_blocks_per_session.
+	//   - sharedParams (LIVE) is used further below for the CURRENT session's end height,
+	//     where a below-min-stake unbonding begins. It must use the session grid in effect
+	//     now; resolving it at session start would use a stale num_blocks_per_session. The
+	//     unbonding END height then uses the params at that session end, like
+	//     EndBlockerUnbondApplications.
 	//   - pricingParams (at session start) converts claimed work to uPOKT. It must match
 	//     the epoch x/proof priced and proof-gated the claim under.
 	sharedParams := settlementContext.GetSharedParams()

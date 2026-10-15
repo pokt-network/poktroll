@@ -121,6 +121,11 @@ func init() {
 	if url := os.Getenv("PATH_URL"); url != "" {
 		pathUrl = url
 	}
+
+	// If "RELAYMINER_METRICS_URL" ENV variable is present, use it for relayminerMetricsUrl
+	if url := os.Getenv("RELAYMINER_METRICS_URL"); url != "" {
+		relayminerMetricsUrl = url
+	}
 }
 
 func TestMain(m *testing.M) {

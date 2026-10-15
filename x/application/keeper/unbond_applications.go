@@ -50,11 +50,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			continue
 		}
 
-		// Compute the unbonding end height using the shared params effective when the
-		// application began unbonding (its unstake session end height), NOT the live params,
-		// so a later num_blocks_per_session decrease cannot release it early (#543, F1).
-		unstakeParams := k.sharedKeeper.GetParamsAtHeight(ctx, int64(application.GetUnstakeSessionEndHeight()))
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&unstakeParams, &application)
+		unbondingEndHeight := k.GetApplicationUnbondingEndHeight(ctx, &application)
 
 		// If the unbonding height is ahead of the current height, the application
 		// stays in the unbonding state.
@@ -220,4 +216,14 @@ func (k Keeper) UnbondApplication(ctx context.Context, app *apptypes.Application
 	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", app))
 
 	return nil
+}
+
+// GetApplicationUnbondingEndHeight returns the height at which the given
+// unbonding application is released. It uses the shared params effective when
+// the application began unbonding (its unstake session end height), NOT the live
+// params, so a later num_blocks_per_session decrease cannot release it early
+// (#543, F1).
+func (k Keeper) GetApplicationUnbondingEndHeight(ctx context.Context, application *apptypes.Application) int64 {
+	unstakeParams := k.sharedKeeper.GetParamsAtHeight(ctx, int64(application.GetUnstakeSessionEndHeight()))
+	return apptypes.GetApplicationUnbondingHeight(&unstakeParams, application)
 }

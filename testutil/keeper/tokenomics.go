@@ -74,6 +74,9 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.StakingKeeper
 	tokenomicstypes.MigrationKeeper
 
+	// GatewayKeeper is the gateway keeper the application keeper uses.
+	GatewayKeeper *gatewaykeeper.Keeper
+
 	Codec *codec.ProtoCodec
 }
 
@@ -738,6 +741,7 @@ func NewTokenomicsModuleKeepers(
 		ServiceKeeper:     &serviceKeeper,
 		StakingKeeper:     mockStakingKeeper,
 		MigrationKeeper:   &migrationKeeper,
+		GatewayKeeper:     &gatewayKeeper,
 
 		Codec: cdc,
 	}

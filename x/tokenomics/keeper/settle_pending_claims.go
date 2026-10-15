@@ -1019,8 +1019,8 @@ func (k Keeper) settleClaim(
 	// those two disagree whenever CUTTM changed mid-flight.
 	//
 	// Named pricingParams (not sharedParams) on purpose: this snapshot carries an OLD
-	// epoch's session grid and MUST NOT be used for timing math. Anything projecting a
-	// future height from the current block reads settlementContext.GetSharedParams().
+	// epoch's session grid and MUST NOT be used for timing math. The current session's
+	// end height reads settlementContext.GetSharedParams().
 	pricingParams := settlementContext.GetSharedParamsAtHeight(ctx, sessionStartHeight)
 
 	// numEstimatedComputeUnits is the probabilistic estimation of the offchain

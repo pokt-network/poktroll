@@ -140,9 +140,10 @@ type settlementContext struct {
 	// Cache of parameters used during the settlement process to prevent repeated KV store lookups.
 	//
 	// DEV_NOTE: sharedParams is the LIVE params snapshot. It is correct for computing
-	// FUTURE heights from the CURRENT block (supplier unbonding, application unbonding),
-	// which must use the session grid in effect now. It is NOT correct for pricing a
-	// claim — use GetSharedParamsAtHeight for that. See that method's godoc.
+	// the CURRENT session's end height (where an unbonding begins), which must use the
+	// session grid in effect now. It is NOT correct for pricing a claim, nor for an
+	// unbonding END height (params at the unstake session end, as the unbonding
+	// EndBlockers use) — use GetSharedParamsAtHeight for those. See that method's godoc.
 	sharedParams     sharedtypes.Params
 	tokenomicsParams tokenomicstypes.Params
 
@@ -363,9 +364,10 @@ func (sctx *settlementContext) GetServiceComputeUnitsPerRelay(serviceId string, 
 // start and a session end are both just heights. The call site is responsible for passing
 // the right one and for saying which it means.
 //
-// Anything projecting a FUTURE height from the CURRENT block (supplier/application
-// unbonding, session end height) must keep using GetSharedParams instead: those need the
-// grid in effect now, not the one the claim was created under.
+// The CURRENT session's end height (where a supplier or application unbonding begins)
+// must keep using GetSharedParams instead: it needs the grid in effect now, not the one
+// the claim was created under. An unbonding END height uses this method at the unstake
+// session end height, matching the unbonding EndBlockers that release the actor.
 //
 // DEV_NOTE: the memo map is per-settlement-context, i.e. block-scoped. It MUST NOT be
 // hoisted onto the Keeper — a cache that outlives the block diverges across nodes and

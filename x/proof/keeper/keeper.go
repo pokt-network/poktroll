@@ -61,7 +61,7 @@ func NewKeeper(
 	// TODO_TECHDEBT: Use cosmos-sdk based polylog implementation once available. Also remove polyzero import.
 	polylogger := polylog.Ctx(context.Background())
 	applicationQuerier := types.NewAppKeeperQueryClient(applicationKeeper)
-	accountQuerier := types.NewAccountKeeperQueryClient(accountKeeper)
+	accountQuerier := types.NewAccountKeeperQueryClient(accountKeeper, logger)
 	sharedQuerier := types.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
 
 	// RingKeeperClient holds the logic of verifying RelayRequests ring signatures

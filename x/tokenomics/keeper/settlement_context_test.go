@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -102,7 +103,7 @@ func (s *TestSuite) SetupTest() {
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(polyzero.WithLevel(polyzero.ErrorLevel)),
 		prooftypes.NewAppKeeperQueryClient(s.keepers.ApplicationKeeper),
-		prooftypes.NewAccountKeeperQueryClient(s.keepers.AccountKeeper),
+		prooftypes.NewAccountKeeperQueryClient(s.keepers.AccountKeeper, log.NewNopLogger()),
 		prooftypes.NewSharedKeeperQueryClient(s.keepers.SharedKeeper, s.keepers.SessionKeeper),
 	))
 	require.NoError(t, err)

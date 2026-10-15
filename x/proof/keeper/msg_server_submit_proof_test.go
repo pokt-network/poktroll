@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -146,7 +147,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			ringClient, err := rings.NewRingClient(depinject.Supply(
 				polyzero.NewLogger(),
 				prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
-				prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+				prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper, log.NewNopLogger()),
 				prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 			))
 			require.NoError(t, err)
@@ -323,7 +324,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
-		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper, log.NewNopLogger()),
 		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 	))
 	require.NoError(t, err)
@@ -521,7 +522,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
-		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper, log.NewNopLogger()),
 		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 	))
 	require.NoError(t, err)
@@ -769,7 +770,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
-		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper, log.NewNopLogger()),
 		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 	))
 	require.NoError(t, err)

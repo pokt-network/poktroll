@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"math"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
@@ -96,6 +97,12 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 // since then shortened the claim and proof windows.
 func (k Keeper) lastProofWindowCloseHeight(ctx context.Context, activationHeight, lastActiveHeight int64) int64 {
 	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, lastActiveHeight)
+	// Validated params never have a zero session length; only an unvalidated
+	// genesis params history can. Keep the config rather than divide by zero.
+	if sharedParams.GetNumBlocksPerSession() == 0 {
+		k.Logger().Error(fmt.Sprintf("params at height %d have num_blocks_per_session 0, keeping service config", lastActiveHeight))
+		return math.MaxInt64
+	}
 	closeHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, lastActiveHeight)
 
 	// Each history entry starts a params epoch: the session containing the block
@@ -106,6 +113,7 @@ func (k Keeper) lastProofWindowCloseHeight(ctx context.Context, activationHeight
 		}
 		previousParams := k.sharedKeeper.GetParamsAtHeight(ctx, effectiveHeight-1)
 		if previousParams.GetNumBlocksPerSession() == 0 {
+			k.Logger().Error(fmt.Sprintf("params at height %d have num_blocks_per_session 0, skipping them", effectiveHeight-1))
 			return false
 		}
 		closeHeight = max(closeHeight, sharedtypes.GetProofWindowCloseHeight(&previousParams, effectiveHeight-1))

@@ -81,7 +81,9 @@ path_gateways:
   count: 1
 
 gateway:
-  # Gateway implementation: "sage" (default) or "path" (legacy, Grove helm chart)
+  # Gateway implementation: "sage" (default) or "path" (legacy, Grove helm chart).
+  # SAGE ignores App-Address (it bills its configured apps) and supports one
+  # gateway: use "path" for load tests, which send relays for many apps.
   type: sage
   # SAGE has no release tags yet: images are tagged <branch>-<short sha>
   sage_image: ghcr.io/pokt-network/sage:main-2d18760

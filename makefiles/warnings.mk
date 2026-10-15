@@ -31,6 +31,8 @@ warn_message_local_stress_test: ## Print a warning message when kicking off a lo
 	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
 	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
 	@echo "|     DEVELOPER_TIP: If you're operating off defaults, you'll likely need to update to 3        |"
+	@echo "|     3. Set 'gateway.type: path' in 'localnet_config.yaml': SAGE ignores App-Address and       |"
+	@echo "|        runs one gateway only, so every relay would be billed to app1                          |"
 	@echo "|                                                                                               |"
 	@echo "|     TODO_DOCUMENT(@okdas): Move this into proper documentation w/ clearer explanations        |"
 	@echo "|                                                                                               |"

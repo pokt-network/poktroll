@@ -60,6 +60,9 @@ spec:
               # the subdomain is passed as a Host header in the request.
             - name: PATH_HOST_OVERRIDE
               value: ${NAMESPACE}-path:3069
+              # relayminer-1's Service (helm-charts relayminer chart: fullname, metrics port 9090).
+            - name: RELAYMINER_METRICS_URL
+              value: http://${NAMESPACE}-relayminer-1:9090/metrics
           volumeMounts:
             - mountPath: /root/.pocket/keyring-test/
               name: writable-keys-volume

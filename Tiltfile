@@ -370,8 +370,25 @@ def provision_sage_gateway(actor_number):
     )
 
 if localnet_config["gateway"]["type"] == "sage":
+    # SAGE signs every relay for its configured apps (it ignores App-Address), and
+    # only gateway 1 has a config. Multi-gateway and load-test setups use PATH.
+    if localnet_config["path_gateways"]["count"] > 1:
+        fail("gateway.type sage supports path_gateways.count 1 only; set gateway.type to path for more gateways")
     for x in range(localnet_config["path_gateways"]["count"]):
         provision_sage_gateway(x + 1)
+
+    # A pocketd binary change rebuilds the validator pod, which starts a new chain
+    # from genesis. The gateway keeps the old chain's sessions and the accounts
+    # have no public keys onchain, so relays fail until this runs (click it in the
+    # Tilt UI, or `tilt trigger "localnet: re-init after reset"`).
+    local_resource(
+        "localnet: re-init after reset",
+        cmd="make acc_initialize_pubkeys && kubectl rollout restart deploy/sage1 deploy/relayminer1",
+        trigger_mode=TRIGGER_MODE_MANUAL,
+        auto_init=False,
+        labels=["gateways"],
+        resource_deps=["sage1"],
+    )
 else:
     # Provision PATH Gateway(s)
     actor_number = 0

@@ -681,7 +681,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(applicationKeeper),
-		prooftypes.NewAccountKeeperQueryClient(accountKeeper),
+		prooftypes.NewAccountKeeperQueryClient(accountKeeper, log.NewNopLogger()),
 		prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper),
 	))
 	require.NoError(t, err)
