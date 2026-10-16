@@ -193,6 +193,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			err := fmt.Errorf("should never happen: found supplier %s in unbonding store but it is not unbonding", supplierAddress)
 			logger.Error(err.Error())
 			k.removeSupplierUnstakingHeightIndex(ctx, supplier.OperatorAddress)
+			k.removeBelowMinStakeUnbonding(ctx, supplier.OperatorAddress)
 			continue
 		}
 

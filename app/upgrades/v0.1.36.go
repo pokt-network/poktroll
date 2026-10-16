@@ -33,11 +33,14 @@ const (
 //     next one on and is unbonded (it previously stayed selectable and never
 //     unbonded); unstaking no longer pushes an already-deactivated service config's
 //     deactivation later (which reactivated it for past sessions).
-//     The operator may now cancel the unbonding of a supplier whose stake is below
-//     min_stake (as after a slash in settlement), by staking again with its
-//     services and at least min_stake, paid by the operator. An unbonding at or
-//     above min_stake (an owner's unstake) can still be cancelled only by the
-//     owner. An owner's stake-only top-up still cancels any unbonding, but leaves
+//     The operator may now cancel an unbonding that settlement (or the repair
+//     below) started because the stake fell below min_stake, by staking again with
+//     its services and at least min_stake, paid by the operator. Such unbondings are
+//     recorded under a new BelowMinStakeUnbonding/ store prefix in x/supplier,
+//     cleared on cancel and on removal (one more read on every unbonding cancel, one
+//     more delete on a recorded one). Any other unbonding, including an owner's
+//     unstake whose stake later falls below min_stake, can still be cancelled only
+//     by the owner. An owner's stake-only top-up still cancels any unbonding, but leaves
 //     the deactivated services deactivated: the operator must stake again with
 //     them. Before, the settlement path deactivated nothing, so a top-up alone
 //     restored the supplier. CONSENSUS-BREAKING (state).
@@ -63,6 +66,14 @@ const (
 //   - MsgCreateClaim and MsgSubmitProof: the session header's start and end
 //     heights must equal the onchain session's. CONSENSUS-BREAKING (state).
 //     RelayMiners already reject relays whose header differs from the onchain one.
+//   - Claim compute units are compared with the relay count times the compute
+//     units per relay as a full-width product, at MsgCreateClaim and at settlement.
+//     CONSENSUS-BREAKING (state): a claim whose product exceeds uint64 is rejected,
+//     and such a claim created before the upgrade is discarded at settlement.
+//   - x/shared: proof_window_open_offset_blocks must be at least 1 (defaults now
+//     proof window open 1 / close 3, same total). No handler code: mainnet and Beta
+//     are at 1. A chain still at 0 keeps working, but its shared param updates are
+//     rejected until they set it to at least 1.
 //   - Proof validation recovers from a panic only while decoding and verifying the
 //     submitted relay and proof (reported as an invalid proof); chain state reads,
 //     including the application ring lookup, run outside it, so a panic there stops

@@ -36,7 +36,7 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 		GracePeriodEndOffsetBlocks:         0,
 		ClaimWindowOpenOffsetBlocks:        0,
 		ClaimWindowCloseOffsetBlocks:       1,
-		ProofWindowOpenOffsetBlocks:        0,
+		ProofWindowOpenOffsetBlocks:        1,
 		ProofWindowCloseOffsetBlocks:       1,
 		SupplierUnbondingPeriodSessions:    uint64(unbondingPeriodSessions),
 		ApplicationUnbondingPeriodSessions: uint64(unbondingPeriodSessions),

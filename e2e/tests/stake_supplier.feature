@@ -23,7 +23,7 @@ Feature: Stake Supplier Namespace
     Scenario: User can unstake a Supplier
         Given the user has the pocketd binary installed
         # Reduce the application unbonding period to avoid timeouts and speed up scenarios.
-        And the "supplier" unbonding period param is successfully set to "1" sessions of "2" blocks
+        And the "supplier" unbonding period param is successfully set to "1" sessions of "3" blocks
         And the "supplier" for account "supplier2" is staked with "1000070" uPOKT
         And an account exists for "supplier2"
         When the user unstakes a "supplier" from the account "supplier2"
@@ -39,7 +39,7 @@ Feature: Stake Supplier Namespace
     Scenario: User can restake a Supplier waiting for it to become active again
         Given the user has the pocketd binary installed
         # Reduce the application unbonding period to avoid timeouts and speed up scenarios.
-        And the "supplier" unbonding period param is successfully set to "1" sessions of "2" blocks
+        And the "supplier" unbonding period param is successfully set to "1" sessions of "3" blocks
         And the user verifies the "supplier" for account "supplier2" is not staked
         Then the user stakes a "supplier" with "1000070" uPOKT for "anvil" service from the account "supplier2"
         And the user should wait for the "supplier" module "StakeSupplier" message to be submitted
