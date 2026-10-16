@@ -15,13 +15,15 @@ Feature: Params Namespace
         # All four claim/proof window offsets at zero make GetNumPendingSessions() return 0.
         # Settlement divides the application stake by that value to derive the per-session
         # budget, and math.Int.Quo panics on a zero divisor. That runs in the EndBlocker, so
-        # the panic would HALT THE CHAIN rather than fail a tx. Each offset is individually
-        # valid at zero, so nothing but this cross-field check rejects the combination.
+        # the panic would HALT THE CHAIN rather than fail a tx. A zero
+        # proof_window_open_offset_blocks is now rejected on its own (the proof seed block
+        # would precede the last block accepting claims), and the cumulative pending
+        # sessions check remains behind it.
         #
         # DEV_NOTE: grace_period_end_offset_blocks MUST be zeroed alongside them, otherwise
         # validateClaimWindowOpenOffsetIsAtLeastGracePeriodEndOffset rejects the param set
         # first & this scenario would assert on the wrong guard.
-        Then the "shared" module parameter update is rejected with the error "pending sessions"
+        Then the "shared" module parameter update is rejected with the error "proof_window_open_offset_blocks must be at least 1"
             | name                             | value | type  |
             | grace_period_end_offset_blocks   | 0     | int64 |
             | claim_window_open_offset_blocks  | 0     | int64 |

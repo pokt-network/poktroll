@@ -99,7 +99,7 @@ func runWindowOffsetCrossSessionTest(t *testing.T, oldProofClose, newProofClose 
 		gracePeriod      int64 = 1
 		claimWindowOpen  int64 = 1
 		claimWindowClose int64 = 2
-		proofWindowOpen  int64 = 0
+		proofWindowOpen  int64 = 1
 	)
 
 	// Anchored at the genesis grid (N=n anchored at block 1), CUTTM=1, unbonding periods

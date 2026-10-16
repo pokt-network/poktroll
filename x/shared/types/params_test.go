@@ -113,6 +113,12 @@ func TestParams_ValidateProofWindowOpenOffsetBlocks(t *testing.T) {
 			err:                         ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
 		},
 		{
+			// The proof seed block would precede the last block accepting claims.
+			desc:                        "zero ProofWindowOpenOffsetBlocks",
+			proofWindowOpenOffsetBlocks: uint64(0),
+			err:                         ErrSharedParamInvalid.Wrapf("proof_window_open_offset_blocks must be at least 1, got 0"),
+		},
+		{
 			desc:                        "valid ProofWindowOpenOffsetBlocks",
 			proofWindowOpenOffsetBlocks: uint64(4),
 		},
@@ -298,8 +304,8 @@ func TestParams_ValidateGatewayUnbondingPeriodSessions(t *testing.T) {
 
 func TestParams_ValidateNumPendingSessionsIsPositive(t *testing.T) {
 	// zeroWindowParams starts from the defaults and zeroes every claim/proof window
-	// offset. Each offset is individually valid at zero, so only the cumulative check
-	// rejects this combination.
+	// offset. The proof window open offset must be at least 1, which rejects this
+	// combination before the cumulative check does.
 	zeroWindowParams := DefaultParams()
 	zeroWindowParams.ClaimWindowOpenOffsetBlocks = 0
 	zeroWindowParams.ClaimWindowCloseOffsetBlocks = 0
@@ -315,12 +321,12 @@ func TestParams_ValidateNumPendingSessionsIsPositive(t *testing.T) {
 	t.Run("all-zero window offsets are rejected", func(t *testing.T) {
 		err := zeroWindowParams.ValidateBasic()
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "must be greater than 0")
+		require.Contains(t, err.Error(), "proof_window_open_offset_blocks must be at least 1")
 	})
 
-	t.Run("a single non-zero window offset is enough", func(t *testing.T) {
+	t.Run("a proof window open offset of 1 is enough", func(t *testing.T) {
 		params := zeroWindowParams
-		params.ProofWindowCloseOffsetBlocks = 1
+		params.ProofWindowOpenOffsetBlocks = 1
 
 		require.Positive(t, GetNumPendingSessions(&params))
 		require.NoError(t, params.ValidateBasic())

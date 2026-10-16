@@ -13,9 +13,9 @@ const (
 	ParamClaimWindowOpenOffsetBlocks          = "claim_window_open_offset_blocks"
 	DefaultClaimWindowCloseOffsetBlocks       = 4
 	ParamClaimWindowCloseOffsetBlocks         = "claim_window_close_offset_blocks"
-	DefaultProofWindowOpenOffsetBlocks        = 0
+	DefaultProofWindowOpenOffsetBlocks        = 1
 	ParamProofWindowOpenOffsetBlocks          = "proof_window_open_offset_blocks"
-	DefaultProofWindowCloseOffsetBlocks       = 4
+	DefaultProofWindowCloseOffsetBlocks       = 3
 	ParamProofWindowCloseOffsetBlocks         = "proof_window_close_offset_blocks"
 	DefaultSupplierUnbondingPeriodSessions    = 1 // 1 session
 	ParamSupplierUnbondingPeriodSessions      = "supplier_unbonding_period_sessions"
@@ -241,9 +241,20 @@ func ValidateClaimWindowCloseOffsetBlocks(claimWindowCloseOffsetBlocksAny any) e
 
 // ValidateProofWindowOpenOffsetBlocks validates the ProofWindowOpenOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+//
+// It MUST be at least 1. The proof seed is the hash of the block before the proof
+// window opens, and claims are accepted up to the claim window close height. At 0
+// that seed block precedes the last block accepting claims, so a claim could be
+// replaced after its seed is known.
 func ValidateProofWindowOpenOffsetBlocks(proofWindowOpenOffsetBlocksAny any) error {
-	_, err := validateIsUint64(proofWindowOpenOffsetBlocksAny)
-	return err
+	proofWindowOpenOffsetBlocks, err := validateIsUint64(proofWindowOpenOffsetBlocksAny)
+	if err != nil {
+		return err
+	}
+	if proofWindowOpenOffsetBlocks < 1 {
+		return ErrSharedParamInvalid.Wrapf("proof_window_open_offset_blocks must be at least 1, got %d", proofWindowOpenOffsetBlocks)
+	}
+	return nil
 }
 
 // ValidateProofWindowCloseOffsetBlocks validates the ProofWindowCloseOffsetBlocks param
