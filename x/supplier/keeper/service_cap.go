@@ -143,8 +143,9 @@ func (k Keeper) getServicePriorityStore(ctx context.Context) storetypes.KVStore 
 }
 
 // ServiceCapSweepBatchSize bounds the suppliers visited per block by the sweep.
-// ponytail: fixed batch; tune from a mainnet-state measurement before the cap is enabled.
-const ServiceCapSweepBatchSize = 200
+// At 500, a sweep over ~4,600 suppliers takes about 10 blocks.
+// ponytail: fixed batch; re-measure against mainnet state before the cap is enabled.
+const ServiceCapSweepBatchSize = 500
 
 // scheduleServiceCapSweep starts (or restarts) a sweep over all suppliers.
 // setParams calls it when the cap is enabled and its params change, so every
