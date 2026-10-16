@@ -860,3 +860,109 @@ func newTestClaimMsg(
 		merkleRoot,
 	)
 }
+
+func TestMsgServer_CreateClaim_Error_ComputeUnitsProductOverflow(t *testing.T) {
+	// Set block height to 1 so there is a valid session onchain.
+	blockHeightOpt := keepertest.WithBlockHeight(1)
+	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+
+	// The base session start height used for testing
+	sessionStartHeight := int64(1)
+
+	// service is the only service for which a session should exist.
+	// this service has a value of greater than 1 for the compute units per relay.
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: 1361,
+		OwnerAddress:         sample.AccAddressBech32(),
+	}
+	// Add the service that is expected to be onchain.
+	keepers.SetService(ctx, *service)
+
+	// Add a supplier that is expected to be in the session.
+	// supplierAddr is staked for "svc1" such that it is expected to be in the session.
+	supplierKeeper := keepers.SupplierKeeper
+	supplierAddr := sample.AccAddressBech32()
+	supplierServices := []*sharedtypes.SupplierServiceConfig{
+		{ServiceId: service.Id},
+	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierAddr, supplierServices, 1, 0)
+	supplierKeeper.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
+		OperatorAddress:      supplierAddr,
+		Services:             supplierServices,
+		ServiceConfigHistory: serviceConfigHistory,
+	})
+
+	// Add an application that is expected to be in the session.
+	// appAddr is staked for "svc1" such that it is expected to be in the session.
+	appKeeper := keepers.ApplicationKeeper
+	appAddr := sample.AccAddressBech32()
+	appKeeper.SetApplication(ctx, apptypes.Application{
+		Address: appAddr,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{ServiceId: service.Id},
+		},
+	})
+
+	// Query for the session which contains the expected app and supplier pair.
+	sessionRes, err := keepers.GetSession(
+		ctx,
+		&sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddr,
+			ServiceId:          service.Id,
+			BlockHeight:        1,
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, sessionRes)
+	require.Equal(t, appAddr, sessionRes.GetSession().GetApplication().GetAddress())
+
+	sessionResSuppliers := sessionRes.GetSession().GetSuppliers()
+	require.NotEmpty(t, sessionResSuppliers)
+	require.Equal(t, supplierAddr, sessionResSuppliers[0].GetOperatorAddress())
+
+	// Increment the block height to the test claim height.
+	sessionHeader := sessionRes.GetSession().GetHeader()
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	testClaimHeight := sharedtypes.GetClaimWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+	sdkCtx = sdkCtx.WithBlockHeight(testClaimHeight)
+	ctx = sdkCtx
+
+	// Prepare a message to submit a claim while also creating a new test claim
+	testClaimMsg := newTestClaimMsg(t,
+		sessionStartHeight,
+		sessionRes.GetSession().GetSessionId(),
+		supplierAddr,
+		appAddr,
+		service,
+		testproof.SmstRootWithSumAndCount(1, modularInverse(1361)),
+	)
+
+	// use the test claim message to create a claim object to get the number of relays and compute units in the claim.
+	testClaim := prooftypes.Claim{RootHash: testClaimMsg.GetRootHash()}
+	testClaimNumComputeUnits, err := testClaim.GetNumClaimedComputeUnits()
+	require.NoError(t, err)
+	testClaimNumRelays, err := testClaim.GetNumRelays()
+	require.NoError(t, err)
+
+	// The relay count times the compute units per relay overflows uint64 and wraps
+	// to the claimed compute units: the claim must be rejected.
+	require.Equal(t, uint64(1), testClaimNumRelays*1361)
+	require.Equal(t, uint64(1), testClaimNumComputeUnits)
+	_, err = srv.CreateClaim(ctx, testClaimMsg)
+	require.ErrorContains(t, err, "is not equal to number of relays")
+
+	_, found := keepers.GetClaim(ctx, sessionHeader.SessionId, supplierAddr)
+	require.False(t, found)
+}
+
+// modularInverse returns the inverse of the odd a modulo 2^64.
+func modularInverse(a uint64) uint64 {
+	x := a
+	for i := 0; i < 6; i++ {
+		x *= 2 - a*x
+	}
+	return x
+}

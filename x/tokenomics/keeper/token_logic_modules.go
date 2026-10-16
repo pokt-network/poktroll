@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"math/big"
+	"math/bits"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -172,8 +173,9 @@ func (k Keeper) processTokenLogicModules(
 	}
 
 	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
-	expectedClaimComputeUnits := numRelays * sessionStartComputeUnitsPerRelay
-	if numClaimComputeUnits != expectedClaimComputeUnits {
+	// The product is checked for overflow, as at claim creation.
+	overflow, expectedClaimComputeUnits := bits.Mul64(numRelays, sessionStartComputeUnitsPerRelay)
+	if overflow != 0 || numClaimComputeUnits != expectedClaimComputeUnits {
 		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"mismatch: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d)",
 			numClaimComputeUnits,
