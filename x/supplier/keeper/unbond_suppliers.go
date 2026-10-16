@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -27,10 +29,14 @@ import (
 //
 // sharedParams MUST be the live shared params: the unstake session end and the
 // next session start are projected from the current block.
+//
+// reason BELOW_MIN_STAKE records that settlement started this unbonding, which
+// is the only unbonding the operator may cancel (see isOperatorRescue).
 func (k Keeper) BeginSupplierUnbonding(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
 	sharedParams *sharedtypes.Params,
+	reason suppliertypes.SupplierUnbondingReason,
 ) (unstakeSessionEndHeight int64) {
 	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
 	unstakeSessionEndHeight = sharedtypes.GetSessionEndHeight(sharedParams, currentHeight)
@@ -46,8 +52,28 @@ func (k Keeper) BeginSupplierUnbonding(
 
 	k.indexSupplierUnstakingHeight(ctx, *supplier)
 	k.SetDehydratedSupplier(ctx, *supplier)
+	if reason == suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE {
+		k.getBelowMinStakeUnbondingStore(ctx).Set(suppliertypes.SupplierOperatorKey(supplier.OperatorAddress), []byte{1})
+	}
 
 	return unstakeSessionEndHeight
+}
+
+// isBelowMinStakeUnbonding reports whether settlement started the supplier's
+// current unbonding because its stake fell below min stake.
+func (k Keeper) isBelowMinStakeUnbonding(ctx context.Context, operatorAddress string) bool {
+	return k.getBelowMinStakeUnbondingStore(ctx).Has(suppliertypes.SupplierOperatorKey(operatorAddress))
+}
+
+// removeBelowMinStakeUnbonding clears the below min stake unbonding marker, when
+// the unbonding is canceled or the supplier is removed.
+func (k Keeper) removeBelowMinStakeUnbonding(ctx context.Context, operatorAddress string) {
+	k.getBelowMinStakeUnbondingStore(ctx).Delete(suppliertypes.SupplierOperatorKey(operatorAddress))
+}
+
+func (k Keeper) getBelowMinStakeUnbondingStore(ctx context.Context) prefix.Store {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, suppliertypes.KeyPrefix(suppliertypes.BelowMinStakeUnbondingKeyPrefix))
 }
 
 // GetSupplierUnbondingEndHeight returns the height at which EndBlockerUnbondSuppliers
@@ -107,7 +133,10 @@ func (k Keeper) RepairUnindexedUnbondingSuppliers(ctx context.Context) (repaired
 	supplierIterator.Close()
 
 	for _, supplier := range toRepair {
-		unstakeSessionEndHeight := k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams)
+		unstakeSessionEndHeight := k.BeginSupplierUnbonding(
+			ctx, &supplier, &sharedParams,
+			suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+		)
 		repaired = append(repaired, supplier.OperatorAddress)
 
 		// The event carries the dehydrated supplier, like the voluntary unbonding

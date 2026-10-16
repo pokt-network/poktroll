@@ -273,7 +273,7 @@ func TestBeginSupplierUnbonding_IndexesMatchFullReindex(t *testing.T) {
 	require.Len(t, k.EnforceServiceCap(ctx, &supplier, suppliertypes.ServiceCapReason_SERVICE_CAP_REASON_SLASH), 1)
 
 	sharedParams := k.SharedKeeper.GetParams(ctx)
-	k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams)
+	k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams, suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE)
 	afterUnbonding := dumpSupplierModuleStore(t, k, ctx)
 	require.Empty(t, countedServiceIds(t, k, ctx, supplier.OperatorAddress))
 

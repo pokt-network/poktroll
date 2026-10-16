@@ -238,15 +238,16 @@ func (k Keeper) StakeSupplier(
 			// to cancel an owner-initiated unstake, preventing the owner from ever
 			// reclaiming their escrowed stake.
 			//
-			// Exception: the operator may cancel an unbonding of a supplier whose
-			// stake is below min_stake (as when settlement slashed it below min stake),
-			// by bringing the stake back to at least min_stake, paid by the operator.
-			// The owner can unstake again at any time, and an unbonding at or above
-			// min_stake stays owner-only, so this cannot be repeated to keep the
-			// owner's stake escrowed.
-			if !msg.IsSigner(storedOwnerAddress) && !isOperatorRescue(msg, supplier, supplierCurrentStake, k.GetParams(ctx).MinStake) {
+			// Exception: the operator may cancel an unbonding that settlement started
+			// because the stake fell below min_stake, by bringing the stake back to
+			// at least min_stake, paid by the operator. The owner's own unstake stays
+			// owner-only even if its stake later falls below min_stake (a slash or a
+			// min_stake raise during unbonding), so the operator cannot keep the
+			// owner's stake escrowed by canceling it.
+			belowMinStakeUnbonding := k.isBelowMinStakeUnbonding(ctx, supplier.OperatorAddress)
+			if !msg.IsSigner(storedOwnerAddress) && !isOperatorRescue(msg, supplier, supplierCurrentStake, k.GetParams(ctx).MinStake, belowMinStakeUnbonding) {
 				err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-					"signer %q is not allowed to cancel the unbonding of supplier with owner %q; only the owner can cancel an in-progress unstake, or the operator when the stake is below min stake and the message restores it",
+					"signer %q is not allowed to cancel the unbonding of supplier with owner %q; only the owner can cancel an in-progress unstake, or the operator when settlement unbonded it below min stake and the message restores min stake",
 					msg.Signer, storedOwnerAddress,
 				)
 				logger.Info(fmt.Sprintf("ERROR: %s", err))
@@ -255,6 +256,9 @@ func (k Keeper) StakeSupplier(
 
 			wasSupplierUnbonding = true
 			supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
+			if belowMinStakeUnbonding {
+				k.removeBelowMinStakeUnbonding(ctx, supplier.OperatorAddress)
+			}
 		}
 	}
 
@@ -506,14 +510,16 @@ func checkServiceCap(msg *suppliertypes.MsgStakeSupplier, params suppliertypes.P
 }
 
 // isOperatorRescue reports whether the message is the supplier's operator
-// bringing a stake below min stake back to at least min stake.
+// bringing a stake below min stake back to at least min stake, for an unbonding
+// that settlement started below min stake.
 func isOperatorRescue(
 	msg *suppliertypes.MsgStakeSupplier,
 	supplier sharedtypes.Supplier,
 	currentStake sdk.Coin,
 	minStake *sdk.Coin,
+	belowMinStakeUnbonding bool,
 ) bool {
-	if minStake == nil || msg.Stake == nil || !msg.IsSigner(supplier.OperatorAddress) {
+	if !belowMinStakeUnbonding || minStake == nil || msg.Stake == nil || !msg.IsSigner(supplier.OperatorAddress) {
 		return false
 	}
 	return currentStake.Amount.LT(minStake.Amount) && msg.Stake.Amount.GTE(minStake.Amount)

@@ -34,6 +34,9 @@ package types
 // │                                                                                    │
 // │ ServicePriorityKeyPrefix +               ServicePriority/operator_address/         │
 // │                                         └── <SupplierAddr>/                        │
+// │                                                                                    │
+// │ BelowMinStakeUnbondingKeyPrefix +        BelowMinStakeUnbonding/operator_address/  │
+// │                                         └── <SupplierAddr>/                        │
 // └────────────────────────────────────────────────────────────────────────────────────┘
 //
 // Legend
@@ -91,6 +94,10 @@ const (
 
 	// ServicePriorityKeyPrefix is the prefix for each supplier's SupplierServicePriority, by operator address
 	ServicePriorityKeyPrefix = "ServicePriority/operator_address/"
+
+	// BelowMinStakeUnbondingKeyPrefix marks, by operator address, a supplier whose
+	// unbonding settlement started because its stake fell below min stake.
+	BelowMinStakeUnbondingKeyPrefix = "BelowMinStakeUnbonding/operator_address/"
 )
 
 // SupplierOperatorKey returns the store key to retrieve a Supplier from the index fields

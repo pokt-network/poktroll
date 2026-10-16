@@ -83,6 +83,7 @@ func (k Keeper) RemoveSupplier(ctx context.Context, supplierOperatorAddress stri
 	k.removeSupplierServiceConfigUpdateIndexes(ctx, supplierOperatorAddress)
 	k.removeSupplierUnstakingHeightIndex(ctx, supplierOperatorAddress)
 	k.removeServicePriority(ctx, supplierOperatorAddress)
+	k.removeBelowMinStakeUnbonding(ctx, supplierOperatorAddress)
 
 	// Delete the supplier from the store
 	supplierStore := k.getSupplierStore(ctx)
