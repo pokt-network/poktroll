@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"cosmossdk.io/depinject"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	ring_secp256k1 "github.com/pokt-network/go-dleq/secp256k1"
 	ringtypes "github.com/pokt-network/go-dleq/types"
@@ -248,6 +249,11 @@ func verifyRingSignature(
 // It returns a slice consisting of the application's public key and the public
 // keys of the gateways to which the application delegated the authority to sign
 // relay requests on its behalf in the session ending at the given height.
+//
+// The application's key is required. A gateway whose account key cannot be a
+// ring member (no public key, or not a secp256k1 key) is left out of the ring:
+// nobody can sign with it, so leaving it out only drops a member no signature
+// can use, and the ring still builds for the application and its other gateways.
 func (rc *ringClient) getRingPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
@@ -259,22 +265,41 @@ func (rc *ringClient) getRingPubKeysForAddress(
 		return nil, err
 	}
 
-	// Reconstruct the delegatee gateway addresses at the given session end
-	// height and add them to the ring addresses.
-	delegateeGatewayAddresses := GetRingAddressesAtSessionEndHeight(&app, sessionEndHeight)
-
-	// Create a slice of addresses for the ring.
-	ringAddresses := make([]string, 0)
-	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
-
-	// Ring signatures require at least two pubKeys.
-	// If the Application has not delegated to any gateways, add its own address
-	// again.
-	if len(delegateeGatewayAddresses) == 0 {
-		delegateeGatewayAddresses = append(delegateeGatewayAddresses, appAddress)
+	appPubKey, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, appAddress)
+	if err != nil {
+		return nil, err
 	}
 
-	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
+	// Create a slice of addresses for the ring, and the public key of each.
+	ringAddresses := []string{appAddress}
+	pubKeysByAddress := map[string]cryptotypes.PubKey{appAddress: appPubKey}
+
+	// Reconstruct the delegatee gateway addresses at the given session end
+	// height and add those that can be ring members.
+	for _, gatewayAddress := range GetRingAddressesAtSessionEndHeight(&app, sessionEndHeight) {
+		gatewayPubKey, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, gatewayAddress)
+		if err != nil {
+			rc.logger.Warn().Err(err).
+				Str("gateway_address", gatewayAddress).
+				Msg("leaving gateway out of the ring: cannot get its public key")
+			continue
+		}
+		if _, ok := gatewayPubKey.(*secp256k1.PubKey); !ok {
+			rc.logger.Warn().
+				Str("gateway_address", gatewayAddress).
+				Str("key_type", fmt.Sprintf("%T", gatewayPubKey)).
+				Msg("leaving gateway out of the ring: its key is not a secp256k1 key")
+			continue
+		}
+		ringAddresses = append(ringAddresses, gatewayAddress)
+		pubKeysByAddress[gatewayAddress] = gatewayPubKey
+	}
+
+	// Ring signatures require at least two pubKeys.
+	// If the Application has no gateway in the ring, add its own address again.
+	if len(ringAddresses) == 1 {
+		ringAddresses = append(ringAddresses, appAddress)
+	}
 
 	// Sort the ring addresses so the ring is built the same way every time.
 	// Verification checks that every key in the signature's ring is in this set
@@ -286,22 +311,9 @@ func (rc *ringClient) getRingPubKeysForAddress(
 		Str("addresses", fmt.Sprintf("%v", ringAddresses)).
 		Msg("converting addresses to points")
 
-	return rc.addressesToPubKeys(ctx, ringAddresses)
-}
-
-// addressesToPubKeys queries for and returns the public keys for the addresses
-// provided.
-func (rc *ringClient) addressesToPubKeys(
-	ctx context.Context,
-	addresses []string,
-) ([]cryptotypes.PubKey, error) {
-	pubKeys := make([]cryptotypes.PubKey, len(addresses))
-	for i, addr := range addresses {
-		acc, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, addr)
-		if err != nil {
-			return nil, err
-		}
-		pubKeys[i] = acc
+	pubKeys := make([]cryptotypes.PubKey, len(ringAddresses))
+	for i, addr := range ringAddresses {
+		pubKeys[i] = pubKeysByAddress[addr]
 	}
 	return pubKeys, nil
 }

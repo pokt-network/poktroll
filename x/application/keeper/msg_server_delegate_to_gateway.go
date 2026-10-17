@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"cosmossdk.io/log"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -73,6 +74,26 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 				msg.GetAppAddress(), maxDelegatedParam,
 			).Error(),
 		)
+	}
+
+	// Relay request rings are made of secp256k1 keys. A gateway whose account
+	// key is of another type (e.g. a multisig) can never sign for the application.
+	// A gateway with no public key yet is accepted: the ring leaves out a gateway
+	// whose key cannot be a ring member.
+	gatewayAddr, err := sdk.AccAddressFromBech32(msg.GetGatewayAddress())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if gatewayAcc := k.accountKeeper.GetAccount(ctx, gatewayAddr); gatewayAcc != nil && gatewayAcc.GetPubKey() != nil {
+		if _, ok := gatewayAcc.GetPubKey().(*secp256k1.PubKey); !ok {
+			logger.Info(fmt.Sprintf("Gateway with address [%s] has a %T key", msg.GetGatewayAddress(), gatewayAcc.GetPubKey()))
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				apptypes.ErrAppInvalidGatewayAddress.Wrapf(
+					"gateway with address %q has a %T key, not a secp256k1 key", msg.GetGatewayAddress(), gatewayAcc.GetPubKey(),
+				).Error(),
+			)
+		}
 	}
 
 	currentHeight := sdkCtx.BlockHeight()

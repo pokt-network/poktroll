@@ -3,6 +3,10 @@ package keeper_test
 import (
 	"testing"
 
+	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256r1"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -477,4 +481,63 @@ func TestMsgServer_DelegateToGateway_FailRingTooLarge(t *testing.T) {
 	setUndelegated(1)
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
+}
+
+func TestMsgServer_DelegateToGateway_GatewayKeyType(t *testing.T) {
+	tests := []struct {
+		desc        string
+		pubKey      cryptotypes.PubKey
+		expectedErr error
+	}{
+		{desc: "secp256k1 key", pubKey: secp256k1.GenPrivKey().PubKey()},
+		{desc: "no public key"},
+		{
+			desc:        "multisig key",
+			pubKey:      kmultisig.NewLegacyAminoPubKey(1, []cryptotypes.PubKey{secp256k1.GenPrivKey().PubKey()}),
+			expectedErr: apptypes.ErrAppInvalidGatewayAddress,
+		},
+		{desc: "secp256r1 key", pubKey: newSecp256r1PubKey(t), expectedErr: apptypes.ErrAppInvalidGatewayAddress},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			k, ctx := keepertest.ApplicationKeeper(t)
+			srv := keeper.NewMsgServerImpl(k)
+
+			appAddr := sample.AccAddressBech32()
+			gatewayAddr := sample.AccAddressBech32()
+			keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gatewaytypes.GatewayNotUnstaking)
+			if test.pubKey != nil {
+				keepertest.SetAccountPubKey(t, gatewayAddr, test.pubKey)
+			}
+
+			_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+				Address:  appAddr,
+				Stake:    &apptypes.DefaultMinStake,
+				Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+			})
+			require.NoError(t, err)
+
+			_, err = srv.DelegateToGateway(ctx, &apptypes.MsgDelegateToGateway{
+				AppAddress:     appAddr,
+				GatewayAddress: gatewayAddr,
+			})
+			foundApp, isAppFound := k.GetApplication(ctx, appAddr)
+			require.True(t, isAppFound)
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				require.Empty(t, foundApp.DelegateeGatewayAddresses)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, []string{gatewayAddr}, foundApp.DelegateeGatewayAddresses)
+		})
+	}
+}
+
+func newSecp256r1PubKey(t *testing.T) cryptotypes.PubKey {
+	t.Helper()
+	privKey, err := secp256r1.GenPrivKey()
+	require.NoError(t, err)
+	return privKey.PubKey()
 }

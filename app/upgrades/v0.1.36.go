@@ -91,6 +91,12 @@ const (
 //     session end height of the relay's header, not at the session end computed
 //     from the live session length. RelayMiners compare the relay's session header
 //     with the onchain session before checking its signature.
+//     The expected ring leaves out a gateway whose account has no public key or a
+//     key that is not secp256k1 (no signer can use it); the application's own key
+//     is still required. CONSENSUS-BREAKING (state, gas: MsgDelegateToGateway reads
+//     the gateway account). MsgDelegateToGateway rejects a
+//     gateway whose account key is not secp256k1 (one with no key yet is accepted).
+//     SDKs and gateways building rings should leave such gateways out too.
 //   - x/application: max_delegated_gateways must be at most 31
 //     (MaxDelegatedGatewaysLimit; mainnet uses 7). A transfer into an existing
 //     application fails, with EventTransferError, when the merged delegations
