@@ -17,9 +17,9 @@ const (
 	ParamProofWindowOpenOffsetBlocks          = "proof_window_open_offset_blocks"
 	DefaultProofWindowCloseOffsetBlocks       = 3
 	ParamProofWindowCloseOffsetBlocks         = "proof_window_close_offset_blocks"
-	DefaultSupplierUnbondingPeriodSessions    = 1 // 1 session
+	DefaultSupplierUnbondingPeriodSessions    = 2 // 2 sessions: lasts past the default proof window close
 	ParamSupplierUnbondingPeriodSessions      = "supplier_unbonding_period_sessions"
-	DefaultApplicationUnbondingPeriodSessions = 1 // 1 session
+	DefaultApplicationUnbondingPeriodSessions = 2 // 2 sessions: lasts past the default proof window close
 	ParamApplicationUnbondingPeriodSessions   = "application_unbonding_period_sessions"
 	DefaultGatewayUnbondingPeriodSessions     = 1 // 1 session
 	ParamGatewayUnbondingPeriodSessions       = "gateway_unbonding_period_sessions"
@@ -393,12 +393,12 @@ func validateGracePeriodOffsetBlocksIsLessThanNumBlocksPerSession(params *Params
 // proof window close blocks.
 // It ensures that a supplier cannot unbond before the pending claims are settled.
 func validateSupplierUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params *Params) error {
-	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseBlocks(params)
+	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseHeightBlocks(params)
 	supplierUnbondingPeriodSessions := int64(params.SupplierUnbondingPeriodSessions * params.NumBlocksPerSession)
 
 	if supplierUnbondingPeriodSessions < cumulativeProofWindowCloseBlocks {
 		return ErrSharedParamInvalid.Wrapf(
-			"SupplierUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
+			"SupplierUnbondingPeriodSessions (%v session) (%v blocks) must last until the proof window closes, %v blocks after the session end",
 			params.SupplierUnbondingPeriodSessions,
 			supplierUnbondingPeriodSessions,
 			cumulativeProofWindowCloseBlocks,
@@ -406,6 +406,16 @@ func validateSupplierUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlock
 	}
 
 	return nil
+}
+
+// GetSessionEndToProofWindowCloseHeightBlocks returns the number of blocks from a
+// session end height to the height at which that session's proof window closes.
+// It includes the block GetClaimWindowOpenHeight adds after the session end, which
+// GetSessionEndToProofWindowCloseBlocks does not count. An actor whose unbonding ends
+// at or after that height is still staked while the session's claims and proofs
+// are submitted and settled.
+func GetSessionEndToProofWindowCloseHeightBlocks(params *Params) int64 {
+	return GetSessionEndToProofWindowCloseBlocks(params) + 1
 }
 
 // validateNumPendingSessionsIsPositive ensures GetNumPendingSessions() can never
@@ -442,12 +452,12 @@ func validateNumPendingSessionsIsPositive(params *Params) error {
 // validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks
 // ensures that an application cannot unbond before the pending claims are settled.
 func validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params *Params) error {
-	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseBlocks(params)
+	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseHeightBlocks(params)
 	applicationUnbondingPeriodSessions := int64(params.ApplicationUnbondingPeriodSessions * params.NumBlocksPerSession)
 
 	if applicationUnbondingPeriodSessions < cumulativeProofWindowCloseBlocks {
 		return ErrSharedParamInvalid.Wrapf(
-			"ApplicationUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
+			"ApplicationUnbondingPeriodSessions (%v session) (%v blocks) must last until the proof window closes, %v blocks after the session end",
 			params.ApplicationUnbondingPeriodSessions,
 			applicationUnbondingPeriodSessions,
 			cumulativeProofWindowCloseBlocks,

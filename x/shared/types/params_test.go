@@ -339,3 +339,33 @@ func TestParams_ValidateNumPendingSessionsIsPositive(t *testing.T) {
 		require.NoError(t, params.ValidateBasic())
 	})
 }
+
+// Valid params keep a supplier or application that unstakes in a session staked
+// until that session's proof window closes.
+func TestParams_UnbondingEndsAtOrAfterProofWindowClose(t *testing.T) {
+	newParams := func(supplierUnbondingPeriodSessions, applicationUnbondingPeriodSessions uint64) Params {
+		params := DefaultParams()
+		params.NumBlocksPerSession = 8
+		params.GracePeriodEndOffsetBlocks = 1
+		params.ClaimWindowOpenOffsetBlocks = 1
+		params.ClaimWindowCloseOffsetBlocks = 4
+		params.ProofWindowOpenOffsetBlocks = 1
+		params.ProofWindowCloseOffsetBlocks = 2
+		params.SupplierUnbondingPeriodSessions = supplierUnbondingPeriodSessions
+		params.ApplicationUnbondingPeriodSessions = applicationUnbondingPeriodSessions
+		params.GatewayUnbondingPeriodSessions = 1
+		return params
+	}
+
+	validate := func(params Params) error { return params.ValidateBasic() }
+
+	// One session (8 blocks) ends one block before the proof window close (9 blocks after the session end).
+	require.ErrorContains(t, validate(newParams(1, 2)), "SupplierUnbondingPeriodSessions")
+	require.ErrorContains(t, validate(newParams(2, 1)), "ApplicationUnbondingPeriodSessions")
+
+	params := newParams(2, 2)
+	require.NoError(t, params.ValidateBasic())
+	sessionEndHeight := GetSessionEndHeight(&params, 10)
+	unbondingEndHeight := sessionEndHeight + int64(params.ApplicationUnbondingPeriodSessions*params.NumBlocksPerSession)
+	require.GreaterOrEqual(t, unbondingEndHeight, GetProofWindowCloseHeight(&params, sessionEndHeight))
+}

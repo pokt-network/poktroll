@@ -149,6 +149,11 @@ const (
 //     stake and transfer messages that change the limit write a history entry, and
 //     application records and events carry it. An application with no history
 //     (every application at the upgrade) uses its current limit. No handler code.
+//   - x/shared: the supplier and application unbonding periods must last at least
+//     until the proof window close height, which is one block later than validation
+//     counted. No handler code: mainnet and Beta are well above it; LocalNet and
+//     Alpha are exactly at it. The default supplier and application unbonding
+//     periods are now 2 sessions (new chains only).
 //
 // Gas changes (gas_used, hence LastResultsHash; no AppHash change):
 //   - MsgCreateClaim / MsgSubmitProof: lower on memo hits.
