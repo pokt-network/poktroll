@@ -26,6 +26,15 @@ func (k msgServer) TransferService(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	// The new owner receives the service owner rewards at settlement, so it must
+	// be able to receive funds.
+	if k.bankKeeper.BlockedAddr(sdk.MustAccAddressFromBech32(msg.NewOwnerAddress)) {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrServiceInvalidOwnerAddress.Wrapf("new owner address %s cannot receive funds", msg.NewOwnerAddress).Error(),
+		)
+	}
+
 	// Look up the service by ID.
 	foundService, found := k.GetService(ctx, msg.ServiceId)
 	if !found {

@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/pocket"
@@ -137,4 +138,24 @@ func TestMsgServer_TransferService(t *testing.T) {
 	})
 	require.Error(t, err, "old owner should not be able to update the service")
 	require.ErrorContains(t, err, "invalid owner address")
+}
+
+func TestMsgServer_TransferService_FailNewOwnerCannotReceiveFunds(t *testing.T) {
+	k, ctx := keepertest.ServiceKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+	ownerAddr := sample.AccAddressBech32()
+	keepertest.AddAccToAccMapCoins(t, ownerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee)
+	_, err := srv.AddService(ctx, &types.MsgAddService{
+		OwnerAddress: ownerAddr,
+		Service:      sharedtypes.Service{Id: "svc1", Name: "svc1", ComputeUnitsPerRelay: 1, OwnerAddress: ownerAddr},
+	})
+	require.NoError(t, err)
+
+	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName).String()
+	_, err = srv.TransferService(ctx, types.NewMsgTransferService(ownerAddr, "svc1", feeCollectorAddr))
+	require.ErrorContains(t, err, "cannot receive funds")
+
+	service, found := k.GetService(ctx, "svc1")
+	require.True(t, found)
+	require.Equal(t, ownerAddr, service.OwnerAddress)
 }

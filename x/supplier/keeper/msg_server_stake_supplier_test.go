@@ -7,6 +7,7 @@ import (
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -1062,4 +1063,28 @@ func setBlockHeightToNextSessionStart(
 	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 	return keepertest.SetBlockHeight(ctx, nextSessionStartHeight)
+}
+
+func TestMsgServer_StakeSupplier_FailRevShareAddressCannotReceiveFunds(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
+
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId")
+	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName).String()
+	stakeMsg.Services[0].RevShare = []*sharedtypes.ServiceRevenueShare{
+		{Address: ownerAddr, RevSharePercentage: 50},
+		{Address: feeCollectorAddr, RevSharePercentage: 50},
+	}
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.ErrorContains(t, err, "cannot receive funds")
+
+	_, found := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.False(t, found)
+
+	// The same revenue share without that address is accepted.
+	stakeMsg.Services[0].RevShare = []*sharedtypes.ServiceRevenueShare{{Address: ownerAddr, RevSharePercentage: 100}}
+	_, err = srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
 }

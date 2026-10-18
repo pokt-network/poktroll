@@ -53,6 +53,7 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 
 	ctrl := gomock.NewController(t)
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
+	mockBankKeeper.EXPECT().BlockedAddr(gomock.Any()).DoAndReturn(isBlockedAddr).AnyTimes()
 	mockBankKeeper.EXPECT().
 		SpendableCoins(gomock.Any(), gomock.Any()).
 		DoAndReturn(

@@ -521,6 +521,28 @@ func (k Keeper) executeAggregatedModToAcctTransfers(
 			)
 		}
 
+		// The bank module refuses transfers to its blocked addresses (module accounts
+		// such as the fee collector). Such a payout goes to the DAO reward address
+		// instead, and stays in the sender module if that address is blocked too.
+		if k.bankKeeper.BlockedAddr(recipientAddr) {
+			tokenomicsParams := k.GetParams(ctx)
+			daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
+			logger.Warn(fmt.Sprintf(
+				"recipient %q cannot receive funds: sending %s (reason %q) to the DAO reward address %q",
+				transfer.RecipientAddress, transfer.Coin, transfer.OpReason.String(), daoRewardAddress,
+			))
+			daoAddr, daoErr := cosmostypes.AccAddressFromBech32(daoRewardAddress)
+			if daoErr != nil || k.bankKeeper.BlockedAddr(daoAddr) {
+				logger.Error(fmt.Sprintf(
+					"DAO reward address %q cannot receive funds: %s (reason %q) stays in the %q module",
+					daoRewardAddress, transfer.Coin, transfer.OpReason.String(), transfer.SenderModule,
+				))
+				continue
+			}
+			transfer.RecipientAddress = daoRewardAddress
+			recipientAddr = daoAddr
+		}
+
 		if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 			ctx,
 			transfer.SenderModule,

@@ -498,7 +498,7 @@ func NewTokenomicsModuleKeepers(
 		cdc,
 		runtime.NewKVStoreService(keys[banktypes.StoreKey]),
 		accountKeeper,
-		make(map[string]bool),
+		blockedModuleAddrs(),
 		authority.String(),
 		logger,
 	)
@@ -1091,4 +1091,13 @@ func WithValidatorDelegationConfigs(configs []ValidatorDelegationConfig) Tokenom
 		}
 		cfg.initKeepersFns = append(cfg.initKeepersFns, initValidatorAndDelegatorAccounts)
 	}
+}
+
+// blockedModuleAddrs returns the addresses the app's bank keeper refuses to send funds to.
+func blockedModuleAddrs() map[string]bool {
+	blockedAddrs := make(map[string]bool)
+	for moduleName := range app.BlockedAddresses() {
+		blockedAddrs[authtypes.NewModuleAddress(moduleName).String()] = true
+	}
+	return blockedAddrs
 }

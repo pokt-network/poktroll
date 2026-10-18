@@ -25,6 +25,7 @@ type BankKeeper interface {
 	// linked to staking.
 	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	BlockedAddr(addr sdk.AccAddress) bool
 }
 
 // SharedKeeper defines the expected interface for the Shared module.

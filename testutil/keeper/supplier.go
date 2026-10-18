@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/supplier/mocks"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
@@ -69,6 +70,7 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 			supplierBalanceMap[addr.String()] -= coins[0].Amount.Int64()
 		})
 	mockBankKeeper.EXPECT().SpendableCoins(gomock.Any(), gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().BlockedAddr(gomock.Any()).DoAndReturn(isBlockedAddr).AnyTimes()
 	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes().
 		Do(func(ctx context.Context, module string, addr sdk.AccAddress, coins sdk.Coins) {
 			supplierBalanceMap[addr.String()] += coins[0].Amount.Int64()
@@ -122,4 +124,14 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 	}
 
 	return supplierModuleKeepers, ctx
+}
+
+// isBlockedAddr reports whether the app's bank keeper refuses to send funds to addr.
+func isBlockedAddr(addr sdk.AccAddress) bool {
+	for moduleName := range app.BlockedAddresses() {
+		if authtypes.NewModuleAddress(moduleName).Equals(addr) {
+			return true
+		}
+	}
+	return false
 }

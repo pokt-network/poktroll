@@ -132,6 +132,23 @@ func (k Keeper) StakeSupplier(
 		}
 	}
 
+	// Reject revenue share addresses that cannot receive funds (bank blocked addresses).
+	for _, serviceConfig := range msg.Services {
+		for _, revShare := range serviceConfig.RevShare {
+			revShareAddr, err := sdk.AccAddressFromBech32(revShare.Address)
+			if err != nil {
+				return nil, status.Error(codes.InvalidArgument, suppliertypes.ErrSupplierInvalidAddress.Wrapf(
+					"invalid revenue share address %q: %v", revShare.Address, err,
+				).Error())
+			}
+			if k.bankKeeper.BlockedAddr(revShareAddr) {
+				return nil, status.Error(codes.InvalidArgument, suppliertypes.ErrSupplierInvalidAddress.Wrapf(
+					"revenue share address %s for service %q cannot receive funds", revShare.Address, serviceConfig.ServiceId,
+				).Error())
+			}
+		}
+	}
+
 	// Check if the services the supplier is staking for exist
 	for _, serviceConfig := range msg.Services {
 		if _, serviceFound := k.serviceKeeper.GetService(ctx, serviceConfig.ServiceId); !serviceFound {

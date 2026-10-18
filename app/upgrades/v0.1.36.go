@@ -135,6 +135,13 @@ const (
 //     owner at once) that a lower stake at or above min_stake used to trigger.
 //     Owners withdraw stake by unstaking, which goes through the unbonding period.
 //     Morse supplier claims stake through the same path and never decrease stake.
+//   - Settlement pays a module to account transfer whose recipient the bank module
+//     refuses (its blocked addresses: fee collector, distribution, mint, bonded and
+//     not bonded pools) to the DAO reward address instead, or leaves it in the
+//     sender module when that address is blocked too, and logs it. CONSENSUS-
+//     BREAKING (state). MsgStakeSupplier rejects such an address as a revenue share
+//     recipient, and MsgTransferService as the new service owner. CONSENSUS-BREAKING
+//     (state, gas: one bank lookup per address).
 //
 // Gas changes (gas_used, hence LastResultsHash; no AppHash change):
 //   - MsgCreateClaim / MsgSubmitProof: lower on memo hits.
