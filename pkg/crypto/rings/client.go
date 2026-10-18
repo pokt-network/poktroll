@@ -3,6 +3,7 @@ package rings
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/pokt-network/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -278,6 +280,13 @@ func (rc *ringClient) getRingPubKeysForAddress(
 	// height and add those that can be ring members.
 	for _, gatewayAddress := range GetRingAddressesAtSessionEndHeight(&app, sessionEndHeight) {
 		gatewayPubKey, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, gatewayAddress)
+		// A failed query (as opposed to a missing account or key) says nothing
+		// about the gateway: return it rather than build a smaller ring. Only the
+		// offchain querier returns this error, so onchain ring construction is
+		// unaffected.
+		if errors.Is(err, query.ErrQueryAccountQueryFailed) {
+			return nil, err
+		}
 		if err != nil {
 			rc.logger.Warn().Err(err).
 				Str("gateway_address", gatewayAddress).

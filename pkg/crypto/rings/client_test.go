@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha3"
 	"encoding/binary"
+	"errors"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -15,10 +16,12 @@ import (
 
 	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -348,4 +351,64 @@ func TestVerifyRelayRequestSignature_AcceptsRingWithRepeatedKey(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, rc.VerifyRelayRequestSignature(context.Background(), relayRequest))
+}
+
+// The application's own key is required: a ring is not built without it.
+func TestGetRingPubKeysForAddress_AppKeyRequired(t *testing.T) {
+	appAddr := sample.AccAddressBech32()
+	ctrl := gomock.NewController(t)
+	appQuerier := mockclient.NewMockApplicationQueryClient(ctrl)
+	appQuerier.EXPECT().GetApplication(gomock.Any(), appAddr).Return(apptypes.Application{Address: appAddr}, nil).AnyTimes()
+	acctQuerier := mockclient.NewMockAccountQueryClient(ctrl)
+	acctQuerier.EXPECT().GetPubKeyFromAddress(gomock.Any(), appAddr).Return(nil, errors.New("no key")).AnyTimes()
+
+	rc := &ringClient{logger: polyzero.NewLogger(), applicationQuerier: appQuerier, accountQuerier: acctQuerier}
+	pubKeys, err := rc.getRingPubKeysForAddress(context.Background(), appAddr, 1)
+	require.Error(t, err)
+	require.Nil(t, pubKeys)
+}
+
+// A gateway with no account or no public key is left out of the ring, as is a
+// gateway whose key lookup fails with any error the onchain account client can
+// return. A failed offchain account query is returned instead.
+func TestGetRingPubKeysForAddress_GatewayKeyErrors(t *testing.T) {
+	appAddr, appPubKey := sample.AccAddressAndPubKey()
+	gatewayAddr := sample.AccAddressBech32()
+
+	tests := []struct {
+		desc       string
+		gatewayErr error
+		expectErr  error
+	}{
+		{desc: "offchain account not found", gatewayErr: query.ErrQueryAccountNotFound},
+		{desc: "offchain public key not found", gatewayErr: query.ErrQueryPubKeyNotFound},
+		{desc: "onchain account not found", gatewayErr: prooftypes.ErrProofAccNotFound},
+		{desc: "onchain public key not found", gatewayErr: prooftypes.ErrProofPubKeyNotFound},
+		{desc: "onchain invalid address", gatewayErr: errors.New("decoding bech32 failed")},
+		{desc: "offchain account query failed", gatewayErr: query.ErrQueryAccountQueryFailed, expectErr: query.ErrQueryAccountQueryFailed},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			appQuerier := mockclient.NewMockApplicationQueryClient(ctrl)
+			appQuerier.EXPECT().GetApplication(gomock.Any(), appAddr).Return(
+				apptypes.Application{Address: appAddr, DelegateeGatewayAddresses: []string{gatewayAddr}}, nil,
+			).AnyTimes()
+			acctQuerier := mockclient.NewMockAccountQueryClient(ctrl)
+			acctQuerier.EXPECT().GetPubKeyFromAddress(gomock.Any(), appAddr).Return(appPubKey, nil).AnyTimes()
+			acctQuerier.EXPECT().GetPubKeyFromAddress(gomock.Any(), gatewayAddr).
+				Return(nil, test.gatewayErr).AnyTimes()
+
+			rc := &ringClient{logger: polyzero.NewLogger(), applicationQuerier: appQuerier, accountQuerier: acctQuerier}
+			pubKeys, err := rc.getRingPubKeysForAddress(context.Background(), appAddr, 1)
+			if test.expectErr != nil {
+				require.ErrorIs(t, err, test.expectErr)
+				require.Nil(t, pubKeys)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, []cryptotypes.PubKey{appPubKey, appPubKey}, pubKeys)
+		})
+	}
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/gogoproto/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -101,7 +103,12 @@ func (aq *accQuerier) GetAccount(
 		return aq.accountQuerier.Account(queryCtx, req)
 	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
-		return nil, ErrQueryAccountNotFound.Wrapf("address: %s [%v]", address, err)
+		// Only a NotFound status means the account does not exist. Any other
+		// failure (e.g. unavailable node, timeout) says nothing about the account.
+		if status.Code(err) == codes.NotFound {
+			return nil, ErrQueryAccountNotFound.Wrapf("address: %s [%v]", address, err)
+		}
+		return nil, ErrQueryAccountQueryFailed.Wrapf("address: %s [%v]", address, err)
 	}
 
 	// Unpack and cache the account object
