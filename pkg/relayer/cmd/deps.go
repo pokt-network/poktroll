@@ -132,8 +132,8 @@ func setupRelayerDependencies(
 		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 		// Session querier returns *sessiontypes.Session, so cache must return pointers.
 		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
-		// Clear on new blocks to refresh application state after each block.
-		// It is needed to ensure that Applications can upstake to continue being served.
+		// Clear on each new session (not each block) to refresh application state,
+		// e.g. so that an upstaked Application is served with its new stake.
 		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 
 		// Setup key-value for cosmos types
