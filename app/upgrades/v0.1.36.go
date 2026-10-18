@@ -145,7 +145,8 @@ const (
 //   - Application per_session_spend_limit history (new Application field 10,
 //     per_session_spend_limit_history). A spend limit change takes effect at the
 //     next session start, like service config changes, and settlement applies the
-//     limit in effect at the claim's session start. CONSENSUS-BREAKING (state):
+//     limit in effect at the claim's session start. A change replaces every change
+//     still pending. CONSENSUS-BREAKING (state):
 //     stake and transfer messages that change the limit write a history entry, and
 //     application records and events carry it. An application with no history
 //     (every application at the upgrade) uses its current limit. No handler code.

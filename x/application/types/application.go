@@ -178,8 +178,9 @@ func (s *Application) GetPerSessionSpendLimitAtHeight(queryHeight int64) *sdk.Co
 //
 //   - No-op if the limit did not change.
 //   - On the first change, prevLimit is first recorded as in effect since height 1.
-//   - An entry already scheduled for activationHeight is replaced, so at most one
-//     pending entry exists and activation heights are strictly increasing.
+//   - Entries scheduled at or after activationHeight are replaced, so at most one
+//     pending entry exists and activation heights are strictly increasing, also
+//     when activationHeight precedes a pending entry (e.g. the session grid moved).
 func (s *Application) RecordPerSessionSpendLimitChange(prevLimit *sdk.Coin, activationHeight int64) {
 	newLimit := s.PerSessionSpendLimit
 	if spendLimitsEqual(prevLimit, newLimit) {
@@ -194,7 +195,7 @@ func (s *Application) RecordPerSessionSpendLimitChange(prevLimit *sdk.Coin, acti
 		})
 	}
 
-	if last := history[len(history)-1]; last.ActivationHeight >= activationHeight {
+	for len(history) > 0 && history[len(history)-1].ActivationHeight >= activationHeight {
 		history = history[:len(history)-1]
 	}
 
