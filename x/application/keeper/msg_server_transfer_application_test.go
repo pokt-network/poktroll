@@ -266,6 +266,15 @@ func TestMsgServer_TransferApplication_MergePerSessionSpendLimit(t *testing.T) {
 					"expected PerSessionSpendLimit %v, got %v", test.expectedLimit, dstApp.PerSessionSpendLimit)
 			}
 
+			// The destination's prior limit stays in effect for the current session;
+			// the merged limit takes effect at the next session start.
+			nextSessionStart := sharedtypes.GetNextSessionStartHeight(&sharedParams, transferCompletionHeight)
+			require.Equal(t, test.dstSpendLimit, dstApp.GetPerSessionSpendLimitAtHeight(transferCompletionHeight))
+			require.Equal(t, test.expectedLimit, dstApp.GetPerSessionSpendLimitAtHeight(nextSessionStart))
+			if test.dstSpendLimit == test.expectedLimit {
+				require.Empty(t, dstApp.PerSessionSpendLimitHistory, "unchanged limit must not record history")
+			}
+
 			// Verify the source application was removed.
 			_, isSrcFound = k.GetApplication(ctx, srcBech32)
 			require.False(t, isSrcFound)

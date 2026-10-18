@@ -582,6 +582,140 @@ func TestProcessTokenLogicModules_PerSessionSpendLimit(t *testing.T) {
 		"overserviced event should indicate spend limit was the binding constraint")
 }
 
+// TestProcessTokenLogicModules_PerSessionSpendLimit_AtSessionStart verifies that
+// settlement applies the per-session spend limit in effect at the claim's session
+// start height, regardless of the application's current limit at settlement time.
+func TestProcessTokenLogicModules_PerSessionSpendLimit_AtSessionStart(t *testing.T) {
+	limit := func(divisor int64) func(appStake cosmosmath.Int) *cosmostypes.Coin {
+		return func(appStake cosmosmath.Int) *cosmostypes.Coin {
+			coin := cosmostypes.NewCoin(pocket.DenomuPOKT, appStake.QuoRaw(divisor))
+			return &coin
+		}
+	}
+	noLimit := func(cosmosmath.Int) *cosmostypes.Coin { return nil }
+
+	tests := []struct {
+		desc string
+		// sessionLimit is the limit in effect during the claim's session.
+		sessionLimit func(appStake cosmosmath.Int) *cosmostypes.Coin
+		// currentLimit is the application's limit at settlement time; it takes
+		// effect at the session start after the claim's session.
+		currentLimit func(appStake cosmosmath.Int) *cosmostypes.Coin
+		// noHistory: the limit never changed (empty history).
+		noHistory bool
+	}{
+		{desc: "limit lowered after session", sessionLimit: limit(8), currentLimit: limit(16)},
+		{desc: "limit raised after session", sessionLimit: limit(16), currentLimit: limit(8)},
+		{desc: "limit set after session", sessionLimit: noLimit, currentLimit: limit(16)},
+		{desc: "limit cleared after session", sessionLimit: limit(16), currentLimit: noLimit},
+		{desc: "limit never changed (empty history)", sessionLimit: limit(16), currentLimit: limit(16), noHistory: true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			globalComputeUnitCostGranularity := uint64(1000000)
+			globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
+			serviceComputeUnitsPerRelay := uint64(1)
+			service := prepareTestService(serviceComputeUnitsPerRelay)
+			numRelays := uint64(1000)
+
+			keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
+				cosmoslog.NewNopLogger(),
+				testkeeper.WithService(*service),
+				testkeeper.WithDefaultModuleBalances(),
+				testkeeper.WithTokenLogicModules([]tlm.TokenLogicModule{
+					tlm.NewRelayBurnEqualsMintTLM(),
+				}),
+			)
+			ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
+			keepers.SetService(ctx, *service)
+
+			numTokensClaimed := getNumTokensClaimed(
+				numRelays,
+				serviceComputeUnitsPerRelay,
+				globalComputeUnitsToTokensMultiplier,
+				globalComputeUnitCostGranularity,
+			)
+			appInitialStake := cosmosmath.NewInt(numTokensClaimed * 4)
+
+			sharedParams := keepers.SharedKeeper.GetParams(ctx)
+			sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+			require.NoError(t, keepers.SharedKeeper.SetParams(ctx, sharedParams))
+
+			tokenomicsParams := keepers.Keeper.GetParams(ctx)
+			tokenomicsParams.GlobalInflationPerClaim = 0
+			tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
+				Supplier: 1,
+			}
+			require.NoError(t, keepers.Keeper.SetParams(ctx, tokenomicsParams))
+
+			appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
+			sessionLimit := test.sessionLimit(appInitialStake)
+			app := apptypes.Application{
+				Address:              sample.AccAddressBech32(),
+				Stake:                &appStake,
+				ServiceConfigs:       []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+				PerSessionSpendLimit: test.currentLimit(appInitialStake),
+			}
+
+			shareHolderAddress := sample.AccAddressBech32()
+			services := []*sharedtypes.SupplierServiceConfig{{
+				ServiceId: service.Id,
+				RevShare: []*sharedtypes.ServiceRevenueShare{{
+					Address:            shareHolderAddress,
+					RevSharePercentage: 100,
+				}},
+			}}
+			supplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, cosmosmath.NewInt(1000000))
+			supplier := sharedtypes.Supplier{
+				OwnerAddress:    shareHolderAddress,
+				OperatorAddress: shareHolderAddress,
+				Stake:           &supplierStake,
+				Services:        services,
+				ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+					shareHolderAddress, services, 1, 0,
+				),
+			}
+			keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
+
+			claim := prepareTestClaim(numRelays, service, &app, &supplier)
+			if !test.noHistory {
+				// The current limit took effect at the first session start after the claim's session.
+				app.RecordPerSessionSpendLimitChange(sessionLimit, claim.SessionHeader.SessionEndBlockHeight+1)
+				require.NotEmpty(t, app.PerSessionSpendLimitHistory)
+			}
+			keepers.SetApplication(ctx, app)
+
+			settlementContext := tokenomicskeeper.NewSettlementContext(ctx, keepers.Keeper, keepers.Logger())
+			require.NoError(t, settlementContext.ClaimCacheWarmUp(ctx, &claim))
+			settlementContext.IncrementSupplierCount(claim.SessionHeader.ApplicationAddress, claim.SessionHeader.SessionId)
+
+			actualSettlement, err := keepers.ProcessTokenLogicModules(ctx, settlementContext, tlm.NewClaimSettlementResult(claim))
+			require.NoError(t, err)
+
+			// Expected: claimed amount capped by appStake/numPendingSessions (1 supplier)
+			// and by the limit in effect during the session.
+			expected := cosmosmath.NewInt(numTokensClaimed)
+			stakePerSession := appInitialStake.QuoRaw(sharedtypes.GetNumPendingSessions(&sharedParams))
+			expected = cosmosmath.MinInt(expected, stakePerSession)
+			if sessionLimit != nil {
+				expected = cosmosmath.MinInt(expected, sessionLimit.Amount)
+			}
+			require.Equal(t, expected, actualSettlement.Amount)
+
+			// Sanity: the current limit would produce a different amount, so the
+			// assertion above distinguishes the two.
+			if !test.noHistory {
+				currentExpected := cosmosmath.MinInt(cosmosmath.NewInt(numTokensClaimed), stakePerSession)
+				if currentLimit := test.currentLimit(appInitialStake); currentLimit != nil {
+					currentExpected = cosmosmath.MinInt(currentExpected, currentLimit.Amount)
+				}
+				require.NotEqual(t, currentExpected, expected, "test setup error: limits must yield different amounts")
+			}
+		})
+	}
+}
+
 // TestProcessTokenLogicModules_PerSessionSpendLimit_NilNoEffect verifies that
 // a nil per-session spend limit does not affect settlement (backwards compatible).
 func TestProcessTokenLogicModules_PerSessionSpendLimit_NilNoEffect(t *testing.T) {

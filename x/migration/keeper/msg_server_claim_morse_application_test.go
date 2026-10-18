@@ -47,12 +47,13 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		Services: []*sharedtypes.ApplicationServiceConfig{&testAppServiceConfig},
 	}
 	expectedApp := apptypes.Application{
-		Address:                   shannonDestAddr,
-		Stake:                     &applicationStake,
-		ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{&testAppServiceConfig},
-		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
-		DelegateeGatewayAddresses: make([]string, 0),
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		Address:                     shannonDestAddr,
+		Stake:                       &applicationStake,
+		ServiceConfigs:              []*sharedtypes.ApplicationServiceConfig{&testAppServiceConfig},
+		ServiceConfigHistory:        make([]*apptypes.ApplicationServiceConfigUpdate, 0),
+		PerSessionSpendLimitHistory: make([]*apptypes.ApplicationPerSessionSpendLimitUpdate, 0),
+		DelegateeGatewayAddresses:   make([]string, 0),
+		PendingUndelegations:        make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
 
 	ctrl := gomock.NewController(t)

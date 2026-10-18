@@ -430,6 +430,74 @@ func TestMsgServer_StakeApplication_PerSessionSpendLimit(t *testing.T) {
 	require.Nil(t, foundApp.PerSessionSpendLimit, "zero spend limit in msg should clear existing limit")
 }
 
+// TestMsgServer_StakeApplication_PerSessionSpendLimitHistory verifies that spend
+// limit changes are recorded in history, take effect at the next session start,
+// and that unchanged limits record nothing.
+func TestMsgServer_StakeApplication_PerSessionSpendLimitHistory(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	appAddr := sample.AccAddressBech32()
+	stake := apptypes.DefaultMinStake
+	services := []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}}
+	coin := func(amt int64) *cosmostypes.Coin {
+		c := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, amt)
+		return &c
+	}
+	restake := func(limit *cosmostypes.Coin) apptypes.Application {
+		t.Helper()
+		_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+			Address:              appAddr,
+			Stake:                &stake,
+			Services:             services,
+			PerSessionSpendLimit: limit,
+		})
+		require.NoError(t, err)
+		stake = stake.AddAmount(math.NewInt(1))
+		app, found := k.GetApplication(ctx, appAddr)
+		require.True(t, found)
+		return app
+	}
+
+	sharedParams := sharedtypes.DefaultParams()
+	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	nextSessionStart := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+
+	// Create with limit X, then restake with nil (preserve) and with X again: no history.
+	app := restake(coin(3000000))
+	require.Empty(t, app.PerSessionSpendLimitHistory)
+	app = restake(nil)
+	require.Empty(t, app.PerSessionSpendLimitHistory)
+	app = restake(coin(3000000))
+	require.Empty(t, app.PerSessionSpendLimitHistory)
+	require.Equal(t, int64(3000000), app.GetPerSessionSpendLimitAtHeight(currentHeight).Amount.Int64())
+
+	// Change to Y: X stays in effect for the current session, Y from the next one.
+	app = restake(coin(2000000))
+	require.Len(t, app.PerSessionSpendLimitHistory, 2)
+	require.Equal(t, int64(3000000), app.GetPerSessionSpendLimitAtHeight(currentHeight).Amount.Int64())
+	require.Equal(t, int64(3000000), app.GetPerSessionSpendLimitAtHeight(nextSessionStart-1).Amount.Int64())
+	require.Equal(t, int64(2000000), app.GetPerSessionSpendLimitAtHeight(nextSessionStart).Amount.Int64())
+
+	// Clear in the same session: replaces the pending entry.
+	zero := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
+	app = restake(&zero)
+	require.Len(t, app.PerSessionSpendLimitHistory, 2)
+	require.Equal(t, int64(3000000), app.GetPerSessionSpendLimitAtHeight(nextSessionStart-1).Amount.Int64())
+	require.Nil(t, app.GetPerSessionSpendLimitAtHeight(nextSessionStart))
+	gs := apptypes.GenesisState{Params: apptypes.DefaultParams(), ApplicationList: []apptypes.Application{app}}
+	require.NoError(t, gs.Validate())
+
+	// Revert to X in the same session: no pending entry remains.
+	app = restake(coin(3000000))
+	require.Len(t, app.PerSessionSpendLimitHistory, 1)
+	require.Equal(t, int64(3000000), app.GetPerSessionSpendLimitAtHeight(nextSessionStart).Amount.Int64())
+
+	// History round-trips through genesis validation.
+	gs = apptypes.GenesisState{Params: apptypes.DefaultParams(), ApplicationList: []apptypes.Application{app}}
+	require.NoError(t, gs.Validate())
+}
+
 func TestMsgServer_StakeApplication_PerSessionSpendLimit_ZeroOnCreate(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)

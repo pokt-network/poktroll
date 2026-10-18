@@ -86,6 +86,10 @@ func (k Keeper) GetApplication(
 	if app.ServiceConfigHistory == nil {
 		app.ServiceConfigHistory = make([]*types.ApplicationServiceConfigUpdate, 0)
 	}
+	// Same normalization for the per-session spend limit history.
+	if app.PerSessionSpendLimitHistory == nil {
+		app.PerSessionSpendLimitHistory = make([]*types.ApplicationPerSessionSpendLimitUpdate, 0)
+	}
 
 	return app, true
 }
@@ -128,6 +132,9 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 		// is for in-memory representation consistency).
 		if app.ServiceConfigHistory == nil {
 			app.ServiceConfigHistory = make([]*types.ApplicationServiceConfigUpdate, 0)
+		}
+		if app.PerSessionSpendLimitHistory == nil {
+			app.PerSessionSpendLimitHistory = make([]*types.ApplicationPerSessionSpendLimitUpdate, 0)
 		}
 
 		apps = append(apps, app)
@@ -350,5 +357,8 @@ func initializeNilApplicationFields(keeperLogger log.Logger, app *types.Applicat
 	// identically for the fallback.
 	if app.ServiceConfigHistory == nil {
 		app.ServiceConfigHistory = make([]*types.ApplicationServiceConfigUpdate, 0)
+	}
+	if app.PerSessionSpendLimitHistory == nil {
+		app.PerSessionSpendLimitHistory = make([]*types.ApplicationPerSessionSpendLimitUpdate, 0)
 	}
 }

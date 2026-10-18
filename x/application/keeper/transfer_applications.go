@@ -198,7 +198,9 @@ func (k Keeper) transferApplication(
 		// to recordApplicationServiceConfigChange, which needs dstApp to still hold
 		// the prior set to detect the change and append history entries.
 		finalServiceConfigs = mergeAppServiceConfigs(&srcApp, &dstApp)
+		prevDstSpendLimit := dstApp.PerSessionSpendLimit
 		mergeAppPerSessionSpendLimit(&srcApp, &dstApp)
+		k.recordPerSessionSpendLimitChange(ctx, &dstApp, prevDstSpendLimit)
 
 		logger.Info(fmt.Sprintf(
 			"transferring application from %q to existing application %q",

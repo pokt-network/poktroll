@@ -337,6 +337,7 @@ func (k Keeper) updateApplication(
 
 	// Three-way per-session spend limit semantics:
 	// nil = preserve existing limit, zero = clear limit, positive = set new limit.
+	prevSpendLimit := app.PerSessionSpendLimit
 	if msg.PerSessionSpendLimit != nil {
 		if msg.PerSessionSpendLimit.IsZero() {
 			app.PerSessionSpendLimit = nil // explicitly clear
@@ -344,6 +345,23 @@ func (k Keeper) updateApplication(
 			app.PerSessionSpendLimit = msg.PerSessionSpendLimit
 		}
 	}
+	k.recordPerSessionSpendLimitChange(ctx, app, prevSpendLimit)
 
 	return nil
+}
+
+// recordPerSessionSpendLimitChange records a change of the application's
+// per-session spend limit (from prevLimit to its current value) in its history,
+// effective at the next session start height. This matches the activation rule
+// of service_config_history and keeps the limit constant within any session,
+// so settlement can resolve the limit in effect at a claim's session start.
+func (k Keeper) recordPerSessionSpendLimitChange(
+	ctx context.Context,
+	app *types.Application,
+	prevLimit *sdk.Coin,
+) {
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	app.RecordPerSessionSpendLimitChange(prevLimit, nextSessionStartHeight)
 }

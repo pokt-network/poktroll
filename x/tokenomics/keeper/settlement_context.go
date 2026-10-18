@@ -691,6 +691,7 @@ func (sctx *settlementContext) AccumulateClaimBudget(ctx context.Context, claim 
 		ctx,
 		sessionHeader.GetApplicationAddress(),
 		sessionHeader.GetSessionId(),
+		sessionHeader.GetSessionStartBlockHeight(),
 		sessionHeader.GetSessionEndBlockHeight(),
 	)
 	if err != nil {
@@ -719,7 +720,7 @@ func (sctx *settlementContext) AccumulateClaimBudget(ctx context.Context, claim 
 func (sctx *settlementContext) getOrInitSessionBudget(
 	ctx context.Context,
 	appAddress, sessionId string,
-	sessionEndBlockHeight int64,
+	sessionStartBlockHeight, sessionEndBlockHeight int64,
 ) (*sessionBudget, error) {
 	key := appSessionKey{appAddress: appAddress, sessionId: sessionId}
 	if sb, ok := sctx.budgetPerAppSession[key]; ok {
@@ -752,16 +753,18 @@ func (sctx *settlementContext) getOrInitSessionBudget(
 
 	// Apply the application's per-session spend limit, if set: it caps the per-session
 	// budget B (= appStake/numPendingSessions), which is then divided among suppliers.
+	// The limit is the one in effect at the claim's session start height (pricing side),
+	// resolved from the application's spend limit history.
 	spendLimitExceeded := false
-	if application.PerSessionSpendLimit != nil &&
-		application.PerSessionSpendLimit.Amount.GT(math.ZeroInt()) {
-		if application.PerSessionSpendLimit.Denom != pocket.DenomuPOKT {
+	spendLimit := application.GetPerSessionSpendLimitAtHeight(sessionStartBlockHeight)
+	if spendLimit != nil && spendLimit.Amount.GT(math.ZeroInt()) {
+		if spendLimit.Denom != pocket.DenomuPOKT {
 			return nil, tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf(
 				"application %s has per_session_spend_limit with invalid denom %q (expected %q)",
-				appAddress, application.PerSessionSpendLimit.Denom, pocket.DenomuPOKT,
+				appAddress, spendLimit.Denom, pocket.DenomuPOKT,
 			)
 		}
-		perSessionBudget := application.PerSessionSpendLimit.Amount
+		perSessionBudget := spendLimit.Amount
 		stakePerSession := appStake.Amount.Quo(math.NewInt(numPendingSessions))
 		if perSessionBudget.GT(stakePerSession) {
 			perSessionBudget = stakePerSession

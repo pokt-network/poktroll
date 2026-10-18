@@ -217,6 +217,7 @@ func (k Keeper) processTokenLogicModules(
 		ctx,
 		sessionHeader.ApplicationAddress,
 		sessionHeader.SessionId,
+		sessionHeader.SessionStartBlockHeight,
 		sessionHeader.SessionEndBlockHeight,
 	)
 	if err != nil {
