@@ -29,6 +29,31 @@ import (
 // session's proof window closes, also when the proof window closes later than
 // the grace period plus the retention sessions.
 func TestPruneUndelegations_KeptUntilProofWindowCloses(t *testing.T) {
+	params := pruneTestSharedParams(t)
+	requireUndelegationKeptUntilProofWindowCloses(t, params, params)
+}
+
+// A session's undelegations are kept until its proof window closes under the
+// params in effect at its end, also when shorter windows are live by then.
+func TestPruneUndelegations_KeptUntilProofWindowClosesAfterWindowsDecrease(t *testing.T) {
+	params := pruneTestSharedParams(t)
+	newParams := params
+	newParams.ClaimWindowOpenOffsetBlocks = 9
+	newParams.ClaimWindowCloseOffsetBlocks = 1
+	newParams.ProofWindowOpenOffsetBlocks = 1
+	newParams.ProofWindowCloseOffsetBlocks = 1
+	require.NoError(t, newParams.ValidateBasic())
+	require.Less(t,
+		keeper.GetNumBlocksUndelegationRetention(&newParams),
+		keeper.GetNumBlocksUndelegationRetention(&params),
+	)
+
+	requireUndelegationKeptUntilProofWindowCloses(t, params, newParams)
+}
+
+func pruneTestSharedParams(t *testing.T) sharedtypes.Params {
+	t.Helper()
+
 	params := sharedtypes.DefaultParams()
 	params.NumBlocksPerSession = 10
 	params.GracePeriodEndOffsetBlocks = 9
@@ -40,6 +65,23 @@ func TestPruneUndelegations_KeptUntilProofWindowCloses(t *testing.T) {
 	params.SupplierUnbondingPeriodSessions = 4
 	params.GatewayUnbondingPeriodSessions = 4
 	require.NoError(t, params.ValidateBasic())
+	return params
+}
+
+// requireUndelegationKeptUntilProofWindowCloses undelegates a gateway in the
+// session ending at 100 under params, makes newParams effective from the next
+// session start (101), and prunes at every height up to that session's proof
+// window close.
+func requireUndelegationKeptUntilProofWindowCloses(t *testing.T, params, newParams sharedtypes.Params) {
+	t.Helper()
+
+	const sessionEndHeight = int64(100)
+	paramsAtHeight := func(height int64) sharedtypes.Params {
+		if height > sessionEndHeight {
+			return newParams
+		}
+		return params
+	}
 
 	storeKey := storetypes.NewKVStoreKey(apptypes.StoreKey)
 	db := dbm.NewMemDB()
@@ -50,7 +92,13 @@ func TestPruneUndelegations_KeptUntilProofWindowCloses(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	sharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	sharedKeeper.EXPECT().GetParams(gomock.Any()).
-		DoAndReturn(func(context.Context) sharedtypes.Params { return params }).AnyTimes()
+		DoAndReturn(func(ctx context.Context) sharedtypes.Params {
+			return paramsAtHeight(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		}).AnyTimes()
+	sharedKeeper.EXPECT().GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, height int64) sharedtypes.Params {
+			return paramsAtHeight(height)
+		}).AnyTimes()
 
 	k := keeper.NewKeeper(
 		codec.NewProtoCodec(codectypes.NewInterfaceRegistry()),
@@ -65,7 +113,6 @@ func TestPruneUndelegations_KeptUntilProofWindowCloses(t *testing.T) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// The application undelegated the gateway during the session ending at 100.
-	sessionEndHeight := int64(100)
 	require.Equal(t, sessionEndHeight, sharedtypes.GetSessionEndHeight(&params, sessionEndHeight))
 	gateway := sample.AccAddressBech32()
 	app := apptypes.Application{
@@ -85,8 +132,15 @@ func TestPruneUndelegations_KeptUntilProofWindowCloses(t *testing.T) {
 	// Prune at every height up to the proof window close: the gateway stays in the ring.
 	for height := sessionEndHeight + 1; height <= proofWindowCloseHeight; height++ {
 		require.NoError(t, k.EndBlockerPruneAppToGatewayPendingUndelegation(ctx.WithBlockHeight(height)))
+		gotApp, found := k.GetApplication(ctx, app.Address)
+		require.True(t, found)
+		require.Contains(t, rings.GetRingAddressesAtSessionEndHeight(&gotApp, uint64(sessionEndHeight)), gateway,
+			"height %d", height)
 	}
-	app, found := k.GetApplication(ctx, app.Address)
+
+	// Pruned in the block after the proof window close.
+	require.NoError(t, k.EndBlockerPruneAppToGatewayPendingUndelegation(ctx.WithBlockHeight(proofWindowCloseHeight+1)))
+	gotApp, found := k.GetApplication(ctx, app.Address)
 	require.True(t, found)
-	require.Contains(t, rings.GetRingAddressesAtSessionEndHeight(&app, uint64(sessionEndHeight)), gateway)
+	require.Empty(t, gotApp.PendingUndelegations)
 }
