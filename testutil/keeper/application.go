@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/application/mocks"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
@@ -67,10 +68,16 @@ func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, contex
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().BlockedAddr(gomock.Any()).DoAndReturn(isBlockedAddr).AnyTimes()
 
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, addr sdk.AccAddress) sdk.AccountI {
+			for moduleName := range app.GetMaccPerms() {
+				if authtypes.NewModuleAddress(moduleName).Equals(addr) {
+					return authtypes.NewEmptyModuleAccount(moduleName)
+				}
+			}
 			pubKey, ok := accountPubKeyMap[addr.String()]
 			if !ok {
 				return nil

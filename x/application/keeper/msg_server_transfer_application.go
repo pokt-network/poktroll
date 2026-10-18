@@ -28,6 +28,24 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	// The stake is returned to the destination when it unbonds, so it must be
+	// able to receive funds and must not be a module account.
+	dstAddr := sdk.MustAccAddressFromBech32(msg.GetDestinationAddress())
+	if k.bankKeeper.BlockedAddr(dstAddr) {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrAppInvalidAddress.Wrapf("destination address %s cannot receive funds", msg.GetDestinationAddress()).Error(),
+		)
+	}
+	if dstAcct := k.accountKeeper.GetAccount(ctx, dstAddr); dstAcct != nil {
+		if _, isModuleAccount := dstAcct.(sdk.ModuleAccountI); isModuleAccount {
+			return nil, status.Error(
+				codes.InvalidArgument,
+				types.ErrAppInvalidAddress.Wrapf("destination address %s is a module account", msg.GetDestinationAddress()).Error(),
+			)
+		}
+	}
+
 	// Ensure destination application does not already exist.
 	_, isDstFound := k.GetApplication(ctx, msg.GetDestinationAddress())
 	if isDstFound {

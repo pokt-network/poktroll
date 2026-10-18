@@ -5,6 +5,7 @@ import (
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
 	pocket "github.com/pokt-network/poktroll/app/pocket"
@@ -534,4 +535,46 @@ func TestMsgServer_TransferApplication_MergeRespectsRingMemberLimit(t *testing.T
 	gotDstApp, isFound := k.GetApplication(ctx, dstBech32)
 	require.True(t, isFound)
 	require.Equal(t, dstApp.PendingUndelegations, gotDstApp.PendingUndelegations)
+}
+
+func TestMsgServer_TransferApplication_FailDestinationCannotReceiveStake(t *testing.T) {
+	tests := []struct {
+		desc        string
+		dst         string
+		expectedErr string
+	}{
+		{
+			desc:        "bank blocked address",
+			dst:         authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(),
+			expectedErr: "cannot receive funds",
+		},
+		{
+			desc:        "module account",
+			dst:         authtypes.NewModuleAddress(apptypes.ModuleName).String(),
+			expectedErr: "is a module account",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			k, ctx := keepertest.ApplicationKeeper(t)
+			srv := appkeeper.NewMsgServerImpl(k)
+
+			srcBech32 := sample.AccAddressBech32()
+			_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+				Address:  srcBech32,
+				Stake:    &apptypes.DefaultMinStake,
+				Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+			})
+			require.NoError(t, err)
+
+			_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, test.dst))
+			require.ErrorContains(t, err, apptypes.ErrAppInvalidAddress.Error())
+			require.ErrorContains(t, err, test.expectedErr)
+
+			srcApp, isFound := k.GetApplication(ctx, srcBech32)
+			require.True(t, isFound)
+			require.Nil(t, srcApp.GetPendingTransfer())
+		})
+	}
 }
