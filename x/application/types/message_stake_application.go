@@ -69,6 +69,9 @@ func ValidatePerSessionSpendLimit(limit *sdk.Coin) error {
 	if limit == nil {
 		return nil
 	}
+	if limit.Amount.IsNil() {
+		return ErrAppInvalidPerSessionSpendLimit.Wrapf("per-session spend limit amount is nil (denom %q)", limit.Denom)
+	}
 	if limit.IsNegative() {
 		return ErrAppInvalidPerSessionSpendLimit.Wrapf("per-session spend limit cannot be negative: %v", limit)
 	}
