@@ -360,6 +360,13 @@ func (k Keeper) recordPerSessionSpendLimitChange(
 	app *types.Application,
 	prevLimit *sdk.Coin,
 ) {
+	// An unchanged limit records nothing, so skip the shared params read.
+	newLimit := app.PerSessionSpendLimit
+	if prevLimit == newLimit ||
+		(prevLimit != nil && newLimit != nil && prevLimit.Denom == newLimit.Denom && prevLimit.Amount.Equal(newLimit.Amount)) {
+		return
+	}
+
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
