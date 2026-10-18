@@ -31,6 +31,10 @@ func (k msgServer) UpdateParams(
 		)
 	}
 
+	if err := k.validateDaoRewardAddressCanReceiveFunds(msg.Params); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params))
 
 	// Surface (but do NOT reject) a param set which makes application/supplier

@@ -76,6 +76,26 @@ func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
 	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(tokenomicstypes.KeyDaoRewardAddress))
 }
 
+func TestMsgUpdateParam_UpdateDaoRewardAddressCannotReceiveFunds(t *testing.T) {
+	k, msgSrv, ctx := setupMsgServer(t)
+	defaultParams := tokenomicstypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// The bank module refuses transfers to the fee collector module account.
+	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      tokenomicstypes.ParamDaoRewardAddress,
+		AsType: &tokenomicstypes.MsgUpdateParam_AsString{
+			AsString: authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(),
+		},
+	}
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.ErrorContains(t, err, "cannot receive funds")
+
+	// The params are unchanged.
+	require.Equal(t, defaultParams, k.GetParams(ctx))
+}
+
 func TestMsgUpdateParam_UpdateGlobalInflationPerClaimOnly(t *testing.T) {
 	expectedGlobalInflationPerClaim := 0.666
 

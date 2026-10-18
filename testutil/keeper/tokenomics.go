@@ -284,6 +284,11 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockBankKeeper.EXPECT().
 		SendCoinsFromModuleToModule(gomock.Any(), apptypes.ModuleName, tokenomicstypes.ModuleName, gomock.Any()).
 		AnyTimes()
+	blockedAddrs := blockedModuleAddrs()
+	mockBankKeeper.EXPECT().
+		BlockedAddr(gomock.Any()).
+		DoAndReturn(func(addr cosmostypes.AccAddress) bool { return blockedAddrs[addr.String()] }).
+		AnyTimes()
 
 	// Mock the account keeper
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)

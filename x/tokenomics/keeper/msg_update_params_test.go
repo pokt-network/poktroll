@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -15,6 +16,9 @@ func TestMsgUpdateParams(t *testing.T) {
 
 	validParams := tokenomicstypes.DefaultParams()
 	validParams.DaoRewardAddress = sample.AccAddressBech32()
+
+	blockedDaoParams := tokenomicstypes.DefaultParams()
+	blockedDaoParams.DaoRewardAddress = authtypes.NewModuleAddress(authtypes.FeeCollectorName).String()
 
 	tests := []struct {
 		desc string
@@ -166,6 +170,17 @@ func TestMsgUpdateParams(t *testing.T) {
 
 			shouldError:    true,
 			expectedErrMsg: "do not add to 1.0: got 0.900000",
+		},
+		{
+			desc: "invalid: dao reward address cannot receive funds",
+
+			req: &tokenomicstypes.MsgUpdateParams{
+				Authority: tokenomicsKeeper.GetAuthority(),
+				Params:    blockedDaoParams,
+			},
+
+			shouldError:    true,
+			expectedErrMsg: "cannot receive funds",
 		},
 		{
 			desc: "valid: successful param update",
