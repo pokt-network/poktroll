@@ -86,6 +86,10 @@ func (k Keeper) GetNumBlocksUndelegationRetention(ctx context.Context) int64 {
 func GetNumBlocksUndelegationRetention(sharedParams *sharedtypes.Params) int64 {
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	return int64(sharedParams.GetGracePeriodEndOffsetBlocks()) +
+	retentionBlocks := int64(sharedParams.GetGracePeriodEndOffsetBlocks()) +
 		(numBlocksPerSession * NumSessionsAppToGatewayUndelegationRetention)
+
+	// Proofs for a session are validated against its ring until its proof window
+	// closes, so keep the session's undelegations at least that long.
+	return max(retentionBlocks, sharedtypes.GetSessionEndToProofWindowCloseHeightBlocks(sharedParams))
 }

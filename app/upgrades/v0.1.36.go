@@ -149,6 +149,11 @@ const (
 //     stake and transfer messages that change the limit write a history entry, and
 //     application records and events carry it. An application with no history
 //     (every application at the upgrade) uses its current limit. No handler code.
+//   - Undelegated gateways stay in an application's pending undelegations at least
+//     until the proof window of their session closes, also when the claim and proof
+//     windows are longer than the grace period plus two sessions. CONSENSUS-BREAKING
+//     (state); unchanged at mainnet and Beta params (50 blocks kept, proof windows
+//     close 33 blocks after the session end).
 //   - x/shared: the supplier and application unbonding periods must last at least
 //     until the proof window close height, which is one block later than validation
 //     counted. No handler code: mainnet and Beta are well above it; LocalNet and
