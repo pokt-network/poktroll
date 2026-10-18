@@ -326,7 +326,7 @@ message EventSettlementBatch {
     // The sender module account (or destination module for mints/burns).
     string sender_module = 2;
 
-    // The recipient (bech32 address for mod-to-acct, module name for mod-to-mod, empty for mints/burns).
+    // The recipient (bech32 address for mod-to-acct, module name for mod-to-mod and mod-to-acct-retained, empty for mints/burns).
     string recipient = 3;
 
     // The settlement operation reason from the TLM.
@@ -338,7 +338,8 @@ message EventSettlementBatch {
     // Number of individual claims that contributed to this batch.
     uint32 num_claims = 6;
 
-    // The type of bank operation: "mint", "burn", "mod_to_mod", "mod_to_acct".
+    // The type of bank operation: "mint", "burn", "mod_to_mod", "mod_to_acct", or "mod_to_acct_retained"
+    // (a mod-to-acct payout that no address could receive, kept in the sender module).
     string op_type = 7;
 }
 

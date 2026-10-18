@@ -86,6 +86,22 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_DaoCannotReceiveFunds()
 	for _, transfer := range s.settleClaimWithoutProof() {
 		require.NotEqual(t, feeCollectorAddr, transfer.Recipient)
 	}
+
+	// The payout that stays in the sender module is recorded with a batch event.
+	numRetainedSourceOwnerTransfers := 0
+	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
+	for _, batch := range testutilevents.FilterEvents[*tokenomicstypes.EventSettlementBatch](t, events) {
+		if batch.OpType != "mod_to_acct_retained" {
+			continue
+		}
+		require.Equal(t, batch.SenderModule, batch.Recipient)
+		switch batch.OpReason {
+		case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
+			tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION:
+			numRetainedSourceOwnerTransfers++
+		}
+	}
+	require.Positive(t, numRetainedSourceOwnerTransfers)
 }
 
 // settleClaimWithoutProof settles s.claims[0], which requires no proof, and

@@ -138,10 +138,14 @@ const (
 //   - Settlement pays a module to account transfer whose recipient the bank module
 //     refuses (its blocked addresses: fee collector, distribution, mint, bonded and
 //     not bonded pools) to the DAO reward address instead, or leaves it in the
-//     sender module when that address is blocked too, and logs it. CONSENSUS-
-//     BREAKING (state). MsgStakeSupplier rejects such an address as a revenue share
-//     recipient, and MsgTransferService as the new service owner. CONSENSUS-BREAKING
-//     (state, gas: one bank lookup per address).
+//     sender module when that address is blocked too, logs it and emits an
+//     EventSettlementBatch with op_type "mod_to_acct_retained" and the sender module
+//     as recipient. CONSENSUS-BREAKING (state). MsgStakeSupplier rejects such an
+//     address as a revenue share recipient, MsgTransferService as the new service
+//     owner, MsgTransferApplication as the destination (also any module account), and
+//     tokenomics MsgUpdateParam(s) as the dao_reward_address. CONSENSUS-BREAKING
+//     (state, gas: one bank lookup per address, one account read per application
+//     transfer).
 //   - Application per_session_spend_limit history (new Application field 10,
 //     per_session_spend_limit_history). A spend limit change takes effect at the
 //     next session start, like service config changes, and settlement applies the

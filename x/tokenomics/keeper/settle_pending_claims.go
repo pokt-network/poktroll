@@ -524,6 +524,8 @@ func (k Keeper) executeAggregatedModToAcctTransfers(
 		// The bank module refuses transfers to its blocked addresses (module accounts
 		// such as the fee collector). Such a payout goes to the DAO reward address
 		// instead, and stays in the sender module if that address is blocked too.
+		// A payout that stays in the sender module is recorded with a batch event
+		// whose recipient is the sender module and whose op type is "mod_to_acct_retained".
 		if k.bankKeeper.BlockedAddr(recipientAddr) {
 			tokenomicsParams := k.GetParams(ctx)
 			daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
@@ -537,6 +539,17 @@ func (k Keeper) executeAggregatedModToAcctTransfers(
 					"DAO reward address %q cannot receive funds: %s (reason %q) stays in the %q module",
 					daoRewardAddress, transfer.Coin, transfer.OpReason.String(), transfer.SenderModule,
 				))
+				if err = ctx.EventManager().EmitTypedEvent(&tokenomicstypes.EventSettlementBatch{
+					SessionEndBlockHeight: sessionEndHeight,
+					SenderModule:          transfer.SenderModule,
+					Recipient:             transfer.SenderModule,
+					OpReason:              transfer.OpReason,
+					TotalAmount:           transfer.Coin.String(),
+					NumClaims:             transfer.NumClaims,
+					OpType:                "mod_to_acct_retained",
+				}); err != nil {
+					return err
+				}
 				continue
 			}
 			transfer.RecipientAddress = daoRewardAddress
