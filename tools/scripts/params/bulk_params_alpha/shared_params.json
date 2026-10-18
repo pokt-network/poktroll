@@ -11,8 +11,8 @@
           "claim_window_close_offset_blocks": "4",
           "proof_window_open_offset_blocks": "1",
           "proof_window_close_offset_blocks": "3",
-          "supplier_unbonding_period_sessions": "1",
-          "application_unbonding_period_sessions": "1",
+          "supplier_unbonding_period_sessions": "2",
+          "application_unbonding_period_sessions": "2",
           "compute_units_to_tokens_multiplier": "42000000",
           "gateway_unbonding_period_sessions": "1",
           "compute_unit_cost_granularity": "1000000"

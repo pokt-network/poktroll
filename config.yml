@@ -446,8 +446,8 @@ genesis:
         claim_window_close_offset_blocks: 4 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than claim_window_open_offset_blocks.
         proof_window_open_offset_blocks: 1 # Must be at least 1: the proof seed block must follow the last block accepting claims.
         proof_window_close_offset_blocks: 3 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than proof_window_open_offset_blocks.
-        supplier_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
-        application_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
+        supplier_unbonding_period_sessions: 2 # Small value to enable for quick testing & onboarding during LocalNet. Must last until the proof window closes.
+        application_unbonding_period_sessions: 2 # Small value to enable for quick testing & onboarding during LocalNet. Must last until the proof window closes.
         gateway_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         compute_units_to_tokens_multiplier: 42000000 # Sets the cost of 1 compute unit to 42 uPOKT (denominated in pPOKT units).
         compute_unit_cost_granularity: 1000000 # Sets compute unit pricing granularity to pPOKT (1e-6 uPOKT per unit).

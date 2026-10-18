@@ -160,9 +160,10 @@ const (
 //     close 33 blocks after the session end).
 //   - x/shared: the supplier and application unbonding periods must last at least
 //     until the proof window close height, which is one block later than validation
-//     counted. No handler code: mainnet and Beta are well above it; LocalNet and
-//     Alpha are exactly at it. The default supplier and application unbonding
-//     periods are now 2 sessions (new chains only).
+//     counted. No handler code: mainnet and Beta are well above it; the LocalNet
+//     config and Alpha params (exactly at it with 1 session) now use 2 sessions.
+//     The default supplier and application unbonding periods are now 2 sessions
+//     (new chains only).
 //
 // Gas changes (gas_used, hence LastResultsHash; no AppHash change):
 //   - MsgCreateClaim / MsgSubmitProof: lower on memo hits.
