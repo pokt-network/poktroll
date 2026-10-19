@@ -74,8 +74,8 @@ require (
 	github.com/hashicorp/go-version v1.8.0
 	github.com/jhump/protoreflect v1.17.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/pokt-network/go-dleq v0.0.0-20250925202155-488f42ad642a
-	github.com/pokt-network/ring-go v0.2.0
+	github.com/pokt-network/go-dleq v0.0.0-20260910080229-86b20e4865eb
+	github.com/pokt-network/ring-go v0.2.1
 	// TODO_TECHDEBT: Whenever we update a protobuf in the `pocket` repo, we need to:
 	// 1. Merge in the update PR (and it's generated outputs) into `pocket` main.
 	// 2. Update the `pocket` sha in the `shannon-sdk` to reflect the new dependency.
@@ -83,7 +83,7 @@ require (
 	// This is creating a circular dependency whereby exporting the protobufs into a separate
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20260812141256-a508808fbbe0
+	github.com/pokt-network/shannon-sdk v0.0.0-20261019124155-bf217636414d
 	github.com/pokt-network/smt v0.16.0
 	github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188
 	github.com/prometheus/client_golang v1.23.0
@@ -97,13 +97,13 @@ require (
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
 	go.uber.org/multierr v1.11.0
-	golang.org/x/crypto v0.57.0
-	golang.org/x/sync v0.23.0
-	golang.org/x/term v0.46.0
-	golang.org/x/text v0.42.0
+	golang.org/x/crypto v0.58.0
+	golang.org/x/sync v0.24.0
+	golang.org/x/term v0.47.0
+	golang.org/x/text v0.43.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa
 	google.golang.org/grpc v1.83.2
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -490,10 +490,10 @@ require (
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/telemetry v0.0.0-20260811182544-a038080d80e5 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/telemetry v0.0.0-20260924152758-ed294f943157 // indirect
 	golang.org/x/time v0.15.0 // indirect
-	golang.org/x/tools v0.49.0 // indirect
+	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/api v0.271.0 // indirect
 	google.golang.org/genproto v0.0.0-20260128011058-8636f8732409 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
