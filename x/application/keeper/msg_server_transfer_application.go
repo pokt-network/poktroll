@@ -28,22 +28,8 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// The stake is returned to the destination when it unbonds, so it must be
-	// able to receive funds and must not be a module account.
-	dstAddr := sdk.MustAccAddressFromBech32(msg.GetDestinationAddress())
-	if k.bankKeeper.BlockedAddr(dstAddr) {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrAppInvalidAddress.Wrapf("destination address %s cannot receive funds", msg.GetDestinationAddress()).Error(),
-		)
-	}
-	if dstAcct := k.accountKeeper.GetAccount(ctx, dstAddr); dstAcct != nil {
-		if _, isModuleAccount := dstAcct.(sdk.ModuleAccountI); isModuleAccount {
-			return nil, status.Error(
-				codes.InvalidArgument,
-				types.ErrAppInvalidAddress.Wrapf("destination address %s is a module account", msg.GetDestinationAddress()).Error(),
-			)
-		}
+	if err := k.validateTransferDestination(ctx, msg.GetDestinationAddress()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Ensure destination application does not already exist.
@@ -102,4 +88,24 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 	isSuccessful = true
 
 	return &types.MsgTransferApplicationResponse{}, nil
+}
+
+// validateTransferDestination checks that dstBech32 can own a transferred stake.
+// The stake is returned to the destination when it unbonds, so it must be able
+// to receive funds and must not be a module account. The transfer EndBlocker
+// repeats it: a transfer accepted by an earlier binary completes without it.
+func (k Keeper) validateTransferDestination(ctx context.Context, dstBech32 string) error {
+	dstAddr, err := sdk.AccAddressFromBech32(dstBech32)
+	if err != nil {
+		return types.ErrAppInvalidAddress.Wrapf("invalid destination address %s: %v", dstBech32, err)
+	}
+	if k.bankKeeper.BlockedAddr(dstAddr) {
+		return types.ErrAppInvalidAddress.Wrapf("destination address %s cannot receive funds", dstBech32)
+	}
+	if dstAcct := k.accountKeeper.GetAccount(ctx, dstAddr); dstAcct != nil {
+		if _, isModuleAccount := dstAcct.(sdk.ModuleAccountI); isModuleAccount {
+			return types.ErrAppInvalidAddress.Wrapf("destination address %s is a module account", dstBech32)
+		}
+	}
+	return nil
 }

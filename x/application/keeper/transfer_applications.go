@@ -125,6 +125,10 @@ func (k Keeper) transferApplication(
 		return apptypes.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application (%s)", srcApp.GetAddress())
 	}
 
+	if err := k.validateTransferDestination(ctx, srcApp.GetPendingTransfer().GetDestinationAddress()); err != nil {
+		return err
+	}
+
 	// Check if the destination application already exists:
 	// If it does not: derive it from the source application.
 	// If it does: "merge" the src app into the dst app by:

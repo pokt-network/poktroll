@@ -578,3 +578,64 @@ func TestMsgServer_TransferApplication_FailDestinationCannotReceiveStake(t *test
 		})
 	}
 }
+
+// A pending transfer accepted before the destination check existed must not
+// complete into a destination that cannot own the stake.
+func TestEndBlockerTransferApplication_FailDestinationCannotReceiveStake(t *testing.T) {
+	tests := []struct {
+		desc        string
+		dst         string
+		expectedErr string
+	}{
+		{
+			desc:        "bank blocked address",
+			dst:         authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(),
+			expectedErr: "cannot receive funds",
+		},
+		{
+			desc:        "module account",
+			dst:         authtypes.NewModuleAddress(apptypes.ModuleName).String(),
+			expectedErr: "is a module account",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			k, ctx := keepertest.ApplicationKeeper(t)
+			srv := appkeeper.NewMsgServerImpl(k)
+			sharedParams := sharedtypes.DefaultParams()
+
+			srcBech32 := sample.AccAddressBech32()
+			_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+				Address:  srcBech32,
+				Stake:    &apptypes.DefaultMinStake,
+				Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+			})
+			require.NoError(t, err)
+
+			// Start a valid transfer, then point it at the invalid destination,
+			// as a transfer accepted without the message check would be.
+			_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, sample.AccAddressBech32()))
+			require.NoError(t, err)
+			srcApp, isFound := k.GetApplication(ctx, srcBech32)
+			require.True(t, isFound)
+			srcApp.PendingTransfer.DestinationAddress = test.dst
+			k.SetApplication(ctx, srcApp)
+
+			transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+			sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(transferEndHeight)
+			require.NoError(t, k.EndBlockerTransferApplication(sdkCtx))
+
+			gotSrcApp, isFound := k.GetApplication(sdkCtx, srcBech32)
+			require.True(t, isFound)
+			require.Nil(t, gotSrcApp.GetPendingTransfer())
+			require.Equal(t, srcApp.GetStake(), gotSrcApp.GetStake())
+			_, isFound = k.GetApplication(sdkCtx, test.dst)
+			require.False(t, isFound)
+
+			transferErrorEvents := testutilevents.FilterEvents[*apptypes.EventTransferError](t, sdkCtx.EventManager().Events())
+			require.Len(t, transferErrorEvents, 1)
+			require.Contains(t, transferErrorEvents[0].GetError(), test.expectedErr)
+		})
+	}
+}

@@ -143,9 +143,11 @@ const (
 //     as recipient. CONSENSUS-BREAKING (state). MsgStakeSupplier rejects such an
 //     address as a revenue share recipient, MsgTransferService as the new service
 //     owner, MsgTransferApplication as the destination (also any module account), and
-//     tokenomics MsgUpdateParam(s) as the dao_reward_address. CONSENSUS-BREAKING
-//     (state, gas: one bank lookup per address, one account read per application
-//     transfer).
+//     tokenomics MsgUpdateParam(s) as the dao_reward_address. A pending application
+//     transfer whose destination fails the same check when it completes is cancelled
+//     with an EventTransferError, the stake staying with the source application.
+//     CONSENSUS-BREAKING (state; the blocked address check is in memory and costs no
+//     gas).
 //   - Application per_session_spend_limit history (new Application field 10,
 //     per_session_spend_limit_history). A spend limit change takes effect at the
 //     next session start, like service config changes, and settlement applies the
