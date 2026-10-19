@@ -182,8 +182,9 @@ const (
 //   - MsgUnstakeApplication / MsgUnstakeGateway: the unbonding begin event reads the
 //     params history once for the unbonding end height instead of the live params.
 //     Do NOT backport these event changes alone as a patch: the reads change gas_used.
-//   - MsgStakeApplication / MsgTransferApplication: no shared params read when the
-//     spend limit does not change (lower).
+//   - MsgStakeApplication: no shared params read when the spend limit does not
+//     change (lower).
+//   - MsgTransferApplication: reads the destination account (higher).
 //   - MsgAddService: lower on a no-op update, higher when a card is set or changed.
 //   - MsgUpdateParam / MsgUpdateParams (supplier): write the service cap sweep key
 //     when the cap is enabled and min_stake, min_stake_included_services or
