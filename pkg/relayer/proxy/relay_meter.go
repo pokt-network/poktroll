@@ -363,7 +363,7 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 		// The application cache is cleared on the first block of each new session
 		// (not every block). The application querier has no uncached read, so a meter
 		// created before that clear runs may read the application as cached during
-		// the previous session (stake and per_session_spend_limit included).
+		// the previous session (its stake included).
 		app, err := rmtr.applicationQuerier.GetApplication(ctx, appAddress)
 		if err != nil {
 			return nil, err
@@ -401,22 +401,6 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 			sharedParams,
 			sessionParams.GetNumSuppliersPerSession(),
 		)
-
-		// Settlement caps the per-session budget at the application's
-		// per_session_spend_limit in effect at the session start height
-		// (settlementContext.getOrInitSessionBudget). Apply the same cap, split
-		// across the same number of suppliers as the stake portion above. Stake
-		// validation only accepts uPOKT limits, so the denom check is a guard.
-		spendLimit := app.GetPerSessionSpendLimitAtHeight(reqMeta.GetSessionHeader().GetSessionStartBlockHeight())
-		if spendLimit != nil && spendLimit.Denom == pocket.DenomuPOKT && spendLimit.Amount.IsPositive() {
-			spendLimitPerSupplier := cosmostypes.NewCoin(
-				pocket.DenomuPOKT,
-				spendLimit.Amount.QuoRaw(int64(sessionParams.GetNumSuppliersPerSession())),
-			)
-			if spendLimitPerSupplier.IsLT(supplierAppStake) {
-				supplierAppStake = spendLimitPerSupplier
-			}
-		}
 
 		relayMeter = &sessionRelayMeter{
 			app:           app,
