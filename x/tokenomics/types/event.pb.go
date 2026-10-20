@@ -836,7 +836,7 @@ type EventSettlementBatch struct {
 	SessionEndBlockHeight int64 `protobuf:"varint,1,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
 	// The sender module account (or destination module for mints/burns).
 	SenderModule string `protobuf:"bytes,2,opt,name=sender_module,json=senderModule,proto3" json:"sender_module,omitempty"`
-	// The recipient (bech32 address for mod-to-acct, module name for mod-to-mod, empty for mints/burns).
+	// The recipient (bech32 address for mod-to-acct, module name for mod-to-mod and mod-to-acct-retained, empty for mints/burns).
 	Recipient string `protobuf:"bytes,3,opt,name=recipient,proto3" json:"recipient,omitempty"`
 	// The settlement operation reason from the TLM.
 	OpReason SettlementOpReason `protobuf:"varint,4,opt,name=op_reason,json=opReason,proto3,enum=pocket.tokenomics.SettlementOpReason" json:"op_reason,omitempty"`
@@ -844,7 +844,8 @@ type EventSettlementBatch struct {
 	TotalAmount string `protobuf:"bytes,5,opt,name=total_amount,json=totalAmount,proto3" json:"total_amount,omitempty"`
 	// Number of individual claims that contributed to this batch.
 	NumClaims uint32 `protobuf:"varint,6,opt,name=num_claims,json=numClaims,proto3" json:"num_claims,omitempty"`
-	// The type of bank operation: "mint", "burn", "mod_to_mod", "mod_to_acct".
+	// The type of bank operation: "mint", "burn", "mod_to_mod", "mod_to_acct", or "mod_to_acct_retained"
+	// (a mod-to-acct payout that no address could receive, kept in the sender module).
 	OpType string `protobuf:"bytes,7,opt,name=op_type,json=opType,proto3" json:"op_type,omitempty"`
 }
 

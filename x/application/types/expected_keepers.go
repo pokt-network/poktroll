@@ -13,7 +13,7 @@ import (
 
 // AccountKeeper defines the expected interface for the Account module.
 type AccountKeeper interface {
-	GetAccount(context.Context, sdk.AccAddress) sdk.AccountI // only used for simulation
+	GetAccount(context.Context, sdk.AccAddress) sdk.AccountI // gateway key type check on delegation, and simulation
 	// Methods imported from account should be defined here
 }
 
@@ -25,6 +25,9 @@ type BankKeeper interface {
 	// linked to staking.
 	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	// BlockedAddr reports whether addr cannot receive funds. Used to reject a
+	// transfer destination that the stake could not be returned to.
+	BlockedAddr(addr sdk.AccAddress) bool
 }
 
 // GatewayKeeper defines the expected interface needed to retrieve gateway information.

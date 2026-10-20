@@ -7,6 +7,7 @@ import (
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -275,57 +276,58 @@ func TestMsgServer_StakeSupplier_FailLoweringStakeBelowMinStake(t *testing.T) {
 	require.Equal(t, int64(1000000), supplierFound.Stake.Amount.Int64())
 }
 
-func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T) {
+// A stake message can never lower the stake, even to a value above min_stake;
+// withdrawal is by unstaking only.
+func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	minStake := supplierModuleKeepers.Keeper.GetParams(ctx).MinStake.Amount.Int64()
 	initialStake := minStake + 10
 
-	// Generate an owner and operator address for the supplier
 	ownerAddr := sample.AccAddressBech32()
 	operatorAddr := sample.AccAddressBech32()
 
-	// Prepare the supplier stake message
 	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake, "svcId")
-
-	// Stake the supplier & verify that the supplier exists
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
-	require.True(t, isSupplierFound)
-
-	t.Run("owner signed", func(t *testing.T) {
-		// Prepare an updated supplier msg with a lower stake which is below the previous stake.
-		newStake := initialStake - 1
-		updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, newStake)
-		setStakeMsgSigner(updateMsg, ownerAddr)
-
-		// Verify that it succeeds
-		_, err = srv.StakeSupplier(ctx, updateMsg)
-		require.NoError(t, err)
-
-		// Verify that the supplier stake is updated
+	requireStake := func(t *testing.T, expected int64) {
+		t.Helper()
 		supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 		require.True(t, isSupplierFound)
-		require.Equal(t, newStake, supplierFound.Stake.Amount.Int64())
+		require.Equal(t, expected, supplierFound.Stake.Amount.Int64())
+	}
+
+	t.Run("owner signed", func(t *testing.T) {
+		updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake-1)
+		setStakeMsgSigner(updateMsg, ownerAddr)
+		ownerBalanceBefore := supplierModuleKeepers.SupplierBalanceMap[ownerAddr]
+
+		_, err := srv.StakeSupplier(ctx, updateMsg)
+		require.Equal(t, ownerBalanceBefore, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
+		require.ErrorContains(t, err, suppliertypes.ErrSupplierInvalidStake.Error())
+		require.Equal(t, codes.InvalidArgument, status.Code(err))
+		requireStake(t, initialStake)
 	})
 
 	t.Run("operator signed", func(t *testing.T) {
-		// Prepare an updated supplier msg with a lower stake which is above the minimum staking fee.
-		newStake := initialStake - 2
-		updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, newStake, "svcId")
+		updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake-2, "svcId")
 		setStakeMsgSigner(updateMsg, operatorAddr)
 
-		// Verify that it succeeds
-		_, err = srv.StakeSupplier(ctx, updateMsg)
-		require.NoError(t, err)
+		_, err := srv.StakeSupplier(ctx, updateMsg)
+		require.ErrorContains(t, err, suppliertypes.ErrSupplierInvalidStake.Error())
+		require.Equal(t, codes.InvalidArgument, status.Code(err))
+		requireStake(t, initialStake)
+	})
 
-		// Verify that the supplier stake is updated.
-		supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
-		require.True(t, isSupplierFound)
-		require.Equal(t, newStake, supplierFound.Stake.Amount.Int64())
+	t.Run("equal stake succeeds", func(t *testing.T) {
+		updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake, "svcId")
+		setStakeMsgSigner(updateMsg, operatorAddr)
+
+		_, err := srv.StakeSupplier(ctx, updateMsg)
+		require.NoError(t, err)
+		requireStake(t, initialStake)
 	})
 }
 
@@ -797,7 +799,7 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 	require.EqualValues(t, expectedSupplier, &supplier)
 }
 
-func TestMsgServer_StakeSupplier_SignerOwnerStakeDestination(t *testing.T) {
+func TestMsgServer_StakeSupplier_OperatorSignedDecreaseMovesNoFunds(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
@@ -826,22 +828,15 @@ func TestMsgServer_StakeSupplier_SignerOwnerStakeDestination(t *testing.T) {
 	require.Equal(t, int64(0), supplierModuleKeepers.SupplierBalanceMap[operatorAddr])
 	require.Equal(t, int64(0), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 
-	// Now decrease the stake using the operator as signer - funds should go to owner
-	lowerStake := minStake + 1
-	decreaseStakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, lowerStake, "svcId")
-	decreaseStakeMsg.Signer = operatorAddr // Use operator as signer for the decrease
+	// A decrease signed by the operator is rejected and moves no funds: nothing
+	// is unescrowed to the owner and the staking fee is not charged.
+	decreaseStakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake+1, "svcId")
+	decreaseStakeMsg.Signer = operatorAddr
 
-	// Update with lower stake
 	_, err = srv.StakeSupplier(ctx, decreaseStakeMsg)
-	require.NoError(t, err)
-
-	// Verify that the stake difference was returned to the owner, not the operator signer
-	stakeDifference := initialStake - lowerStake
-	// Operator should have paid the staking fee but received no stake back
-	expectedOperatorBalance := -supplierStakingFee.Amount.Int64()
-	require.Equal(t, expectedOperatorBalance, supplierModuleKeepers.SupplierBalanceMap[operatorAddr])
-	// Owner should have received the stake difference (return of funds)
-	require.Equal(t, stakeDifference, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierInvalidStake.Error())
+	require.Equal(t, int64(0), supplierModuleKeepers.SupplierBalanceMap[operatorAddr])
+	require.Equal(t, int64(0), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 }
 
 func TestMsgServer_StakeSupplier_UpdateServiceBeforeActivation(t *testing.T) {
@@ -1068,4 +1063,28 @@ func setBlockHeightToNextSessionStart(
 	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 	return keepertest.SetBlockHeight(ctx, nextSessionStartHeight)
+}
+
+func TestMsgServer_StakeSupplier_FailRevShareAddressCannotReceiveFunds(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
+
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId")
+	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName).String()
+	stakeMsg.Services[0].RevShare = []*sharedtypes.ServiceRevenueShare{
+		{Address: ownerAddr, RevSharePercentage: 50},
+		{Address: feeCollectorAddr, RevSharePercentage: 50},
+	}
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.ErrorContains(t, err, "cannot receive funds")
+
+	_, found := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.False(t, found)
+
+	// The same revenue share without that address is accepted.
+	stakeMsg.Services[0].RevShare = []*sharedtypes.ServiceRevenueShare{{Address: ownerAddr, RevSharePercentage: 100}}
+	_, err = srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
 }

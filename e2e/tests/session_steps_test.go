@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"slices"
@@ -374,6 +375,7 @@ func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName
 	currentHeight := s.getCurrentBlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 	s.waitForBlockHeight(nextSessionStartHeight)
+	s.wsSessionStartHeight = nextSessionStartHeight
 
 	// Set WebSocket close height just before the claim window opens
 	// TODO_TECHDEBT(@red-0ne): Re-evaluate if the -1 is needed here or not.
@@ -384,6 +386,7 @@ func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName
 	header := http.Header{}
 	header.Add("App-Address", app.Address)
 	header.Add("Target-Service-Id", testWsServiceId)
+	s.wsServiceId = testWsServiceId
 
 	// Parse the base URL and convert to WebSocket scheme
 	wsUrl, err := url.Parse(pathUrl)
@@ -404,22 +407,43 @@ func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName
 }
 
 func (s *suite) TheApplicationReceivesEvmSubscriptionEventsUntilTheSessionEnds() {
-	ctx := s.readEVMSubscriptionEvents()
+	s.readEVMSubscriptionEvents()
 
-	for {
-		select {
-		case <-time.After(eventTimeout):
-			s.Fatalf("ERROR: timed out waiting for subscription events")
-		case <-ctx.Done():
-			require.Greater(s, s.numEVMSubscriptionEvents.Load(), uint64(0), "no subscription events received")
-			return
-		}
-	}
+	// A gateway may keep the client connection open past the session's end
+	// (e.g. SAGE moves it to the next session's supplier), so wait for the last
+	// height of the session instead of waiting for the connection to close.
+	// The connection stays open so the RelayMiner closes the bridge itself.
+	s.waitForBlockHeight(s.wsCloseHeight)
+	require.Greater(s, s.numEVMSubscriptionEvents.Load(), uint64(0), "no subscription events received")
 }
 
-func (s *suite) TheSubscriptionIsClosedBeforeClaimWindowOpenHeightIsReached() {
-	lastCommitHeight := s.getLastCommitBlockHeight()
-	require.Equal(s, s.wsCloseHeight, lastCommitHeight)
+func (s *suite) TheRelayminerStopsTheWebsocketBridgeBeforeClaimWindowOpenHeightIsReached() {
+	// The client connection is still open, so the RelayMiner must stop the
+	// bridge itself when it sees the claim window open height. It then reports
+	// that height with the "session_end" reason. The gauge keeps values from
+	// earlier runs, so the height must also be in this session.
+	defer func() { _ = s.wsConn.Close() }()
+	claimWindowOpenHeight := s.wsCloseHeight + 1
+	metricLine := fmt.Sprintf("relayminer_websocket_bridge_close_height{reason=\"session_end\",service_id=%q} ", s.wsServiceId)
+
+	require.Eventually(s, func() bool {
+		res, err := http.Get(relayminerMetricsUrl)
+		if err != nil {
+			return false
+		}
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return false
+		}
+		for _, line := range strings.Split(string(body), "\n") {
+			if value, found := strings.CutPrefix(line, metricLine); found {
+				closeHeight, err := strconv.ParseFloat(value, 64)
+				return err == nil && int64(closeHeight) >= s.wsSessionStartHeight && int64(closeHeight) <= claimWindowOpenHeight
+			}
+		}
+		return false
+	}, 30*time.Second, time.Second, "RelayMiner did not stop the websocket bridge at height %d", claimWindowOpenHeight)
 }
 
 func (s *suite) sendRelaysForSession(

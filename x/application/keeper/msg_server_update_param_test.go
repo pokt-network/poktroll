@@ -14,7 +14,7 @@ import (
 )
 
 func TestMsgUpdateParam_UpdateMaxDelegatedGatewaysOnly(t *testing.T) {
-	expectedMaxDelegatedGateways := uint64(999)
+	expectedMaxDelegatedGateways := uint64(20)
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)

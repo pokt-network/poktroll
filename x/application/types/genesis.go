@@ -87,6 +87,22 @@ func (gs GenesisState) Validate() error {
 		if err := ValidatePerSessionSpendLimit(app.PerSessionSpendLimit); err != nil {
 			return err
 		}
+
+		// Validate the per-session spend limit history: valid limits and strictly
+		// increasing positive activation heights.
+		prevActivationHeight := int64(0)
+		for _, update := range app.PerSessionSpendLimitHistory {
+			if update == nil || update.ActivationHeight <= prevActivationHeight {
+				return ErrAppInvalidPerSessionSpendLimit.Wrapf(
+					"application %q per-session spend limit history must have strictly increasing positive activation heights",
+					app.Address,
+				)
+			}
+			if err := ValidatePerSessionSpendLimit(update.PerSessionSpendLimit); err != nil {
+				return err
+			}
+			prevActivationHeight = update.ActivationHeight
+		}
 	}
 
 	// this line is used by starport scaffolding # genesis/types/validate

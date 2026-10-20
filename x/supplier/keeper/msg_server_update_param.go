@@ -33,6 +33,8 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 	}
 
 	params := k.GetParams(ctx)
+	// The switch below only replaces pointer fields, so this copy is unaffected.
+	paramsBefore := params
 
 	switch msg.Name {
 	case suppliertypes.ParamMinStake:
@@ -41,6 +43,12 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 	case suppliertypes.ParamStakingFee:
 		logger = logger.With("staking_fee", msg.GetAsCoin())
 		params.StakingFee = msg.GetAsCoin()
+	case suppliertypes.ParamMinStakeIncludedServices:
+		logger = logger.With("min_stake_included_services", msg.GetAsUint64())
+		params.MinStakeIncludedServices = msg.GetAsUint64()
+	case suppliertypes.ParamStakePerAdditionalService:
+		logger = logger.With("stake_per_additional_service", msg.GetAsCoin())
+		params.StakePerAdditionalService = msg.GetAsCoin()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,
@@ -54,7 +62,7 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := k.SetParams(ctx, params); err != nil {
+	if err := k.setParams(ctx, paramsBefore, params); err != nil {
 		err = fmt.Errorf("unable to set params: %v", err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())

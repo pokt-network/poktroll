@@ -2,6 +2,8 @@ package rings
 
 import (
 	"context"
+	"encoding/binary"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/pokt-network/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -22,12 +25,6 @@ import (
 
 var (
 	_ crypto.RingClient = (*ringClient)(nil)
-
-	// PlaceholderRingPubKey is a deterministic dummy public key used when an application
-	// has no delegated gateways.
-	// This ensures the ring has at least two keys without using duplicates.
-	PlaceholderRingPubKey  = secp256k1.GenPrivKeyFromSecret([]byte("placeholder_ring_key_for_apps_without_gateways")).PubKey()
-	PlaceholderRingAddress = PlaceholderRingPubKey.Address().String()
 
 	// ringCurve is the elliptic curve used for the ring signatures.
 	// It is used to deserialize the ring signatures.
@@ -92,12 +89,62 @@ func (rc *ringClient) GetRingForAddressAtHeight(
 	appAddress string,
 	blockHeight int64,
 ) (*ring.Ring, error) {
-	ringPubKeys, err := rc.getRingPubKeysForAddress(ctx, appAddress, blockHeight)
+	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
+	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last` method
+	// to get the most recently (asynchronously) observed (and cached) value.
+	sharedParams, err := rc.sharedQuerier.GetParams(ctx)
+	if err != nil {
+		return nil, err
+	}
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParams, blockHeight)
+
+	ringPubKeys, err := rc.getRingPubKeysForAddress(ctx, appAddress, uint64(sessionEndHeight))
 	if err != nil {
 		return nil, err
 	}
 
 	return GetRingFromPubKeys(ringPubKeys)
+}
+
+// MaxRingSignatureMembers is the most members a relay request ring signature
+// may have. It is a fixed protocol bound so that whether a signature is
+// accepted never depends on delegation state, which can change between signing
+// and verification. It is well above any ring an honest signer builds: the
+// application, its delegated gateways and the gateways undelegated since the
+// session.
+const MaxRingSignatureMembers = 64
+
+// validateRingSignatureSize checks a serialized ring signature against the
+// ring-go v0.2.0 layout: a 4-byte big-endian member count n, the challenge
+// scalar, the key image point, then n (scalar, point) pairs. n must be between
+// 2 and maxMembers.
+func validateRingSignatureSize(signature []byte, maxMembers uint64) error {
+	const (
+		sizeLen   = 4
+		scalarLen = 32 // ring-go's fixed scalar length for secp256k1
+	)
+	if len(signature) < sizeLen {
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
+			"ring signature is %d bytes, too short", len(signature),
+		)
+	}
+
+	numRingMembers := uint64(binary.BigEndian.Uint32(signature[:sizeLen]))
+	if numRingMembers < 2 || numRingMembers > maxMembers {
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
+			"ring signature has %d members, expected between 2 and %d", numRingMembers, maxMembers,
+		)
+	}
+
+	pointLen := uint64(ringCurve.CompressedPointSize())
+	expectedLen := sizeLen + scalarLen + pointLen + numRingMembers*(scalarLen+pointLen)
+	if uint64(len(signature)) != expectedLen {
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
+			"ring signature is %d bytes, expected %d for %d members",
+			len(signature), expectedLen, numRingMembers,
+		)
+	}
+	return nil
 }
 
 // VerifyRelayRequestSignature verifies the signature of the relay request
@@ -128,25 +175,53 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		return ErrRingClientInvalidRelayRequest.Wrap("missing signature from relay request")
 	}
 
-	// Deserialize the request signature bytes back into a ring signature.
-	relayRequestRingSig := new(ring.RingSig)
-	if err := relayRequestRingSig.Deserialize(ringCurve, signature); err != nil {
-		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
-			"error deserializing ring signature: %s", err,
-		)
+	// Check the signature's size before deserializing it: the member count must
+	// be within bounds, and the length must match the member count exactly.
+	if err := validateRingSignatureSize(signature, MaxRingSignatureMembers); err != nil {
+		return err
 	}
 
-	// Get the ring for the application address of the relay request.
-	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+	// Get the ring for the application address of the relay request, at the
+	// end height of the request's session.
+	sessionEndHeight := uint64(sessionHeader.GetSessionEndBlockHeight())
 	appAddress := sessionHeader.GetApplicationAddress()
-	expectedRelayRingPointsForApp, err := rc.getRingPointsForAddressAtHeight(
-		ctx,
-		appAddress,
-		sessionEndHeight,
-	)
+	expectedRelayRingPointsForApp, numExpectedRingMembers, err := rc.getRingPointsForAddressAtSessionEndHeight(ctx, appAddress, sessionEndHeight)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
+		)
+	}
+
+	// The signature cannot have more members than the expected ring. Signers
+	// build the same list of ring members, which can name a key more than once
+	// (e.g. the application key twice when it has no gateways), so the bound is
+	// the member count, not the number of distinct keys.
+	if err := validateRingSignatureSize(signature, uint64(numExpectedRingMembers)); err != nil {
+		return err
+	}
+	return verifyRingSignature(signature, expectedRelayRingPointsForApp, relayRequest, appAddress)
+}
+
+// verifyRingSignature deserializes the signature and verifies it against the
+// relay request, using only keys of the expected ring. A panic while handling
+// the signature bytes is returned as an invalid signature.
+func verifyRingSignature(
+	signature []byte,
+	expectedRelayRingPointsForApp map[string]ringtypes.Point,
+	relayRequest *types.RelayRequest,
+	appAddress string,
+) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = ErrRingClientInvalidRelayRequestSignature.Wrapf("panic verifying ring signature: %v", r)
+		}
+	}()
+
+	// Deserialize the request signature bytes back into a ring signature.
+	relayRequestRingSig := new(ring.RingSig)
+	if err = relayRequestRingSig.Deserialize(ringCurve, signature); err != nil {
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
+			"error deserializing ring signature: %s", err,
 		)
 	}
 
@@ -175,11 +250,16 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 // getRingPubKeysForAddress returns the public keys corresponding to a ring.
 // It returns a slice consisting of the application's public key and the public
 // keys of the gateways to which the application delegated the authority to sign
-// relay requests on its behalf at the given block height.
+// relay requests on its behalf in the session ending at the given height.
+//
+// The application's key is required. A gateway whose account key cannot be a
+// ring member (no public key, or not a secp256k1 key) is left out of the ring:
+// nobody can sign with it, so leaving it out only drops a member no signature
+// can use, and the ring still builds for the application and its other gateways.
 func (rc *ringClient) getRingPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
-	blockHeight int64,
+	sessionEndHeight uint64,
 ) ([]cryptotypes.PubKey, error) {
 	// Get the application's on chain state.
 	app, err := rc.applicationQuerier.GetApplication(ctx, appAddress)
@@ -187,28 +267,52 @@ func (rc *ringClient) getRingPubKeysForAddress(
 		return nil, err
 	}
 
-	// Reconstruct the delegatee gateway addresses at the given block height and
-	// add them to the ring addresses.
-	delegateeGatewayAddresses, err := rc.GetRingAddressesAtBlock(ctx, &app, blockHeight)
+	appPubKey, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, appAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create a slice of addresses for the ring.
-	ringAddresses := make([]string, 0)
-	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
+	// Create a slice of addresses for the ring, and the public key of each.
+	ringAddresses := []string{appAddress}
+	pubKeysByAddress := map[string]cryptotypes.PubKey{appAddress: appPubKey}
 
-	// Ring signatures require at least two pubKeys.
-	// If the Application has not delegated to any gateways, use a placeholder
-	// deterministic address to avoid duplicate keys in the ring.
-	if len(delegateeGatewayAddresses) == 0 {
-		delegateeGatewayAddresses = append(delegateeGatewayAddresses, PlaceholderRingAddress)
+	// Reconstruct the delegatee gateway addresses at the given session end
+	// height and add those that can be ring members.
+	for _, gatewayAddress := range GetRingAddressesAtSessionEndHeight(&app, sessionEndHeight) {
+		gatewayPubKey, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, gatewayAddress)
+		// A failed query (as opposed to a missing account or key) says nothing
+		// about the gateway: return it rather than build a smaller ring. Only the
+		// offchain querier returns this error, so onchain ring construction is
+		// unaffected.
+		if errors.Is(err, query.ErrQueryAccountQueryFailed) {
+			return nil, err
+		}
+		if err != nil {
+			rc.logger.Warn().Err(err).
+				Str("gateway_address", gatewayAddress).
+				Msg("leaving gateway out of the ring: cannot get its public key")
+			continue
+		}
+		if _, ok := gatewayPubKey.(*secp256k1.PubKey); !ok {
+			rc.logger.Warn().
+				Str("gateway_address", gatewayAddress).
+				Str("key_type", fmt.Sprintf("%T", gatewayPubKey)).
+				Msg("leaving gateway out of the ring: its key is not a secp256k1 key")
+			continue
+		}
+		ringAddresses = append(ringAddresses, gatewayAddress)
+		pubKeysByAddress[gatewayAddress] = gatewayPubKey
 	}
 
-	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
+	// Ring signatures require at least two pubKeys.
+	// If the Application has no gateway in the ring, add its own address again.
+	if len(ringAddresses) == 1 {
+		ringAddresses = append(ringAddresses, appAddress)
+	}
 
-	// Sort the ring addresses to ensure the ring is consistent between signing and
-	// verification by satisfying relayRequestRingSig.Ring().Equals(expectedAppRing)
+	// Sort the ring addresses so the ring is built the same way every time.
+	// Verification checks that every key in the signature's ring is in this set
+	// (see ringPointsContain); it does not require the rings to be equal.
 	slices.Sort(ringAddresses)
 
 	rc.logger.Debug().
@@ -216,49 +320,32 @@ func (rc *ringClient) getRingPubKeysForAddress(
 		Str("addresses", fmt.Sprintf("%v", ringAddresses)).
 		Msg("converting addresses to points")
 
-	return rc.addressesToPubKeys(ctx, ringAddresses)
-}
-
-// addressesToPubKeys queries for and returns the public keys for the addresses
-// provided.
-func (rc *ringClient) addressesToPubKeys(
-	ctx context.Context,
-	addresses []string,
-) ([]cryptotypes.PubKey, error) {
-	pubKeys := make([]cryptotypes.PubKey, len(addresses))
-	for i, addr := range addresses {
-		// Check if this is the dummy gateway address
-		if addr == PlaceholderRingAddress {
-			pubKeys[i] = PlaceholderRingPubKey
-			continue
-		}
-		acc, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, addr)
-		if err != nil {
-			return nil, err
-		}
-		pubKeys[i] = acc
+	pubKeys := make([]cryptotypes.PubKey, len(ringAddresses))
+	for i, addr := range ringAddresses {
+		pubKeys[i] = pubKeysByAddress[addr]
 	}
 	return pubKeys, nil
 }
 
-// getRingPointsForAddressAtHeight returns a map of the ring points for the given
-// application at a specific height. It takes into account the application itself
+// getRingPointsForAddressAtSessionEndHeight returns a map of the ring points for
+// the given application in the session ending at the given height, and the
+// number of ring members, counting a key listed more than once each time. It takes into account the application itself
 // as well as all the addresses it delegated to. It returns a map of encoded
 // ring points to Point objects (i.e. public keys).
-func (rc *ringClient) getRingPointsForAddressAtHeight(
+func (rc *ringClient) getRingPointsForAddressAtSessionEndHeight(
 	ctx context.Context,
 	appAddress string,
-	blockHeight int64,
-) (map[string]ringtypes.Point, error) {
-	ringPubKeys, err := rc.getRingPubKeysForAddress(ctx, appAddress, blockHeight)
+	sessionEndHeight uint64,
+) (map[string]ringtypes.Point, int, error) {
+	ringPubKeys, err := rc.getRingPubKeysForAddress(ctx, appAddress, sessionEndHeight)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// Get the points on the secp256k1 curve for the public keys in the ring.
 	points, err := pointsFromPublicKeys(ringPubKeys...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	ringPoints := make(map[string]ringtypes.Point, len(points))
@@ -272,30 +359,7 @@ func (rc *ringClient) getRingPointsForAddressAtHeight(
 	}
 
 	// Return the ring the constructed from the points retrieved above.
-	return ringPoints, nil
-}
-
-// GetRingAddressesAtBlock returns the active gateway addresses that need to be
-// used to construct the ring in order to validate that the given app should pay for.
-// It takes into account both active delegations and pending undelegations that
-// should still be part of the ring at the given block height.
-// The ring addresses slice is reconstructed by adding back the past delegated
-// gateways that have been undelegated after the target session end height.
-func (rc *ringClient) GetRingAddressesAtBlock(
-	ctx context.Context,
-	app *apptypes.Application,
-	blockHeight int64,
-) ([]string, error) {
-	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
-	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last` method
-	// to get the most recently (asynchronously) observed (and cached) value.
-	// TODO_MAINNET(@red-0ne, #543): We also don't really want to use the current value of the params.
-	// Instead, we should be using the value that the params had for the session given by blockHeight.
-	sharedParams, err := rc.sharedQuerier.GetParams(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return GetRingAddressesAtBlock(sharedParams, app, blockHeight), nil
+	return ringPoints, len(points), nil
 }
 
 // GetRingAddressesAtBlock returns the active gateway addresses that need to be
@@ -325,8 +389,10 @@ func GetRingAddressesAtSessionEndHeight(
 	app *apptypes.Application,
 	targetSessionEndHeight uint64,
 ) []string {
-	// Get the current active delegations for the application and use them as a base.
-	activeDelegationsAtHeight := app.DelegateeGatewayAddresses
+	// Get the current active delegations for the application and use them as a
+	// base. Clone them: appending below must not write into the application's
+	// slice, which callers may share.
+	activeDelegationsAtHeight := slices.Clone(app.DelegateeGatewayAddresses)
 
 	// Use a map to keep track of the gateways addresses that have been added to
 	// the active delegations slice to avoid duplicates.

@@ -156,7 +156,7 @@ var (
 			QueryParamsResponse:     apptypes.QueryParamsResponse{},
 		},
 		ValidParams: apptypes.Params{
-			MaxDelegatedGateways: 999,
+			MaxDelegatedGateways: 20,
 			MinStake:             &ValidActorMinStake,
 		},
 		ParamTypes: map[ParamType]any{
@@ -196,11 +196,14 @@ var (
 			QueryParamsResponse:     suppliertypes.QueryParamsResponse{},
 		},
 		ValidParams: suppliertypes.Params{
-			MinStake:   &ValidActorMinStake,
-			StakingFee: &ValidStakingFee,
+			MinStake:                  &ValidActorMinStake,
+			StakingFee:                &ValidStakingFee,
+			MinStakeIncludedServices:  35,
+			StakePerAdditionalService: &ValidStakingFee,
 		},
 		ParamTypes: map[ParamType]any{
-			ParamTypeCoin: suppliertypes.MsgUpdateParam_AsCoin{},
+			ParamTypeCoin:   suppliertypes.MsgUpdateParam_AsCoin{},
+			ParamTypeUint64: suppliertypes.MsgUpdateParam_AsUint64{},
 		},
 		DefaultParams:    suppliertypes.DefaultParams(),
 		NewParamClientFn: suppliertypes.NewQueryClient,

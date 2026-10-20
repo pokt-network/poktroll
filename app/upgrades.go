@@ -203,6 +203,15 @@ var allUpgrades = []upgrades.Upgrade{
 	//   offsets at the claim's session end rather than from live params (diverges from
 	//   v0.1.34 as soon as governance shrinks the offsets' sum)
 	upgrades.Upgrade_0_1_35,
+	// v0.1.36 upgrade adds:
+	// - Block-scoped session supplier memo (lower claim/proof gas on memo hits)
+	// - Supplier unbonding fixes, plus a one-shot repair of unindexed unbonding suppliers
+	// - EventServiceMetadataUpdated on MsgAddService card changes
+	// - Supplier service cap params (min_stake_included_services, stake_per_additional_service),
+	//   seeded disabled; stake buys a limited number of services once governance sets a price
+	// - MsgStakeSupplier can no longer lower a supplier's stake; withdraw by unstaking
+	// - Proof requirement sampling and proof validation changes
+	upgrades.Upgrade_0_1_36,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

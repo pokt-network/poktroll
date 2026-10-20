@@ -5,9 +5,11 @@ import (
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
 	pocket "github.com/pokt-network/poktroll/app/pocket"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -265,6 +267,15 @@ func TestMsgServer_TransferApplication_MergePerSessionSpendLimit(t *testing.T) {
 					"expected PerSessionSpendLimit %v, got %v", test.expectedLimit, dstApp.PerSessionSpendLimit)
 			}
 
+			// The destination's prior limit stays in effect for the current session;
+			// the merged limit takes effect at the next session start.
+			nextSessionStart := sharedtypes.GetNextSessionStartHeight(&sharedParams, transferCompletionHeight)
+			require.Equal(t, test.dstSpendLimit, dstApp.GetPerSessionSpendLimitAtHeight(transferCompletionHeight))
+			require.Equal(t, test.expectedLimit, dstApp.GetPerSessionSpendLimitAtHeight(nextSessionStart))
+			if test.dstSpendLimit == test.expectedLimit {
+				require.Empty(t, dstApp.PerSessionSpendLimitHistory, "unchanged limit must not record history")
+			}
+
 			// Verify the source application was removed.
 			_, isSrcFound = k.GetApplication(ctx, srcBech32)
 			require.False(t, isSrcFound)
@@ -416,4 +427,215 @@ func TestMsgServer_TransferApplication_NewAddressRewritesHistoryAppAddress(t *te
 	// src is removed by the transfer EndBlocker.
 	_, isSrcFound := k.GetApplication(ctx, srcBech32)
 	require.False(t, isSrcFound, "src must be removed after a completed transfer")
+}
+
+// A transfer into an existing application fails when the merged delegations
+// would exceed max_delegated_gateways. Both applications stay unchanged.
+func TestMsgServer_TransferApplication_MergeRespectsMaxDelegatedGateways(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := appkeeper.NewMsgServerImpl(k)
+	sharedParams := sharedtypes.DefaultParams()
+	maxDelegatedGateways := int(k.GetParams(ctx).MaxDelegatedGateways)
+
+	srcBech32 := sample.AccAddressBech32()
+	dstBech32 := sample.AccAddressBech32()
+	svcConfigs := []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}}
+
+	_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address: srcBech32, Stake: &apptypes.DefaultMinStake, Services: svcConfigs,
+	})
+	require.NoError(t, err)
+	_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, dstBech32))
+	require.NoError(t, err)
+	_, err = srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address: dstBech32, Stake: &apptypes.DefaultMinStake, Services: svcConfigs,
+	})
+	require.NoError(t, err)
+
+	// Together the two applications delegate to one more gateway than allowed.
+	delegate := func(appBech32 string, numGateways int) apptypes.Application {
+		app, isFound := k.GetApplication(ctx, appBech32)
+		require.True(t, isFound)
+		for range numGateways {
+			app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, sample.AccAddressBech32())
+		}
+		k.SetApplication(ctx, app)
+		return app
+	}
+	srcApp := delegate(srcBech32, maxDelegatedGateways/2+1)
+	dstApp := delegate(dstBech32, maxDelegatedGateways-maxDelegatedGateways/2)
+
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight))
+	require.NoError(t, k.EndBlockerTransferApplication(ctx))
+
+	gotSrcApp, isFound := k.GetApplication(ctx, srcBech32)
+	require.True(t, isFound)
+	require.Nil(t, gotSrcApp.PendingTransfer)
+	require.Equal(t, srcApp.DelegateeGatewayAddresses, gotSrcApp.DelegateeGatewayAddresses)
+
+	gotDstApp, isFound := k.GetApplication(ctx, dstBech32)
+	require.True(t, isFound)
+	require.Equal(t, dstApp.DelegateeGatewayAddresses, gotDstApp.DelegateeGatewayAddresses)
+	require.True(t, dstApp.Stake.Equal(*gotDstApp.Stake))
+}
+
+// A transfer into an existing application fails when the merged ring, with the
+// gateways undelegated in the current session, would exceed the ring signature
+// member limit.
+func TestMsgServer_TransferApplication_MergeRespectsRingMemberLimit(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := appkeeper.NewMsgServerImpl(k)
+	sharedParams := sharedtypes.DefaultParams()
+
+	srcBech32 := sample.AccAddressBech32()
+	dstBech32 := sample.AccAddressBech32()
+	svcConfigs := []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}}
+
+	_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address: srcBech32, Stake: &apptypes.DefaultMinStake, Services: svcConfigs,
+	})
+	require.NoError(t, err)
+	_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, dstBech32))
+	require.NoError(t, err)
+	_, err = srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address: dstBech32, Stake: &apptypes.DefaultMinStake, Services: svcConfigs,
+	})
+	require.NoError(t, err)
+
+	srcApp, isFound := k.GetApplication(ctx, srcBech32)
+	require.True(t, isFound)
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+	completionHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight)
+
+	// Each application alone fits; merged they hold one gateway too many.
+	undelegate := func(appBech32 string, numGateways int) apptypes.Application {
+		app, found := k.GetApplication(ctx, appBech32)
+		require.True(t, found)
+		undelegated := make([]string, numGateways)
+		for i := range undelegated {
+			undelegated[i] = sample.AccAddressBech32()
+		}
+		app.PendingUndelegations = map[uint64]apptypes.UndelegatingGatewayList{
+			uint64(completionHeight): {GatewayAddresses: undelegated},
+		}
+		k.SetApplication(ctx, app)
+		return app
+	}
+	srcApp = undelegate(srcBech32, rings.MaxRingSignatureMembers/2)
+	dstApp := undelegate(dstBech32, rings.MaxRingSignatureMembers/2)
+
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(completionHeight)
+	require.NoError(t, k.EndBlockerTransferApplication(ctx))
+
+	gotSrcApp, isFound := k.GetApplication(ctx, srcBech32)
+	require.True(t, isFound)
+	require.Nil(t, gotSrcApp.PendingTransfer)
+	require.Equal(t, srcApp.PendingUndelegations, gotSrcApp.PendingUndelegations)
+	gotDstApp, isFound := k.GetApplication(ctx, dstBech32)
+	require.True(t, isFound)
+	require.Equal(t, dstApp.PendingUndelegations, gotDstApp.PendingUndelegations)
+}
+
+func TestMsgServer_TransferApplication_FailDestinationCannotReceiveStake(t *testing.T) {
+	tests := []struct {
+		desc        string
+		dst         string
+		expectedErr string
+	}{
+		{
+			desc:        "bank blocked address",
+			dst:         authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(),
+			expectedErr: "cannot receive funds",
+		},
+		{
+			desc:        "module account",
+			dst:         authtypes.NewModuleAddress(apptypes.ModuleName).String(),
+			expectedErr: "is a module account",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			k, ctx := keepertest.ApplicationKeeper(t)
+			srv := appkeeper.NewMsgServerImpl(k)
+
+			srcBech32 := sample.AccAddressBech32()
+			_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+				Address:  srcBech32,
+				Stake:    &apptypes.DefaultMinStake,
+				Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+			})
+			require.NoError(t, err)
+
+			_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, test.dst))
+			require.ErrorContains(t, err, apptypes.ErrAppInvalidAddress.Error())
+			require.ErrorContains(t, err, test.expectedErr)
+
+			srcApp, isFound := k.GetApplication(ctx, srcBech32)
+			require.True(t, isFound)
+			require.Nil(t, srcApp.GetPendingTransfer())
+		})
+	}
+}
+
+// A pending transfer accepted before the destination check existed must not
+// complete into a destination that cannot own the stake.
+func TestEndBlockerTransferApplication_FailDestinationCannotReceiveStake(t *testing.T) {
+	tests := []struct {
+		desc        string
+		dst         string
+		expectedErr string
+	}{
+		{
+			desc:        "bank blocked address",
+			dst:         authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(),
+			expectedErr: "cannot receive funds",
+		},
+		{
+			desc:        "module account",
+			dst:         authtypes.NewModuleAddress(apptypes.ModuleName).String(),
+			expectedErr: "is a module account",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			k, ctx := keepertest.ApplicationKeeper(t)
+			srv := appkeeper.NewMsgServerImpl(k)
+			sharedParams := sharedtypes.DefaultParams()
+
+			srcBech32 := sample.AccAddressBech32()
+			_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+				Address:  srcBech32,
+				Stake:    &apptypes.DefaultMinStake,
+				Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+			})
+			require.NoError(t, err)
+
+			// Start a valid transfer, then point it at the invalid destination,
+			// as a transfer accepted without the message check would be.
+			_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, sample.AccAddressBech32()))
+			require.NoError(t, err)
+			srcApp, isFound := k.GetApplication(ctx, srcBech32)
+			require.True(t, isFound)
+			srcApp.PendingTransfer.DestinationAddress = test.dst
+			k.SetApplication(ctx, srcApp)
+
+			transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+			sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(transferEndHeight)
+			require.NoError(t, k.EndBlockerTransferApplication(sdkCtx))
+
+			gotSrcApp, isFound := k.GetApplication(sdkCtx, srcBech32)
+			require.True(t, isFound)
+			require.Nil(t, gotSrcApp.GetPendingTransfer())
+			require.Equal(t, srcApp.GetStake(), gotSrcApp.GetStake())
+			_, isFound = k.GetApplication(sdkCtx, test.dst)
+			require.False(t, isFound)
+
+			transferErrorEvents := testutilevents.FilterEvents[*apptypes.EventTransferError](t, sdkCtx.EventManager().Events())
+			require.Len(t, transferErrorEvents, 1)
+			require.Contains(t, transferErrorEvents[0].GetError(), test.expectedErr)
+		})
+	}
 }

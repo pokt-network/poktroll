@@ -174,7 +174,15 @@ func (claim *Claim) GetProofRequirementSampleValue(
 	proofRequirementSeedBlockHash []byte,
 ) (float64, error) {
 	// Get the hash of the claim to seed the random number generator.
-	claimHash, err := claim.GetHash()
+	// Hash only the fields the supplier submits, which the RelayMiner rebuilds to
+	// compute the same sample (claimFromSessionTree). Fields the chain sets later,
+	// such as the proof validation status, must never change the sample.
+	submittedClaim := Claim{
+		SupplierOperatorAddress: claim.SupplierOperatorAddress,
+		SessionHeader:           claim.SessionHeader,
+		RootHash:                claim.RootHash,
+	}
+	claimHash, err := submittedClaim.GetHash()
 	if err != nil {
 		return 0, err
 	}

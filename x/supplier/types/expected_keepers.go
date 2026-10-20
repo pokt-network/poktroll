@@ -22,6 +22,7 @@ type BankKeeper interface {
 	SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins
 	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	BlockedAddr(addr sdk.AccAddress) bool
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared information.
@@ -31,6 +32,12 @@ type SharedKeeper interface {
 	// This is used for historical session queries to ensure correct session boundaries.
 	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
+	// IterateParamsHistoryReverse walks the params history from fromHeight back.
+	IterateParamsHistoryReverse(
+		ctx context.Context,
+		fromHeight int64,
+		fn func(effectiveHeight int64, params sharedtypes.Params) (stop bool),
+	)
 }
 
 // ServiceKeeper defines the expected interface for the Service module.

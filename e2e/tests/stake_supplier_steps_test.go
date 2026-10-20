@@ -36,7 +36,7 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 		GracePeriodEndOffsetBlocks:         0,
 		ClaimWindowOpenOffsetBlocks:        0,
 		ClaimWindowCloseOffsetBlocks:       1,
-		ProofWindowOpenOffsetBlocks:        0,
+		ProofWindowOpenOffsetBlocks:        1,
 		ProofWindowCloseOffsetBlocks:       1,
 		SupplierUnbondingPeriodSessions:    uint64(unbondingPeriodSessions),
 		ApplicationUnbondingPeriodSessions: uint64(unbondingPeriodSessions),
@@ -44,6 +44,10 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 		ComputeUnitsToTokensMultiplier:     sharedtypes.DefaultComputeUnitsToTokensMultiplier,
 		ComputeUnitCostGranularity:         sharedtypes.DefaultComputeUnitCostGranularity,
 	}
+	require.GreaterOrEqualf(s,
+		unbondingPeriodSessions*numBlocksPerSession,
+		sharedtypes.GetSessionEndToProofWindowCloseHeightBlocks(&sharedParams),
+		"the unbonding period MUST last until the proof window closes to satisfy parameter validation requirements")
 
 	// Convert params struct to the map type expected by
 	// s.sendAuthzExecToUpdateAllModuleParams().

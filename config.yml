@@ -311,6 +311,12 @@ genesis:
         staking_fee:
           amount: "1000000" # 1 POKT
           denom: upokt
+        # Services covered by min_stake. At least 1.
+        min_stake_included_services: 1
+        # Stake per service beyond the included ones. 0 disables the service cap.
+        stake_per_additional_service:
+          amount: "0"
+          denom: upokt
       supplierList:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
@@ -438,10 +444,10 @@ genesis:
         grace_period_end_offset_blocks: 1 # Small value to smooth out session rollovers.
         claim_window_open_offset_blocks: 1 # Small (for speed) non-zero (for security) value to balance speed and security.
         claim_window_close_offset_blocks: 4 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than claim_window_open_offset_blocks.
-        proof_window_open_offset_blocks: 0 # Set to zero to allow for immediate proof submission after the claim window closes.
-        proof_window_close_offset_blocks: 4 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than proof_window_open_offset_blocks.
-        supplier_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
-        application_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
+        proof_window_open_offset_blocks: 1 # Must be at least 1: the proof seed block must follow the last block accepting claims.
+        proof_window_close_offset_blocks: 3 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than proof_window_open_offset_blocks.
+        supplier_unbonding_period_sessions: 2 # Small value to enable for quick testing & onboarding during LocalNet. Must last until the proof window closes.
+        application_unbonding_period_sessions: 2 # Small value to enable for quick testing & onboarding during LocalNet. Must last until the proof window closes.
         gateway_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         compute_units_to_tokens_multiplier: 42000000 # Sets the cost of 1 compute unit to 42 uPOKT (denominated in pPOKT units).
         compute_unit_cost_granularity: 1000000 # Sets compute unit pricing granularity to pPOKT (1e-6 uPOKT per unit).

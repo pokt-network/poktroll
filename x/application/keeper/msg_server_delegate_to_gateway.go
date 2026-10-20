@@ -6,10 +6,12 @@ import (
 	"slices"
 
 	"cosmossdk.io/log"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -74,6 +76,26 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 		)
 	}
 
+	// Relay request rings are made of secp256k1 keys. A gateway whose account
+	// key is of another type (e.g. a multisig) can never sign for the application.
+	// A gateway with no public key yet is accepted: the ring leaves out a gateway
+	// whose key cannot be a ring member.
+	gatewayAddr, err := sdk.AccAddressFromBech32(msg.GetGatewayAddress())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if gatewayAcc := k.accountKeeper.GetAccount(ctx, gatewayAddr); gatewayAcc != nil && gatewayAcc.GetPubKey() != nil {
+		if _, ok := gatewayAcc.GetPubKey().(*secp256k1.PubKey); !ok {
+			logger.Info(fmt.Sprintf("Gateway with address [%s] has a %T key", msg.GetGatewayAddress(), gatewayAcc.GetPubKey()))
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				apptypes.ErrAppInvalidGatewayAddress.Wrapf(
+					"gateway with address %q has a %T key, not a secp256k1 key", msg.GetGatewayAddress(), gatewayAcc.GetPubKey(),
+				).Error(),
+			)
+		}
+	}
+
 	currentHeight := sdkCtx.BlockHeight()
 	// Ensure that the gateway is still active
 	if !gateway.IsActive(currentHeight) {
@@ -98,6 +120,21 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 				).Error(),
 			)
 		}
+	}
+
+	// The relay request ring also includes the gateways undelegated in the current
+	// session. Keep it within the ring signature member limit.
+	currentSessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
+	ringAddresses := rings.GetRingAddressesAtSessionEndHeight(&app, uint64(currentSessionEndHeight))
+	if ringSize := 1 + len(ringAddresses) + 1; ringSize > rings.MaxRingSignatureMembers {
+		logger.Info(fmt.Sprintf("Application ring would have %d members, more than %d", ringSize, rings.MaxRingSignatureMembers))
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			apptypes.ErrAppMaxDelegatedGateways.Wrapf(
+				"application with address %q would have %d ring members (gateways undelegated this session included), more than %d",
+				msg.GetAppAddress(), ringSize, rings.MaxRingSignatureMembers,
+			).Error(),
+		)
 	}
 
 	// Update the application with the new delegatee public key

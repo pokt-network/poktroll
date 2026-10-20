@@ -3,12 +3,18 @@ package keeper_test
 import (
 	"testing"
 
+	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256r1"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -39,12 +45,13 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	}
 
 	expectedApp := &apptypes.Application{
-		Address:                   stakeMsg.GetAddress(),
-		Stake:                     stakeMsg.GetStake(),
-		ServiceConfigs:            stakeMsg.GetServices(),
-		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
-		DelegateeGatewayAddresses: make([]string, 0),
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		Address:                     stakeMsg.GetAddress(),
+		Stake:                       stakeMsg.GetStake(),
+		ServiceConfigs:              stakeMsg.GetServices(),
+		ServiceConfigHistory:        make([]*apptypes.ApplicationServiceConfigUpdate, 0),
+		PerSessionSpendLimitHistory: make([]*apptypes.ApplicationPerSessionSpendLimitUpdate, 0),
+		DelegateeGatewayAddresses:   make([]string, 0),
+		PendingUndelegations:        make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
 
 	// Stake the application & verify that the application exists
@@ -149,12 +156,13 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedApp := &apptypes.Application{
-		Address:                   stakeMsg.GetAddress(),
-		Stake:                     stakeMsg.GetStake(),
-		ServiceConfigs:            stakeMsg.GetServices(),
-		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
-		DelegateeGatewayAddresses: []string{gatewayAddr},
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		Address:                     stakeMsg.GetAddress(),
+		Stake:                       stakeMsg.GetStake(),
+		ServiceConfigs:              stakeMsg.GetServices(),
+		ServiceConfigHistory:        make([]*apptypes.ApplicationServiceConfigUpdate, 0),
+		PerSessionSpendLimitHistory: make([]*apptypes.ApplicationPerSessionSpendLimitUpdate, 0),
+		DelegateeGatewayAddresses:   []string{gatewayAddr},
+		PendingUndelegations:        make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
 	expectedEvent := &apptypes.EventRedelegation{
 		Application:      expectedApp,
@@ -286,12 +294,13 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 
 	for i, event := range filteredEvents {
 		expectedApp := &apptypes.Application{
-			Address:                   stakeMsg.GetAddress(),
-			Stake:                     stakeMsg.GetStake(),
-			ServiceConfigs:            stakeMsg.GetServices(),
-			ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
-			DelegateeGatewayAddresses: gatewayAddresses[:i+1],
-			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+			Address:                     stakeMsg.GetAddress(),
+			Stake:                       stakeMsg.GetStake(),
+			ServiceConfigs:              stakeMsg.GetServices(),
+			ServiceConfigHistory:        make([]*apptypes.ApplicationServiceConfigUpdate, 0),
+			PerSessionSpendLimitHistory: make([]*apptypes.ApplicationPerSessionSpendLimitUpdate, 0),
+			DelegateeGatewayAddresses:   gatewayAddresses[:i+1],
+			PendingUndelegations:        make(map[uint64]apptypes.UndelegatingGatewayList),
 		}
 		expectedEvent := &apptypes.EventRedelegation{
 			Application:      expectedApp,
@@ -432,4 +441,106 @@ func TestMsgServer_DelegateToGateway_UnbondingButActive_Success(t *testing.T) {
 	foundApp, isAppFound := k.GetApplication(sdkCtx, appAddr)
 	require.True(t, isAppFound)
 	require.Contains(t, foundApp.DelegateeGatewayAddresses, gatewayAddr)
+}
+
+// A delegation is rejected when, with the gateways undelegated in the current
+// session, the application's ring would exceed the ring signature member limit.
+func TestMsgServer_DelegateToGateway_FailRingTooLarge(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	appAddr := sample.AccAddressBech32()
+	gatewayAddr := sample.AccAddressBech32()
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gatewaytypes.GatewayNotUnstaking)
+
+	_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+		Address:  appAddr,
+		Stake:    &apptypes.DefaultMinStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+	})
+	require.NoError(t, err)
+
+	// Fill the ring with gateways undelegated in the current session, leaving
+	// room for numFree more members.
+	setUndelegated := func(numFree int) {
+		app, found := k.GetApplication(ctx, appAddr)
+		require.True(t, found)
+		undelegated := make([]string, rings.MaxRingSignatureMembers-1-numFree)
+		for i := range undelegated {
+			undelegated[i] = sample.AccAddressBech32()
+		}
+		sessionEndHeight := testsession.GetSessionEndHeightWithDefaultParams(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		app.PendingUndelegations = map[uint64]apptypes.UndelegatingGatewayList{
+			uint64(sessionEndHeight): {GatewayAddresses: undelegated},
+		}
+		k.SetApplication(ctx, app)
+	}
+	delegateMsg := &apptypes.MsgDelegateToGateway{AppAddress: appAddr, GatewayAddress: gatewayAddr}
+
+	setUndelegated(0)
+	_, err = srv.DelegateToGateway(ctx, delegateMsg)
+	require.ErrorContains(t, err, apptypes.ErrAppMaxDelegatedGateways.Error())
+
+	setUndelegated(1)
+	_, err = srv.DelegateToGateway(ctx, delegateMsg)
+	require.NoError(t, err)
+}
+
+func TestMsgServer_DelegateToGateway_GatewayKeyType(t *testing.T) {
+	tests := []struct {
+		desc        string
+		pubKey      cryptotypes.PubKey
+		expectedErr error
+	}{
+		{desc: "secp256k1 key", pubKey: secp256k1.GenPrivKey().PubKey()},
+		{desc: "no public key"},
+		{
+			desc:        "multisig key",
+			pubKey:      kmultisig.NewLegacyAminoPubKey(1, []cryptotypes.PubKey{secp256k1.GenPrivKey().PubKey()}),
+			expectedErr: apptypes.ErrAppInvalidGatewayAddress,
+		},
+		{desc: "secp256r1 key", pubKey: newSecp256r1PubKey(t), expectedErr: apptypes.ErrAppInvalidGatewayAddress},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			k, ctx := keepertest.ApplicationKeeper(t)
+			srv := keeper.NewMsgServerImpl(k)
+
+			appAddr := sample.AccAddressBech32()
+			gatewayAddr := sample.AccAddressBech32()
+			keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gatewaytypes.GatewayNotUnstaking)
+			if test.pubKey != nil {
+				keepertest.SetAccountPubKey(t, gatewayAddr, test.pubKey)
+			}
+
+			_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+				Address:  appAddr,
+				Stake:    &apptypes.DefaultMinStake,
+				Services: []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}},
+			})
+			require.NoError(t, err)
+
+			_, err = srv.DelegateToGateway(ctx, &apptypes.MsgDelegateToGateway{
+				AppAddress:     appAddr,
+				GatewayAddress: gatewayAddr,
+			})
+			foundApp, isAppFound := k.GetApplication(ctx, appAddr)
+			require.True(t, isAppFound)
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				require.Empty(t, foundApp.DelegateeGatewayAddresses)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, []string{gatewayAddr}, foundApp.DelegateeGatewayAddresses)
+		})
+	}
+}
+
+func newSecp256r1PubKey(t *testing.T) cryptotypes.PubKey {
+	t.Helper()
+	privKey, err := secp256r1.GenPrivKey()
+	require.NoError(t, err)
+	return privKey.PubKey()
 }

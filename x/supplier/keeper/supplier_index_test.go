@@ -140,3 +140,25 @@ func TestGetSupplierServiceConfigUpdates_MixedValidAndOrphaned(t *testing.T) {
 	require.Len(t, configs, 1)
 	require.Equal(t, "svc2", configs[0].Service.ServiceId)
 }
+
+// Rescheduling a config's deactivation moves its deactivation index entry: the
+// entry at the old height is removed.
+func TestRescheduleServiceConfigDeactivation_MovesIndexEntry(t *testing.T) {
+	k, ctx := newMinimalKeeper(t)
+
+	config := &sharedtypes.ServiceConfigUpdate{
+		OperatorAddress:    "pokt1testoperator",
+		Service:            &sharedtypes.SupplierServiceConfig{ServiceId: "svc-test"},
+		ActivationHeight:   1,
+		DeactivationHeight: 100,
+	}
+	k.rescheduleServiceConfigDeactivation(ctx, config, 100)
+	oldKey := types.ServiceConfigUpdateDeactivationHeightKey(*config)
+
+	k.rescheduleServiceConfigDeactivation(ctx, config, 50)
+	newKey := types.ServiceConfigUpdateDeactivationHeightKey(*config)
+
+	deactivationHeightStore := k.getServiceConfigUpdateDeactivationHeightStore(ctx)
+	require.False(t, deactivationHeightStore.Has(oldKey))
+	require.True(t, deactivationHeightStore.Has(newKey))
+}

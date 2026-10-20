@@ -67,6 +67,16 @@ func (gs GenesisState) Validate() error {
 		}
 
 	}
+	priorityOperatorAddrs := make(map[string]struct{}, len(gs.ServicePriorityList))
+	for _, priority := range gs.ServicePriorityList {
+		if _, err := sdk.AccAddressFromBech32(priority.OperatorAddress); err != nil {
+			return ErrSupplierInvalidAddress.Wrapf("invalid service priority operator address %v", err.Error())
+		}
+		if _, ok := priorityOperatorAddrs[priority.OperatorAddress]; ok {
+			return fmt.Errorf("duplicated service priority for supplier %s", priority.OperatorAddress)
+		}
+		priorityOperatorAddrs[priority.OperatorAddress] = struct{}{}
+	}
 	// this line is used by starport scaffolding # genesis/types/validate
 
 	return gs.Params.Validate()

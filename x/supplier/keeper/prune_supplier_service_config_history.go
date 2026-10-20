@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"math"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
@@ -14,7 +15,7 @@ import (
 // for various reasons (servicing relays, claim settlement, etc), it can be pruned.
 // This helps reduce onchain state bloat and avoid diverting attention from non-actionable metadata.
 //
-// IMPORTANT: Service configs are kept until AFTER the proof window closes for the last session
+// IMPORTANT: Service configs are kept until AFTER the latest proof window close of the sessions
 // they could have been used in. This ensures historical session queries return correct supplier
 // lists when validating claims.
 func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
@@ -27,6 +28,10 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 
 	// Track unique suppliers whose configurations were pruned
 	deactivatedConfigsSuppliers := make(map[string]bool)
+
+	// Many configs share activation and deactivation heights: compute each
+	// proof window close height once per block.
+	proofWindowCloseHeights := make(map[[2]int64]int64)
 
 	// Retrieve all service configurations that were deactivated at or before the current height.
 	// We use a range iterator because configs may not be pruned at their exact deactivation height
@@ -54,10 +59,15 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 		// The deactivation height is set to the FIRST block of the next session (see
 		// msg_server_unstake_supplier.go). Therefore, the LAST block where the config
 		// was active is DeactivationHeight - 1, which falls within the last active session.
-		// We calculate the proof window for that session.
+		// We keep the config until the latest proof window close of the sessions it
+		// was active in, which is usually that last session's.
 		lastActiveHeight := serviceConfigUpdate.DeactivationHeight - 1
-		sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, lastActiveHeight)
-		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, lastActiveHeight)
+		heights := [2]int64{serviceConfigUpdate.ActivationHeight, lastActiveHeight}
+		proofWindowCloseHeight, ok := proofWindowCloseHeights[heights]
+		if !ok {
+			proofWindowCloseHeight = k.lastProofWindowCloseHeight(ctx, heights[0], heights[1])
+			proofWindowCloseHeights[heights] = proofWindowCloseHeight
+		}
 
 		if currentHeight <= proofWindowCloseHeight {
 			// Config is still needed for claim validation - skip pruning
@@ -79,4 +89,36 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 	}
 
 	return len(deactivatedConfigsSuppliers), nil
+}
+
+// lastProofWindowCloseHeight returns the latest proof window close height of the
+// sessions between activationHeight and lastActiveHeight. The last session
+// usually closes last, but an earlier session closes later when a params change
+// since then shortened the claim and proof windows.
+func (k Keeper) lastProofWindowCloseHeight(ctx context.Context, activationHeight, lastActiveHeight int64) int64 {
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, lastActiveHeight)
+	// Validated params never have a zero session length; only an unvalidated
+	// genesis params history can. Keep the config rather than divide by zero.
+	if sharedParams.GetNumBlocksPerSession() == 0 {
+		k.Logger().Error(fmt.Sprintf("params at height %d have num_blocks_per_session 0, keeping service config", lastActiveHeight))
+		return math.MaxInt64
+	}
+	closeHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, lastActiveHeight)
+
+	// Each history entry starts a params epoch: the session containing the block
+	// before it is the last one under the previous params.
+	k.sharedKeeper.IterateParamsHistoryReverse(ctx, lastActiveHeight, func(effectiveHeight int64, _ sharedtypes.Params) bool {
+		if effectiveHeight <= activationHeight {
+			return true
+		}
+		previousParams := k.sharedKeeper.GetParamsAtHeight(ctx, effectiveHeight-1)
+		if previousParams.GetNumBlocksPerSession() == 0 {
+			k.Logger().Error(fmt.Sprintf("params at height %d have num_blocks_per_session 0, skipping them", effectiveHeight-1))
+			return false
+		}
+		closeHeight = max(closeHeight, sharedtypes.GetProofWindowCloseHeight(&previousParams, effectiveHeight-1))
+		return false
+	})
+
+	return closeHeight
 }

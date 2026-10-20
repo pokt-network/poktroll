@@ -1,6 +1,8 @@
 package types
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -152,4 +154,68 @@ func GetApplicationTransferHeight(
 	pendingTransferSessionEnd := int64(application.GetPendingTransfer().GetSessionEndHeight())
 
 	return sharedtypes.GetSettlementSessionEndHeight(sharedParams, pendingTransferSessionEnd)
+}
+
+// GetPerSessionSpendLimitAtHeight returns the per-session spend limit in effect
+// at the given height (nil = no limit).
+//
+// Empty history means the limit has never changed, so the current
+// PerSessionSpendLimit applies at every height. The same fallback applies if no
+// history entry is active at queryHeight.
+func (s *Application) GetPerSessionSpendLimitAtHeight(queryHeight int64) *sdk.Coin {
+	for i := len(s.PerSessionSpendLimitHistory) - 1; i >= 0; i-- {
+		entry := s.PerSessionSpendLimitHistory[i]
+		if entry != nil && entry.ActivationHeight <= queryHeight {
+			return entry.PerSessionSpendLimit
+		}
+	}
+	return s.PerSessionSpendLimit
+}
+
+// RecordPerSessionSpendLimitChange records in per_session_spend_limit_history
+// that the limit changed from prevLimit to the application's current
+// PerSessionSpendLimit, effective at activationHeight (the next session start).
+//
+//   - No-op if the limit did not change.
+//   - On the first change, prevLimit is first recorded as in effect since height 1.
+//   - Entries scheduled at or after activationHeight are replaced, so activation
+//     heights are strictly increasing, also when activationHeight precedes a
+//     pending entry (e.g. the session grid moved). A pending entry scheduled
+//     before activationHeight is kept: after a session length change between two
+//     changes, more than one entry can be pending.
+func (s *Application) RecordPerSessionSpendLimitChange(prevLimit *sdk.Coin, activationHeight int64) {
+	newLimit := s.PerSessionSpendLimit
+	if spendLimitsEqual(prevLimit, newLimit) {
+		return
+	}
+
+	history := s.PerSessionSpendLimitHistory
+	if len(history) == 0 {
+		history = append(history, &ApplicationPerSessionSpendLimitUpdate{
+			PerSessionSpendLimit: prevLimit,
+			ActivationHeight:     1,
+		})
+	}
+
+	for len(history) > 0 && history[len(history)-1].ActivationHeight >= activationHeight {
+		history = history[:len(history)-1]
+	}
+
+	// Skip the entry if it matches the limit already in effect before activationHeight.
+	if len(history) == 0 || !spendLimitsEqual(history[len(history)-1].PerSessionSpendLimit, newLimit) {
+		history = append(history, &ApplicationPerSessionSpendLimitUpdate{
+			PerSessionSpendLimit: newLimit,
+			ActivationHeight:     activationHeight,
+		})
+	}
+
+	s.PerSessionSpendLimitHistory = history
+}
+
+// spendLimitsEqual reports whether two optional spend limits are equal (nil == nil).
+func spendLimitsEqual(a, b *sdk.Coin) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.Denom == b.Denom && a.Amount.Equal(b.Amount)
 }

@@ -35,11 +35,7 @@ func (k Keeper) EndBlockerUnbondGateways(ctx context.Context) (numUnbondedGatewa
 		}
 		gateway := gatewayLifecycle.ToGateway()
 
-		// Compute the unbonding end height using the shared params effective when the gateway
-		// began unbonding (its unstake session end height), NOT the live params, so a later
-		// num_blocks_per_session decrease cannot release it early (#543, F1).
-		unstakeParams := k.sharedKeeper.GetParamsAtHeight(ctx, int64(gateway.GetUnstakeSessionEndHeight()))
-		unbondingEndHeight := gatewaytypes.GetGatewayUnbondingHeight(&unstakeParams, &gateway)
+		unbondingEndHeight := k.GetGatewayUnbondingEndHeight(ctx, &gateway)
 
 		// If the unbonding height is ahead of the current height, the gateway
 		// stays in the unbonding state.
@@ -104,4 +100,13 @@ func (k Keeper) UnbondGateway(ctx context.Context, gateway *gatewaytypes.Gateway
 	logger.Info(fmt.Sprintf("Successfully removed the gateway: %s", gateway.GetAddress()))
 
 	return nil
+}
+
+// GetGatewayUnbondingEndHeight returns the height at which the given unbonding
+// gateway is released. It uses the shared params effective when the gateway
+// began unbonding (its unstake session end height), NOT the live params, so a
+// later num_blocks_per_session decrease cannot release it early (#543, F1).
+func (k Keeper) GetGatewayUnbondingEndHeight(ctx context.Context, gateway *gatewaytypes.Gateway) int64 {
+	unstakeParams := k.sharedKeeper.GetParamsAtHeight(ctx, int64(gateway.GetUnstakeSessionEndHeight()))
+	return gatewaytypes.GetGatewayUnbondingHeight(&unstakeParams, gateway)
 }

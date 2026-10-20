@@ -327,7 +327,7 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
 
 	// Use historical params at sessionEndHeight to ensure consistency with other
-	// on-chain proof validation (validateProofWindow, validateClosestPath).
+	// on-chain proof validation (validateProofWindow, getProofSeed).
 	// See x/proof/keeper/session.go:167 for the same pattern.
 	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
 

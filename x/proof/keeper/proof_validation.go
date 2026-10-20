@@ -23,9 +23,9 @@ package keeper
 	2. verify(relay.Res.Signature, supplier.pubKey)
 
 	## Relay Mining validation
-	1. verify(proof.path) is the expected path; pseudo-random variation using onchain data
-	2. verify(proof.ValueHash, expectedDifficulty); governance based
-	3. verify(claim.Root, proof.ClosestProof); verify the closest proof is correct
+	1. verify(proof.ValueHash, expectedDifficulty); governance based
+	2. verify(claim.Root, proof, seed); the proven leaf is the one the onchain seed
+	   selects, weighted by relay count (smt.VerifyWeightedProof)
 */
 
 import (
@@ -33,6 +33,8 @@ import (
 	"context"
 	"fmt"
 
+	cosmoslog "cosmossdk.io/log"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/pokt-network/smt"
 
@@ -73,9 +75,8 @@ func (k Keeper) EnsureWellFormedProof(ctx context.Context, proof *types.Proof) e
 	}
 	logger.Info("queried and validated the session header")
 
-	// Re-hydrate message session header with the onchain session header.
-	// This corrects for discrepancies between unvalidated fields in the session
-	// header which can be derived from known values (e.g. session end height).
+	// Use the onchain session header, which queryAndValidateSessionHeader
+	// checked the proof's header against.
 	sessionHeader := onChainSession.GetHeader()
 
 	logger = logger.With(
@@ -110,6 +111,13 @@ func (k Keeper) EnsureWellFormedProof(ctx context.Context, proof *types.Proof) e
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to decompact sparse merkle closest proof due to error: %v", err))
 		return types.ErrProofInvalidProof.Wrapf("failed to decompact sparse erkle closest proof: %s", err)
+	}
+
+	// Reject proofs that are not in weighted form (e.g. from a RelayMiner that still
+	// generates closest proofs) at submission, rather than silently in the EndBlocker.
+	if err = ensureWeightedProofForm(sparseMerkleClosestProof); err != nil {
+		logger.Error(err.Error())
+		return err
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
@@ -231,11 +239,82 @@ func (k Keeper) EnsureValidProofSignaturesAndClosestPath(
 		return err
 	}
 
+	// Decode the relay the supplier submitted.
+	var (
+		sparseMerkleClosestProof *smt.SparseMerkleClosestProof
+		relay                    *servicetypes.Relay
+		relayBz                  []byte
+	)
+	err = recoverAsInvalidProof("relay decoding", func() (err error) {
+		sparseMerkleClosestProof, relay, relayBz, err = k.decodeSubmittedRelay(logger, proof)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
+	// Verify the relay request's signature. This reads the application's ring
+	// from chain state, so it runs outside recoverAsInvalidProof; the ring client
+	// handles malformed signature bytes itself.
+	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relay.GetReq()); err != nil {
+		logger.Error(fmt.Sprintf("failed to verify relay request signature due to error: %v", err))
+		return err
+	}
+	logger.Debug("successfully verified relay request signature")
+
+	// Verify the relay response's signature and the relay's position in the tree.
+	err = recoverAsInvalidProof("relay verification", func() error {
+		return verifySubmittedRelay(logger, sparseMerkleClosestProof, relay, relayBz, supplierOperatorPubKey)
+	})
+	if err != nil {
+		return err
+	}
+
+	// Derive the proof seed from the pseudo-random onchain data associated with the header.
+	proofSeed, err := k.getProofSeed(ctx, sessionHeader, supplierOperatorAddr)
+	if err != nil {
+		logger.Error(fmt.Sprintf("failed to get proof seed due to error: %v", err))
+		return err
+	}
+
+	// Verify the proof is for the leaf the seed selects, weighted by relay count,
+	// and that it is included in the claimed root.
+	err = recoverAsInvalidProof("weighted proof verification", func() error {
+		return verifyWeightedProof(sparseMerkleClosestProof, claim.GetRootHash(), proofSeed)
+	})
+	if err != nil {
+		logger.Error(fmt.Sprintf("failed to verify weighted merkle proof due to error: %v", err))
+		return err
+	}
+	logger.Debug("successfully verified weighted merkle proof")
+
+	return nil
+}
+
+// recoverAsInvalidProof runs fn, which parses or verifies bytes the supplier
+// submitted, and reports a panic in it as an invalid proof. Only such steps run
+// through it: a panic anywhere else (e.g. reading chain state) must still stop
+// the node rather than mark an honest proof invalid and slash its supplier.
+func recoverAsInvalidProof(step string, fn func() error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = types.ErrProofInvalidProof.Wrapf("panic during %s: %v", step, r)
+		}
+	}()
+	return fn()
+}
+
+// decodeSubmittedRelay decodes the proof's closest merkle proof and the relay it
+// carries.
+func (k Keeper) decodeSubmittedRelay(
+	logger cosmoslog.Logger,
+	proof *types.Proof,
+) (*smt.SparseMerkleClosestProof, *servicetypes.Relay, []byte, error) {
 	// Unmarshal the sparse compact merkle closest proof from the message.
 	sparseCompactMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
-	if err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
+	if err := sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
 		logger.Error(fmt.Sprintf("failed to unmarshal sparse compact merkle closest proof due to error: %v", err))
-		return types.ErrProofInvalidProof.Wrapf("failed to unmarshal sparse compact merkle closest proof: %s", err)
+		return nil, nil, nil, types.ErrProofInvalidProof.Wrapf("failed to unmarshal sparse compact merkle closest proof: %s", err)
 	}
 
 	// SparseCompactMerkeClosestProof was intentionally compacted to reduce its onchain state size
@@ -243,7 +322,7 @@ func (k Keeper) EnsureValidProofSignaturesAndClosestPath(
 	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to decompact sparse merkle closest proof due to error: %v", err))
-		return types.ErrProofInvalidProof.Wrapf("failed to decompact sparse merkle closest proof: %s", err)
+		return nil, nil, nil, types.ErrProofInvalidProof.Wrapf("failed to decompact sparse merkle closest proof: %s", err)
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
@@ -251,56 +330,47 @@ func (k Keeper) EnsureValidProofSignaturesAndClosestPath(
 	relay := &servicetypes.Relay{}
 	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
 		logger.Error(fmt.Sprintf("failed to unmarshal relay due to error: %v", err))
-		return types.ErrProofInvalidRelay.Wrapf("failed to unmarshal relay: %s", err)
+		return nil, nil, nil, types.ErrProofInvalidRelay.Wrapf("failed to unmarshal relay: %s", err)
 	}
 
-	// Verify the relay request's signature.
-	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relay.GetReq()); err != nil {
-		logger.Error(fmt.Sprintf("failed to verify relay request signature due to error: %v", err))
-		return err
-	}
-	logger.Debug("successfully verified relay request signature")
+	return sparseMerkleClosestProof, relay, relayBz, nil
+}
 
+// verifySubmittedRelay verifies the relay response's signature and the relay's
+// position in the tree.
+func verifySubmittedRelay(
+	logger cosmoslog.Logger,
+	sparseMerkleClosestProof *smt.SparseMerkleClosestProof,
+	relay *servicetypes.Relay,
+	relayBz []byte,
+	supplierOperatorPubKey cryptotypes.PubKey,
+) error {
 	// Verify the relay response's signature.
-	if err = relay.GetRes().VerifySupplierOperatorSignature(supplierOperatorPubKey); err != nil {
+	if err := relay.GetRes().VerifySupplierOperatorSignature(supplierOperatorPubKey); err != nil {
 		logger.Error(fmt.Sprintf("failed to verify relay response signature due to error: %v", err))
 		return err
 	}
 	logger.Debug("successfully verified relay response signature")
 
-	// Validate that path the proof is submitted for matches the expected one
-	// based on the pseudo-random onchain data associated with the header.
-	if err = k.validateClosestPath(
-		ctx,
-		sparseMerkleClosestProof,
-		sessionHeader,
-		supplierOperatorAddr,
-	); err != nil {
-		logger.Error(fmt.Sprintf("failed to validate closest path due to error: %v", err))
+	// Ensure the relay is proven at the position its content determines, so a
+	// relay cannot be inserted more than once at arbitrary positions.
+	if err := ensureRelayAtCanonicalPath(sparseMerkleClosestProof, relayBz); err != nil {
+		logger.Error(fmt.Sprintf("failed to validate proof path due to error: %v", err))
 		return err
 	}
-	logger.Debug("successfully validated proof path")
-
-	// Verify the proof's sparse merkle closest proof.
-	if err = verifyClosestProof(sparseMerkleClosestProof, claim.GetRootHash()); err != nil {
-		logger.Error(fmt.Sprintf("failed to verify sparse merkle closest proof due to error: %v", err))
-		return err
-	}
-	logger.Debug("successfully verified sparse merkle closest proof")
 
 	return nil
 }
 
-// validateClosestPath ensures that the proof's path matches the expected path.
-// Since the proof path needs to be pseudo-randomly selected AFTER the session
-// ends, the seed for this is the block hash at the height when the proof window
-// opens.
-func (k Keeper) validateClosestPath(
+// getProofSeed returns the seed that selects the leaf to be proven.
+// Since the leaf needs to be pseudo-randomly selected AFTER the session
+// ends, the seed is derived from the block hash at the height when the proof
+// window opens.
+func (k Keeper) getProofSeed(
 	ctx context.Context,
-	proof *smt.SparseMerkleClosestProof,
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddr string,
-) error {
+) ([]byte, error) {
 	// The RelayMiner has to wait until the submit claim and proof windows is are open
 	// in order to to create the claim and submit claims and proofs, respectively.
 	// These windows are calculated as specified in the docs;
@@ -312,7 +382,7 @@ func (k Keeper) validateClosestPath(
 	// submitted during SessionNumber=(N+1) but created during SessionNumber=N) are
 	// still included as part of SessionNumber=N.
 	//
-	// Since smt.ProveClosest is defined in terms of proof window open height,
+	// Since the RelayMiner proves in terms of the proof window open height,
 	// this block's hash needs to be used for validation too.
 	earliestSupplierProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
 		ctx,
@@ -320,7 +390,7 @@ func (k Keeper) validateClosestPath(
 		supplierOperatorAddr,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// earliestSupplierProofCommitHeight - 1 is the block that will have its hash used as the
@@ -328,16 +398,7 @@ func (k Keeper) validateClosestPath(
 	// be received before proceeding.
 	proofPathSeedBlockHash := k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight-1)
 
-	expectedProofPath := protocol.GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
-	if !bytes.Equal(proof.Path, expectedProofPath) {
-		return types.ErrProofInvalidProof.Wrapf(
-			"the path of the proof provided (%x) does not match one expected by the onchain protocol (%x)",
-			proof.Path,
-			expectedProofPath,
-		)
-	}
-
-	return nil
+	return protocol.GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId()), nil
 }
 
 // validateSessionClaim ensures that the given session header and supplierOperatorAddress
@@ -452,19 +513,43 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 	return nil
 }
 
-// verifyClosestProof verifies the correctness of the ClosestMerkleProof
-// against the root hash committed to when creating the claim.
-func verifyClosestProof(
+// ensureRelayAtCanonicalPath checks the proven leaf sits at the path the
+// RelayMiner inserts the relay at: the SMT path of the relay hash (the key).
+func ensureRelayAtCanonicalPath(proof *smt.SparseMerkleClosestProof, relayBz []byte) error {
+	relayHash := protocol.GetRelayHashFromBytes(relayBz)
+	pathHasher := protocol.NewTrieHasher()
+	_, _ = pathHasher.Write(relayHash[:])
+	if !bytes.Equal(proof.ClosestPath, pathHasher.Sum(nil)) {
+		return types.ErrProofInvalidProof.Wrap("proof path does not match the relay hash")
+	}
+	return nil
+}
+
+// ensureWeightedProofForm checks the proof has the shape of a weighted proof:
+// it proves the leaf at its own path, with no flipped bits.
+// smt.VerifyWeightedProof enforces this too; checking it at submission makes
+// closest proofs fail loudly instead of in the EndBlocker.
+func ensureWeightedProofForm(proof *smt.SparseMerkleClosestProof) error {
+	if !bytes.Equal(proof.Path, proof.ClosestPath) || len(proof.FlippedBits) != 0 {
+		return types.ErrProofInvalidProof.Wrap("proof is not a weighted merkle proof")
+	}
+	return nil
+}
+
+// verifyWeightedProof verifies the proof is for the leaf selected by the seed,
+// weighted by relay count, against the root hash committed to when creating the claim.
+func verifyWeightedProof(
 	proof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
+	proofSeed []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, protocol.NewSMTSpec())
+	valid, err := smt.VerifyWeightedProof(proof, claimRootHash, proofSeed, protocol.NewSMTSpec())
 	if err != nil {
-		return err
+		return types.ErrProofInvalidProof.Wrapf("invalid weighted merkle proof: %s", err)
 	}
 
 	if !valid {
-		return types.ErrProofInvalidProof.Wrap("invalid closest merkle proof")
+		return types.ErrProofInvalidProof.Wrap("invalid weighted merkle proof")
 	}
 
 	return nil

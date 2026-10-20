@@ -165,11 +165,10 @@ func (k Keeper) IterateParamsHistoryReverse(
 		var paramsUpdate types.ParamsUpdate
 		// Defensive: skip-and-log on corrupted history entries instead of halting
 		// via MustUnmarshal. Same rationale as GetParamsAtHeight + GetParamsHistoryEntry —
-		// a corrupted entry must not halt the chain at settlement (the only caller of
-		// this iterator is the O2 cross-session candidate scan in
-		// candidateSessionEndHeightsForLiveParams). Skipping yields a degraded scan
-		// — that epoch's candidates are missed — which is observable and recoverable;
-		// halting is not.
+		// a corrupted entry must not halt the chain. Callers degrade instead: the O2
+		// cross-session candidate scan (candidateSessionEndHeightsForLiveParams) misses
+		// that epoch's candidates, and the supplier service config pruner may prune a
+		// config before that epoch's last proof window closes. Halting is worse.
 		if err := k.cdc.Unmarshal(iterator.Value(), &paramsUpdate); err != nil {
 			k.logger.Error(fmt.Sprintf(
 				"IterateParamsHistoryReverse: failed to unmarshal params history entry at fromHeight=%d: %v; skipping entry",

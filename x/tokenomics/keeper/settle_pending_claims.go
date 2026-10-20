@@ -521,6 +521,41 @@ func (k Keeper) executeAggregatedModToAcctTransfers(
 			)
 		}
 
+		// The bank module refuses transfers to its blocked addresses (module accounts
+		// such as the fee collector). Such a payout goes to the DAO reward address
+		// instead, and stays in the sender module if that address is blocked too.
+		// A payout that stays in the sender module is recorded with a batch event
+		// whose recipient is the sender module and whose op type is "mod_to_acct_retained".
+		if k.bankKeeper.BlockedAddr(recipientAddr) {
+			tokenomicsParams := k.GetParams(ctx)
+			daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
+			logger.Warn(fmt.Sprintf(
+				"recipient %q cannot receive funds: sending %s (reason %q) to the DAO reward address %q",
+				transfer.RecipientAddress, transfer.Coin, transfer.OpReason.String(), daoRewardAddress,
+			))
+			daoAddr, daoErr := cosmostypes.AccAddressFromBech32(daoRewardAddress)
+			if daoErr != nil || k.bankKeeper.BlockedAddr(daoAddr) {
+				logger.Error(fmt.Sprintf(
+					"DAO reward address %q cannot receive funds: %s (reason %q) stays in the %q module",
+					daoRewardAddress, transfer.Coin, transfer.OpReason.String(), transfer.SenderModule,
+				))
+				if err = ctx.EventManager().EmitTypedEvent(&tokenomicstypes.EventSettlementBatch{
+					SessionEndBlockHeight: sessionEndHeight,
+					SenderModule:          transfer.SenderModule,
+					Recipient:             transfer.SenderModule,
+					OpReason:              transfer.OpReason,
+					TotalAmount:           transfer.Coin.String(),
+					NumClaims:             transfer.NumClaims,
+					OpType:                "mod_to_acct_retained",
+				}); err != nil {
+					return err
+				}
+				continue
+			}
+			transfer.RecipientAddress = daoRewardAddress
+			recipientAddr = daoAddr
+		}
+
 		if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 			ctx,
 			transfer.SenderModule,
@@ -809,13 +844,14 @@ func (k Keeper) slashSupplierStake(
 
 	// Check if the supplier's stake is below the minimum and unstake it if necessary.
 	// Ensure that a slashed supplier going below min stake is unbonded only once.
-	minSupplierStakeCoin := k.supplierKeeper.GetParams(ctx).MinStake
-	if supplierToSlash.GetStake().IsLT(*minSupplierStakeCoin) && !supplierToSlash.IsUnbonding() {
-		sharedParams := settlementContext.GetSharedParams()
-		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-		currentHeight := sdkCtx.BlockHeight()
-		unstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
-
+	// Defensive: GetParams returns a zero-value Params{} (nil MinStake) if params
+	// were never written. Fall back to DefaultMinStake, as EndBlockerUnbondSuppliers
+	// does, so a nil-deref never halts the chain in the EndBlocker.
+	minSupplierStakeCoin := suppliertypes.DefaultMinStake
+	if minStake := k.supplierKeeper.GetParams(ctx).MinStake; minStake != nil {
+		minSupplierStakeCoin = *minStake
+	}
+	if supplierToSlash.GetStake().IsLT(minSupplierStakeCoin) && !supplierToSlash.IsUnbonding() {
 		logger.Warn(fmt.Sprintf(
 			"unstaking supplier %q owned by %q due to stake (%s) below the minimum (%s)",
 			supplierToSlash.GetOperatorAddress(),
@@ -824,14 +860,15 @@ func (k Keeper) slashSupplierStake(
 			minSupplierStakeCoin,
 		))
 
-		// Start force unstaking the supplier.
-		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
-
-		// Deactivate the supplier's services so they can no longer be selected to
-		// service relays in the next session.
-		for _, serviceConfig := range supplierToSlash.ServiceConfigHistory {
-			serviceConfig.DeactivationHeight = unstakeSessionEndHeight
-		}
+		// Start force unstaking the supplier: record its unstake session end height,
+		// deactivate its services from the next session on, and persist it WITH its
+		// indexes, so it leaves future sessions and EndBlockerUnbondSuppliers unbonds it.
+		// supplierToSlash is dehydrated; BeginSupplierUnbonding reloads its history.
+		liveSharedParams := settlementContext.GetSharedParams()
+		unstakeSessionEndHeight := k.supplierKeeper.BeginSupplierUnbonding(
+			ctx, supplierToSlash, &liveSharedParams,
+			suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+		)
 
 		// Handling unbonding for slashed suppliers:
 		// - Initiate unbonding at the current session end height (earliest possible time)
@@ -842,12 +879,16 @@ func (k Keeper) slashSupplierStake(
 			Supplier:           supplierToSlash,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   unstakeSessionEndHeight,
-			UnbondingEndHeight: unstakeSessionEndHeight,
+			UnbondingEndHeight: k.supplierKeeper.GetSupplierUnbondingEndHeight(ctx, supplierToSlash),
 		})
+	} else {
+		// This is the only write of the reduced stake: the settlement flush has
+		// already run when slashing happens.
+		k.supplierKeeper.SetDehydratedSupplier(ctx, *supplierToSlash)
+		// The lower stake may no longer cover every service: deactivate the excess
+		// from the next session on.
+		k.supplierKeeper.EnforceServiceCap(ctx, supplierToSlash, suppliertypes.ServiceCapReason_SERVICE_CAP_REASON_SLASH)
 	}
-
-	// Only update the dehydrated supplier, since the service config will remain unchanged.
-	k.supplierKeeper.SetDehydratedSupplier(ctx, *supplierToSlash)
 
 	// Emit an event that a supplier has been slashed.
 	claim := claimSettlementResult.GetClaim()
@@ -1016,8 +1057,8 @@ func (k Keeper) settleClaim(
 	// those two disagree whenever CUTTM changed mid-flight.
 	//
 	// Named pricingParams (not sharedParams) on purpose: this snapshot carries an OLD
-	// epoch's session grid and MUST NOT be used for timing math. Anything projecting a
-	// future height from the current block reads settlementContext.GetSharedParams().
+	// epoch's session grid and MUST NOT be used for timing math. The current session's
+	// end height reads settlementContext.GetSharedParams().
 	pricingParams := settlementContext.GetSharedParamsAtHeight(ctx, sessionStartHeight)
 
 	// numEstimatedComputeUnits is the probabilistic estimation of the offchain

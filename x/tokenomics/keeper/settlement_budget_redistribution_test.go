@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	cosmoslog "cosmossdk.io/log"
@@ -9,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/pocket"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
@@ -46,8 +49,12 @@ type budgetRedistributionFixture struct {
 // Params are chosen so that claimed uPOKT == numRelays exactly (CUPR=1,
 // CUTTM==granularity, difficulty=1, global inflation=0), and the mint=burn distribution
 // pays the supplier 100% so ProcessTokenLogicModules returns exactly the post-cap amount.
-func newBudgetRedistributionFixture(t testing.TB, floorTarget int64, relayCounts []uint64) *budgetRedistributionFixture {
+// The fixture runs only the mint=burn TLM unless tokenLogicModules are given.
+func newBudgetRedistributionFixture(t testing.TB, floorTarget int64, relayCounts []uint64, tokenLogicModules ...tlm.TokenLogicModule) *budgetRedistributionFixture {
 	t.Helper()
+	if len(tokenLogicModules) == 0 {
+		tokenLogicModules = []tlm.TokenLogicModule{tlm.NewRelayBurnEqualsMintTLM()}
+	}
 
 	granularity := uint64(1_000_000)
 	cuttm := uint64(1) * granularity
@@ -58,9 +65,7 @@ func newBudgetRedistributionFixture(t testing.TB, floorTarget int64, relayCounts
 		cosmoslog.NewNopLogger(),
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
-		testkeeper.WithTokenLogicModules([]tlm.TokenLogicModule{
-			tlm.NewRelayBurnEqualsMintTLM(),
-		}),
+		testkeeper.WithTokenLogicModules(tokenLogicModules),
 	)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(sdkCtx, *service)
@@ -354,4 +359,47 @@ func sum(xs []int64) int64 {
 		total += x
 	}
 	return total
+}
+
+// failingTLM is a token logic module whose processing emits an event, then
+// fails.
+type failingTLM struct{}
+
+func (failingTLM) GetId() tlm.TokenLogicModuleId { return tlm.TLMGlobalMint }
+
+func (failingTLM) Process(ctx context.Context, _ cosmoslog.Logger, _ tlm.TLMContext) error {
+	if err := cosmostypes.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&tokenomicstypes.EventApplicationOverserviced{}); err != nil {
+		return err
+	}
+	return errors.New("failing TLM")
+}
+
+// A claim whose TLM processing fails leaves no trace in the settlement cache:
+// neither the application stake nor the validator rewards change.
+func TestProcessTokenLogicModules_FailedClaimLeavesSettlementCacheUnchanged(t *testing.T) {
+	f := newBudgetRedistributionFixture(t, 1000, []uint64{500}, tlm.NewRelayBurnEqualsMintTLM(), failingTLM{})
+
+	// Give the proposer a share so the first TLM adds validator rewards.
+	tokenomicsParams := f.keepers.Keeper.GetParams(f.ctx)
+	tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
+		Supplier: 0.5,
+		Proposer: 0.5,
+	}
+	require.NoError(t, f.keepers.Keeper.SetParams(f.ctx, tokenomicsParams))
+
+	sctx := tokenomicskeeper.NewSettlementContext(f.ctx, f.keepers.Keeper, f.keepers.Logger())
+	claim := prepareTestClaim(f.relays[0], f.service, &f.app, &f.suppliers[0])
+	require.NoError(t, sctx.ClaimCacheWarmUp(f.ctx, &claim))
+	sctx.IncrementSupplierCount(claim.SessionHeader.ApplicationAddress, claim.SessionHeader.SessionId)
+	require.NoError(t, sctx.AccumulateClaimBudget(f.ctx, &claim))
+
+	ctx, _ := testevents.ResetEventManager(f.ctx)
+	_, err := f.keepers.ProcessTokenLogicModules(ctx, sctx, tlm.NewClaimSettlementResult(claim))
+	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsProcessingTLM)
+	require.Empty(t, cosmostypes.UnwrapSDKContext(ctx).EventManager().Events())
+
+	app, err := sctx.GetApplication(f.app.Address)
+	require.NoError(t, err)
+	require.Equal(t, *f.app.Stake, *app.Stake)
+	require.Empty(t, sctx.GetValidatorRewardAccumulator())
 }

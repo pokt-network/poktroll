@@ -77,8 +77,16 @@ ollama:
   model: qwen:0.5b
 
 path_gateways:
-  # Number of path gateway nodes to run
+  # Number of gateway nodes to run (SAGE or PATH, see `gateway.type`)
   count: 1
+
+gateway:
+  # Gateway implementation: "sage" (default) or "path" (legacy, Grove helm chart).
+  # SAGE ignores App-Address (it bills its configured apps) and supports one
+  # gateway: use "path" for load tests, which send relays for many apps.
+  type: sage
+  # SAGE has no release tags yet: images are tagged <branch>-<short sha>
+  sage_image: ghcr.io/pokt-network/sage:main-2d18760
 
 path_local_repo:
   # Whether to use a local checkout of the PATH repo

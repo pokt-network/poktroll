@@ -62,3 +62,25 @@ func TestSeededFloat64(t *testing.T) {
 	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples.Load(), toleranceSamples, "true samples")
 	require.InDeltaf(t, expectedNumFalseSamples, numFalseSamples, toleranceSamples, "false samples")
 }
+
+// TestSeededFloat64_LowProbability checks the sub-percent tail is sampled at its
+// nominal rate (mainnet proof_request_probability is 0.001).
+func TestSeededFloat64_LowProbability(t *testing.T) {
+	const (
+		probability = 0.001
+		numSamples  = 2_000_000
+	)
+
+	numTrueSamples := 0
+	seed := make([]byte, 8)
+	for idx := uint64(0); idx < numSamples; idx++ {
+		binary.BigEndian.PutUint64(seed, idx)
+		if poktrand.SeededFloat64(seed) <= probability {
+			numTrueSamples++
+		}
+	}
+
+	// Expected 2000, stddev ~45: +/-10% is > 4 sigma.
+	expected := probability * numSamples
+	require.InEpsilon(t, expected, float64(numTrueSamples), 0.1)
+}

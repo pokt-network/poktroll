@@ -74,6 +74,9 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.StakingKeeper
 	tokenomicstypes.MigrationKeeper
 
+	// GatewayKeeper is the gateway keeper the application keeper uses.
+	GatewayKeeper *gatewaykeeper.Keeper
+
 	Codec *codec.ProtoCodec
 }
 
@@ -207,6 +210,14 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		EndBlockerUnbondApplications(gomock.Any()).
 		Return(nil).
 		AnyTimes()
+	// With no params history, the unbonding end height uses the default shared params.
+	mockApplicationKeeper.EXPECT().
+		GetApplicationUnbondingEndHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, app *apptypes.Application) int64 {
+			sharedParams := sharedtypes.DefaultParams()
+			return apptypes.GetApplicationUnbondingHeight(&sharedParams, app)
+		}).
+		AnyTimes()
 
 	// Return DefaultParams (non-nil MinStake) so the settlement auto-unstake check
 	// in ProcessTokenLogicModules reads a valid min_stake. An empty Params{} has a
@@ -240,8 +251,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(sharedtypes.Supplier{}, false).
 		AnyTimes()
 	mockSupplierKeeper.EXPECT().
-		GetSupplierActiveServiceConfig(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, supplierInstance *sharedtypes.Supplier, serviceId string) []*sharedtypes.SupplierServiceConfig {
+		GetSupplierActiveServiceConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, supplierInstance *sharedtypes.Supplier, serviceId string, _ int64) []*sharedtypes.SupplierServiceConfig {
 			if supplier.OperatorAddress != supplierInstance.OperatorAddress {
 				return []*sharedtypes.SupplierServiceConfig{}
 			}
@@ -272,6 +283,11 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		AnyTimes()
 	mockBankKeeper.EXPECT().
 		SendCoinsFromModuleToModule(gomock.Any(), apptypes.ModuleName, tokenomicstypes.ModuleName, gomock.Any()).
+		AnyTimes()
+	blockedAddrs := blockedModuleAddrs()
+	mockBankKeeper.EXPECT().
+		BlockedAddr(gomock.Any()).
+		DoAndReturn(func(addr cosmostypes.AccAddress) bool { return blockedAddrs[addr.String()] }).
 		AnyTimes()
 
 	// Mock the account keeper
@@ -429,6 +445,7 @@ func NewTokenomicsModuleKeepers(
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
 	stateStore := integration.CreateMultiStore(keys, log.NewNopLogger())
+	sessionTransientStoreKey := MountSessionTransientStore(t, stateStore)
 
 	// Use the test logger by default (i.e. if none is given).
 	if logger == nil {
@@ -486,7 +503,7 @@ func NewTokenomicsModuleKeepers(
 		cdc,
 		runtime.NewKVStoreService(keys[banktypes.StoreKey]),
 		accountKeeper,
-		make(map[string]bool),
+		blockedModuleAddrs(),
 		authority.String(),
 		logger,
 	)
@@ -577,6 +594,7 @@ func NewTokenomicsModuleKeepers(
 	sessionKeeper := sessionkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(keys[sessiontypes.StoreKey]),
+		runtime.NewTransientStoreService(sessionTransientStoreKey),
 		logger,
 		authority.String(),
 		accountKeeper,
@@ -736,6 +754,7 @@ func NewTokenomicsModuleKeepers(
 		ServiceKeeper:     &serviceKeeper,
 		StakingKeeper:     mockStakingKeeper,
 		MigrationKeeper:   &migrationKeeper,
+		GatewayKeeper:     &gatewayKeeper,
 
 		Codec: cdc,
 	}
@@ -1077,4 +1096,13 @@ func WithValidatorDelegationConfigs(configs []ValidatorDelegationConfig) Tokenom
 		}
 		cfg.initKeepersFns = append(cfg.initKeepersFns, initValidatorAndDelegatorAccounts)
 	}
+}
+
+// blockedModuleAddrs returns the addresses the app's bank keeper refuses to send funds to.
+func blockedModuleAddrs() map[string]bool {
+	blockedAddrs := make(map[string]bool)
+	for moduleName := range app.BlockedAddresses() {
+		blockedAddrs[authtypes.NewModuleAddress(moduleName).String()] = true
+	}
+	return blockedAddrs
 }

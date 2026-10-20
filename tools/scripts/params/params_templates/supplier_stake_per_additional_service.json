@@ -1,0 +1,15 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.supplier.MsgUpdateParam",
+        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "name": "stake_per_additional_service",
+        "as_coin": {
+          "amount": "0",
+          "denom": "upokt"
+        }
+      }
+    ]
+  }
+}

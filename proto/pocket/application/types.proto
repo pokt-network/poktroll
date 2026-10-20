@@ -61,6 +61,28 @@ message Application {
   // forever avoids the pruning-induced historical-query non-determinism observed
   // on the supplier side (see session_mutation_analysis).
   repeated ApplicationServiceConfigUpdate service_config_history = 9;
+
+  // Timeline of per_session_spend_limit values and the heights at which each
+  // took effect. Settlement resolves the limit in effect at a claim's session
+  // start height from this history.
+  //
+  // Written only when the limit actually changes; a change takes effect at the
+  // next session start height (same rule as service_config_history), so the
+  // limit is constant for the duration of any single session. Empty history
+  // means the limit has never changed and per_session_spend_limit applies at
+  // every height. Not pruned, for the same reason as service_config_history.
+  repeated ApplicationPerSessionSpendLimitUpdate per_session_spend_limit_history = 10;
+}
+
+// ApplicationPerSessionSpendLimitUpdate records the per-session spend limit
+// that is in effect from activation_height until the next entry's activation_height.
+message ApplicationPerSessionSpendLimitUpdate {
+  // Per-session spend limit in uPOKT. Nil = no limit.
+  cosmos.base.v1beta1.Coin per_session_spend_limit = 1;
+
+  // Block height (a session start height, or 1 for the backfilled initial value)
+  // from which this limit is in effect.
+  int64 activation_height = 2;
 }
 
 // ApplicationServiceConfigUpdate tracks a change in an application's service

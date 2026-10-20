@@ -28,9 +28,10 @@ func (k msgServer) UpdateParams(
 		)
 	}
 
-	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params))
+	paramsBefore := k.GetParams(ctx)
+	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", paramsBefore, msg.Params))
 
-	if err := k.SetParams(ctx, msg.Params); err != nil {
+	if err := k.setParams(ctx, paramsBefore, msg.Params); err != nil {
 		err = fmt.Errorf("unable to set params: %w", err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())

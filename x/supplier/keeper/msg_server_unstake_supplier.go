@@ -38,8 +38,11 @@ func (k msgServer) UnstakeSupplier(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// Check if the supplier already exists or not
-	supplier, isSupplierFound := k.GetSupplier(ctx, msg.GetOperatorAddress())
+	// Check if the supplier already exists or not.
+	// Dehydrated on purpose: only the owner, operator and unstake height are read
+	// here, and BeginSupplierUnbonding reloads the service config history itself.
+	// Hydrating would gas-meter the whole history for nothing.
+	supplier, isSupplierFound := k.GetDehydratedSupplier(ctx, msg.GetOperatorAddress())
 	if !isSupplierFound {
 		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.GetOperatorAddress()))
 		return nil, status.Error(
@@ -79,33 +82,20 @@ func (k msgServer) UnstakeSupplier(
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// Mark the supplier as unstaking by recording the height at which it should stop
-	// providing service.
+	// providing service, and schedule its active service configurations to be
+	// deactivated at the start of the next session.
 	// The supplier MUST continue to provide service until the end of the current
 	// session. I.e., onchain sessions' suppliers list MUST NOT change mid-session.
 	// Removing it right away could have undesired effects on the network
 	// (e.g. a session with less than the minimum or 0 number of suppliers,
 	// offchain actors that need to listen to session supplier's change mid-session, etc).
-	supplier.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
-
-	// Schedule all the old service configurations to be deactivated at the start of the next session
-	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
-	for _, serviceConfig := range supplier.ServiceConfigHistory {
-		serviceConfig.DeactivationHeight = nextSessionStartHeight
-	}
-
-	// Update the supplier record in state
-	k.SetAndIndexDehydratedSupplier(ctx, supplier)
-
-	// dehydrate the supplier to avoid sending the entire object
-	supplier.Services = nil
-	supplier.ServiceConfigHistory = nil
+	k.BeginSupplierUnbonding(ctx, &supplier, &sharedParams, suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY)
 
 	// Emit an event signaling that the supplier has begun the unbonding process
-	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
+	unbondingEndHeight := k.GetSupplierUnbondingEndHeight(ctx, &supplier)
 	event := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &supplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,

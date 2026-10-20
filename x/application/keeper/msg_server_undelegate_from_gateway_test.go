@@ -72,12 +72,13 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 
 	for i, redelegationEvent := range redelgationEvents {
 		expectedApp := &apptypes.Application{
-			Address:                   stakeMsg.GetAddress(),
-			Stake:                     stakeMsg.GetStake(),
-			ServiceConfigs:            stakeMsg.GetServices(),
-			ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
-			DelegateeGatewayAddresses: expectedGatewayAddresses[:i+1],
-			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+			Address:                     stakeMsg.GetAddress(),
+			Stake:                       stakeMsg.GetStake(),
+			ServiceConfigs:              stakeMsg.GetServices(),
+			ServiceConfigHistory:        make([]*apptypes.ApplicationServiceConfigUpdate, 0),
+			PerSessionSpendLimitHistory: make([]*apptypes.ApplicationPerSessionSpendLimitUpdate, 0),
+			DelegateeGatewayAddresses:   expectedGatewayAddresses[:i+1],
+			PendingUndelegations:        make(map[uint64]apptypes.UndelegatingGatewayList),
 		}
 		expectedRedelegationEvent := &apptypes.EventRedelegation{
 			Application:      expectedApp,
@@ -105,11 +106,12 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	// Assert that the EventRedelegation event is emitted.
 	expectedGatewayAddresses = append(expectedGatewayAddresses[:3], expectedGatewayAddresses[4:]...)
 	expectedApp := &apptypes.Application{
-		Address:                   stakeMsg.GetAddress(),
-		Stake:                     stakeMsg.GetStake(),
-		ServiceConfigs:            stakeMsg.GetServices(),
-		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
-		DelegateeGatewayAddresses: expectedGatewayAddresses,
+		Address:                     stakeMsg.GetAddress(),
+		Stake:                       stakeMsg.GetStake(),
+		ServiceConfigs:              stakeMsg.GetServices(),
+		ServiceConfigHistory:        make([]*apptypes.ApplicationServiceConfigUpdate, 0),
+		PerSessionSpendLimitHistory: make([]*apptypes.ApplicationPerSessionSpendLimitUpdate, 0),
+		DelegateeGatewayAddresses:   expectedGatewayAddresses,
 		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
 			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},
 		},
@@ -206,12 +208,13 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedApp := &apptypes.Application{
-		Address:                   stakeMsg.GetAddress(),
-		Stake:                     stakeMsg.GetStake(),
-		ServiceConfigs:            stakeMsg.GetServices(),
-		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
-		DelegateeGatewayAddresses: []string{gatewayAddr2},
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		Address:                     stakeMsg.GetAddress(),
+		Stake:                       stakeMsg.GetStake(),
+		ServiceConfigs:              stakeMsg.GetServices(),
+		ServiceConfigHistory:        make([]*apptypes.ApplicationServiceConfigUpdate, 0),
+		PerSessionSpendLimitHistory: make([]*apptypes.ApplicationPerSessionSpendLimitUpdate, 0),
+		DelegateeGatewayAddresses:   []string{gatewayAddr2},
+		PendingUndelegations:        make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
 	expectedRedelegationEvent := &apptypes.EventRedelegation{
 		Application:      expectedApp,
@@ -280,12 +283,13 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedApp := &apptypes.Application{
-		Address:                   stakeMsg.GetAddress(),
-		Stake:                     stakeMsg.GetStake(),
-		ServiceConfigs:            stakeMsg.GetServices(),
-		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
-		DelegateeGatewayAddresses: []string{gatewayAddr},
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		Address:                     stakeMsg.GetAddress(),
+		Stake:                       stakeMsg.GetStake(),
+		ServiceConfigs:              stakeMsg.GetServices(),
+		ServiceConfigHistory:        make([]*apptypes.ApplicationServiceConfigUpdate, 0),
+		PerSessionSpendLimitHistory: make([]*apptypes.ApplicationPerSessionSpendLimitUpdate, 0),
+		DelegateeGatewayAddresses:   []string{gatewayAddr},
+		PendingUndelegations:        make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
 	expectedRedelegationEvent := &apptypes.EventRedelegation{
 		Application:      expectedApp,
@@ -325,11 +329,12 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.Equal(t, 1, len(redelegationEvents))
 
 	expectedApp = &apptypes.Application{
-		Address:                   stakeMsg.GetAddress(),
-		Stake:                     stakeMsg.GetStake(),
-		ServiceConfigs:            stakeMsg.GetServices(),
-		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
-		DelegateeGatewayAddresses: make([]string, 0),
+		Address:                     stakeMsg.GetAddress(),
+		Stake:                       stakeMsg.GetStake(),
+		ServiceConfigs:              stakeMsg.GetServices(),
+		ServiceConfigHistory:        make([]*apptypes.ApplicationServiceConfigUpdate, 0),
+		PerSessionSpendLimitHistory: make([]*apptypes.ApplicationPerSessionSpendLimitUpdate, 0),
+		DelegateeGatewayAddresses:   make([]string, 0),
 		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
 			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},
 		},

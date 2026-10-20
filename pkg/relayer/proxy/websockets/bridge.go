@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"sync/atomic"
 
 	"github.com/gorilla/websocket"
 
@@ -53,6 +54,7 @@ type bridge struct {
 	ctx       context.Context
 	cancelCtx context.CancelFunc
 	logger    polylog.Logger
+	serviceId string
 
 	// Pre-derived per-handler loggers. NewBridge runs concurrently across
 	// websocket upgrades, so any per-message .With(...) on a shared parent
@@ -205,6 +207,7 @@ func NewBridge(
 		ctx:                ctx,
 		cancelCtx:          cancelCtx,
 		logger:             bridgeLogger,
+		serviceId:          session.Header.ServiceId,
 		gatewayMsgLogger:   bridgeLogger.With("message_source", string(messageSourceGateway)),
 		backendMsgLogger:   bridgeLogger.With("message_source", string(messageSourceServiceBackend)),
 		serviceBackendConn: serviceBackendConn,
@@ -245,12 +248,16 @@ func (b *bridge) Run(closeHeight int64) {
 		b.messageLoop()
 	}()
 
+	var lastHeight atomic.Int64
+	var reachedCloseHeight atomic.Bool
 	channel.ForEach(
 		b.ctx,
 		b.blockClient.CommittedBlocksSequence(b.ctx),
 		func(ctx context.Context, block client.Block) {
+			lastHeight.Store(block.Height())
 			if block.Height() >= closeHeight {
-				b.logger.Info().Msg("session closing, bridge stopped")
+				reachedCloseHeight.Store(true)
+				b.logger.Info().Int64("height", block.Height()).Msg("session closing, bridge stopped")
 				// TODO_MAINNET(@red-0ne) Propagate the session closing as a close message
 				// to the gateway so end user can be informed.
 				b.cancelCtx()
@@ -274,7 +281,17 @@ func (b *bridge) Run(closeHeight int64) {
 	b.gatewayConn.waitSenders()
 	b.stopChanCloseOnce.Do(func() { close(b.stopChan) })
 
-	b.logger.Info().Msg("bridge stopped")
+	height := lastHeight.Load()
+	// The bridge stopped at its session's end only if it saw the close height
+	// before either side disconnected.
+	reason := "disconnect"
+	if reachedCloseHeight.Load() {
+		reason = "session_end"
+	}
+	if height > 0 {
+		relayer.WebsocketBridgeCloseHeight.With("service_id", b.serviceId, "reason", reason).Set(float64(height))
+	}
+	b.logger.Info().Int64("last_height", height).Str("reason", reason).Msg("bridge stopped")
 }
 
 // goCancelBridgeOnStop cancels the bridge context as soon as the stop observable
@@ -341,6 +358,13 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 		return
 	}
 
+	if err := relayRequest.ValidateBasic(); err != nil {
+		b.serviceBackendConn.handleError(
+			ErrWebsocketsGatewayMessage.Wrapf("invalid relay request: %v", err),
+		)
+		return
+	}
+
 	// Ensure that the relay request is for the session that the bridge is serving.
 	if relayRequest.Meta.SessionHeader.SessionId != b.session.Header.SessionId {
 		b.serviceBackendConn.handleError(
@@ -353,12 +377,6 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 	}
 
 	serviceId := relayRequest.Meta.SessionHeader.ServiceId
-
-	// Store the latest relay request to guarantee that there is always a request/response.
-	// This is to guarantee that any mined Relay will contain a request/response pair
-	// which is a requirement for the protocol's proof verification.
-	// E.g. The latest eth_subscribe RelayRequest will be mapped to multiple responses.
-	b.setLatestRelayRequest(&relayRequest)
 
 	relayer.RelaysTotal.With(
 		"service_id", serviceId,
@@ -377,6 +395,13 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 	}
 
 	logger.Debug().Msg("relay request verified")
+
+	// Store the latest relay request to guarantee that there is always a request/response.
+	// This is to guarantee that any mined Relay will contain a request/response pair
+	// which is a requirement for the protocol's proof verification.
+	// E.g. The latest eth_subscribe RelayRequest will be mapped to multiple responses.
+	// Only a verified request is stored: backend messages are paired with it.
+	b.setLatestRelayRequest(&relayRequest)
 
 	// Forward the relay request payload to the service backend.
 	if err := b.serviceBackendConn.WriteMessage(msg.messageType, relayRequest.Payload); err != nil {

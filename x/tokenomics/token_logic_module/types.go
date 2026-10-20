@@ -62,10 +62,12 @@ func (tlm TokenLogicModuleId) EnumIndex() int {
 // - All token logic modules must implement this interface
 //
 // IMPORTANT_SIDE_EFFECTS:
-// - TLMs may update the application and supplier objects (passed as pointers)
-// - TLMs CANNOT persist any state changes
-// - Persistence of updated application and supplier is handled by the tokenomics keeper in `ProcessTokenLogicModules()`
-// - This design and separation of concerns may change in the future
+//   - TLMs may update the application object (passed as a pointer)
+//   - The supplier object is a per-claim copy holding only the claim's service
+//     configuration: TLMs MUST treat it as read-only, since changes are not persisted
+//   - TLMs CANNOT persist any state changes
+//   - Persistence of the updated application is handled by the tokenomics keeper in `ProcessTokenLogicModules()`
+//   - This design and separation of concerns may change in the future
 //
 // DEV_NOTE:
 // - As of writing, this anticipates potentially unstaking actors if their stake falls below a threshold

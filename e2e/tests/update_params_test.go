@@ -520,14 +520,33 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case suppliertypes.ModuleName:
-		minStake := s.expectedModuleParams[moduleName][suppliertypes.ParamMinStake].value.(*cosmostypes.Coin)
-		stakingFee := s.expectedModuleParams[moduleName][suppliertypes.ParamStakingFee].value.(*cosmostypes.Coin)
+		// Params absent from the scenario's table keep their defaults onchain.
+		defaults := suppliertypes.DefaultParams()
+		moduleParams := s.expectedModuleParams[moduleName]
+		minStake := defaults.MinStake
+		if param, ok := moduleParams[suppliertypes.ParamMinStake]; ok {
+			minStake = param.value.(*cosmostypes.Coin)
+		}
+		stakingFee := defaults.StakingFee
+		if param, ok := moduleParams[suppliertypes.ParamStakingFee]; ok {
+			stakingFee = param.value.(*cosmostypes.Coin)
+		}
+		includedServices := suppliertypes.DefaultMinStakeIncludedServices
+		if param, ok := moduleParams[suppliertypes.ParamMinStakeIncludedServices]; ok {
+			includedServices = param.value.(uint64)
+		}
+		pricePerService := &suppliertypes.DefaultStakePerAdditionalService
+		if param, ok := moduleParams[suppliertypes.ParamStakePerAdditionalService]; ok {
+			pricePerService = param.value.(*cosmostypes.Coin)
+		}
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&suppliertypes.QueryParamsResponse{
 				Params: suppliertypes.Params{
-					MinStake:   minStake,
-					StakingFee: stakingFee,
+					MinStake:                  minStake,
+					StakingFee:                stakingFee,
+					MinStakeIncludedServices:  includedServices,
+					StakePerAdditionalService: pricePerService,
 				},
 			},
 		)

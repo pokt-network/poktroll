@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"context"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,14 +23,9 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 
 	currentHeight := ctx.BlockHeight()
 
-	// Calculate the block height at which undelegations should be pruned
-	numBlocksUndelegationRetention := k.GetNumBlocksUndelegationRetention(ctx)
-	// Skip pruning when current height is less than retention pTargeteriod to prevent
-	// looking up negative or zero block heights.
-	if currentHeight <= numBlocksUndelegationRetention {
-		return nil
-	}
-	earliestUnprunedUndelegationHeight := uint64(currentHeight - numBlocksUndelegationRetention)
+	// Retention blocks by undelegation session end height. Block-scoped: many
+	// undelegations share a session end height and each needs one params lookup.
+	retentionBlocksBySessionEndHeight := make(map[uint64]int64)
 
 	// Iterate over all applications that have pending undelegations and prune
 	// undelegations that are older than the retention period.
@@ -60,7 +54,15 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 		}
 
 		for undelegationSessionEndHeight := range application.PendingUndelegations {
-			if undelegationSessionEndHeight < earliestUnprunedUndelegationHeight {
+			// A session's proofs are validated against the windows of the params
+			// in effect at its end, so its retention uses those params too.
+			retentionBlocks, ok := retentionBlocksBySessionEndHeight[undelegationSessionEndHeight]
+			if !ok {
+				sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, int64(undelegationSessionEndHeight))
+				retentionBlocks = GetNumBlocksUndelegationRetention(&sharedParams)
+				retentionBlocksBySessionEndHeight[undelegationSessionEndHeight] = retentionBlocks
+			}
+			if int64(undelegationSessionEndHeight)+retentionBlocks < currentHeight {
 				// prune undelegations
 				delete(application.PendingUndelegations, undelegationSessionEndHeight)
 			}
@@ -73,19 +75,15 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 }
 
 // GetNumBlocksUndelegationRetention returns the number of blocks for which
-// undelegations should be kept before being pruned, given the current onchain
-// shared module parameters.
-func (k Keeper) GetNumBlocksUndelegationRetention(ctx context.Context) int64 {
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	return GetNumBlocksUndelegationRetention(&sharedParams)
-}
-
-// GetNumBlocksUndelegationRetention returns the number of blocks for which
 // undelegations should be kept before being pruned, given the passed shared
 // module parameters.
 func GetNumBlocksUndelegationRetention(sharedParams *sharedtypes.Params) int64 {
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	return int64(sharedParams.GetGracePeriodEndOffsetBlocks()) +
+	retentionBlocks := int64(sharedParams.GetGracePeriodEndOffsetBlocks()) +
 		(numBlocksPerSession * NumSessionsAppToGatewayUndelegationRetention)
+
+	// Proofs for a session are validated against its ring until its proof window
+	// closes, so keep the session's undelegations at least that long.
+	return max(retentionBlocks, sharedtypes.GetSessionEndToProofWindowCloseHeightBlocks(sharedParams))
 }

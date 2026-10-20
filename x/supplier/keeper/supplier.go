@@ -82,6 +82,8 @@ func (k Keeper) RemoveSupplier(ctx context.Context, supplierOperatorAddress stri
 	// Remove all associated indexes
 	k.removeSupplierServiceConfigUpdateIndexes(ctx, supplierOperatorAddress)
 	k.removeSupplierUnstakingHeightIndex(ctx, supplierOperatorAddress)
+	k.removeServicePriority(ctx, supplierOperatorAddress)
+	k.removeBelowMinStakeUnbonding(ctx, supplierOperatorAddress)
 
 	// Delete the supplier from the store
 	supplierStore := k.getSupplierStore(ctx)
@@ -160,24 +162,16 @@ func (k Keeper) hydratePartialDehydratedSupplierServiceConfigs(ctx context.Conte
 	supplier.ServiceConfigHistory = nil
 }
 
-// GetSupplierActiveServiceConfig retrieves a supplier's active service configuration
-// update for a specific service ID based on the current block height.
-
-// The function:
-// - Retrieves the supplier's service configuration history for the specified service ID
-// - Returns the configuration that is active at the current block height
+// GetSupplierActiveServiceConfig returns the supplier's service configuration for
+// serviceId that is active at the given height.
 func (k Keeper) GetSupplierActiveServiceConfig(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
 	serviceId string,
+	height int64,
 ) []*sharedtypes.SupplierServiceConfig {
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	currentHeight := sdkCtx.BlockHeight()
-
-	// Retrieve the supplier's service configuration history for the specified service ID.
 	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, serviceId)
-	// Determine which update is active at the current block height.
-	return sharedtypes.GetActiveServiceConfigsFromHistory(serviceConfigHistory, currentHeight)
+	return sharedtypes.GetActiveServiceConfigsFromHistory(serviceConfigHistory, height)
 }
 
 // getSupplierStore returns a KVStore for the supplier data

@@ -113,6 +113,12 @@ func TestParams_ValidateProofWindowOpenOffsetBlocks(t *testing.T) {
 			err:                         ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
 		},
 		{
+			// The proof seed block would precede the last block accepting claims.
+			desc:                        "zero ProofWindowOpenOffsetBlocks",
+			proofWindowOpenOffsetBlocks: uint64(0),
+			err:                         ErrSharedParamInvalid.Wrapf("proof_window_open_offset_blocks must be at least 1, got 0"),
+		},
+		{
 			desc:                        "valid ProofWindowOpenOffsetBlocks",
 			proofWindowOpenOffsetBlocks: uint64(4),
 		},
@@ -298,8 +304,8 @@ func TestParams_ValidateGatewayUnbondingPeriodSessions(t *testing.T) {
 
 func TestParams_ValidateNumPendingSessionsIsPositive(t *testing.T) {
 	// zeroWindowParams starts from the defaults and zeroes every claim/proof window
-	// offset. Each offset is individually valid at zero, so only the cumulative check
-	// rejects this combination.
+	// offset. The proof window open offset must be at least 1, which rejects this
+	// combination before the cumulative check does.
 	zeroWindowParams := DefaultParams()
 	zeroWindowParams.ClaimWindowOpenOffsetBlocks = 0
 	zeroWindowParams.ClaimWindowCloseOffsetBlocks = 0
@@ -315,12 +321,12 @@ func TestParams_ValidateNumPendingSessionsIsPositive(t *testing.T) {
 	t.Run("all-zero window offsets are rejected", func(t *testing.T) {
 		err := zeroWindowParams.ValidateBasic()
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "must be greater than 0")
+		require.Contains(t, err.Error(), "proof_window_open_offset_blocks must be at least 1")
 	})
 
-	t.Run("a single non-zero window offset is enough", func(t *testing.T) {
+	t.Run("a proof window open offset of 1 is enough", func(t *testing.T) {
 		params := zeroWindowParams
-		params.ProofWindowCloseOffsetBlocks = 1
+		params.ProofWindowOpenOffsetBlocks = 1
 
 		require.Positive(t, GetNumPendingSessions(&params))
 		require.NoError(t, params.ValidateBasic())
@@ -332,4 +338,34 @@ func TestParams_ValidateNumPendingSessionsIsPositive(t *testing.T) {
 		require.Positive(t, GetNumPendingSessions(&params))
 		require.NoError(t, params.ValidateBasic())
 	})
+}
+
+// Valid params keep a supplier or application that unstakes in a session staked
+// until that session's proof window closes.
+func TestParams_UnbondingEndsAtOrAfterProofWindowClose(t *testing.T) {
+	newParams := func(supplierUnbondingPeriodSessions, applicationUnbondingPeriodSessions uint64) Params {
+		params := DefaultParams()
+		params.NumBlocksPerSession = 8
+		params.GracePeriodEndOffsetBlocks = 1
+		params.ClaimWindowOpenOffsetBlocks = 1
+		params.ClaimWindowCloseOffsetBlocks = 4
+		params.ProofWindowOpenOffsetBlocks = 1
+		params.ProofWindowCloseOffsetBlocks = 2
+		params.SupplierUnbondingPeriodSessions = supplierUnbondingPeriodSessions
+		params.ApplicationUnbondingPeriodSessions = applicationUnbondingPeriodSessions
+		params.GatewayUnbondingPeriodSessions = 1
+		return params
+	}
+
+	validate := func(params Params) error { return params.ValidateBasic() }
+
+	// One session (8 blocks) ends one block before the proof window close (9 blocks after the session end).
+	require.ErrorContains(t, validate(newParams(1, 2)), "SupplierUnbondingPeriodSessions")
+	require.ErrorContains(t, validate(newParams(2, 1)), "ApplicationUnbondingPeriodSessions")
+
+	params := newParams(2, 2)
+	require.NoError(t, params.ValidateBasic())
+	sessionEndHeight := GetSessionEndHeight(&params, 10)
+	unbondingEndHeight := sessionEndHeight + int64(params.ApplicationUnbondingPeriodSessions*params.NumBlocksPerSession)
+	require.GreaterOrEqual(t, unbondingEndHeight, GetProofWindowCloseHeight(&params, sessionEndHeight))
 }

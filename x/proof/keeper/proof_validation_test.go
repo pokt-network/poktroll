@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/hex"
 	"testing"
 
@@ -9,8 +10,6 @@ import (
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	ring_secp256k1 "github.com/pokt-network/go-dleq/secp256k1"
-	"github.com/pokt-network/ring-go"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
@@ -113,7 +112,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
-		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper, log.NewNopLogger()),
 		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 	))
 	require.NoError(t, err)
@@ -482,9 +481,12 @@ func TestEnsureValidProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
+			// The size check runs before deserializing: the first 4 bytes are
+			// read as the member count, which is out of bounds.
 			expectedErr: prooftypes.ErrProofInvalidRelayRequest.Wrapf(
-				"error deserializing ring signature: %s",
-				new(ring.RingSig).Deserialize(ring_secp256k1.NewCurve(), invalidSignatureBz),
+				"ring signature has %d members, expected between 2 and %d",
+				binary.BigEndian.Uint32(invalidSignatureBz[:4]),
+				rings.MaxRingSignatureMembers,
 			),
 		},
 		{
@@ -557,7 +559,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			},
 		},
 		{
-			desc: "the merkle proof path provided does not match the one expected/enforced by the protocol",
+			desc: "the merkle proof must be for the leaf selected by the seed expected/enforced by the protocol",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a new valid session tree for this test case because once the
 				// closest proof has already been generated, the path cannot be changed.
@@ -590,11 +592,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// with an invalid relay response signature.
 				return testtree.NewProof(t, supplierOperatorAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
 			},
-			expectedErr: prooftypes.ErrProofInvalidProof.Wrapf(
-				"the path of the proof provided (%x) does not match one expected by the onchain protocol (%x)",
-				wrongClosestProofPath,
-				protocol.GetPathForProof(sdkCtx.HeaderHash(), validSessionHeader.GetSessionId()),
-			),
+			expectedErr: prooftypes.ErrProofInvalidProof.Wrap("invalid weighted merkle proof"),
 		},
 		{
 			desc: "relay difficulty must be greater than or equal to a high difficulty (low target hash)",
@@ -733,7 +731,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: prooftypes.ErrProofInvalidProof.Wrap("invalid closest merkle proof"),
+			expectedErr: prooftypes.ErrProofInvalidProof.Wrap("invalid weighted merkle proof"),
 		},
 		{
 			desc: "claim and proof application addresses must match",

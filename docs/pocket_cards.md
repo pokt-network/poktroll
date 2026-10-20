@@ -315,6 +315,28 @@ a property of the service, not of the gateway fronting it.
 
 ---
 
+# Change events
+
+Indexers do not need to poll and diff cards. The chain emits a typed event whenever a stored
+card changes:
+
+| Card kind | Event | Emitted by |
+|---|---|---|
+| Service | `pocket.service.EventServiceMetadataUpdated` | `MsgAddService` |
+| Gateway | `pocket.gateway.EventGatewayMetadataUpdated` | `MsgUpdateGatewayMetadata` |
+
+- **Both carry primitives only:** the service ID or gateway address, `session_end_height` and
+  `card_size_bytes`. The card itself is never in the event log; read it from state.
+- **Only a card change emits.** Re-sending the stored card byte for byte, or sending no card,
+  emits no card event. A service update that changes only its name or
+  `compute_units_per_relay` is stored but emits no card event; an update that changes nothing
+  at all is not even written.
+- **A new service created with a card emits.** From an indexer's point of view the stored card
+  went from none to this one. A gateway has no equivalent: it must already be staked before
+  `MsgUpdateGatewayMetadata` can set a card.
+
+---
+
 # Commands
 
 Everything below is `pocketd`. Add `--network=<main|beta|local>`, `--home`, and
@@ -375,8 +397,11 @@ services:
 ```
 
 - An entry that names no `card_file` leaves that service's stored card untouched.
-- A service is skipped only when **both** its `compute_units_per_relay` and its card already
-  match what is on-chain.
+- An entry that sets `service_name` to a name different from the on-chain one **renames** the
+  service. Omit `service_name` to keep the on-chain name.
+- A service is skipped only when its name (if set), its `compute_units_per_relay` and its card
+  all already match what is on-chain. The command prints what each update changes, with the old
+  and new values.
 - Card comparison is **byte-exact**, so reformatting a card file counts as a change even when the
   JSON is semantically identical.
 - `--disable-batch-msgs` sends one transaction per service instead of one batched transaction.

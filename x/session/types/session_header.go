@@ -8,6 +8,10 @@ import (
 
 // ValidateBasic performs basic stateless validation of a SessionHeader.
 func (sh *SessionHeader) ValidateBasic() error {
+	if sh == nil {
+		return ErrSessionInvalidSessionId.Wrap("missing session header")
+	}
+
 	// Validate the application address
 	if _, err := sdk.AccAddressFromBech32(sh.ApplicationAddress); err != nil {
 		return ErrSessionInvalidAppAddress.Wrapf("%q; (%s)", sh.ApplicationAddress, err)

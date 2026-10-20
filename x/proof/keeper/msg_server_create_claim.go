@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"math/bits"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -95,10 +96,12 @@ func (k msgServer) CreateClaim(
 	// For a specific service, each relay costs the same amount.
 	// TODO_POST_MAINNET: Investigate ways of having request specific compute unit
 	// costs within the same service.
-	numExpectedComputeUnitsToClaim := numRelays * serviceComputeUnitsPerRelay
+	// The product is checked for overflow: a wrapped product would let a claim
+	// pair a tiny compute unit sum with an arbitrarily large relay count.
+	overflow, numExpectedComputeUnitsToClaim := bits.Mul64(numRelays, serviceComputeUnitsPerRelay)
 
 	// Ensure the number of compute units claimed is equal to the number of relays
-	if numClaimComputeUnits != numExpectedComputeUnitsToClaim {
+	if overflow != 0 || numClaimComputeUnits != numExpectedComputeUnitsToClaim {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrProofComputeUnitsMismatch.Wrap(

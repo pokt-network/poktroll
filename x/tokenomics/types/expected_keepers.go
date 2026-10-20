@@ -39,6 +39,7 @@ type BankKeeper interface {
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr cosmostypes.AccAddress, amt cosmostypes.Coins) error
 	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt cosmostypes.Coins) error
 	Balance(context.Context, *banktypes.QueryBalanceRequest) (*banktypes.QueryBalanceResponse, error)
+	BlockedAddr(addr cosmostypes.AccAddress) bool
 }
 
 type ApplicationKeeper interface {
@@ -46,6 +47,7 @@ type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	GetParams(ctx context.Context) (params apptypes.Params)
+	GetApplicationUnbondingEndHeight(ctx context.Context, application *apptypes.Application) int64
 
 	// Setters
 	SetApplication(ctx context.Context, app apptypes.Application)
@@ -110,11 +112,14 @@ type SupplierKeeper interface {
 	GetParams(ctx context.Context) suppliertypes.Params
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetDehydratedSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
-	GetSupplierActiveServiceConfig(ctx context.Context, supplier *sharedtypes.Supplier, serviceId string) (activeServiceConfigs []*sharedtypes.SupplierServiceConfig)
+	GetSupplierActiveServiceConfig(ctx context.Context, supplier *sharedtypes.Supplier, serviceId string, height int64) (activeServiceConfigs []*sharedtypes.SupplierServiceConfig)
 
 	// Setters
 	SetAndIndexDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 	SetDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	BeginSupplierUnbonding(ctx context.Context, supplier *sharedtypes.Supplier, sharedParams *sharedtypes.Params, reason suppliertypes.SupplierUnbondingReason) (unstakeSessionEndHeight int64)
+	GetSupplierUnbondingEndHeight(ctx context.Context, supplier *sharedtypes.Supplier) int64
+	EnforceServiceCap(ctx context.Context, supplier *sharedtypes.Supplier, reason suppliertypes.ServiceCapReason) (deactivatedServiceIds []string)
 }
 
 type ServiceKeeper interface {

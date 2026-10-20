@@ -3,7 +3,9 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"maps"
 	"math/big"
+	"math/bits"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -28,7 +30,25 @@ import (
 // amount to the actual settlement amount and handling the case for overserviced applications.
 //
 // IMPORTANT: It is assumed that the proof for the claim has been validated BEFORE calling this function.
+//
+// The events emitted while processing the claim are kept only if it succeeds:
+// a failed claim is discarded, so its events are dropped with it.
 func (k Keeper) ProcessTokenLogicModules(
+	ctx context.Context,
+	settlementContext *settlementContext,
+	pendingResult *tokenomicstypes.ClaimSettlementResult,
+) (cosmostypes.Coin, error) {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	claimEvents := cosmostypes.NewEventManager()
+	settlementCoin, err := k.processTokenLogicModules(sdkCtx.WithEventManager(claimEvents), settlementContext, pendingResult)
+	if err != nil {
+		return settlementCoin, err
+	}
+	sdkCtx.EventManager().EmitEvents(claimEvents.Events())
+	return settlementCoin, nil
+}
+
+func (k Keeper) processTokenLogicModules(
 	ctx context.Context,
 	settlementContext *settlementContext,
 	pendingResult *tokenomicstypes.ClaimSettlementResult,
@@ -106,10 +126,11 @@ func (k Keeper) ProcessTokenLogicModules(
 	// DEV_NOTE: two distinct shared params epochs are in play here, and they are NOT
 	// interchangeable:
 	//
-	//   - sharedParams (LIVE) is used further below to project FUTURE heights from the
-	//     CURRENT block (session end height, application unbonding height). Those must use
-	//     the session grid in effect now; resolving them at session start would schedule
-	//     unbonding against a stale num_blocks_per_session.
+	//   - sharedParams (LIVE) is used further below for the CURRENT session's end height,
+	//     where a below-min-stake unbonding begins. It must use the session grid in effect
+	//     now; resolving it at session start would use a stale num_blocks_per_session. The
+	//     unbonding END height then uses the params at that session end, like
+	//     EndBlockerUnbondApplications.
 	//   - pricingParams (at session start) converts claimed work to uPOKT. It must match
 	//     the epoch x/proof priced and proof-gated the claim under.
 	sharedParams := settlementContext.GetSharedParams()
@@ -131,7 +152,11 @@ func (k Keeper) ProcessTokenLogicModules(
 		return cosmostypes.Coin{}, err
 	}
 
-	supplier, err := settlementContext.GetSupplier(pendingResult.Claim.GetSupplierOperatorAddress())
+	supplier, err := settlementContext.GetSupplierForClaim(
+		pendingResult.Claim.GetSupplierOperatorAddress(),
+		sessionHeader.ServiceId,
+		sessionHeader.SessionStartBlockHeight,
+	)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}
@@ -148,8 +173,9 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
-	expectedClaimComputeUnits := numRelays * sessionStartComputeUnitsPerRelay
-	if numClaimComputeUnits != expectedClaimComputeUnits {
+	// The product is checked for overflow, as at claim creation.
+	overflow, expectedClaimComputeUnits := bits.Mul64(numRelays, sessionStartComputeUnitsPerRelay)
+	if overflow != 0 || numClaimComputeUnits != expectedClaimComputeUnits {
 		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"mismatch: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d)",
 			numClaimComputeUnits,
@@ -191,6 +217,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		ctx,
 		sessionHeader.ApplicationAddress,
 		sessionHeader.SessionId,
+		sessionHeader.SessionStartBlockHeight,
 		sessionHeader.SessionEndBlockHeight,
 	)
 	if err != nil {
@@ -241,11 +268,19 @@ func (k Keeper) ProcessTokenLogicModules(
 	// instead of calling distributeValidatorRewards per-claim. The accumulated totals
 	// are flushed once per settlement batch in SettlePendingClaims, achieving perfect
 	// precision via the Largest Remainder Method on the batched sum.
+	// A failed claim is discarded with its queued operations, so restore the
+	// application stake and the validator rewards the TLMs changed in the
+	// settlement cache.
+	appStakeBefore := *application.Stake
+	validatorRewardsBefore := maps.Clone(tlmCtx.ValidatorRewardAccumulator)
 	for _, tokenLogicModule := range k.tokenLogicModules {
 		tlmName := tokenLogicModule.GetId().String()
 		logger.Info(fmt.Sprintf("Starting processing TLM: %q", tlmName))
 
 		if err = tokenLogicModule.Process(ctx, logger, tlmCtx); err != nil {
+			application.Stake = &appStakeBefore
+			clear(tlmCtx.ValidatorRewardAccumulator)
+			maps.Copy(tlmCtx.ValidatorRewardAccumulator, validatorRewardsBefore)
 			return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf("TLM %q: %s", tlmName, err)
 		}
 
@@ -277,10 +312,13 @@ func (k Keeper) ProcessTokenLogicModules(
 		minStake = *appMinStake
 	}
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
-	if tlmCtx.Application.Stake.Amount.LT(minStake.Amount) {
+	// An application that is already unbonding keeps its unbonding height:
+	// moving it to a later session would keep the application in sessions.
+	if tlmCtx.Application.Stake.Amount.LT(minStake.Amount) && !tlmCtx.Application.IsUnbonding() {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		tlmCtx.Application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, tlmCtx.Application)
+		// Report the unbonding end height EndBlockerUnbondApplications will use.
+		unbondingEndHeight := k.applicationKeeper.GetApplicationUnbondingEndHeight(ctx, tlmCtx.Application)
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			Application:        tlmCtx.Application,

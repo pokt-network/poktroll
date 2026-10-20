@@ -7,6 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/pocket"
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -112,8 +113,9 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	ctx = setBlockHeightToNextSessionStart(ctx, supplierModuleKeepers.SharedKeeper)
 	numSuppliersWithServicesActivation, err := supplierModuleKeepers.BeginBlockerActivateSupplierServices(ctx)
 	require.NoError(t, err)
-	// Services for both suppliers are activated at the start of the session.
-	require.Equal(t, 2, numSuppliersWithServicesActivation)
+	// Only the staked supplier's services are activated: the unstaking supplier's
+	// services are deactivated at the same height they would have activated.
+	require.Equal(t, 1, numSuppliersWithServicesActivation)
 
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetDehydratedSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)
@@ -509,4 +511,209 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	// Ensure that the initial stake is returned to the owner while the staking fee
 	// remains deducted from the supplier's balance.
 	require.Equal(t, -supplierStakingFee.Amount.Int64(), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
+}
+
+// TestMsgServer_UnstakeSupplier_KeepsDeactivatedServiceConfigs asserts that
+// unstaking only schedules the deactivation of service configs that are still
+// active: a config a restake already deactivated keeps its deactivation height.
+// Moving it to the next session start would reactivate it for past sessions and
+// change which suppliers they contain.
+func TestMsgServer_UnstakeSupplier_KeepsDeactivatedServiceConfigs(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	operatorAddr := sample.AccAddressBech32()
+	stakeAmount := suppliertypes.DefaultMinStake.Amount.Int64()
+
+	// Stake for serviceID: active from the next session.
+	stakeMsg, _ := newSupplierStakeMsg(operatorAddr, operatorAddr, stakeAmount, serviceID)
+	_, err := srv.StakeSupplier(sdkCtx, stakeMsg)
+	require.NoError(t, err)
+
+	// Next session: restake for another service, which schedules serviceID's
+	// deactivation at the following session start.
+	restakeHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
+	sdkCtx = sdkCtx.WithBlockHeight(restakeHeight)
+	restakeMsg, _ := newSupplierStakeMsg(operatorAddr, operatorAddr, stakeAmount, "svcId2")
+	_, err = srv.StakeSupplier(sdkCtx, restakeMsg)
+	require.NoError(t, err)
+	serviceIDDeactivationHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, restakeHeight)
+
+	// Unstake two sessions later, before the deactivated config is pruned.
+	unstakeHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, serviceIDDeactivationHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(unstakeHeight)
+	_, err = srv.UnstakeSupplier(sdkCtx, &suppliertypes.MsgUnstakeSupplier{Signer: operatorAddr, OperatorAddress: operatorAddr})
+	require.NoError(t, err)
+
+	supplier, found := supplierModuleKeepers.GetSupplier(sdkCtx, operatorAddr)
+	require.True(t, found)
+	require.Len(t, supplier.ServiceConfigHistory, 2)
+	unstakeDeactivationHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, unstakeHeight)
+	for _, serviceConfig := range supplier.ServiceConfigHistory {
+		switch serviceConfig.Service.ServiceId {
+		case serviceID:
+			require.Equal(t, serviceIDDeactivationHeight, serviceConfig.DeactivationHeight)
+		default:
+			require.Equal(t, unstakeDeactivationHeight, serviceConfig.DeactivationHeight)
+		}
+	}
+
+	// The index sessions are hydrated from agrees: serviceID stays inactive
+	// for the session it was deactivated at.
+	serviceConfigsIterator := supplierModuleKeepers.GetServiceConfigUpdatesIterator(sdkCtx, serviceID, serviceIDDeactivationHeight)
+	defer serviceConfigsIterator.Close()
+	for ; serviceConfigsIterator.Valid(); serviceConfigsIterator.Next() {
+		serviceConfig, err := serviceConfigsIterator.Value()
+		require.NoError(t, err)
+		if serviceConfig.OperatorAddress == operatorAddr {
+			require.False(t, serviceConfig.IsActive(serviceIDDeactivationHeight))
+		}
+	}
+}
+
+// The operator can cancel the unbonding of a supplier below min stake, as after
+// a slash in settlement, by restoring the stake to min stake with its services.
+func TestMsgServer_StakeSupplier_OperatorCancelsBelowMinStakeUnbonding(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
+	minStake := suppliertypes.DefaultMinStake.Amount.Int64()
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, serviceID)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Settlement slashes the supplier below min stake and starts its unbonding.
+	supplier, isSupplierFound := supplierModuleKeepers.GetDehydratedSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	slashedStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, minStake-1)
+	supplier.Stake = &slashedStake
+	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
+	supplierModuleKeepers.BeginSupplierUnbonding(ctx, &supplier, &sharedParams, suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE)
+	require.Empty(t, countedServiceIds(t, supplierModuleKeepers, cosmostypes.UnwrapSDKContext(ctx), operatorAddr))
+
+	// The operator cannot cancel without restoring min stake.
+	operatorRestakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake-1, serviceID)
+	setStakeMsgSigner(operatorRestakeMsg, operatorAddr)
+	_, err = srv.StakeSupplier(ctx, operatorRestakeMsg)
+	require.ErrorContains(t, err, "only the owner can cancel an in-progress unstake")
+
+	// Restoring min stake with its services cancels the unbonding and restores them.
+	operatorRestakeMsg, _ = newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, serviceID)
+	setStakeMsgSigner(operatorRestakeMsg, operatorAddr)
+	_, err = srv.StakeSupplier(ctx, operatorRestakeMsg)
+	require.NoError(t, err)
+
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.False(t, foundSupplier.IsUnbonding())
+	require.Equal(t, []string{serviceID}, countedServiceIds(t, supplierModuleKeepers, cosmostypes.UnwrapSDKContext(ctx), operatorAddr))
+}
+
+// The owner's own unstake stays owner-only even when a slash during unbonding
+// takes the stake below min stake: only an unbonding that settlement started
+// below min stake can be canceled by the operator.
+func TestMsgServer_StakeSupplier_OperatorCannotCancelOwnerUnstakeBelowMinStake(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
+	minStake := suppliertypes.DefaultMinStake.Amount.Int64()
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, serviceID)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	_, err = srv.UnstakeSupplier(ctx, &suppliertypes.MsgUnstakeSupplier{Signer: ownerAddr, OperatorAddress: operatorAddr})
+	require.NoError(t, err)
+
+	// Settlement slashes the already unbonding supplier below min stake: it only
+	// lowers the stake, the unbonding stays the owner's.
+	supplier, isSupplierFound := supplierModuleKeepers.GetDehydratedSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	slashedStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, minStake-1)
+	supplier.Stake = &slashedStake
+	supplierModuleKeepers.SetDehydratedSupplier(ctx, supplier)
+
+	operatorRestakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, serviceID)
+	setStakeMsgSigner(operatorRestakeMsg, operatorAddr)
+	_, err = srv.StakeSupplier(ctx, operatorRestakeMsg)
+	require.ErrorContains(t, err, "only the owner can cancel an in-progress unstake")
+
+	// The owner can still cancel it.
+	ownerRestakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake)
+	_, err = srv.StakeSupplier(ctx, ownerRestakeMsg)
+	require.NoError(t, err)
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.False(t, foundSupplier.IsUnbonding())
+}
+
+// A min stake raise above the stake of an owner-unbonding supplier does not let
+// the operator cancel the owner's unstake.
+func TestMsgServer_StakeSupplier_OperatorCannotCancelOwnerUnstakeAfterMinStakeRaise(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
+	minStake := suppliertypes.DefaultMinStake.Amount.Int64()
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, serviceID)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	params := supplierModuleKeepers.Keeper.GetParams(ctx)
+	newMinStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, minStake+10)
+	params.MinStake = &newMinStake
+	require.NoError(t, supplierModuleKeepers.SetParams(ctx, params))
+
+	_, err = srv.UnstakeSupplier(ctx, &suppliertypes.MsgUnstakeSupplier{Signer: ownerAddr, OperatorAddress: operatorAddr})
+	require.NoError(t, err)
+
+	operatorRestakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake+10, serviceID)
+	setStakeMsgSigner(operatorRestakeMsg, operatorAddr)
+	_, err = srv.StakeSupplier(ctx, operatorRestakeMsg)
+	require.ErrorContains(t, err, "only the owner can cancel an in-progress unstake")
+}
+
+// A rescue clears the below min stake marker: if the owner then unstakes and a
+// slash takes the stake below min stake again, the operator cannot cancel it.
+func TestMsgServer_StakeSupplier_OperatorRescueIsSingleUse(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
+	minStake := suppliertypes.DefaultMinStake.Amount.Int64()
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, serviceID)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	slashBelowMinStake := func() sharedtypes.Supplier {
+		supplier, isSupplierFound := supplierModuleKeepers.GetDehydratedSupplier(ctx, operatorAddr)
+		require.True(t, isSupplierFound)
+		slashedStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, minStake-1)
+		supplier.Stake = &slashedStake
+		return supplier
+	}
+
+	// Settlement starts a below min stake unbonding; the operator rescues it.
+	supplier := slashBelowMinStake()
+	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
+	supplierModuleKeepers.BeginSupplierUnbonding(ctx, &supplier, &sharedParams, suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE)
+	operatorRestakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, serviceID)
+	setStakeMsgSigner(operatorRestakeMsg, operatorAddr)
+	_, err = srv.StakeSupplier(ctx, operatorRestakeMsg)
+	require.NoError(t, err)
+
+	// The owner unstakes, then a slash takes the stake below min stake again.
+	_, err = srv.UnstakeSupplier(ctx, &suppliertypes.MsgUnstakeSupplier{Signer: ownerAddr, OperatorAddress: operatorAddr})
+	require.NoError(t, err)
+	supplier = slashBelowMinStake()
+	supplierModuleKeepers.SetDehydratedSupplier(ctx, supplier)
+
+	_, err = srv.StakeSupplier(ctx, operatorRestakeMsg)
+	require.ErrorContains(t, err, "only the owner can cancel an in-progress unstake")
 }

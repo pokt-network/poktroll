@@ -20,8 +20,8 @@ var testSharedParams = sharedtypes.Params{
 	GracePeriodEndOffsetBlocks:         1,
 	ClaimWindowOpenOffsetBlocks:        2,
 	ClaimWindowCloseOffsetBlocks:       4,
-	ProofWindowOpenOffsetBlocks:        0,
-	ProofWindowCloseOffsetBlocks:       4,
+	ProofWindowOpenOffsetBlocks:        1,
+	ProofWindowCloseOffsetBlocks:       3,
 	SupplierUnbondingPeriodSessions:    4,
 	ApplicationUnbondingPeriodSessions: 4,
 	GatewayUnbondingPeriodSessions:     4,
@@ -314,8 +314,8 @@ func TestMsgUpdateParam_UpdateSupplierUnbondingPeriodSessions(t *testing.T) {
 	require.EqualError(t, err, status.Error(
 		codes.InvalidArgument,
 		sharedtypes.ErrSharedParamInvalid.Wrapf(
-			"SupplierUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
-			1, 4, 10,
+			"SupplierUnbondingPeriodSessions (%v session) (%v blocks) must last until the proof window closes, %v blocks after the session end",
+			1, 4, 11,
 		).Error(),
 	).Error())
 }
@@ -359,8 +359,8 @@ func TestMsgUpdateParam_UpdateApplicationUnbondingPeriodSessions(t *testing.T) {
 	require.EqualError(t, err, status.Error(
 		codes.InvalidArgument,
 		sharedtypes.ErrSharedParamInvalid.Wrapf(
-			"ApplicationUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
-			1, 4, 10,
+			"ApplicationUnbondingPeriodSessions (%v session) (%v blocks) must last until the proof window closes, %v blocks after the session end",
+			1, 4, 11,
 		).Error(),
 	).Error())
 }

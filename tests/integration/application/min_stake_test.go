@@ -258,13 +258,14 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 	globalInflationAmt := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedBurnCoin, globalInflationPerClaimRat)
 	expectedEndStake := s.appStake.Sub(expectedBurnCoin).Sub(globalInflationAmt)
 	return &apptypes.Application{
-		Address:                   s.appBech32,
-		Stake:                     &expectedEndStake,
-		ServiceConfigs:            s.appServiceConfigs,
-		ServiceConfigHistory:      make([]*apptypes.ApplicationServiceConfigUpdate, 0),
-		DelegateeGatewayAddresses: make([]string, 0),
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
-		UnstakeSessionEndHeight:   uint64(sessionEndHeight),
+		Address:                     s.appBech32,
+		Stake:                       &expectedEndStake,
+		ServiceConfigs:              s.appServiceConfigs,
+		ServiceConfigHistory:        make([]*apptypes.ApplicationServiceConfigUpdate, 0),
+		PerSessionSpendLimitHistory: make([]*apptypes.ApplicationPerSessionSpendLimitUpdate, 0),
+		DelegateeGatewayAddresses:   make([]string, 0),
+		PendingUndelegations:        make(map[uint64]apptypes.UndelegatingGatewayList),
+		UnstakeSessionEndHeight:     uint64(sessionEndHeight),
 	}
 }
 

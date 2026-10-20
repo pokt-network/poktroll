@@ -19,4 +19,12 @@ message Params {
 
   // staking_fee is the fee charged by the protocol for staking a supplier.
   cosmos.base.v1beta1.Coin staking_fee = 2 [(gogoproto.jsontag) = "staking_fee", (gogoproto.moretags) = "yaml:\"staking_fee\""];
+
+  // min_stake_included_services is the number of services covered by min_stake.
+  // Must be at least 1.
+  uint64 min_stake_included_services = 3 [(gogoproto.jsontag) = "min_stake_included_services", (gogoproto.moretags) = "yaml:\"min_stake_included_services\""];
+
+  // stake_per_additional_service is the additional stake required for each service
+  // beyond min_stake_included_services. Zero disables the service cap.
+  cosmos.base.v1beta1.Coin stake_per_additional_service = 4 [(gogoproto.jsontag) = "stake_per_additional_service", (gogoproto.moretags) = "yaml:\"stake_per_additional_service\""];
 }

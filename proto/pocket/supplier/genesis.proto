@@ -6,6 +6,7 @@ option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
 
 import "pocket/supplier/params.proto";
 import "pocket/shared/supplier.proto";
@@ -16,5 +17,19 @@ message GenesisState {
   // params defines all the parameters of the module.
   Params   params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
   repeated pocket.shared.Supplier supplierList = 2 [(gogoproto.nullable) = false] ;
+  // Service priority of every supplier that has one.
+  repeated SupplierServicePriority service_priority_list = 3 [(gogoproto.nullable) = false];
+}
+
+// SupplierServicePriority holds the service IDs of a supplier's most recent stake
+// message that listed services, in message order. When the stake does not cover
+// every service, services earlier in this list are kept.
+//
+// It is stored under its own key rather than on the Supplier record, because
+// Supplier records are read on every claim and proof while only the service cap
+// reads the priority.
+message SupplierServicePriority {
+  string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  repeated string service_ids = 2;
 }
 

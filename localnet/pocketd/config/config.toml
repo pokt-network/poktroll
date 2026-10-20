@@ -8,7 +8,7 @@
 
 # The version of the CometBFT binary that created or
 # last modified the config file. Do not modify this.
-version = "0.38.22"
+version = "0.38.26"
 
 #######################################################################
 ###                   Main Base Config Options                      ###
@@ -75,6 +75,11 @@ abci = "socket"
 # If true, query the ABCI app on connecting to a new peer
 # so the app can decide if we should keep the connection or not
 filter_peers = false
+
+# Buffer capacity for the internal EventBus. A value of 0 means unbuffered
+# (publishers block until subscribers receive). Higher values reduce back-pressure
+# at the cost of memory.
+event_bus_buffer_capacity = 0
 
 
 #######################################################################

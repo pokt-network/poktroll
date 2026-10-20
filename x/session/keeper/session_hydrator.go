@@ -2,12 +2,15 @@ package keeper
 
 import (
 	"bytes"
+	"cmp"
+	"container/heap"
 	"context"
 	"crypto"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"slices"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
@@ -63,16 +66,6 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 		return nil, err
 	}
 	logger.Debug("Finished hydrating session metadata")
-
-	// CRITICAL: Session caching has been disabled to fix consensus failure.
-	// The in-memory cache caused non-determinism because different nodes had
-	// different cache states (populated by external RPC queries), leading to
-	// different gas consumption during tx execution and AppHash mismatches.
-	// See: https://github.com/pokt-network/poktroll/issues/XXX
-	//
-	// TODO_POST_MAINNET: Re-implement caching in a determinism-safe way:
-	// - Only cache during queries (ExecModeCheck/Simulate), not during FinalizeBlock
-	// - Or use a store-backed cache that's part of consensus state
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
 		return nil, err
@@ -191,11 +184,20 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	params := k.GetParamsAtHeight(ctx, sh.blockHeight)
 	numSuppliersPerSession := int(params.NumSuppliersPerSession)
 
-	// Map supplier operator addresses to random weights for deterministic sorting.
-	// This ensures fair distribution when:
-	// - NumCandidateSuppliers exceeds NumSuppliersPerSession
-	// - We need to randomly but fairly determine which suppliers can serve Applications
-	candidatesToRandomWeight := make(map[string]int, numSuppliersPerSession)
+	// Within FinalizeBlock, every claim/proof of a session selects the same
+	// suppliers: serve repeats from the block memo (see session_memo.go).
+	// Only the selection is memoized; supplier records are still read below.
+	memoStore := k.sessionMemoStore(ctx)
+	var memoKey []byte
+	if memoStore != nil {
+		currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+		memoKey = types.SessionMemoKey(currentHeight, sh.blockHeight, params.NumSuppliersPerSession, sh.sessionIDBz)
+		if selected, found := k.getMemoizedSupplierConfigs(memoStore, memoKey); found {
+			sh.session.Suppliers = k.getServiceConfigsSuppliers(ctx, selected)
+			return nil
+		}
+	}
+
 	// Pre-allocate with capacity to reduce allocations.
 	// We expect at most a reasonable multiple of numSuppliersPerSession candidates.
 	candidateSupplierConfigs := make([]*sharedtypes.ServiceConfigUpdate, 0, numSuppliersPerSession*2)
@@ -238,26 +240,28 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 
 	// If the number of available suppliers is less than the maximum number of
 	// possible suppliers per session, use all available suppliers.
+	selected := candidateSupplierConfigs
 	if len(candidateSupplierConfigs) < numSuppliersPerSession {
 		logger.Debug(fmt.Sprintf(
 			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
 			len(candidateSupplierConfigs),
 			numSuppliersPerSession,
 		))
-		suppliers := k.getServiceConfigsSuppliers(ctx, candidateSupplierConfigs)
-		sh.session.Suppliers = suppliers
-
-		return nil
+	} else {
+		weightedCandidates := make([]weightedCandidate, len(candidateSupplierConfigs))
+		for i, serviceConfigUpdate := range candidateSupplierConfigs {
+			weightedCandidates[i] = weightedCandidate{
+				weight: generateSupplierRandomWeight(serviceConfigUpdate.OperatorAddress, sh.sessionIDBz),
+				config: serviceConfigUpdate,
+			}
+		}
+		selected = selectLowestWeightCandidates(weightedCandidates, numSuppliersPerSession)
 	}
 
-	for _, serviceConfigUpdate := range candidateSupplierConfigs {
-		supplierOperatorAddress := serviceConfigUpdate.OperatorAddress
-		candidatesToRandomWeight[supplierOperatorAddress] = generateSupplierRandomWeight(supplierOperatorAddress, sh.sessionIDBz)
+	if memoStore != nil {
+		k.memoizeSupplierConfigs(memoStore, memoKey, selected)
 	}
-
-	sortedCandidates := sortCandidateSupplierConfigsBySupplierWeight(candidateSupplierConfigs, candidatesToRandomWeight)
-	suppliers := k.getServiceConfigsSuppliers(ctx, sortedCandidates[:numSuppliersPerSession])
-	sh.session.Suppliers = suppliers
+	sh.session.Suppliers = k.getServiceConfigsSuppliers(ctx, selected)
 
 	return nil
 }
@@ -364,37 +368,64 @@ func getSessionStartBlockHeightBz(sharedParams *sharedtypes.Params, blockHeight 
 	return sessionStartBlockHeightBz
 }
 
-// sortCandidateSupplierConfigsBySupplierWeight sorts the given service config
-// list by their corresponding suppliers addresses using the provided random weights map.
-func sortCandidateSupplierConfigsBySupplierWeight(
-	candidateSuppliers []*sharedtypes.ServiceConfigUpdate,
-	candidatesToRandomWeight map[string]int,
-) []*sharedtypes.ServiceConfigUpdate {
-	// Sort suppliers operator addresses deterministically based on their random weights.
-	// If weights are equal, sort by operator address to ensure consistent ordering.
-	weightedSupplierSortFn := func(serviceConfigUpdateA, serviceConfigUpdateB *sharedtypes.ServiceConfigUpdate) int {
-		// Get the pre-calculated random weights for both suppliers
-		weightA := candidatesToRandomWeight[serviceConfigUpdateA.OperatorAddress]
-		weightB := candidatesToRandomWeight[serviceConfigUpdateB.OperatorAddress]
+// weightedCandidate is a candidate service config with its random weight
+// (see generateSupplierRandomWeight).
+type weightedCandidate struct {
+	weight int
+	config *sharedtypes.ServiceConfigUpdate
+}
 
-		// Compare weights using explicit comparisons to avoid int64 overflow.
-		// generateSupplierRandomWeight converts uint64 → int, so values span the
-		// full int64 range. Subtraction (weightA - weightB) can overflow, violating
-		// sort's trichotomy property.
-		if weightA < weightB {
-			return -1
-		} else if weightA > weightB {
-			return 1
+// compareWeightedCandidates orders candidates by random weight, then by
+// operator address. A supplier has at most one active config per service, so
+// this is a total order: the selection does not depend on the input order.
+// cmp.Compare is used rather than subtraction, which overflows over the full
+// int64 range of the weights.
+func compareWeightedCandidates(a, b weightedCandidate) int {
+	if c := cmp.Compare(a.weight, b.weight); c != 0 {
+		return c
+	}
+	return strings.Compare(a.config.OperatorAddress, b.config.OperatorAddress)
+}
+
+// selectLowestWeightCandidates returns the n lowest candidates in
+// compareWeightedCandidates order, sorted in that order. This is the first n
+// of the fully sorted candidate list, found in O(len * log n) with a bounded
+// max-heap instead of sorting every candidate.
+func selectLowestWeightCandidates(candidates []weightedCandidate, n int) []*sharedtypes.ServiceConfigUpdate {
+	if n <= 0 {
+		return []*sharedtypes.ServiceConfigUpdate{}
+	}
+	lowest := make(weightedCandidateMaxHeap, 0, min(n, len(candidates)))
+	for _, candidate := range candidates {
+		if len(lowest) < n {
+			heap.Push(&lowest, candidate)
+		} else if compareWeightedCandidates(candidate, lowest[0]) < 0 {
+			lowest[0] = candidate
+			heap.Fix(&lowest, 0)
 		}
-
-		// If weights are equal, use operator addresses as a tiebreaker
-		// to ensure deterministic ordering.
-		return bytes.Compare(
-			[]byte(serviceConfigUpdateA.OperatorAddress),
-			[]byte(serviceConfigUpdateB.OperatorAddress),
-		)
 	}
 
-	slices.SortFunc(candidateSuppliers, weightedSupplierSortFn)
-	return candidateSuppliers
+	slices.SortFunc(lowest, compareWeightedCandidates)
+	selected := make([]*sharedtypes.ServiceConfigUpdate, len(lowest))
+	for i, candidate := range lowest {
+		selected[i] = candidate.config
+	}
+	return selected
+}
+
+// weightedCandidateMaxHeap is a container/heap whose root is the highest
+// candidate in compareWeightedCandidates order.
+type weightedCandidateMaxHeap []weightedCandidate
+
+func (h weightedCandidateMaxHeap) Len() int { return len(h) }
+func (h weightedCandidateMaxHeap) Less(i, j int) bool {
+	return compareWeightedCandidates(h[i], h[j]) > 0
+}
+func (h weightedCandidateMaxHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+func (h *weightedCandidateMaxHeap) Push(x any)   { *h = append(*h, x.(weightedCandidate)) }
+func (h *weightedCandidateMaxHeap) Pop() any {
+	old := *h
+	last := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return last
 }

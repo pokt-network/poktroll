@@ -22,7 +22,7 @@ import (
 // If shared params change between a session's end and the proof window,
 // the seed block hash must still be calculated using the params that were
 // effective when the session ended, to maintain consistency with other on-chain
-// proof validation (validateProofWindow, validateClosestPath in EndBlocker).
+// proof validation (validateProofWindow, getProofSeed in EndBlocker).
 //
 // This is a regression test for the bug where getProofRequirementSeedBlockHash
 // called k.sharedQuerier.GetParams(ctx) (current params) instead of

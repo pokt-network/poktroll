@@ -13,6 +13,7 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -20,6 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/application/mocks"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
@@ -34,6 +36,11 @@ import (
 // - Control gateway delegation eligibility
 // WARNING: Using this map may cause issues if running multiple tests in parallel
 var stakedGatewayToUnstakeSessionEndHeightMap = make(map[string]uint64)
+
+// accountPubKeyMap mocks account public keys for tests: the mocked account keeper
+// returns an account with this key for these addresses, and no account otherwise.
+// WARNING: Using this map may cause issues if running multiple tests in parallel
+var accountPubKeyMap = make(map[string]cryptotypes.PubKey)
 
 // ApplicationModuleKeepers is a struct that contains the keepers needed for testing
 // the application module.
@@ -61,9 +68,27 @@ func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, contex
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().BlockedAddr(gomock.Any()).DoAndReturn(isBlockedAddr).AnyTimes()
 
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
-	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()
+	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, addr sdk.AccAddress) sdk.AccountI {
+			for moduleName := range app.GetMaccPerms() {
+				if authtypes.NewModuleAddress(moduleName).Equals(addr) {
+					return authtypes.NewEmptyModuleAccount(moduleName)
+				}
+			}
+			pubKey, ok := accountPubKeyMap[addr.String()]
+			if !ok {
+				return nil
+			}
+			acc := authtypes.NewBaseAccountWithAddress(addr)
+			if err := acc.SetPubKey(pubKey); err != nil {
+				panic(err)
+			}
+			return acc
+		},
+	).AnyTimes()
 
 	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
 	mockGatewayKeeper.EXPECT().GetGateway(gomock.Any(), gomock.Any()).DoAndReturn(
@@ -182,4 +207,15 @@ func AddGatewayToStakedGatewayMap(t *testing.T, gatewayAddr string, unstakeSessi
 func RemoveGatewayFromStakedGatewayMap(t *testing.T, gatewayAddr string) {
 	t.Helper()
 	delete(stakedGatewayToUnstakeSessionEndHeightMap, gatewayAddr)
+}
+
+// SetAccountPubKey makes the application's mocked account keeper return an
+// account with the given public key for the given address.
+// It cleans up after test completion.
+func SetAccountPubKey(t *testing.T, addr string, pubKey cryptotypes.PubKey) {
+	t.Helper()
+	accountPubKeyMap[addr] = pubKey
+	t.Cleanup(func() {
+		delete(accountPubKeyMap, addr)
+	})
 }

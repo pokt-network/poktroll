@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	cosmoslog "cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -97,10 +98,10 @@ func (k Keeper) createSupplier(
 //   - if the supplier is found and is not unbonding, it is updated (in memory) according to the msg
 //   - if the supplier is found and is unbonding, it is updated (in memory; and no longer unbonding)
 //   - additional stake validation (e.g. min stake, etc.)
-//   - EITHER any positive difference between the msg stake and any current stake is transferred
+//   - the stake can never decrease: a msg stake below the current stake is rejected.
+//     Stake is withdrawn only by unstaking (which goes through the unbonding period).
+//   - any positive difference between the msg stake and any current stake is transferred
 //     from the staking supplier's account, to the supplier module's accounts.
-//   - OR any negative difference between the msg stake and any current stake is transferred
-//     from the supplier module's account (stake escrow) to the staking supplier's account.
 //   - the supplier staking fee is deducted from the staking supplier's account balance.
 //   - the (new or updated) supplier is persisted.
 //   - an EventSupplierStaked event is emitted.
@@ -128,6 +129,23 @@ func (k Keeper) StakeSupplier(
 					"owner address %s is a module account and cannot be used", msg.OwnerAddress,
 				).Error(),
 			)
+		}
+	}
+
+	// Reject revenue share addresses that cannot receive funds (bank blocked addresses).
+	for _, serviceConfig := range msg.Services {
+		for _, revShare := range serviceConfig.RevShare {
+			revShareAddr, err := sdk.AccAddressFromBech32(revShare.Address)
+			if err != nil {
+				return nil, status.Error(codes.InvalidArgument, suppliertypes.ErrSupplierInvalidAddress.Wrapf(
+					"invalid revenue share address %q: %v", revShare.Address, err,
+				).Error())
+			}
+			if k.bankKeeper.BlockedAddr(revShareAddr) {
+				return nil, status.Error(codes.InvalidArgument, suppliertypes.ErrSupplierInvalidAddress.Wrapf(
+					"revenue share address %s for service %q cannot receive funds", revShare.Address, serviceConfig.ServiceId,
+				).Error())
+			}
 		}
 	}
 
@@ -236,9 +254,17 @@ func (k Keeper) StakeSupplier(
 			// re-stake (paying only the staking fee, since the stake amount is unchanged)
 			// to cancel an owner-initiated unstake, preventing the owner from ever
 			// reclaiming their escrowed stake.
-			if !msg.IsSigner(storedOwnerAddress) {
+			//
+			// Exception: the operator may cancel an unbonding that settlement started
+			// because the stake fell below min_stake, by bringing the stake back to
+			// at least min_stake, paid by the operator. The owner's own unstake stays
+			// owner-only even if its stake later falls below min_stake (a slash or a
+			// min_stake raise during unbonding), so the operator cannot keep the
+			// owner's stake escrowed by canceling it.
+			belowMinStakeUnbonding := k.isBelowMinStakeUnbonding(ctx, supplier.OperatorAddress)
+			if !msg.IsSigner(storedOwnerAddress) && !isOperatorRescue(msg, supplier, supplierCurrentStake, k.GetParams(ctx).MinStake, belowMinStakeUnbonding) {
 				err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-					"signer %q is not allowed to cancel the unbonding of supplier with owner %q; only the owner can cancel an in-progress unstake",
+					"signer %q is not allowed to cancel the unbonding of supplier with owner %q; only the owner can cancel an in-progress unstake, or the operator when settlement unbonded it below min stake and the message restores min stake",
 					msg.Signer, storedOwnerAddress,
 				)
 				logger.Info(fmt.Sprintf("ERROR: %s", err))
@@ -247,16 +273,39 @@ func (k Keeper) StakeSupplier(
 
 			wasSupplierUnbonding = true
 			supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
+			if belowMinStakeUnbonding {
+				k.removeBelowMinStakeUnbonding(ctx, supplier.OperatorAddress)
+			}
 		}
 	}
 
+	supplierParams := k.GetParams(ctx)
+
 	// MUST ALWAYS have at least minimum stake.
-	minStake := k.GetParams(ctx).MinStake
+	minStake := supplierParams.MinStake
 	if msg.Stake.Amount.LT(minStake.Amount) {
 		err = suppliertypes.ErrSupplierInvalidStake.Wrapf(
 			"supplier with owner %q must stake at least %s",
 			msg.GetOwnerAddress(), minStake,
 		)
+		logger.Info(fmt.Sprintf("ERROR: %s", err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// The stake can only be withdrawn by unstaking, never lowered by a stake message.
+	// msg.Stake is the stake that will apply (updateSupplier filled it in if nil).
+	if msg.Stake.Amount.LT(supplierCurrentStake.Amount) {
+		err = suppliertypes.ErrSupplierInvalidStake.Wrapf(
+			"supplier %q has stake %s; requested stake %s is lower, stake can only be withdrawn by unstaking",
+			msg.OperatorAddress, supplierCurrentStake, msg.Stake,
+		)
+		logger.Info(fmt.Sprintf("ERROR: %s", err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// The stake must cover the supplier's services. msg.Stake is the stake that
+	// will apply: updateSupplier filled it in when the message carried none.
+	if err = checkServiceCap(msg, supplierParams); err != nil {
 		logger.Info(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -268,7 +317,7 @@ func (k Keeper) StakeSupplier(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	supplierStakingFee := k.GetParams(ctx).StakingFee
+	supplierStakingFee := supplierParams.StakingFee
 
 	if err = k.reconcileSupplierStakeDiff(ctx, msg, supplierCurrentStake); err != nil {
 		logger.Error(fmt.Sprintf("Could not transfer supplier stake difference due to %s", err))
@@ -283,8 +332,18 @@ func (k Keeper) StakeSupplier(
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	// Update the Supplier in the store
-	k.SetAndIndexDehydratedSupplier(ctx, supplier)
+	// Update the Supplier in the store. Without services in the message, the
+	// service config history is unchanged and needs no re-indexing.
+	if len(msg.Services) == 0 {
+		k.indexSupplierUnstakingHeight(ctx, supplier)
+		k.SetDehydratedSupplier(ctx, supplier)
+	} else {
+		k.SetAndIndexDehydratedSupplier(ctx, supplier)
+		servicePriority := suppliertypes.ServicePriorityFromConfigs(msg.Services)
+		if !slices.Equal(k.GetServicePriority(ctx, supplier.OperatorAddress), servicePriority) {
+			k.SetServicePriority(ctx, supplier.OperatorAddress, servicePriority)
+		}
+	}
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -415,8 +474,9 @@ func (k Keeper) updateSupplier(
 	return nil
 }
 
-// reconcileSupplierStakeDiff transfers the difference between the current and new stake
-// amounts by either escrowing, when the stake is increased, or unescrowing otherwise.
+// reconcileSupplierStakeDiff escrows the difference between the new and the current
+// stake from the msg signer when the stake is increased. The caller has already
+// rejected decreases, so there is nothing to unescrow.
 func (k Keeper) reconcileSupplierStakeDiff(
 	ctx context.Context,
 	msg *suppliertypes.MsgStakeSupplier,
@@ -432,12 +492,6 @@ func (k Keeper) reconcileSupplierStakeDiff(
 		return err
 	}
 
-	// Parse the owner address - this is the account that will receive stake decreases
-	ownerAccAddr, err := sdk.AccAddressFromBech32(msg.OwnerAddress)
-	if err != nil {
-		return err
-	}
-
 	// The Supplier is increasing its stake, so escrow the difference
 	if currentStake.Amount.LT(newStake.Amount) {
 		coinsToEscrow := sdk.NewCoins(newStake.Sub(currentStake))
@@ -446,28 +500,44 @@ func (k Keeper) reconcileSupplierStakeDiff(
 		return k.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAccAddr, suppliertypes.ModuleName, coinsToEscrow)
 	}
 
-	// Ensure that the new stake is at least the minimum stake which is required for:
-	// 1. The supplier to be considered active.
-	// 2. Cover for any potential slashing that may occur during claims settlement.
-	minStake := k.GetParams(ctx).MinStake
-	if newStake.Amount.LT(minStake.Amount) {
-		err := suppliertypes.ErrSupplierInvalidStake.Wrapf(
-			"supplier with owner %q must stake at least %s",
-			signerAccAddr, minStake,
-		)
-		return err
-	}
-
-	// The supplier is decreasing its stake, unescrow the difference.
-	if currentStake.Amount.GT(newStake.Amount) {
-		coinsToUnescrow := sdk.NewCoins(currentStake.Sub(newStake))
-
-		// Send the coins from the staked supplier pool to the supplier owner account
-		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, suppliertypes.ModuleName, ownerAccAddr, coinsToUnescrow)
-	}
-
 	// The supplier is not changing its stake. This can happen if the supplier
 	// is updating its service configurations or owner address but not the stake.
 	logger.Info(fmt.Sprintf("Updating supplier with address %q but stake is unchanged", msg.OperatorAddress))
 	return nil
+}
+
+// checkServiceCap returns an error if msg.Stake does not cover the services in
+// the message. A stake-only update carries no services; it can only keep or raise
+// the stake, so it never reduces coverage and is always accepted.
+func checkServiceCap(msg *suppliertypes.MsgStakeSupplier, params suppliertypes.Params) error {
+	numServices := uint64(len(msg.Services))
+	if numServices == 0 {
+		return nil
+	}
+
+	allowed, limited := suppliertypes.AllowedServices(*msg.Stake, params)
+	if !limited || numServices <= allowed {
+		return nil
+	}
+
+	return suppliertypes.ErrSupplierTooManyServices.Wrapf(
+		"%d services require %s; supplier stake is %s",
+		numServices, suppliertypes.RequiredStake(numServices, params), msg.Stake,
+	)
+}
+
+// isOperatorRescue reports whether the message is the supplier's operator
+// bringing a stake below min stake back to at least min stake, for an unbonding
+// that settlement started below min stake.
+func isOperatorRescue(
+	msg *suppliertypes.MsgStakeSupplier,
+	supplier sharedtypes.Supplier,
+	currentStake sdk.Coin,
+	minStake *sdk.Coin,
+	belowMinStakeUnbonding bool,
+) bool {
+	if !belowMinStakeUnbonding || minStake == nil || msg.Stake == nil || !msg.IsSigner(supplier.OperatorAddress) {
+		return false
+	}
+	return currentStake.Amount.LT(minStake.Amount) && msg.Stake.Amount.GTE(minStake.Amount)
 }

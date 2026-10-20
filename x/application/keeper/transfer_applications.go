@@ -7,6 +7,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -124,6 +125,10 @@ func (k Keeper) transferApplication(
 		return apptypes.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application (%s)", srcApp.GetAddress())
 	}
 
+	if err := k.validateTransferDestination(ctx, srcApp.GetPendingTransfer().GetDestinationAddress()); err != nil {
+		return err
+	}
+
 	// Check if the destination application already exists:
 	// If it does not: derive it from the source application.
 	// If it does: "merge" the src app into the dst app by:
@@ -174,12 +179,32 @@ func (k Keeper) transferApplication(
 		dstApp.Stake = &srcStakeSumCoin
 
 		mergeAppDelegatees(&srcApp, &dstApp)
+		maxDelegatedGateways := k.GetParams(ctx).MaxDelegatedGateways
+		if uint64(len(dstApp.DelegateeGatewayAddresses)) > maxDelegatedGateways {
+			return apptypes.ErrAppMaxDelegatedGateways.Wrapf(
+				"merged application would delegate to %d gateways, more than the maximum of %d",
+				len(dstApp.DelegateeGatewayAddresses), maxDelegatedGateways,
+			)
+		}
 		mergeAppPendingUndelegations(&srcApp, &dstApp)
+		// The relay request ring includes the gateways undelegated in the current
+		// session. Keep the merged ring within the ring signature member limit.
+		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+		sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
+		ringAddresses := rings.GetRingAddressesAtSessionEndHeight(&dstApp, uint64(sessionEndHeight))
+		if ringSize := 1 + len(ringAddresses); ringSize > rings.MaxRingSignatureMembers {
+			return apptypes.ErrAppMaxDelegatedGateways.Wrapf(
+				"merged application would have %d ring members, more than %d",
+				ringSize, rings.MaxRingSignatureMembers,
+			)
+		}
 		// NB: do NOT mutate dstApp.ServiceConfigs here — the merged union is passed
 		// to recordApplicationServiceConfigChange, which needs dstApp to still hold
 		// the prior set to detect the change and append history entries.
 		finalServiceConfigs = mergeAppServiceConfigs(&srcApp, &dstApp)
+		prevDstSpendLimit := dstApp.PerSessionSpendLimit
 		mergeAppPerSessionSpendLimit(&srcApp, &dstApp)
+		k.recordPerSessionSpendLimitChange(ctx, &dstApp, prevDstSpendLimit)
 
 		logger.Info(fmt.Sprintf(
 			"transferring application from %q to existing application %q",

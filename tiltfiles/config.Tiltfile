@@ -53,10 +53,15 @@ def read_configs():
         msg = "⚠️ Your config is missing keys: " + ", ".join(missing)
         print(msg)
 
-        local(
-            "cat - > {}".format(extended_config_file_name),
-            stdin=get_file_content(merged_cfg)
-        )
+        # Write only on change: every write re-runs the config-file resource.
+        extended_content = get_file_content(merged_cfg)
+        # local(), not read_file(): read_file would watch the file and re-run the Tiltfile.
+        current_content = str(local("cat {} 2>/dev/null || true".format(extended_config_file_name), quiet=True, echo_off=True))
+        if current_content.rstrip("\n") != extended_content.rstrip("\n"):
+            local(
+                "cat - > {}".format(extended_config_file_name),
+                stdin=extended_content
+            )
 
         # Only define the resource if it's actually needed
         local_resource(
