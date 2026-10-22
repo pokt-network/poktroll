@@ -103,14 +103,14 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, templates *template.T
 	for moduleName, fieldNodes := range paramsFieldNodesByModule {
 		for _, fieldNode := range fieldNodes {
 			// Uncomment and concatenate the field's comment lines.
-			comment := ""
+			var comment strings.Builder
 			for commentIdx, commentLine := range fieldNode.LeadingComments() {
 				var commentFmt = " %s"
 				if commentIdx == 0 {
 					commentFmt = "%s"
 				}
 
-				comment += fmt.Sprintf(commentFmt, strings.Trim(commentLine.Text, " /"))
+				comment.WriteString(fmt.Sprintf(commentFmt, strings.Trim(commentLine.Text, " /")))
 			}
 
 			// Extract the field's type information.
@@ -118,7 +118,7 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, templates *template.T
 				Module:  moduleName,
 				Type:    string(fieldNode.FldType.AsIdentifier()),
 				Name:    fieldNode.Name.Val,
-				Comment: comment,
+				Comment: comment.String(),
 			})
 		}
 	}
