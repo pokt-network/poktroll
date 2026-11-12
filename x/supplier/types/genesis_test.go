@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -345,6 +346,57 @@ func TestGenesisState_Validate(t *testing.T) {
 								},
 							},
 						},
+					},
+				},
+			},
+			isValid: false,
+		},
+		{
+			desc: "invalid - non-canonical supplier owner address",
+			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
+				SupplierList: []sharedtypes.Supplier{
+					{
+						OwnerAddress:    strings.ToUpper(addr1),
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
+					},
+				},
+			},
+			isValid: false,
+		},
+		{
+			desc: "invalid - non-canonical supplier operator address",
+			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
+				SupplierList: []sharedtypes.Supplier{
+					{
+						OwnerAddress:    addr1,
+						OperatorAddress: strings.ToUpper(addr1),
+						Stake:           &stake1,
+						Services:        serviceList1,
+					},
+				},
+			},
+			isValid: false,
+		},
+		{
+			desc: "invalid - non-canonical service priority operator address",
+			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
+				SupplierList: []sharedtypes.Supplier{
+					{
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
+					},
+				},
+				ServicePriorityList: []types.SupplierServicePriority{
+					{
+						OperatorAddress: strings.ToUpper(addr1),
+						ServiceIds:      []string{"svcId1"},
 					},
 				},
 			},

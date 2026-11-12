@@ -1,0 +1,42 @@
+syntax = "proto3";
+package pocket.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "gogoproto/gogo.proto";
+
+// AllowlistSweep is the pending sweep of a service's staked suppliers against
+// its supplier allowlist. A supplier the allowlist does not allow is
+// deactivated on the service at the first session start after the sweep visits
+// it. The sweep is stored under the service ID, so one service has at most one
+// pending sweep.
+message AllowlistSweep {
+    // The service whose suppliers are to be swept. The store key is authoritative.
+    string service_id = 1;
+
+    // The last supplier service config store key the sweep visited. Empty
+    // (nil or zero-length) means the sweep has not started.
+    bytes cursor = 2;
+
+    // Set when an allowlist removal happened while the sweep was running. The
+    // sweep then makes exactly one more pass from the first config once it
+    // exhausts the service's configs.
+    bool rerun = 3;
+
+    // The block height at which the service became permissioned (its first
+    // allowlist entry). Non-zero marks a deferred initial sweep: it does not
+    // start before the first session start after this height, so already-staked
+    // suppliers leave at the following (second) session start. Zero means the
+    // sweep is not deferred: either it was started by a removal on a
+    // permissioned service, or it is a deferred initial sweep that has since
+    // started.
+    int64 deferred_from_height = 4;
+}
+
+// SupplierAllowlistEntry is one address on a service's supplier allowlist, as
+// exported to and imported from genesis.
+message SupplierAllowlistEntry {
+    string service_id = 1;
+    string address = 2;
+}

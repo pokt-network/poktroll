@@ -24,6 +24,10 @@ func (gs GenesisState) Validate() error {
 	if err := validateRelayMiningDifficultyList(gs.RelayMiningDifficultyList); err != nil {
 		return err
 	}
+
+	if err := validateSupplierAllowlist(gs.ServiceList, gs.SupplierAllowlist, gs.SupplierAllowlistSweeps); err != nil {
+		return err
+	}
 	// this line is used by starport scaffolding # genesis/types/validate
 
 	return gs.Params.ValidateBasic()
@@ -63,6 +67,64 @@ func validateRelayMiningDifficultyList(relayMiningDifficultyList []RelayMiningDi
 			return ErrServiceDuplicateIndex.Wrapf("duplicated index for relayMiningDifficulty: %s", index)
 		}
 		relayMiningDifficultyIndexMap[index] = struct{}{}
+	}
+
+	return nil
+}
+
+// validateSupplierAllowlist validates the supplier allowlist entries and pending
+// sweeps against the (already validated) service list.
+func validateSupplierAllowlist(
+	serviceList []sharedtypes.Service,
+	entries []SupplierAllowlistEntry,
+	sweeps []AllowlistSweep,
+) error {
+	serviceIds := make(map[string]struct{}, len(serviceList))
+	for _, service := range serviceList {
+		serviceIds[service.Id] = struct{}{}
+	}
+
+	entryKeys := make(map[string]struct{}, len(entries))
+	for _, entry := range entries {
+		if _, ok := serviceIds[entry.ServiceId]; !ok {
+			return ErrServiceInvalidSupplierAllowlist.Wrapf("allowlist entry of unknown service %q", entry.ServiceId)
+		}
+		if err := sharedtypes.ValidateCanonicalAddress(entry.Address); err != nil {
+			return ErrServiceInvalidSupplierAllowlist.Wrapf(
+				"invalid allowlist address %q of service %q; (%v)", entry.Address, entry.ServiceId, err,
+			)
+		}
+		entryKey := string(SupplierAllowlistKey(entry.ServiceId, entry.Address))
+		if _, ok := entryKeys[entryKey]; ok {
+			return ErrServiceDuplicateIndex.Wrapf(
+				"duplicated allowlist entry %q of service %q", entry.Address, entry.ServiceId,
+			)
+		}
+		entryKeys[entryKey] = struct{}{}
+	}
+
+	sweepServiceIds := make(map[string]struct{}, len(sweeps))
+	for _, sweep := range sweeps {
+		if _, ok := serviceIds[sweep.ServiceId]; !ok {
+			return ErrServiceInvalidSupplierAllowlist.Wrapf("allowlist sweep of unknown service %q", sweep.ServiceId)
+		}
+		if _, ok := sweepServiceIds[sweep.ServiceId]; ok {
+			return ErrServiceDuplicateIndex.Wrapf("duplicated allowlist sweep of service %q", sweep.ServiceId)
+		}
+		sweepServiceIds[sweep.ServiceId] = struct{}{}
+		if sweep.DeferredFromHeight < 0 {
+			return ErrServiceInvalidSupplierAllowlist.Wrapf(
+				"negative deferred_from_height %d of the allowlist sweep of service %q",
+				sweep.DeferredFromHeight, sweep.ServiceId,
+			)
+		}
+		// A deferred sweep has not started, so it has no cursor: the first pass
+		// drops deferred_from_height when it writes one.
+		if sweep.DeferredFromHeight != 0 && len(sweep.Cursor) > 0 {
+			return ErrServiceInvalidSupplierAllowlist.Wrapf(
+				"deferred allowlist sweep of service %q carries a cursor", sweep.ServiceId,
+			)
+		}
 	}
 
 	return nil

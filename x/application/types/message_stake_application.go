@@ -25,7 +25,7 @@ func NewMsgStakeApplication(
 
 func (msg *MsgStakeApplication) ValidateBasic() error {
 	// Validate the address
-	_, err := sdk.AccAddressFromBech32(msg.Address)
+	err := sharedtypes.ValidateCanonicalAddress(msg.Address)
 	if err != nil {
 		return ErrAppInvalidAddress.Wrapf("invalid application address %s; (%v)", msg.Address, err)
 	}

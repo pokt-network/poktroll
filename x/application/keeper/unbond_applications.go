@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
@@ -34,7 +35,12 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	for ; allUnstakingApplicationsIterator.Valid(); allUnstakingApplicationsIterator.Next() {
 		application, err := allUnstakingApplicationsIterator.Value()
 		if err != nil {
-			return err
+			// The unstaking index points at an application that no longer exists.
+			// A dangling index entry must not halt the chain: drop it and continue.
+			orphanAddress := strings.TrimSuffix(string(allUnstakingApplicationsIterator.Key()), "/")
+			logger.Error(fmt.Sprintf("could not load unbonding application %s; removing the dangling index entry: %s", orphanAddress, err))
+			k.removeApplicationUnstakingIndex(ctx, orphanAddress)
+			continue
 		}
 
 		// Ignore applications that have not initiated the unbonding action.

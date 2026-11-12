@@ -2,9 +2,11 @@ package keeper
 
 import (
 	"slices"
+	"strings"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
@@ -28,7 +30,14 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnbondingGateways(ctx cosmostypes.Co
 		for ; delegationIterator.Valid(); delegationIterator.Next() {
 			application, err := delegationIterator.Value()
 			if err != nil {
-				return err
+				// The delegation index points at an application that no longer exists.
+				// A dangling index entry must not halt the chain: drop it and continue.
+				// Key is DelegationKey(gateway, app) = "<gateway>/<app>/".
+				gatewayPrefix := string(apptypes.StringKey(unbondingGateway.GetAddress()))
+				orphanApp := strings.TrimSuffix(strings.TrimPrefix(string(delegationIterator.Key()), gatewayPrefix), "/")
+				logger.Error("could not load delegating application; removing the dangling delegation index entry")
+				k.removeApplicationDelegationIndex(ctx, orphanApp, unbondingGateway.GetAddress())
+				continue
 			}
 
 			// Get the index of the particular unbonding gateway from the list of gateways the app delegated to.
@@ -38,7 +47,7 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnbondingGateways(ctx cosmostypes.Co
 				// to the gateway, log the error, remove the index entry but continue
 				// to the next delegation.
 				logger.Error("Gateway address not found in application delegatee addresses")
-				k.removeApplicationDelegationIndex(ctx, unbondingGateway.GetAddress(), application.Address)
+				k.removeApplicationDelegationIndex(ctx, application.Address, unbondingGateway.GetAddress())
 				continue
 			}
 

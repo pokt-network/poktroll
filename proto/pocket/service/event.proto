@@ -32,3 +32,22 @@ message EventServiceMetadataUpdated {
     // Size in bytes of the card now stored, so indexers can see the change without the payload.
     uint64 card_size_bytes = 3 [(gogoproto.jsontag) = "card_size_bytes"];
 }
+
+// EventServiceSupplierAllowlistUpdated is emitted when a service owner changes the
+// service's supplier allowlist.
+//
+// DEV_NOTE: primitives only, plus two repeated strings that check_proto_event_fields
+// flags. Both are bounded: MsgUpdateServiceSupplierAllowlist caps added + removed at
+// MaxSupplierAllowlistEntriesPerMsg (100) addresses, so the event stays small.
+message EventServiceSupplierAllowlistUpdated {
+    // The ID of the service whose allowlist was updated.
+    string service_id = 1 [(gogoproto.jsontag) = "service_id"];
+    // The service owner that submitted the update.
+    string owner_address = 2 [(gogoproto.jsontag) = "owner_address"];
+    // Whether the service is permissioned after the update, i.e. its allowlist is non-empty.
+    bool permissioned = 3 [(gogoproto.jsontag) = "permissioned"];
+    // The addresses added to the allowlist.
+    repeated string added = 4 [(gogoproto.jsontag) = "added"];
+    // The addresses removed from the allowlist.
+    repeated string removed = 5 [(gogoproto.jsontag) = "removed"];
+}

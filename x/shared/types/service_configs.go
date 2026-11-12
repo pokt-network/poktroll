@@ -2,8 +2,6 @@ package types
 
 import (
 	"fmt"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
@@ -120,7 +118,7 @@ func ValidateServiceRevShare(revShareList []*ServiceRevenueShare) error {
 			return ErrSharedInvalidRevShare.Wrapf("rev share address cannot be empty: %v", revShare)
 		}
 
-		if _, err := sdk.AccAddressFromBech32(revShare.Address); err != nil {
+		if err := ValidateCanonicalAddress(revShare.Address); err != nil {
 			return ErrSharedInvalidRevShare.Wrapf("invalid rev share address %s; (%v)", revShare.Address, err)
 		}
 

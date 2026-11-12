@@ -344,6 +344,37 @@ func TestGenesisState_Validate(t *testing.T) {
 			isValid: false,
 		},
 
+		{
+			desc: "invalid - non-canonical application address",
+			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
+				ApplicationList: []types.Application{
+					{
+						Address:                   strings.ToUpper(addr1),
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
+					},
+				},
+			},
+			isValid: false,
+		},
+		{
+			desc: "invalid - non-canonical delegatee gateway address",
+			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
+				ApplicationList: []types.Application{
+					{
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: []string{strings.ToUpper(gatewayAddr1)},
+					},
+				},
+			},
+			isValid: false,
+		},
+
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
 	for _, test := range tests {

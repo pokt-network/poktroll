@@ -33,6 +33,13 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 
 	k.Logger().Info(fmt.Sprintf("pruned service config history for %d suppliers", numSuppliersWithPrunedHistory))
 
+	// The allowlist sweep runs before the cap sweep: a service a supplier is no
+	// longer allowed on must not take one of the service slots its stake pays for.
+	numServiceConfigsSwept := k.EndBlockerServiceAllowlistSweep(ctx)
+	if numServiceConfigsSwept > 0 {
+		logger.Info(fmt.Sprintf("service allowlist sweep visited %d service configs", numServiceConfigsSwept))
+	}
+
 	numSuppliersSwept := k.EndBlockerServiceCapSweep(ctx)
 	if numSuppliersSwept > 0 {
 		logger.Info(fmt.Sprintf("service cap sweep visited %d suppliers", numSuppliersSwept))

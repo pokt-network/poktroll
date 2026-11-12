@@ -10,6 +10,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/pokt-network/poktroll/app/pocket"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
 // newAnteHandlerFn returns an AnteHandler that waives minimum gas/fees for transactions
@@ -80,15 +81,63 @@ func newTxFeeChecker(
 
 // shouldWaiveMorseClaimGasFees returns true if:
 //   - The waive_morse_claim_gas_fees migration module param is true
+//   - The morse_account_claiming_enabled migration module param is true
 //   - The tx contains EXACTLY ONE secp256k1 signature
 //   - The tx contains ONLY morse claim messages
 //     I.e., MsgClaimMorseAccount, MsgClaimMorseApplication, and MsgClaimMorseSupplier
+//   - Each message claims a distinct Morse account that exists and is not yet claimed
+//   - A supplier claim is signed by the claimed node's key or by its output address's key
 func shouldWaiveMorseClaimGasFees(sdkCtx cosmostypes.Context, app *App, tx cosmostypes.Tx) bool {
 	migrationParams := app.Keepers.MigrationKeeper.GetParams(sdkCtx)
 
 	return migrationParams.WaiveMorseClaimGasFees &&
+		migrationParams.MorseAccountClaimingEnabled &&
 		txHasOneSecp256k1Signature(tx) &&
-		txHasOnlyMorseClaimMsgs(tx)
+		txHasOnlyMorseClaimMsgs(tx) &&
+		txClaimsOnlyUnclaimedMorseAccounts(sdkCtx, app, tx)
+}
+
+// txClaimsOnlyUnclaimedMorseAccounts returns true if every message of the given tx
+// claims a distinct Morse account that exists and has not been claimed yet.
+// A repeated account would make the tx fail (and revert) after the first claim.
+func txClaimsOnlyUnclaimedMorseAccounts(sdkCtx cosmostypes.Context, app *App, tx cosmostypes.Tx) bool {
+	morseAddresses := make(map[string]struct{})
+	for _, msg := range tx.GetMsgs() {
+		// The claimed account is the one each msg handler looks up: a supplier claim
+		// may be signed by the Morse owner on behalf of the claimed node.
+		var morseAddress string
+		// A supplier claim's Morse signer must be the claimed node or its output
+		// address, as in the msg handler. Account and application claims derive the
+		// claimed address from the signing key itself.
+		var supplierClaimSigner string
+		switch claimMsg := msg.(type) {
+		case *migrationtypes.MsgClaimMorseSupplier:
+			morseAddress = claimMsg.GetMorseNodeAddress()
+			supplierClaimSigner = claimMsg.GetMorseSignerAddress()
+		case *migrationtypes.MsgClaimMorseAccount:
+			morseAddress = claimMsg.GetMorseSignerAddress()
+		case *migrationtypes.MsgClaimMorseApplication:
+			morseAddress = claimMsg.GetMorseSignerAddress()
+		default:
+			return false
+		}
+
+		if _, isRepeated := morseAddresses[morseAddress]; isRepeated {
+			return false
+		}
+		morseAddresses[morseAddress] = struct{}{}
+
+		morseClaimableAccount, isFound := app.Keepers.MigrationKeeper.GetMorseClaimableAccount(sdkCtx, morseAddress)
+		if !isFound || morseClaimableAccount.IsClaimed() {
+			return false
+		}
+		if supplierClaimSigner != "" &&
+			supplierClaimSigner != morseClaimableAccount.GetMorseSrcAddress() &&
+			supplierClaimSigner != morseClaimableAccount.GetMorseOutputAddress() {
+			return false
+		}
+	}
+	return true
 }
 
 // txHasOneSecp256k1Signature returns true if the given tx contains EXACTLY ONE secp256k1 signature.

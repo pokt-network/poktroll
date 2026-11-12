@@ -1,6 +1,9 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+)
 
 var _ sdk.Msg = (*MsgStakeGateway)(nil)
 
@@ -12,7 +15,7 @@ func NewMsgStakeGateway(address string, stake sdk.Coin) *MsgStakeGateway {
 }
 
 func (msg *MsgStakeGateway) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.Address)
+	err := sharedtypes.ValidateCanonicalAddress(msg.Address)
 	if err != nil {
 		return ErrGatewayInvalidAddress.Wrapf("invalid gateway address %s; (%v)", msg.Address, err)
 	}

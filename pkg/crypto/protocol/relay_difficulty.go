@@ -36,7 +36,12 @@ func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newR
 	// If targetNumRelays == newRelaysEma -> do not scale -> keep the same difficulty to mine relays
 	// TODO_IMPROVE: Figure out if there's a range (e.g. 5%) within which it is reasonable
 	// to keep the same difficulty.
-	if targetNumRelays == newRelaysEma {
+	//
+	// newRelaysEma == 0 cannot scale (big.NewRat divides by it and panics). This is
+	// unreachable on the normal settlement path (claims carry >= 1 relay and the EMA
+	// floors at 1), but this is called from the tokenomics EndBlocker, so a zero from
+	// any source must keep the difficulty unchanged rather than halt the chain.
+	if targetNumRelays == newRelaysEma || newRelaysEma == 0 {
 		return prevTargetHash
 	}
 

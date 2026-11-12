@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -535,6 +536,70 @@ func TestMsgServer_TransferApplication_MergeRespectsRingMemberLimit(t *testing.T
 	gotDstApp, isFound := k.GetApplication(ctx, dstBech32)
 	require.True(t, isFound)
 	require.Equal(t, dstApp.PendingUndelegations, gotDstApp.PendingUndelegations)
+}
+
+// A gateway delegated on one side of a merge and pending undelegation on the
+// other must end up delegated once, with no pending entry, so the relay ring for
+// the merge session lists it once.
+func TestMsgServer_TransferApplication_MergeReconcilesDelegateeWithPendingUndelegation(t *testing.T) {
+	for _, pendingOnDst := range []bool{true, false} {
+		t.Run(fmt.Sprintf("pendingOnDst=%t", pendingOnDst), func(t *testing.T) {
+			k, ctx := keepertest.ApplicationKeeper(t)
+			srv := appkeeper.NewMsgServerImpl(k)
+			sharedParams := sharedtypes.DefaultParams()
+
+			srcBech32 := sample.AccAddressBech32()
+			dstBech32 := sample.AccAddressBech32()
+			gatewayBech32 := sample.AccAddressBech32()
+			otherGatewayBech32 := sample.AccAddressBech32()
+			svcConfigs := []*sharedtypes.ApplicationServiceConfig{{ServiceId: "svc1"}}
+
+			_, err := srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+				Address: srcBech32, Stake: &apptypes.DefaultMinStake, Services: svcConfigs,
+			})
+			require.NoError(t, err)
+			_, err = srv.TransferApplication(ctx, apptypes.NewMsgTransferApplication(srcBech32, dstBech32))
+			require.NoError(t, err)
+			_, err = srv.StakeApplication(ctx, &apptypes.MsgStakeApplication{
+				Address: dstBech32, Stake: &apptypes.DefaultMinStake, Services: svcConfigs,
+			})
+			require.NoError(t, err)
+
+			srcApp, isFound := k.GetApplication(ctx, srcBech32)
+			require.True(t, isFound)
+			transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+			completionHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight)
+
+			delegatedBech32, pendingBech32 := srcBech32, dstBech32
+			if !pendingOnDst {
+				delegatedBech32, pendingBech32 = dstBech32, srcBech32
+			}
+			delegatedApp, isFound := k.GetApplication(ctx, delegatedBech32)
+			require.True(t, isFound)
+			delegatedApp.DelegateeGatewayAddresses = []string{gatewayBech32}
+			k.SetApplication(ctx, delegatedApp)
+			pendingApp, isFound := k.GetApplication(ctx, pendingBech32)
+			require.True(t, isFound)
+			pendingApp.PendingUndelegations = map[uint64]apptypes.UndelegatingGatewayList{
+				uint64(completionHeight): {GatewayAddresses: []string{gatewayBech32, otherGatewayBech32}},
+			}
+			k.SetApplication(ctx, pendingApp)
+
+			ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(completionHeight)
+			require.NoError(t, k.EndBlockerTransferApplication(ctx))
+
+			gotDstApp, isFound := k.GetApplication(ctx, dstBech32)
+			require.True(t, isFound)
+			require.Equal(t, []string{gatewayBech32}, gotDstApp.DelegateeGatewayAddresses)
+			require.Equal(t, map[uint64]apptypes.UndelegatingGatewayList{
+				uint64(completionHeight): {GatewayAddresses: []string{otherGatewayBech32}},
+			}, gotDstApp.PendingUndelegations)
+			require.ElementsMatch(t,
+				[]string{gatewayBech32, otherGatewayBech32},
+				rings.GetRingAddressesAtSessionEndHeight(&gotDstApp, uint64(completionHeight)),
+			)
+		})
+	}
 }
 
 func TestMsgServer_TransferApplication_FailDestinationCannotReceiveStake(t *testing.T) {

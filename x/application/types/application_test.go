@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -131,7 +132,7 @@ func TestApplication_RecordPerSessionSpendLimitChange_EarlierActivationReplacesP
 	d := sdk.NewInt64Coin("upokt", 4_000_000)
 	stake := sdk.NewInt64Coin("upokt", 100_000_000)
 	app := &Application{
-		Address:              "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4",
+		Address:              sample.AccAddressBech32(),
 		Stake:                &stake,
 		PerSessionSpendLimit: &a,
 		ServiceConfigs:       []*sharedtypes.ApplicationServiceConfig{svc("svc")},

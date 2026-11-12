@@ -30,7 +30,9 @@ func NewParams(minStake *cosmostypes.Coin) Params {
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
-	return NewParams(&DefaultMinStake)
+	// Copies: the defaults are package globals, and callers may mutate the returned params.
+	minStake := DefaultMinStake
+	return NewParams(&minStake)
 }
 
 // ParamSetPairs get the params.ParamSet

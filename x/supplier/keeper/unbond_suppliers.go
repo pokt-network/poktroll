@@ -179,9 +179,11 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 		supplier, found := k.GetDehydratedSupplier(ctx, string(supplierAddress))
 		if !found {
 			// We should be able to find the supplier if it is in the iterator.
-			err := fmt.Errorf("should never happen: could not find unbonding supplier %s", supplierAddress)
-			logger.Error(err.Error())
-			return numUnbondedSuppliers, err
+			// A dangling index entry must not halt the chain: drop it and continue.
+			logger.Error(fmt.Sprintf("should never happen: could not find unbonding supplier %s; removing the dangling index entry", supplierAddress))
+			k.removeSupplierUnstakingHeightIndex(ctx, string(supplierAddress))
+			k.removeBelowMinStakeUnbonding(ctx, string(supplierAddress))
+			continue
 		}
 
 		// Ignore suppliers that have not initiated the unbonding action
@@ -209,13 +211,6 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 		ownerAddress, err := cosmostypes.AccAddressFromBech32(supplier.OwnerAddress)
 		if err != nil {
 			logger.Error(fmt.Sprintf("could not parse the owner address %s", supplier.OwnerAddress))
-			return numUnbondedSuppliers, err
-		}
-
-		// Retrieve the address of the supplier.
-		supplierOperatorAddress, err := cosmostypes.AccAddressFromBech32(supplier.OperatorAddress)
-		if err != nil {
-			logger.Error(fmt.Sprintf("could not parse the operator address %s", supplier.OperatorAddress))
 			return numUnbondedSuppliers, err
 		}
 
@@ -258,8 +253,8 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			}
 		}
 
-		// Remove the supplier from the store.
-		k.RemoveSupplier(ctx, supplierOperatorAddress.String())
+		// Remove the supplier from the store under the key it is stored with.
+		k.RemoveSupplier(ctx, supplier.OperatorAddress)
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 
 		// Defensive: GetParams returns a zero-value Params{} (nil MinStake) if params

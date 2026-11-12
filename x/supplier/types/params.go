@@ -49,11 +49,15 @@ func NewParams(
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
+	// Copies: the defaults are package globals, and callers may mutate the returned params.
+	minStake := DefaultMinStake
+	stakingFee := DefaultStakingFee
+	stakePerAdditionalService := DefaultStakePerAdditionalService
 	return NewParams(
-		&DefaultMinStake,
-		&DefaultStakingFee,
+		&minStake,
+		&stakingFee,
 		DefaultMinStakeIncludedServices,
-		&DefaultStakePerAdditionalService,
+		&stakePerAdditionalService,
 	)
 }
 

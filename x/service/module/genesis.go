@@ -30,6 +30,14 @@ func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisSta
 			panic(err)
 		}
 	}
+	// Restore the supplier allowlists and their pending sweeps. Dropping them would
+	// silently reopen every permissioned service and abandon every sweep in progress.
+	for _, entry := range genState.SupplierAllowlist {
+		k.SetSupplierAllowlistEntry(ctx, entry.ServiceId, entry.Address)
+	}
+	for _, sweep := range genState.SupplierAllowlistSweeps {
+		k.SetAllowlistSweep(ctx, sweep)
+	}
 	// this line is used by starport scaffolding # genesis/module/init
 	if err := k.SetParams(ctx, genState.Params); err != nil {
 		panic(err)
@@ -44,6 +52,9 @@ func ExportGenesis(ctx context.Context, k keeper.Keeper) *types.GenesisState {
 	genesis.ServiceList = k.GetAllServices(ctx)
 	genesis.RelayMiningDifficultyList = k.GetAllRelayMiningDifficulty(ctx)
 	genesis.ComputeUnitsPerRelayHistory = k.GetAllServiceComputeUnitsPerRelayHistory(ctx)
+	genesis.SupplierAllowlist = k.GetAllSupplierAllowlistEntries(ctx)
+	// Sweep cursors stay valid: x/supplier re-imports its service configs under the same keys.
+	genesis.SupplierAllowlistSweeps = k.GetPendingAllowlistSweeps(ctx)
 	// this line is used by starport scaffolding # genesis/module/export
 
 	return genesis

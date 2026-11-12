@@ -21,7 +21,7 @@ func NewMsgUpdateGatewayMetadata(address string, metadata *sharedtypes.Metadata)
 // has no keeper access; that check lives in the message server, mirroring how
 // UnstakeGateway handles a not-found gateway.
 func (msg *MsgUpdateGatewayMetadata) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.Address); err != nil {
 		return ErrGatewayInvalidAddress.Wrapf("invalid gateway address %s; (%v)", msg.Address, err)
 	}
 

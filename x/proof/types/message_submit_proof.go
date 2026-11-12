@@ -5,6 +5,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ sdk.Msg = (*MsgSubmitProof)(nil)
@@ -19,7 +20,7 @@ func NewMsgSubmitProof(supplierOperatorAddress string, sessionHeader *sessiontyp
 
 // ValidateBasic performs basic stateless validation of a MsgSubmitProof.
 func (msg *MsgSubmitProof) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierOperatorAddress()); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.GetSupplierOperatorAddress()); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
 			"supplier operator address %q, error: %s",
 			msg.GetSupplierOperatorAddress(),
@@ -35,6 +36,10 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 
 	if err := sessionHeader.ValidateBasic(); err != nil {
 		return ErrProofInvalidSessionHeader.Wrapf("%s", err)
+	}
+	// State lookups compare the application address string, so require its canonical encoding.
+	if err := sharedtypes.ValidateCanonicalAddress(sessionHeader.GetApplicationAddress()); err != nil {
+		return ErrProofInvalidSessionHeader.Wrapf("application address: %s", err)
 	}
 
 	if len(msg.GetProof()) == 0 {

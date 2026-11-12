@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
@@ -50,7 +51,12 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	for ; allTransferringApplicationsIterator.Valid(); allTransferringApplicationsIterator.Next() {
 		srcApp, err := allTransferringApplicationsIterator.Value()
 		if err != nil {
-			return err
+			// The transfer index points at an application that no longer exists.
+			// A dangling index entry must not halt the chain: drop it and continue.
+			orphanAddress := strings.TrimSuffix(string(allTransferringApplicationsIterator.Key()), "/")
+			logger.Error(fmt.Sprintf("could not load transferring application %s; removing the dangling index entry: %s", orphanAddress, err))
+			k.removeApplicationTransferIndex(ctx, orphanAddress)
+			continue
 		}
 
 		// Ignore applications that have not initiated the transfer action.
@@ -187,6 +193,12 @@ func (k Keeper) transferApplication(
 			)
 		}
 		mergeAppPendingUndelegations(&srcApp, &dstApp)
+		// A gateway can be delegated on one side and pending undelegation on the
+		// other. The merged application is delegated to it, so drop the pending
+		// entry as a re-delegation does; otherwise the ring would list it twice.
+		for _, delegateeBech32 := range dstApp.DelegateeGatewayAddresses {
+			k.updatePendingUndelegations(ctx, &dstApp, delegateeBech32, logger)
+		}
 		// The relay request ring includes the gateways undelegated in the current
 		// session. Keep the merged ring within the ring signature member limit.
 		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)

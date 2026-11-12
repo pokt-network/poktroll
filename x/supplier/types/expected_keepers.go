@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -43,6 +44,14 @@ type SharedKeeper interface {
 // ServiceKeeper defines the expected interface for the Service module.
 type ServiceKeeper interface {
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, bool)
+	// IsSupplierAllowed reports whether the supplier's owner or operator may serve
+	// the service: always true for a service with an empty supplier allowlist.
+	IsSupplierAllowed(ctx context.Context, serviceId, ownerAddress, operatorAddress string) bool
+	// GetPendingAllowlistSweeps returns the services whose staked suppliers still
+	// need to be checked against their (changed) supplier allowlist.
+	GetPendingAllowlistSweeps(ctx context.Context) []servicetypes.AllowlistSweep
+	SetAllowlistSweep(ctx context.Context, sweep servicetypes.AllowlistSweep)
+	ClearAllowlistSweep(ctx context.Context, serviceId string)
 }
 
 // SessionKeeper defines the expected interface for the Session module.

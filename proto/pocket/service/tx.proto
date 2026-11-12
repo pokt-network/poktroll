@@ -24,6 +24,7 @@ service Msg {
   rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse );
   rpc AddService       (MsgAddService      ) returns (MsgAddServiceResponse      );
   rpc TransferService  (MsgTransferService ) returns (MsgTransferServiceResponse );
+  rpc UpdateServiceSupplierAllowlist (MsgUpdateServiceSupplierAllowlist) returns (MsgUpdateServiceSupplierAllowlistResponse);
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -91,3 +92,17 @@ message MsgTransferService {
 
 // MsgTransferServiceResponse is the response to a MsgTransferService message.
 message MsgTransferServiceResponse {}
+
+// MsgUpdateServiceSupplierAllowlist adds and/or removes suppliers on a service's
+// supplier allowlist. A service is permissioned while its allowlist has at least
+// one entry. Only the service owner can update the allowlist.
+message MsgUpdateServiceSupplierAllowlist {
+  option (cosmos.msg.v1.signer) = "owner_address";
+  string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service owner (signer).
+  string service_id = 2; // The unique identifier of the service whose allowlist is updated.
+  repeated string add = 3; // The canonical Bech32 addresses (supplier owner or operator) to add to the allowlist.
+  repeated string remove = 4; // The canonical Bech32 addresses (supplier owner or operator) to remove from the allowlist.
+}
+
+// MsgUpdateServiceSupplierAllowlistResponse is the response to a MsgUpdateServiceSupplierAllowlist message.
+message MsgUpdateServiceSupplierAllowlistResponse {}

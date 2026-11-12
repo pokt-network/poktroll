@@ -140,6 +140,30 @@ pocketd q service show-service pocket --dehydrated`,
 					Example:        `pocketd q service compute-units-per-relay-history <service-id>`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}},
 				},
+				{
+					RpcMethod: "SupplierAllowlist",
+					Use:       "supplier-allowlist [service-id]",
+					Short:     "List the supplier allowlist of a service",
+					Long: `
+- Lists the addresses (supplier owner or operator) allowed to serve a service.
+- A service is permissioned while its allowlist is non-empty; an empty list means any supplier may serve it.
+- Supports pagination via flags if there are many entries.
+`,
+					Example:        `pocketd q service supplier-allowlist <service-id>`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "service_id"}},
+				},
+				{
+					RpcMethod: "SupplierAllowlistEntry",
+					Use:       "is-supplier-allowed [service-id] [address]",
+					Short:     "Show whether an address is on a service's supplier allowlist",
+					Long: `
+- Shows whether an address (supplier owner or operator) is on a service's supplier allowlist.
+- Also shows whether the service is permissioned, that is, whether its allowlist is non-empty.
+- The address must be in canonical (lowercase) bech32 form.
+`,
+					Example:        `pocketd q service is-supplier-allowed <service-id> <address>`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "service_id"}, {ProtoField: "address"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},
@@ -180,6 +204,26 @@ Only the current owner (--from) can initiate the transfer.
 The new owner immediately gains full control of the service.`,
 					Example:        `pocketd tx service transfer-service svc-foo pokt1newowner... --from currentowner`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "service_id"}, {ProtoField: "new_owner_address"}},
+				},
+				{
+					RpcMethod: "UpdateServiceSupplierAllowlist",
+					Use:       "update-supplier-allowlist <service-id>",
+					Short:     "Add and/or remove suppliers on a service's supplier allowlist",
+					Long: `Add and/or remove addresses (supplier owner or operator) on a service's supplier allowlist.
+Only the service owner (--from) can update the allowlist.
+
+A service is permissioned while its allowlist is non-empty: only listed suppliers may serve it.
+New stakes by unlisted suppliers are rejected at once. Already-staked unlisted suppliers are deactivated for
+the service at the second session start after the first entry on an open service (finish the list within the current session),
+and at the next session start after a later removal. Current sessions are never affected.
+
+Addresses must be canonical (lowercase) bech32. Pass comma-separated lists to --add and --remove (at most 100 entries combined).`,
+					Example:        `pocketd tx service update-supplier-allowlist svc-foo --add pokt1abc...,pokt1def... --remove pokt1ghi... --from owner`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "service_id"}},
+					FlagOptions: map[string]*autocliv1.FlagOptions{
+						"add":    {Usage: "Comma-separated canonical addresses to add to the allowlist"},
+						"remove": {Usage: "Comma-separated canonical addresses to remove from the allowlist"},
+					},
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},

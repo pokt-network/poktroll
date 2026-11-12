@@ -841,7 +841,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin32",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin33",
                 "parameters": [
                     {
                         "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
@@ -875,7 +875,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin32",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin33",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -903,12 +903,45 @@
                 }
             }
         },
+        "/pocket.service.Msg/UpdateServiceSupplierAllowlist": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateServiceSupplierAllowlist",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateServiceSupplierAllowlist adds and/or removes suppliers on a service's\nsupplier allowlist. A service is permissioned while its allowlist has at least\none entry. Only the service owner can update the allowlist.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.MsgUpdateServiceSupplierAllowlist"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.MsgUpdateServiceSupplierAllowlistResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
         "/pocket.session.Msg/UpdateParam": {
             "post": {
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin36",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin37",
                 "parameters": [
                     {
                         "name": "body",
@@ -941,7 +974,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin36",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin37",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -974,7 +1007,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin43",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin44",
                 "parameters": [
                     {
                         "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
@@ -1008,7 +1041,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin43",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin44",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -1105,7 +1138,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin48",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin49",
                 "parameters": [
                     {
                         "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
@@ -1139,7 +1172,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin48",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin49",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -1172,7 +1205,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin53",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin54",
                 "parameters": [
                     {
                         "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
@@ -1206,7 +1239,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin53",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin54",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.",
@@ -2244,6 +2277,107 @@
                 }
             }
         },
+        "/pokt-network/poktroll/service/supplier_allowlist/{service_id}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries a service's supplier allowlist. The service is permissioned iff the list is non-empty.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_SupplierAllowlist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "service_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "byte",
+                        "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.QuerySupplierAllowlistResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/service/supplier_allowlist/{service_id}/{address}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries whether an address is on a service's supplier allowlist, and whether the service is permissioned.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_SupplierAllowlistEntry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "service_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.QuerySupplierAllowlistEntryResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
         "/pokt-network/poktroll/session/get_session": {
             "get": {
                 "tags": [
@@ -2294,7 +2428,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin35",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin36",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2317,7 +2451,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin40",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin41",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2373,7 +2507,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin47",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin48",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2515,7 +2649,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin52",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin53",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2650,6 +2784,14 @@
                     "description": "Optional per-session spend limit in uPOKT. When set, caps the maximum\namount of stake consumed per session. Nil = no limit (default).",
                     "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
                 },
+                "per_session_spend_limit_history": {
+                    "description": "Timeline of per_session_spend_limit values and the heights at which each\ntook effect. Settlement resolves the limit in effect at a claim's session\nstart height from this history.\n\nWritten only when the limit actually changes; a change takes effect at the\nnext session start height (same rule as service_config_history), so the\nlimit is constant for the duration of any single session. Empty history\nmeans the limit has never changed and per_session_spend_limit applies at\nevery height. Not pruned, for the same reason as service_config_history.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.application.ApplicationPerSessionSpendLimitUpdate"
+                    }
+                },
                 "service_config_history": {
                     "description": "List of historical service configuration updates, tracking the application's\nservice config changes and their corresponding activation heights.\n\nMirrors the supplier `service_config_history` pattern to support\ndeterministic historical session queries (GetSession at a past height must\nreturn the service config that was active at that height, not the latest).\n\nThis history is NOT pruned: applications are orders of magnitude fewer than\nsupplier service rows, so the storage cost is negligible, and keeping it\nforever avoids the pruning-induced historical-query non-determinism observed\non the supplier side (see session_mutation_analysis).",
                     "type": "array",
@@ -2674,6 +2816,21 @@
                     "type": "string",
                     "format": "uint64",
                     "title": "Session end height when application initiated unstaking (0 if not unstaking)"
+                }
+            }
+        },
+        "pocket.application.ApplicationPerSessionSpendLimitUpdate": {
+            "description": "ApplicationPerSessionSpendLimitUpdate records the per-session spend limit\nthat is in effect from activation_height until the next entry's activation_height.",
+            "type": "object",
+            "properties": {
+                "activation_height": {
+                    "description": "Block height (a session start height, or 1 for the backfilled initial value)\nfrom which this limit is in effect.",
+                    "type": "string",
+                    "format": "int64"
+                },
+                "per_session_spend_limit": {
+                    "description": "Per-session spend limit in uPOKT. Nil = no limit.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
                 }
             }
         },
@@ -3647,6 +3804,38 @@
             "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
             "type": "object"
         },
+        "pocket.service.MsgUpdateServiceSupplierAllowlist": {
+            "description": "MsgUpdateServiceSupplierAllowlist adds and/or removes suppliers on a service's\nsupplier allowlist. A service is permissioned while its allowlist has at least\none entry. Only the service owner can update the allowlist.",
+            "type": "object",
+            "properties": {
+                "add": {
+                    "description": "The canonical Bech32 addresses (supplier owner or operator) to add to the allowlist.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "owner_address": {
+                    "description": "The Bech32 address of the service owner (signer).",
+                    "type": "string"
+                },
+                "remove": {
+                    "description": "The canonical Bech32 addresses (supplier owner or operator) to remove from the allowlist.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "service_id": {
+                    "description": "The unique identifier of the service whose allowlist is updated.",
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.service.MsgUpdateServiceSupplierAllowlistResponse": {
+            "description": "MsgUpdateServiceSupplierAllowlistResponse is the response to a MsgUpdateServiceSupplierAllowlist message.",
+            "type": "object"
+        },
         "pocket.service.Params": {
             "description": "Params defines the parameters for the module.",
             "type": "object",
@@ -3763,6 +3952,37 @@
                         "type": "object",
                         "$ref": "#/definitions/pocket.service.RelayMiningDifficultyUpdate"
                     }
+                }
+            }
+        },
+        "pocket.service.QuerySupplierAllowlistEntryResponse": {
+            "type": "object",
+            "properties": {
+                "listed": {
+                    "description": "True iff the address is on the service's allowlist.",
+                    "type": "boolean"
+                },
+                "permissioned": {
+                    "description": "True iff the service's allowlist is non-empty.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "pocket.service.QuerySupplierAllowlistResponse": {
+            "type": "object",
+            "properties": {
+                "addresses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse"
+                },
+                "permissioned": {
+                    "description": "True iff the allowlist is non-empty.",
+                    "type": "boolean"
                 }
             }
         },
@@ -4364,6 +4584,10 @@
                 "as_coin": {
                     "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
                 },
+                "as_uint64": {
+                    "type": "string",
+                    "format": "uint64"
+                },
                 "authority": {
                     "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
                     "type": "string"
@@ -4400,6 +4624,15 @@
             "properties": {
                 "min_stake": {
                     "description": "min_stake is the minimum amount of uPOKT that a supplier must stake to be\nincluded in network sessions and remain staked.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "min_stake_included_services": {
+                    "description": "min_stake_included_services is the number of services covered by min_stake.\nMust be at least 1.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "stake_per_additional_service": {
+                    "description": "stake_per_additional_service is the additional stake required for each service\nbeyond min_stake_included_services. Zero disables the service cap.",
                     "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
                 },
                 "staking_fee": {

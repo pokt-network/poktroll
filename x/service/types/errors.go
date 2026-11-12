@@ -22,4 +22,5 @@ var (
 	ErrServiceNotFound                     = sdkerrors.Register(ModuleName, 1117, "service not found")
 	ErrServiceUnauthorized                 = sdkerrors.Register(ModuleName, 1118, "unauthorized service operation")
 	ErrServiceEmitEvent                    = sdkerrors.Register(ModuleName, 1119, "unable to emit onchain event")
+	ErrServiceInvalidSupplierAllowlist     = sdkerrors.Register(ModuleName, 1120, "invalid supplier allowlist update")
 )

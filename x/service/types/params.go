@@ -43,8 +43,10 @@ func NewParams(
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
+	// Copies: the defaults are package globals, and callers may mutate the returned params.
+	addServiceFee := MinAddServiceFee
 	return NewParams(
-		&MinAddServiceFee,
+		&addServiceFee,
 		DefaultTargetNumRelays,
 	)
 }

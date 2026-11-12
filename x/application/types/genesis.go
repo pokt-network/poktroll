@@ -33,6 +33,11 @@ func (gs GenesisState) Validate() error {
 
 	// Check that the stake value for the apps is valid and that the delegatee addresses are valid
 	for _, app := range gs.ApplicationList {
+		// Validate the application address
+		if err := sharedtypes.ValidateCanonicalAddress(app.Address); err != nil {
+			return ErrAppInvalidAddress.Wrapf("invalid application address %s; (%v)", app.Address, err)
+		}
+
 		// TODO_MAINNET: Consider creating shared helpers across the board for stake validation,
 		// similar to how we have `ValidateAppServiceConfigs` below
 		if app.Stake == nil {
@@ -54,7 +59,7 @@ func (gs GenesisState) Validate() error {
 
 		// Check that the application's delegated gateway addresses are valid
 		for _, gatewayAddr := range app.DelegateeGatewayAddresses {
-			if _, err := sdk.AccAddressFromBech32(gatewayAddr); err != nil {
+			if err := sharedtypes.ValidateCanonicalAddress(gatewayAddr); err != nil {
 				return ErrAppInvalidGatewayAddress.Wrapf("invalid gateway address %s; (%v)", gatewayAddr, err)
 			}
 		}

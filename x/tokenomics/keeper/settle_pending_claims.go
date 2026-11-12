@@ -108,10 +108,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			}
 
 			collectedClaims = append(collectedClaims, claim)
-			settlementContext.IncrementSupplierCount(
-				claim.SessionHeader.ApplicationAddress,
-				claim.SessionHeader.SessionId,
-			)
 		}
 		expiringClaimsIterator.Close()
 	}
@@ -125,16 +121,26 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	// This requires pricing every claim, which needs warm caches (service, difficulty,
 	// application, params). We warm them here; Phase 2's own ClaimCacheWarmUp then hits the
 	// cache (it is idempotent). A claim that cannot be warmed or priced here is simply left
-	// out of the budget math — Phase 2 discards it deterministically for the same reason,
-	// exactly as before this change. IncrementSupplierCount stays in Phase 1 so the divisor
-	// N reflects the same claim set the pre-change code used.
+	// out of the budget math — Phase 2 discards it deterministically for the same reason.
+	//
+	// The supplier count of each (application, session) group, the divisor of its floor,
+	// counts only the claims that warmed up: a claim Phase 2 discards must not lower the
+	// floor of the others. Every count is complete before any budget is accumulated.
+	pricedClaims := make([]*prooftypes.Claim, 0, len(collectedClaims))
 	for i := range collectedClaims {
 		claim := &collectedClaims[i]
 		if warmErr := settlementContext.ClaimCacheWarmUp(ctx, claim); warmErr != nil {
 			// Faulty claim; Phase 2 will surface and discard it. Skip budget accounting.
 			continue
 		}
+		settlementContext.IncrementSupplierCount(
+			claim.SessionHeader.ApplicationAddress,
+			claim.SessionHeader.SessionId,
+		)
+		pricedClaims = append(pricedClaims, claim)
+	}
 
+	for _, claim := range pricedClaims {
 		if budgetErr := settlementContext.AccumulateClaimBudget(ctx, claim); budgetErr != nil {
 			// Claim could not be priced or its budget initialized; Phase 2 will discard it
 			// for the same reason. Skip budget accounting.

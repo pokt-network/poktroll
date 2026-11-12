@@ -46,7 +46,9 @@ func NewParams(maxDelegatedGateways uint64, minStake *cosmostypes.Coin) Params {
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
-	return NewParams(DefaultMaxDelegatedGateways, &DefaultMinStake)
+	// Copies: the defaults are package globals, and callers may mutate the returned params.
+	minStake := DefaultMinStake
+	return NewParams(DefaultMaxDelegatedGateways, &minStake)
 }
 
 // ParamSetPairs get the params.ParamSet

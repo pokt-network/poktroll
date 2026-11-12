@@ -26,6 +26,10 @@ Visit the [Service FAQ](../4_faq/1_service_faq.md) for more information about in
   - [2. Query for the Service](#2-query-for-the-service)
   - [3. What do I do next?](#3-what-do-i-do-next)
 - [How do I update an existing service's `compute_units_per_relay`?](#how-do-i-update-an-existing-services-compute_units_per_relay)
+- [How do I restrict which suppliers can serve my service?](#how-do-i-restrict-which-suppliers-can-serve-my-service)
+  - [Update the allowlist](#update-the-allowlist)
+  - [When it takes effect](#when-it-takes-effect)
+  - [Query the allowlist](#query-the-allowlist)
 - [Experimental: How do I attach a card to a service?](#experimental-how-do-i-attach-a-card-to-a-service)
   - [Validate Before You Broadcast](#validate-before-you-broadcast)
   - [Using a File](#using-a-file)
@@ -149,6 +153,120 @@ pocketd tx service add-service \
     --fees 300upokt --from $USER \
    --network=beta
 ```
+
+## How do I restrict which suppliers can serve my service?
+
+A service is **open** by default: any staked supplier may serve it. The service owner can restrict it
+with a **supplier allowlist**. A service is **permissioned** exactly when its allowlist has at least one
+entry; removing every entry reopens it.
+
+- A supplier is allowed if its `owner_address` **or** its `operator_address` (the supplier ID) is listed.
+  Listing an owner covers its whole fleet of suppliers; listing an operator covers that one supplier.
+  Revenue share addresses never count.
+- Addresses must be canonical (lowercase) bech32; any other form is rejected.
+- The service owner is not exempt: to run your own suppliers on a permissioned service, list them too.
+- Applications are not restricted: any staked application can still use a permissioned service.
+
+:::warning The first entry closes the service to everyone not listed
+
+On an open service with suppliers, the first entry makes it permissioned. Suppliers already staked on it
+that are not on the list lose the service (see [When it takes effect](#when-it-takes-effect)).
+
+:::
+
+### Update the allowlist
+
+```bash
+pocketd tx service update-supplier-allowlist ${SERVICE_ID} \
+    --add ${ADDRESS_1},${ADDRESS_2} --remove ${ADDRESS_3} \
+    --from ${SERVICE_OWNER} --network=beta \
+    --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+```
+
+- Only the current service owner can sign.
+- A message carries at most `100` addresses (`--add` and `--remove` combined). It is all-or-nothing, and
+  the error names the offending address. Adding an address that is already listed, or removing one that
+  is not, does nothing. The same address twice within `--add` or within `--remove`, or in both, is an
+  error that rejects the whole message.
+- The allowlist belongs to the service: `transfer-service` moves it to the new owner.
+
+:::warning Large updates need more than the default gas limit
+
+Every entry is written to the store and paid for in gas: about `5,500` gas per newly added address, about
+`2,000` per removed address and about `1,000` per address that is already listed (or absent on removal),
+plus transaction-size gas and about `3` gas per byte of the service's card (the message reads the whole
+service). A message with 100 new addresses needs about `550,000` gas for the update alone, so the default
+limit (`200000`) runs out after roughly 30 additions. Use `--gas=auto` as above, or set `--gas` explicitly.
+
+:::
+
+To change more than `100` addresses at once, put several messages in one transaction. Allow about `700000`
+gas per 100 added addresses (more if the service has a large card) and give the total as `--gas` to every
+`--generate-only` call (the fee is the gas limit times the gas price). For example, with two batches
+(`1400000` gas):
+
+```bash
+# 1. Build one unsigned transaction per batch of up to 100 addresses
+pocketd tx service update-supplier-allowlist ${SERVICE_ID} --add ${BATCH_1_ADDRESSES} \
+    --from ${SERVICE_OWNER} --network=beta \
+    --generate-only --gas=1400000 --gas-prices=1upokt > batch1.json
+pocketd tx service update-supplier-allowlist ${SERVICE_ID} --add ${BATCH_2_ADDRESSES} \
+    --from ${SERVICE_OWNER} --network=beta \
+    --generate-only --gas=1400000 --gas-prices=1upokt > batch2.json
+
+# 2. Merge the messages of all batches into one transaction
+jq -s '.[0].body.messages = (map(.body.messages) | add) | .[0]' batch1.json batch2.json > merged.json
+
+# 3. Sign it
+pocketd tx sign merged.json --from ${SERVICE_OWNER} --network=beta --output-document signed.json
+
+# 4. Broadcast it
+pocketd tx broadcast signed.json --network=beta
+```
+
+When first permissioning a service, several separate transactions within the same session also work.
+
+### When it takes effect
+
+- **Any stake message that lists the service** (a new stake or a restake, even one that only changes an
+  endpoint) by a supplier whose owner and operator are both unlisted is rejected immediately, as soon as
+  the list has an entry.
+- **First entry on an open service:** already-staked suppliers that are not listed lose the service at
+  the **second session start** after the entry. You have the rest of the current session, in any number
+  of transactions, to finish the list.
+- **Later removals** (the service is already permissioned): the removed supplier loses the service at the
+  **next session start**. A removal made after the first entry but before that next session start joins
+  the first entry's pending pass, so that supplier also leaves at the **second session start**.
+- The pass checks at most 200 supplier configs per block, a budget shared by every service with a pending
+  pass, and a removal made while a pass is running can need a second pass. So on a service with thousands
+  of suppliers, or while other services are being swept, suppliers the pass reaches after the next session
+  start leave one or more sessions later.
+- Current sessions, and their claims, are never affected.
+- Only that service is deactivated: the supplier stays staked and keeps its other services. A supplier
+  whose only service is deactivated stays staked with zero services and earns nothing until it re-stakes
+  with services.
+- A removed supplier does not come back by itself. After it is listed again, it re-stakes with the
+  service in its config to serve it.
+- Removing every entry reopens the service and clears any pending pass, but it does not undo
+  deactivations that are already scheduled: those suppliers re-stake to serve the service again.
+
+### Query the allowlist
+
+```bash
+# Entries of the list (paginated) and whether the service is permissioned
+pocketd query service supplier-allowlist ${SERVICE_ID} --network=beta
+
+# Whether an address is listed, and whether the service is permissioned
+pocketd query service is-supplier-allowed ${SERVICE_ID} ${ADDRESS} --network=beta
+```
+
+`is-supplier-allowed` omits fields that are false: `{}` means the service is open, and
+`{"permissioned":true}` alone means the address is not listed. Check both the supplier's owner and operator
+addresses: the supplier is allowed if either one is listed.
+
+Every update emits an `EventServiceSupplierAllowlistUpdated` event. The update transaction does not emit
+`EventSupplierServiceNotAllowed`: the pass that follows (in later blocks) emits one per scheduled
+deactivation, with its `effective_height`.
 
 ## Experimental: How do I attach a card to a service?
 

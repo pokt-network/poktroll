@@ -58,11 +58,15 @@ func NewParams(
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
+	// Copies: the defaults are package globals, and callers may mutate the returned params.
+	proofRequirementThreshold := DefaultProofRequirementThreshold
+	proofMissingPenalty := DefaultProofMissingPenalty
+	proofSubmissionFee := DefaultMinProofSubmissionFee
 	return NewParams(
 		DefaultProofRequestProbability,
-		&DefaultProofRequirementThreshold,
-		&DefaultProofMissingPenalty,
-		&DefaultMinProofSubmissionFee,
+		&proofRequirementThreshold,
+		&proofMissingPenalty,
+		&proofSubmissionFee,
 	)
 }
 

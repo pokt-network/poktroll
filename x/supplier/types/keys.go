@@ -69,6 +69,10 @@ var ParamsKey = []byte("p_supplier")
 // of the last supplier processed; empty means the sweep starts from the beginning.
 var ServiceCapSweepKey = []byte("ServiceCapSweep/cursor")
 
+// AllowlistSweepLastServiceKey stores the ID of the last service the allowlist
+// sweep opened; the next sweep starts with the pending service after it.
+var AllowlistSweepLastServiceKey = []byte("AllowlistSweep/last_service")
+
 func KeyPrefix(p string) []byte { return []byte(p) }
 
 var _ binary.ByteOrder

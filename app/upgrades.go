@@ -212,6 +212,15 @@ var allUpgrades = []upgrades.Upgrade{
 	// - MsgStakeSupplier can no longer lower a supplier's stake; withdraw by unstaking
 	// - Proof requirement sampling and proof validation changes
 	upgrades.Upgrade_0_1_36,
+	// v0.1.37 upgrade adds:
+	// - Canonical bech32 addresses required in messages; non-canonical supplier operators
+	//   removed without refund, non-canonical owners rewritten, non-canonical applications
+	//   and gateways begin unbonding
+	// - Permissioned services (supplier allowlist per service, owner-managed)
+	// - Unbonding/settlement EndBlocker hardening, zero-EMA difficulty guard, Morse fee
+	//   waiver conditions, settlement budget divisor counts priced claims only
+	// - Dependency updates (smt, iavl, grpc)
+	upgrades.Upgrade_0_1_37,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

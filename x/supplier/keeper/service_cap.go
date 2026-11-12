@@ -38,25 +38,14 @@ func (k Keeper) EnforceServiceCap(
 		return nil
 	}
 
-	// The params effective at this height describe the current session: at the
-	// block where a session length change takes effect, the live params still
-	// hold the previous grid until the shared EndBlocker promotes the new one.
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sdkCtx.BlockHeight())
-	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
-
-	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, "")
-	counted := make([]*sharedtypes.ServiceConfigUpdate, 0, len(serviceConfigHistory))
-	for _, config := range serviceConfigHistory {
-		if suppliertypes.IsCountedServiceConfig(config, nextSessionStartHeight) {
-			counted = append(counted, config)
-		}
-	}
+	nextSessionStartHeight := k.nextSessionStartHeight(ctx)
+	counted := k.countedServiceConfigs(ctx, supplier.OperatorAddress, nextSessionStartHeight)
 	if uint64(len(counted)) <= allowed {
 		return nil
 	}
 
 	ranked := suppliertypes.RankServiceConfigs(counted, k.GetServicePriority(ctx, supplier.OperatorAddress))
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	stake := supplier.Stake.String()
 	for _, config := range ranked[allowed:] {
 		k.rescheduleServiceConfigDeactivation(ctx, config, nextSessionStartHeight)
@@ -77,6 +66,34 @@ func (k Keeper) EnforceServiceCap(
 	}
 
 	return deactivatedServiceIds
+}
+
+// nextSessionStartHeight returns the start height of the session after the
+// current one.
+func (k Keeper) nextSessionStartHeight(ctx context.Context) int64 {
+	// The params effective at this height describe the current session: at the
+	// block where a session length change takes effect, the live params still
+	// hold the previous grid until the shared EndBlocker promotes the new one.
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sdkCtx.BlockHeight())
+	return sharedtypes.GetNextSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
+}
+
+// countedServiceConfigs returns the supplier's stored service configs still in
+// effect after the next session start, in store key order.
+func (k Keeper) countedServiceConfigs(
+	ctx context.Context,
+	operatorAddress string,
+	nextSessionStartHeight int64,
+) []*sharedtypes.ServiceConfigUpdate {
+	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, operatorAddress, "")
+	counted := make([]*sharedtypes.ServiceConfigUpdate, 0, len(serviceConfigHistory))
+	for _, config := range serviceConfigHistory {
+		if suppliertypes.IsCountedServiceConfig(config, nextSessionStartHeight) {
+			counted = append(counted, config)
+		}
+	}
+	return counted
 }
 
 // rescheduleServiceConfigDeactivation sets one stored service config's deactivation

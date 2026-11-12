@@ -160,11 +160,27 @@ func (k Keeper) StakeSupplier(
 		}
 	}
 
+	// Reject services whose supplier allowlist lists neither the owner nor the operator.
+	// This is also the Morse claim path's gate. Revenue share addresses never count.
+	for _, serviceConfig := range msg.Services {
+		if !k.serviceKeeper.IsSupplierAllowed(ctx, serviceConfig.ServiceId, msg.OwnerAddress, msg.OperatorAddress) {
+			logger.Info(fmt.Sprintf("supplier is not allowed on service %q", serviceConfig.ServiceId))
+			return nil, status.Error(
+				codes.InvalidArgument,
+				suppliertypes.ErrSupplierServiceNotAllowed.Wrapf(
+					"neither owner %s nor operator %s is on the supplier allowlist of service %q",
+					msg.OwnerAddress, msg.OperatorAddress, serviceConfig.ServiceId,
+				).Error(),
+			)
+		}
+	}
+
 	// Check if the supplier already exists or not
 	var (
 		err                  error
 		wasSupplierUnbonding bool
 		supplierCurrentStake sdk.Coin
+		storedOwnerAddress   string
 	)
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 
@@ -239,7 +255,7 @@ func (k Keeper) StakeSupplier(
 		// depend on an unrelated guard 40 lines away -- relax that one to allow, say, an
 		// operator-initiated owner handoff, and an operator could cancel the owner's
 		// unstake simply by setting msg.OwnerAddress to itself.
-		storedOwnerAddress := supplier.OwnerAddress
+		storedOwnerAddress = supplier.OwnerAddress
 
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
 			logger.Info(fmt.Sprintf("ERROR: could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
@@ -337,6 +353,12 @@ func (k Keeper) StakeSupplier(
 	if len(msg.Services) == 0 {
 		k.indexSupplierUnstakingHeight(ctx, supplier)
 		k.SetDehydratedSupplier(ctx, supplier)
+		// A message listing services was checked against the allowlists above.
+		// After a stake-only owner change, deactivate the services that list
+		// neither the new owner nor the operator; the tx still succeeds.
+		if isSupplierFound && supplier.OwnerAddress != storedOwnerAddress {
+			k.enforceSupplierAllowlists(ctx, &supplier)
+		}
 	} else {
 		k.SetAndIndexDehydratedSupplier(ctx, supplier)
 		servicePriority := suppliertypes.ServicePriorityFromConfigs(msg.Services)

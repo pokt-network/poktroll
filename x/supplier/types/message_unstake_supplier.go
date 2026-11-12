@@ -1,6 +1,10 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+)
 
 const TypeMsgUnstakeSupplier = "unstake_supplier"
 
@@ -14,11 +18,11 @@ func NewMsgUnstakeSupplier(signerAddress, operatorAddress string) *MsgUnstakeSup
 }
 
 func (msg *MsgUnstakeSupplier) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.Signer); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.Signer); err != nil {
 		return ErrSupplierInvalidAddress.Wrapf("invalid signer address (%s)", err)
 	}
 
-	if _, err := sdk.AccAddressFromBech32(msg.OperatorAddress); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.OperatorAddress); err != nil {
 		return ErrSupplierInvalidAddress.Wrapf("invalid operator address (%s)", err)
 	}
 

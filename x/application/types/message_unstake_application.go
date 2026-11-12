@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ sdk.Msg = (*MsgUnstakeApplication)(nil)
@@ -13,7 +14,7 @@ func NewMsgUnstakeApplication(appAddr string) *MsgUnstakeApplication {
 }
 
 func (msg *MsgUnstakeApplication) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.Address); err != nil {
 		return ErrAppInvalidAddress.Wrapf("invalid address address (%s)", err)
 	}
 	return nil

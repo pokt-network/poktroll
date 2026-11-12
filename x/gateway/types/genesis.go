@@ -1,6 +1,10 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+)
 
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {
@@ -23,6 +27,10 @@ func (gs GenesisState) Validate() error {
 			return ErrGatewayInvalidAddress.Wrap("duplicated index for gateway")
 		}
 		gatewayAddrMap[address] = struct{}{}
+		// Validate the gateway address
+		if err := sharedtypes.ValidateCanonicalAddress(gateway.Address); err != nil {
+			return ErrGatewayInvalidAddress.Wrapf("invalid gateway address %s; (%v)", gateway.Address, err)
+		}
 		// Validate the stake of each gateway
 		if gateway.Stake == nil {
 			return ErrGatewayInvalidStake.Wrap("nil stake amount for gateway")

@@ -17,4 +17,5 @@ var (
 	ErrSupplierEmitEvent            = sdkerrors.Register(ModuleName, 1108, "failed to emit event")
 	ErrSupplierInvalidServiceId     = sdkerrors.Register(ModuleName, 1109, "invalid service ID")
 	ErrSupplierTooManyServices      = sdkerrors.Register(ModuleName, 1111, "stake does not cover the number of services")
+	ErrSupplierServiceNotAllowed    = sdkerrors.Register(ModuleName, 1112, "supplier is not allowed on service")
 )

@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -35,6 +36,9 @@ func TestGenesisState_Validate(t *testing.T) {
 		OwnerAddress:         ownerAddr,
 		ComputeUnitsPerRelay: 1,
 	}
+
+	listedAddr := sample.AccAddressBech32()
+	validServices := []sharedtypes.Service{*svc1, *svc2}
 
 	tests := []struct {
 		desc        string
@@ -111,6 +115,112 @@ func TestGenesisState_Validate(t *testing.T) {
 				},
 			},
 			expectedErr: types.ErrServiceParamInvalid,
+		},
+		{
+			desc: "valid - supplier allowlist and sweeps",
+			genState: &types.GenesisState{
+				Params:      types.DefaultParams(),
+				ServiceList: validServices,
+				SupplierAllowlist: []types.SupplierAllowlistEntry{
+					{ServiceId: svc1.Id, Address: listedAddr},
+					{ServiceId: svc2.Id, Address: listedAddr},
+				},
+				SupplierAllowlistSweeps: []types.AllowlistSweep{
+					{ServiceId: svc1.Id, Cursor: []byte("cursor"), Rerun: true},
+					{ServiceId: svc2.Id, DeferredFromHeight: 42},
+				},
+			},
+			expectedErr: nil,
+		},
+		{
+			desc: "invalid - non-canonical allowlist address",
+			genState: &types.GenesisState{
+				Params:      types.DefaultParams(),
+				ServiceList: validServices,
+				SupplierAllowlist: []types.SupplierAllowlistEntry{
+					{ServiceId: svc1.Id, Address: strings.ToUpper(listedAddr)},
+				},
+			},
+			expectedErr: types.ErrServiceInvalidSupplierAllowlist,
+		},
+		{
+			desc: "invalid - allowlist entry of unknown service",
+			genState: &types.GenesisState{
+				Params:      types.DefaultParams(),
+				ServiceList: validServices,
+				SupplierAllowlist: []types.SupplierAllowlistEntry{
+					{ServiceId: "unknown", Address: listedAddr},
+				},
+			},
+			expectedErr: types.ErrServiceInvalidSupplierAllowlist,
+		},
+		{
+			desc: "invalid - allowlist entry with empty service ID",
+			genState: &types.GenesisState{
+				Params:      types.DefaultParams(),
+				ServiceList: validServices,
+				SupplierAllowlist: []types.SupplierAllowlistEntry{
+					{ServiceId: "", Address: listedAddr},
+				},
+			},
+			expectedErr: types.ErrServiceInvalidSupplierAllowlist,
+		},
+		{
+			desc: "invalid - duplicate allowlist entry",
+			genState: &types.GenesisState{
+				Params:      types.DefaultParams(),
+				ServiceList: validServices,
+				SupplierAllowlist: []types.SupplierAllowlistEntry{
+					{ServiceId: svc1.Id, Address: listedAddr},
+					{ServiceId: svc1.Id, Address: listedAddr},
+				},
+			},
+			expectedErr: types.ErrServiceDuplicateIndex,
+		},
+		{
+			desc: "invalid - allowlist sweep of unknown service",
+			genState: &types.GenesisState{
+				Params:      types.DefaultParams(),
+				ServiceList: validServices,
+				SupplierAllowlistSweeps: []types.AllowlistSweep{
+					{ServiceId: "unknown"},
+				},
+			},
+			expectedErr: types.ErrServiceInvalidSupplierAllowlist,
+		},
+		{
+			desc: "invalid - duplicate allowlist sweep",
+			genState: &types.GenesisState{
+				Params:      types.DefaultParams(),
+				ServiceList: validServices,
+				SupplierAllowlistSweeps: []types.AllowlistSweep{
+					{ServiceId: svc1.Id},
+					{ServiceId: svc1.Id, Rerun: true},
+				},
+			},
+			expectedErr: types.ErrServiceDuplicateIndex,
+		},
+		{
+			desc: "invalid - negative allowlist sweep deferral",
+			genState: &types.GenesisState{
+				Params:      types.DefaultParams(),
+				ServiceList: validServices,
+				SupplierAllowlistSweeps: []types.AllowlistSweep{
+					{ServiceId: svc1.Id, DeferredFromHeight: -1},
+				},
+			},
+			expectedErr: types.ErrServiceInvalidSupplierAllowlist,
+		},
+		{
+			desc: "invalid - deferred allowlist sweep with a cursor",
+			genState: &types.GenesisState{
+				Params:      types.DefaultParams(),
+				ServiceList: validServices,
+				SupplierAllowlistSweeps: []types.AllowlistSweep{
+					{ServiceId: svc1.Id, DeferredFromHeight: 42, Cursor: []byte("11/addr")},
+				},
+			},
+			expectedErr: types.ErrServiceInvalidSupplierAllowlist,
 		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}

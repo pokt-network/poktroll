@@ -57,19 +57,19 @@ func (gs GenesisState) Validate() error {
 		}
 
 		// Validate the supplier owner address
-		if _, err := sdk.AccAddressFromBech32(supplier.OwnerAddress); err != nil {
+		if err := sharedtypes.ValidateCanonicalAddress(supplier.OwnerAddress); err != nil {
 			return ErrSupplierInvalidAddress.Wrapf("invalid supplier owner address %v", err.Error())
 		}
 
 		// Validate the supplier operator address
-		if _, err := sdk.AccAddressFromBech32(supplier.OperatorAddress); err != nil {
+		if err := sharedtypes.ValidateCanonicalAddress(supplier.OperatorAddress); err != nil {
 			return ErrSupplierInvalidAddress.Wrapf("invalid supplier operator address %v", err.Error())
 		}
 
 	}
 	priorityOperatorAddrs := make(map[string]struct{}, len(gs.ServicePriorityList))
 	for _, priority := range gs.ServicePriorityList {
-		if _, err := sdk.AccAddressFromBech32(priority.OperatorAddress); err != nil {
+		if err := sharedtypes.ValidateCanonicalAddress(priority.OperatorAddress); err != nil {
 			return ErrSupplierInvalidAddress.Wrapf("invalid service priority operator address %v", err.Error())
 		}
 		if _, ok := priorityOperatorAddrs[priority.OperatorAddress]; ok {

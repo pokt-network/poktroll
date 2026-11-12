@@ -63,6 +63,16 @@ service Query {
   rpc ComputeUnitsPerRelayHistory (QueryComputeUnitsPerRelayHistoryRequest) returns (QueryComputeUnitsPerRelayHistoryResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/compute_units_per_relay/{serviceId}/history";
   }
+
+  // Queries a service's supplier allowlist. The service is permissioned iff the list is non-empty.
+  rpc SupplierAllowlist (QuerySupplierAllowlistRequest) returns (QuerySupplierAllowlistResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/supplier_allowlist/{service_id}";
+  }
+
+  // Queries whether an address is on a service's supplier allowlist, and whether the service is permissioned.
+  rpc SupplierAllowlistEntry (QuerySupplierAllowlistEntryRequest) returns (QuerySupplierAllowlistEntryResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/supplier_allowlist/{service_id}/{address}";
+  }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
@@ -156,4 +166,28 @@ message QueryComputeUnitsPerRelayHistoryRequest {
 message QueryComputeUnitsPerRelayHistoryResponse {
   repeated ServiceComputeUnitsPerRelayUpdate computeUnitsPerRelayHistory = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QuerySupplierAllowlistRequest {
+  string service_id = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message QuerySupplierAllowlistResponse {
+  // True iff the allowlist is non-empty.
+  bool permissioned = 1;
+  repeated string addresses = 2;
+  cosmos.base.query.v1beta1.PageResponse pagination = 3;
+}
+
+message QuerySupplierAllowlistEntryRequest {
+  string service_id = 1;
+  string address = 2;
+}
+
+message QuerySupplierAllowlistEntryResponse {
+  // True iff the service's allowlist is non-empty.
+  bool permissioned = 1;
+  // True iff the address is on the service's allowlist.
+  bool listed = 2;
 }

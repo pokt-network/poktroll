@@ -2,6 +2,7 @@ package types
 
 import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ cosmostypes.Msg = (*MsgTransferApplication)(nil)
@@ -22,12 +23,12 @@ func (msg *MsgTransferApplication) ValidateBasic() error {
 		return ErrAppInvalidAddress.Wrap("empty destination application address")
 	}
 
-	_, srcBech32Err := cosmostypes.AccAddressFromBech32(msg.GetSourceAddress())
+	srcBech32Err := sharedtypes.ValidateCanonicalAddress(msg.GetSourceAddress())
 	if srcBech32Err != nil {
 		return ErrAppInvalidAddress.Wrapf("invalid source application address (%s): %v", msg.GetSourceAddress(), srcBech32Err)
 	}
 
-	_, dstBech32Err := cosmostypes.AccAddressFromBech32(msg.GetDestinationAddress())
+	dstBech32Err := sharedtypes.ValidateCanonicalAddress(msg.GetDestinationAddress())
 	if dstBech32Err != nil {
 		return ErrAppInvalidAddress.Wrapf("invalid destination application address (%s): %v", msg.GetDestinationAddress(), dstBech32Err)
 	}

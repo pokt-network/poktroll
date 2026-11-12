@@ -307,6 +307,32 @@ Suppliers staked before this feature keep their services in service ID order unt
 they next restake with services.
 :::
 
+:::note Permissioned services
+
+A service owner can restrict a service to a supplier allowlist (see
+[How do I restrict which suppliers can serve my service?](../1_cheat_sheets/1_service_cheatsheet.md#how-do-i-restrict-which-suppliers-can-serve-my-service)).
+On such a service:
+
+- A stake that lists the service is rejected with `supplier is not allowed on service` unless the stake's
+  `owner_address` **or** `operator_address` is on the allowlist. Check first with
+  `pocketd query service is-supplier-allowed <service_id> <address>` for both your owner and your
+  operator address (either one listed is enough). The output omits fields that are false: `{}` means the
+  service is open, and `{"permissioned":true}` alone means that address is not listed.
+- If you are not (or no longer) on the list, the service is deactivated for your supplier: at the next
+  session start after the owner removes you from an already permissioned service, or at the second session
+  start after the owner adds the first entry to a previously open service (also when the removal comes
+  after that first entry but before the next session start). The change can reach some suppliers one or
+  more sessions later: the pass checks at most 200 supplier configs per block, a budget shared by every
+  service with a pending pass, and a removal made while a pass is running can need a second pass. The
+  supplier stays staked and keeps its other services, and one `EventSupplierServiceNotAllowed` event (with
+  its `effective_height`) is emitted per scheduled deactivation. A supplier whose only service is
+  deactivated stays staked with zero services and earns nothing until it restakes with services. Current
+  sessions and their claims are not affected.
+- To serve the service again, get listed again, then restake with the service in `services`.
+- A stake-only update that changes `owner_address` is never rejected, but it deactivates, at the next
+  session start, the services that neither the new owner nor the operator is allowed on.
+:::
+
 #### `service_id`
 
 | Scenario             | Requirement  |

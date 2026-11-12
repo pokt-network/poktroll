@@ -191,7 +191,7 @@ if localnet_config["hot-reloading"]:
 docker_build(
     "pocketd",
     ".",
-    dockerfile_contents="""FROM golang:1.27.2
+    dockerfile_contents="""FROM golang:1.27.4
 RUN apt-get -q update && apt-get install -qyy curl jq less
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 COPY bin/pocketd /usr/local/bin/pocketd

@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var validUrlSchemes = []string{"http", "https", "ws", "wss"}
@@ -56,7 +54,7 @@ func (s *Service) ValidateBasic() error {
 		return err
 	}
 
-	if _, err := sdk.AccAddressFromBech32(s.OwnerAddress); err != nil {
+	if err := ValidateCanonicalAddress(s.OwnerAddress); err != nil {
 		return ErrSharedInvalidService.Wrapf("invalid owner address: %s", s.OwnerAddress)
 	}
 

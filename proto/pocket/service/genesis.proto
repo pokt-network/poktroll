@@ -11,6 +11,7 @@ import "pocket/service/params.proto";
 import "pocket/shared/service.proto";
 import "pocket/service/relay_mining_difficulty.proto";
 import "pocket/service/compute_units.proto";
+import "pocket/service/supplier_allowlist.proto";
 
 
 // GenesisState defines the service module's genesis state.
@@ -30,5 +31,19 @@ message GenesisState {
   // prevent, with no signal that anything was lost. Mirrors params_history in
   // pocket/shared/genesis.proto.
   repeated ServiceComputeUnitsPerRelayUpdate compute_units_per_relay_history = 4 [(gogoproto.nullable) = false];
+
+  // supplier_allowlist contains every service's supplier allowlist entries.
+  //
+  // Without it an export/import round trip silently empties every allowlist, which
+  // reopens every permissioned service to all suppliers with no signal that anything
+  // was lost.
+  repeated SupplierAllowlistEntry supplier_allowlist = 5 [(gogoproto.nullable) = false];
+
+  // supplier_allowlist_sweeps contains the pending sweeps of services' staked
+  // suppliers against their allowlists, cursors included.
+  //
+  // Without it an export/import round trip silently drops every sweep in progress,
+  // leaving suppliers the allowlist no longer allows on the service.
+  repeated AllowlistSweep supplier_allowlist_sweeps = 6 [(gogoproto.nullable) = false];
 }
 

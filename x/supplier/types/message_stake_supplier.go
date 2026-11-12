@@ -27,8 +27,8 @@ func NewMsgStakeSupplier(
 }
 
 // ValidateBasic performs the following validation steps:
-//  1. Validates the owner address is bech32 encoded.
-//  2. Validates the operator address is bech32 encoded.
+//  1. Validates the owner address is bech32 encoded in canonical (lowercase) form.
+//  2. Validates the operator address is bech32 encoded in canonical (lowercase) form.
 //  3. If the stake is not nil:
 //     - Validates the stake amount is positive.
 //     - Validates the stake denom is upokt.
@@ -36,17 +36,17 @@ func NewMsgStakeSupplier(
 //     - Validates each service config
 func (msg *MsgStakeSupplier) ValidateBasic() error {
 	// Validate the owner address
-	if _, err := sdk.AccAddressFromBech32(msg.OwnerAddress); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.OwnerAddress); err != nil {
 		return ErrSupplierInvalidAddress.Wrapf("invalid owner address %s; (%s)", msg.OwnerAddress, err)
 	}
 
 	// Validate the address
-	if _, err := sdk.AccAddressFromBech32(msg.OperatorAddress); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.OperatorAddress); err != nil {
 		return ErrSupplierInvalidAddress.Wrapf("invalid operator address %s; (%s)", msg.OperatorAddress, err)
 	}
 
 	// Validate the signer address
-	if _, err := sdk.AccAddressFromBech32(msg.Signer); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.Signer); err != nil {
 		return ErrSupplierInvalidAddress.Wrapf("invalid signer address %s; (%s)", msg.Signer, err)
 	}
 

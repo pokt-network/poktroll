@@ -80,15 +80,17 @@ func (k Keeper) UnbondGateway(ctx context.Context, gateway *gatewaytypes.Gateway
 	}
 
 	// Send the coins from the gateway pool back to the gateway.
+	// A failed send must not halt the EndBlocker: log it, leave the coins in the
+	// module pool and still remove the gateway, as the application and supplier
+	// unbonding EndBlockers do.
 	err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx, gatewaytypes.ModuleName, gatewayAddr, []cosmostypes.Coin{*gateway.Stake},
 	)
 	if err != nil {
 		logger.Error(fmt.Sprintf(
-			"could not send %v coins from module %s to gateway account %s due to %v",
-			gateway.Stake, gatewayAddr, gatewaytypes.ModuleName, err,
+			"could not send %v coins from module %s to gateway account %s due to %v; gateway will be removed and coins will remain in module pool",
+			gateway.Stake, gatewaytypes.ModuleName, gatewayAddr, err,
 		))
-		return err
 	}
 
 	// Remove the Gateway from the store.

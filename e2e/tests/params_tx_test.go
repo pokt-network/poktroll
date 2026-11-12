@@ -129,6 +129,34 @@ func (s *suite) broadcastAndWaitForAuthzExecTx(signingKeyName, txJSONFilePath st
 func (s *suite) broadcastTxAndRequireCommitted(args ...string) cliTxResponse {
 	s.Helper()
 
+	committedTxRes := s.broadcastTxAndWaitForResult(args...)
+	require.Equalf(s, txCodeOK, committedTxRes.Code,
+		"tx %s was rejected with code %d: %s", committedTxRes.TxHash, committedTxRes.Code, committedTxRes.RawLog,
+	)
+
+	return committedTxRes
+}
+
+// broadcastTxAndRequireRejected runs a `pocketd tx ...` command against the node under
+// test, blocks until the resulting tx is committed & asserts that the chain rejected it.
+// A message the chain rejects at delivery still broadcasts with code 0, so only the
+// committed result shows the rejection.
+func (s *suite) broadcastTxAndRequireRejected(args ...string) cliTxResponse {
+	s.Helper()
+
+	committedTxRes := s.broadcastTxAndWaitForResult(args...)
+	require.NotEqualf(s, txCodeOK, committedTxRes.Code,
+		"expected tx %s to be rejected but it succeeded", committedTxRes.TxHash,
+	)
+
+	return committedTxRes
+}
+
+// broadcastTxAndWaitForResult runs a `pocketd tx ...` command against the node under
+// test, asserts that it was accepted for broadcast & returns its committed result.
+func (s *suite) broadcastTxAndWaitForResult(args ...string) cliTxResponse {
+	s.Helper()
+
 	// The response must be parseable, so the output flag is appended here rather than left
 	// to each call site: without it the CLI emits YAML & every caller would have to
 	// remember to opt in.
@@ -150,12 +178,7 @@ func (s *suite) broadcastTxAndRequireCommitted(args ...string) cliTxResponse {
 	// attempt would otherwise always miss & print a "tx not found" retry banner.
 	time.Sleep(txDelaySeconds * time.Second)
 
-	committedTxRes := s.queryCommittedTx(broadcastTxRes.TxHash)
-	require.Equalf(s, txCodeOK, committedTxRes.Code,
-		"tx %s was rejected with code %d: %s", committedTxRes.TxHash, committedTxRes.Code, committedTxRes.RawLog,
-	)
-
-	return committedTxRes
+	return s.queryCommittedTx(broadcastTxRes.TxHash)
 }
 
 // queryCommittedTx queries the tx with the given hash & returns its committed result.

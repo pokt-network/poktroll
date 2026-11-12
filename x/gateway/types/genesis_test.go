@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -153,6 +154,19 @@ func TestGenesisState_Validate(t *testing.T) {
 					{
 						Address: addr2,
 						Stake:   &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - non-canonical gateway address",
+			genState: &gatewaytypes.GenesisState{
+				Params: gatewaytypes.DefaultParams(),
+				GatewayList: []gatewaytypes.Gateway{
+					{
+						Address: strings.ToUpper(addr1),
+						Stake:   &stake1,
 					},
 				},
 			},

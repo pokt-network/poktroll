@@ -26,7 +26,7 @@ func NewMsgAddService(serviceOwnerAddr, serviceId, serviceName string, computeUn
 
 // ValidateBasic performs basic validation of the message and its fields
 func (msg *MsgAddService) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.OwnerAddress); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.OwnerAddress); err != nil {
 		return ErrServiceInvalidAddress.Wrapf("invalid signer address %s; (%v)", msg.OwnerAddress, err)
 	}
 	// Ensure that the signer of the add_service message is the owner of the service.

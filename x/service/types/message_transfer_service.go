@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ sdk.Msg = (*MsgTransferService)(nil)
@@ -16,11 +17,11 @@ func NewMsgTransferService(ownerAddress, serviceId, newOwnerAddress string) *Msg
 
 // ValidateBasic performs basic validation of the MsgTransferService fields.
 func (msg *MsgTransferService) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.OwnerAddress); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.OwnerAddress); err != nil {
 		return ErrServiceInvalidAddress.Wrapf("invalid owner address %s; (%v)", msg.OwnerAddress, err)
 	}
 
-	if _, err := sdk.AccAddressFromBech32(msg.NewOwnerAddress); err != nil {
+	if err := sharedtypes.ValidateCanonicalAddress(msg.NewOwnerAddress); err != nil {
 		return ErrServiceInvalidAddress.Wrapf("invalid new owner address %s; (%v)", msg.NewOwnerAddress, err)
 	}
 

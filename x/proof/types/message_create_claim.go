@@ -6,6 +6,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const TypeMsgCreateClaim = "create_claim"
@@ -27,8 +28,8 @@ func NewMsgCreateClaim(
 // ValidateBasic performs basic stateless validation of a MsgCreateClaim.
 func (msg *MsgCreateClaim) ValidateBasic() error {
 	// Validate the supplier operator address
-	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierOperatorAddress()); err != nil {
-		return ErrProofInvalidAddress.Wrapf("%s", msg.GetSupplierOperatorAddress())
+	if err := sharedtypes.ValidateCanonicalAddress(msg.GetSupplierOperatorAddress()); err != nil {
+		return ErrProofInvalidAddress.Wrapf("%s; (%s)", msg.GetSupplierOperatorAddress(), err)
 	}
 
 	// Retrieve & validate the session header
@@ -38,6 +39,10 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 	}
 	if err := sessionHeader.ValidateBasic(); err != nil {
 		return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", err)
+	}
+	// State lookups compare the application address string, so require its canonical encoding.
+	if err := sharedtypes.ValidateCanonicalAddress(sessionHeader.GetApplicationAddress()); err != nil {
+		return ErrProofInvalidSessionHeader.Wrapf("invalid session header application address: %s", err)
 	}
 
 	// Validate the root hash

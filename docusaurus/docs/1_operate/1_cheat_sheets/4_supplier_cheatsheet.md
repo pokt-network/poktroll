@@ -270,6 +270,14 @@ Use your own service_id or [create a new one](1_service_cheatsheet.md).
 
 :::
 
+:::note Permissioned services
+
+A service owner can restrict a service to listed suppliers. Staking on one fails with
+`supplier is not allowed on service` unless your `owner_address` or `operator_address` is on its allowlist.
+See the [supplier staking config](../3_configs/3_supplier_staking_config.md#services).
+
+:::
+
 :::warning Revenue Share Update Permissions (Operator-Only Updates)
 
 **Revenue share addresses and percentages CAN ONLY be updated by the OPERATOR account.**
