@@ -33,6 +33,43 @@ For technical documentation, visit [dev.poktroll.com](https://dev.poktroll.com).
 Documentation is maintained in the [docusaurus repo](./docusaurus) and is
 automatically deployed to the link above.
 
+# Prerequisites
+
+```bash
+# Install required tools
+brew install gnu-sed
+brew install grep
+brew install yq
+brew install kind
+brew install tilt
+
+# Verify Go version (must be 1.23.x, NOT 1.24+)
+go version
+# Expected output: go1.23.12 darwin/arm64 
+
+```
+
+
+
+# Quickstart (Localnet)
+```
+# Start the local network
+make localnet_up
+
+# Initialize accounts (required for relays & tests)
+make acc_initialize_pubkeys POCKET_NODE=http://localhost:26657
+```
+Troubleshooting
+
+If you see this error:"Failed to receive any response from endpoints..."
+
+It usually means you forgot to run the make acc_initialize_pubkeys step.
+```
+
+
+
 ## License
 
-This project is licensed under the MIT License; see the [LICENSE](https://github.com/pokt-network/poktroll/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License.  
+See the [LICENSE](https://github.com/pokt-network/poktroll/blob/main/LICENSE) file for details.
+
